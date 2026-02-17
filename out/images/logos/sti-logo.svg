@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <circle cx="60" cy="60" r="55" fill="#003366"/>
-  <circle cx="60" cy="60" r="48" fill="none" stroke="#FFD700" stroke-width="3"/>
-  <text x="60" y="55" text-anchor="middle" fill="#FFD700" font-family="Arial, sans-serif" font-size="24" font-weight="bold">STI</text>
-  <text x="60" y="75" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10">COLLEGE</text>
-  <text x="60" y="88" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="8">BALAGTAS</text>
-</svg>
