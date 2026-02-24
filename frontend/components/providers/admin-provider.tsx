@@ -30,7 +30,7 @@ import {
 interface AdminContextValue {
   // Auth
   isLoggedIn: boolean
-  login: (email: string, password: string) => boolean
+  login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   adminEmail: string
 
@@ -134,16 +134,29 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [settings, mounted])
 
   // ── Auth ──
-  const login = useCallback((email: string, password: string) => {
-    // Simple demo auth
-    if (email === "admin@mhacto.gov.ph" && password === "admin123") {
-      setIsLoggedIn(true)
-      setAdminEmail(email)
-      saveJson("admin_logged_in", true)
-      saveJson("admin_email", email)
-      return true
+  const login = useCallback(async (email: string, password: string) => {
+     try{
+      const response = await fetch("http://localhost:8000/api/auth/login.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setIsLoggedIn(true)
+        setAdminEmail(data.user.email)
+        saveJson("admin_logged_in", true)
+        saveJson("admin_email", data.user.email)
+        return true
+      }
+      else {
+        console.error("Login failed:", data.error)
+        return false
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
     }
-    return false
   }, [])
 
   const logout = useCallback(() => {
