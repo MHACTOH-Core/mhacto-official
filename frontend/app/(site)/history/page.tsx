@@ -1,81 +1,192 @@
-import Link from "next/link"
-import { Clock, Users } from "lucide-react"
+"use client"
 
-const sections = [
-  {
-    title: "Timeline of Events",
-    description:
-      "Explore the significant historical milestones that shaped Bocaue — from its early barangay origins to its role in national history.",
-    href: "/history/timeline",
-    icon: Clock,
-    color: "from-amber-500 to-yellow-400",
-    bg: "bg-amber-50",
-  },
-  {
-    title: "Notable Figures",
-    description:
-      "Discover the remarkable men and women of Bocaue whose contributions in arts, politics, religion, and culture left lasting legacies.",
-    href: "/history/notable-persons",
-    icon: Users,
-    color: "from-emerald-500 to-teal-400",
-    bg: "bg-emerald-50",
-  },
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { timelineEvents, notablePersons, personCategoryLabels } from "@/lib/data/history-data"
+
+const eraColor: Record<string, string> = {
+  "Pre-Colonial Period": "bg-amber-500",
+  "Spanish Colonial Period": "bg-orange-500",
+  "Philippine Revolution": "bg-red-500",
+  "American Colonial Period": "bg-blue-500",
+  "World War II": "bg-gray-600",
+  "Post-War Republic": "bg-green-600",
+  "Contemporary": "bg-primary",
+}
+
+const categoryColor: Record<string, string> = {
+  "national-hero": "bg-red-100 text-red-800 border-red-200",
+  arts: "bg-purple-100 text-purple-800 border-purple-200",
+  religion: "bg-amber-100 text-amber-700 border-amber-200",
+  government: "bg-blue-100 text-blue-800 border-blue-200",
+  education: "bg-green-100 text-green-800 border-green-200",
+  sports: "bg-cyan-100 text-cyan-800 border-cyan-200",
+}
+
+const navSections = [
+  { id: "timeline", label: "Timeline" },
+  { id: "notable-figures", label: "Notable Figures" },
 ]
 
+
+
 export default function HistoryPage() {
+  const [activeSection, setActiveSection] = useState("timeline")
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      for (const s of [...navSections].reverse()) {
+        const el = document.getElementById(s.id)
+        if (el && el.getBoundingClientRect().top <= 120) { setActiveSection(s.id); return }
+      }
+      setActiveSection("timeline")
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" })
+  }
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
       <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[280px] flex items-end overflow-hidden"
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="px-6 pb-10 pt-20 lg:px-16">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">
-            Bocaue Wonders
-          </p>
-          <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            History of Bocaue
-          </h1>
-          <p className="mt-2 max-w-xl text-sm text-white/80 sm:text-base">
-            A town shaped by faith, revolution, and culture — walk through the
-            centuries that defined Bocaue, Bulacan.
-          </p>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-8 w-8 text-amber-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">History of Bocaue</h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Cards */}
-      <section className="mx-auto max-w-4xl px-6 py-14 lg:px-16">
-        <div className="grid gap-8 sm:grid-cols-2">
-          {sections.map(({ title, description, href, icon: Icon, color, bg }) => (
-            <Link
-              key={title}
-              href={href}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className={`h-2 w-full bg-gradient-to-r ${color}`} />
-              <div className="p-6">
-                <div
-                  className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl ${bg}`}
-                >
-                  <Icon className="h-5 w-5 text-foreground/70" />
+      {/* Sticky in-page nav */}
+      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto py-1">
+            {navSections.map((s) => (
+              <button key={s.id} onClick={() => scrollTo(s.id)}
+                className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Timeline ── */}
+      <section id="timeline" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+        <div className="mx-auto max-w-4xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Clock className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Timeline of Events</h2>
+              <p className="text-muted-foreground">From pre-colonial roots to the present day</p>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
+            <div className="space-y-6">
+              {timelineEvents.map((event) => (
+                <div key={event.year} className="relative pl-12">
+                  <div className={`absolute left-0 top-1.5 h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-black shadow-sm ${eraColor[event.era] ?? "bg-primary"}`}>
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-md transition-all">
+                    <CardContent className="p-5">
+                      <div className="flex flex-wrap items-start gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs font-bold">{event.year}</Badge>
+                        <Badge variant="outline" className={`text-xs ${eraColor[event.era] ? eraColor[event.era].replace("bg-", "bg-") + " text-white border-0" : ""}`}>{event.era}</Badge>
+                        {event.significance === "major" && <Badge className="text-xs bg-red-500 text-white border-0"><Shield className="h-2.5 w-2.5 mr-1" /> Major Event</Badge>}
+                      </div>
+                      <h3 className="text-base font-black text-foreground mb-1">{event.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+                      {event.image && (
+                        <div className="relative h-40 rounded-lg overflow-hidden mb-3">
+                          <Image src={event.image} alt={event.title} fill className="object-cover" />
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setExpandedId(expandedId === event.year ? null : event.year)}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        {expandedId === event.year ? <><ChevronUp className="h-3.5 w-3.5" /> Hide details</> : <><ChevronDown className="h-3.5 w-3.5" /> Read more</>}
+                      </button>
+                      {expandedId === event.year && (
+                        <p className="mt-3 text-sm text-foreground leading-relaxed border-t border-border pt-3">{event.details}</p>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-                <h2 className="mb-2 text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                  {title}
-                </h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {description}
-                </p>
-                <span className="mt-4 inline-block text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Explore →
-                </span>
-              </div>
-            </Link>
-          ))}
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Notable Figures ── */}
+      <section id="notable-figures" className="py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Notable Figures</h2>
+              <p className="text-muted-foreground">Remarkable people who shaped Bocaue&apos;s identity</p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {notablePersons.map((person) => (
+              <Card key={person.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                {person.image && (
+                  <div className="relative h-44 overflow-hidden">
+                    <Image src={person.image} alt={person.name} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <Badge variant="outline" className={`text-xs ${categoryColor[person.category] ?? ""}`}>
+                        {personCategoryLabels[person.category]}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                <CardContent className="p-5 flex flex-col flex-1">
+                  {!person.image && (
+                    <Badge variant="outline" className={`text-xs mb-3 self-start ${categoryColor[person.category] ?? ""}`}>
+                      {personCategoryLabels[person.category]}
+                    </Badge>
+                  )}
+                  <div className="mb-1 text-xs text-muted-foreground">{person.years}</div>
+                  <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
+                  <p className="text-xs text-primary font-semibold mb-3">{person.title}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{person.description}</p>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Legacy</p>
+                    <p className="text-xs text-foreground leading-relaxed">{person.legacy}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
     </main>

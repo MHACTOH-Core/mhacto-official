@@ -1,90 +1,218 @@
-import Link from "next/link"
-import { Utensils, Sparkles, Flame } from "lucide-react"
+"use client"
 
-const sections = [
-  {
-    title: "Local Cuisine",
-    description:
-      "Taste the flavors of Bocaue — from its famous puto and kakanin to traditional town fiesta dishes that have been passed down for generations.",
-    href: "/culture/local-cuisine",
-    icon: Utensils,
-    color: "from-orange-500 to-amber-400",
-    bg: "bg-orange-50",
-  },
-  {
-    title: "Festivals",
-    description:
-      "Experience the vibrant celebrations of Bocaue, including the world-famous Bocaue Pagoda Festival and the rich fiesta traditions honoring St. Martin of Tours.",
-    href: "/culture/festivals-celebrations",
-    icon: Sparkles,
-    color: "from-rose-500 to-pink-400",
-    bg: "bg-rose-50",
-  },
-  {
-    title: "Cultural Practices",
-    description:
-      "Learn about the living traditions, rituals, and customs that define Bocaue's identity — from religious processions to everyday community practices.",
-    href: "/culture/practices-traditions",
-    icon: Flame,
-    color: "from-violet-500 to-purple-400",
-    bg: "bg-violet-50",
-  },
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { localCuisine, festivals, culturalPractices } from "@/lib/data/culture-data"
+
+const festivalTypeColor: Record<string, string> = {
+  religious: "bg-amber-100 text-amber-800 border-amber-200",
+  cultural: "bg-purple-100 text-purple-800 border-purple-200",
+  civic: "bg-blue-100 text-blue-800 border-blue-200",
+  seasonal: "bg-green-100 text-green-800 border-green-200",
+}
+
+const statusConfig = {
+  active: { icon: CheckCircle, color: "text-green-600", label: "Active" },
+  endangered: { icon: AlertTriangle, color: "text-amber-500", label: "Endangered" },
+  revived: { icon: RefreshCw, color: "text-blue-500", label: "Revived" },
+}
+
+const navSections = [
+  { id: "cuisine", label: "Local Cuisine" },
+  { id: "festivals", label: "Festivals" },
+  { id: "practices", label: "Cultural Practices" },
 ]
 
 export default function CulturePage() {
+  const [activeSection, setActiveSection] = useState("cuisine")
+
+  useEffect(() => {
+    const handleScroll = () => {
+      for (const s of [...navSections].reverse()) {
+        const el = document.getElementById(s.id)
+        if (el && el.getBoundingClientRect().top <= 120) { setActiveSection(s.id); return }
+      }
+      setActiveSection("cuisine")
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" })
+  }
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
       <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[280px] flex items-end overflow-hidden"
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="px-6 pb-10 pt-20 lg:px-16">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">
-            Bocaue Wonders
-          </p>
-          <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Arts &amp; Culture
-          </h1>
-          <p className="mt-2 max-w-xl text-sm text-white/80 sm:text-base">
-            Immerse yourself in the rich heritage, living traditions, and vibrant
-            festivals that make Bocaue a cultural treasure of Bulacan.
-          </p>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-8 w-8 text-amber-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Arts &amp; Culture</h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Cards */}
-      <section className="mx-auto max-w-5xl px-6 py-14 lg:px-16">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {sections.map(({ title, description, href, icon: Icon, color, bg }) => (
-            <Link
-              key={title}
-              href={href}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className={`h-2 w-full bg-gradient-to-r ${color}`} />
-              <div className="p-6">
-                <div
-                  className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl ${bg}`}
-                >
-                  <Icon className="h-5 w-5 text-foreground/70" />
+      {/* Sticky nav */}
+      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto py-1">
+            {navSections.map((s) => (
+              <button key={s.id} onClick={() => scrollTo(s.id)}
+                className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Local Cuisine ── */}
+      <section id="cuisine" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Utensils className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Local Cuisine</h2>
+              <p className="text-muted-foreground">Flavors and foodways that define Bocaue&apos;s table</p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {localCuisine.map((item) => (
+              <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                <div className="relative h-48 overflow-hidden">
+                  <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-4">
+                    <Badge className="text-xs bg-orange-500 text-white border-0 capitalize">{item.type}</Badge>
+                  </div>
                 </div>
-                <h2 className="mb-2 text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                  {title}
-                </h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {description}
-                </p>
-                <span className="mt-4 inline-block text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Explore →
-                </span>
-              </div>
-            </Link>
-          ))}
+                <CardContent className="p-5 flex flex-col flex-1">
+                  <h3 className="text-lg font-black text-foreground mb-0.5">{item.name}</h3>
+                  {item.tagalogName && item.tagalogName !== item.name && <p className="text-xs text-muted-foreground italic mb-2">{item.tagalogName}</p>}
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{item.description}</p>
+                  <div className="border-t border-border pt-3 space-y-1.5">
+                    <div className="flex items-start gap-2 text-xs"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" /><span>{item.where.join(" · ")}</span></div>
+                    {item.bestTime && <div className="flex items-start gap-2 text-xs"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" /><span>{item.bestTime}</span></div>}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Festivals ── */}
+      <section id="festivals" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Sparkles className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Festivals &amp; Celebrations</h2>
+              <p className="text-muted-foreground">Annual events that bring the community together</p>
+            </div>
+          </div>
+          <div className="space-y-8">
+            {festivals.map((fest, idx) => (
+              <Card key={fest.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+                <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
+                  {idx % 2 === 0 && (
+                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
+                      <Image src={fest.image} alt={fest.name} fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-3 left-4">
+                        <Badge variant="outline" className={`text-xs ${festivalTypeColor[fest.type] ?? ""}`}>{fest.type}</Badge>
+                      </div>
+                    </div>
+                  )}
+                  <CardContent className="p-6 sm:p-8 flex flex-col justify-start">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-primary">{fest.date}</span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{fest.name}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{fest.description}</p>
+                    <p className="text-sm text-foreground leading-relaxed mb-4">{fest.story}</p>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Star className="h-3 w-3" /> Highlights</p>
+                      <ul className="space-y-1">{fest.highlights.map((h) => <li key={h} className="text-sm text-foreground flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{h}</li>)}</ul>
+                    </div>
+                  </CardContent>
+                  {idx % 2 !== 0 && (
+                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px] order-first md:order-last">
+                      <Image src={fest.image} alt={fest.name} fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-3 right-4">
+                        <Badge variant="outline" className={`text-xs ${festivalTypeColor[fest.type] ?? ""}`}>{fest.type}</Badge>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Cultural Practices ── */}
+      <section id="practices" className="py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Flame className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Cultural Practices &amp; Traditions</h2>
+              <p className="text-muted-foreground">Living customs that define Bocaue&apos;s identity</p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {culturalPractices.map((practice) => {
+              const StatusIcon = statusConfig[practice.status].icon
+              return (
+                <Card key={practice.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                  {practice.image && (
+                    <div className="relative h-44 overflow-hidden">
+                      <Image src={practice.image} alt={practice.name} fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    </div>
+                  )}
+                  <CardContent className="p-5 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs capitalize">{practice.category.replace("-", " ")}</Badge>
+                      <span className={`flex items-center gap-1 text-xs font-semibold ${statusConfig[practice.status].color}`}>
+                        <StatusIcon className="h-3 w-3" />{statusConfig[practice.status].label}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-black text-foreground mb-2">{practice.name}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{practice.description}</p>
+                    <div className="border-t border-border pt-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Significance</p>
+                      <p className="text-xs text-foreground leading-relaxed">{practice.significance}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
         </div>
       </section>
     </main>
