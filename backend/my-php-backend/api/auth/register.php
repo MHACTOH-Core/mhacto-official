@@ -1,0 +1,3 @@
+<?php
+// register.php - Handles user registration
+// ...implementation here...

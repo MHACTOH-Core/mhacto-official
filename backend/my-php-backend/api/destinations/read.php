@@ -1,0 +1,3 @@
+<?php
+// read.php - Fetches destinations
+// ...implementation here...

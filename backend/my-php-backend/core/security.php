@@ -1,0 +1,3 @@
+<?php
+// security.php - Session, CORS, JWT utilities
+// ...implementation here...
