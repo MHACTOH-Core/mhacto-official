@@ -73,7 +73,7 @@ export function PlacesCarousel() {
           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
             Featured Places
           </span>
-          <h2 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
+          <h2 className="mt-2 text-2xl font-bold text-foreground md:text-3xl font-heading">
             Slide through Bocaue&apos;s landmarks
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">

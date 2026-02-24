@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -89,6 +89,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
@@ -171,14 +172,19 @@ export function Navbar() {
       <div
         key={item.label}
         className="relative group"
-        onMouseEnter={() => setHoveredDropdown(item.label)}
-        onMouseLeave={() => setHoveredDropdown(null)}
+        onMouseEnter={() => {
+          if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+          setHoveredDropdown(item.label)
+        }}
+        onMouseLeave={() => {
+          closeTimerRef.current = setTimeout(() => setHoveredDropdown(null), 350)
+        }}
       >
         {/* Trigger button */}
         <button
-          className={`flex items-center gap-0.5 rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-accent hover:text-primary ${
+          className={`flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-all duration-150 hover:text-primary ${
             hasActiveChild(item) || hoveredDropdown === item.label
-              ? "text-primary bg-accent/60"
+              ? "text-primary"
               : "text-foreground"
           }`}
         >
@@ -216,7 +222,7 @@ export function Navbar() {
                   // Category group with flyout
                   <div className="group/sub relative">
                     <button
-                      className="flex w-full items-center justify-between gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-accent/60 hover:text-primary"
+                      className="flex w-full items-center justify-between gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
                     >
                       {child.label}
                       <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover/sub:translate-x-0.5" />
@@ -238,9 +244,9 @@ export function Navbar() {
                           <Link
                             key={subchild.label}
                             href={subchild.href || "#"}
-                            className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-accent/60 hover:text-primary ${
+                            className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-muted/70 hover:text-primary ${
                               isActive(subchild)
-                                ? "text-primary font-semibold bg-accent/40"
+                                ? "text-primary font-semibold bg-primary/10"
                                 : "text-foreground"
                             }`}
                           >
@@ -255,9 +261,9 @@ export function Navbar() {
                   // Direct link
                   <Link
                     href={child.href || "#"}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-accent/60 hover:text-primary ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-muted/70 hover:text-primary ${
                       isActive(child)
-                        ? "text-primary font-semibold bg-accent/40"
+                        ? "text-primary font-semibold bg-primary/10"
                         : "text-foreground"
                     }`}
                   >
@@ -280,9 +286,9 @@ export function Navbar() {
         key={item.label}
         href={getHref(item)}
         onClick={(e) => handleHashClick(e, item)}
-        className={`rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-accent hover:text-primary ${
+        className={`rounded-md px-2 py-1.5 text-[13px] font-medium transition-all duration-150 hover:text-primary ${
           isActive(item)
-            ? "text-primary bg-accent/60"
+            ? "text-primary"
             : "text-foreground"
         }`}
       >
@@ -293,7 +299,7 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-white/80 backdrop-blur-md shadow-sm">
-      <nav className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-2 lg:px-8">
+      <nav className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 lg:py-4 lg:px-8">
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
@@ -308,7 +314,7 @@ export function Navbar() {
         </Link>
 
         {/* Center – Desktop nav links */}
-        <div className="hidden items-center gap-0.5 md:flex lg:gap-1">
+        <div className="hidden items-center gap-1 md:flex lg:gap-2">
           {navLinks.map((item) =>
             item.children
               ? renderDesktopDropdown(item)

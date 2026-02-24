@@ -13,7 +13,7 @@ export function AttractionsSection() {
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
             Top Destinations
           </span>
-          <h2 className="mt-2 text-balance text-2xl font-bold text-card-foreground sm:text-3xl md:text-4xl">
+          <h2 className="mt-2 text-balance text-2xl font-bold text-card-foreground sm:text-3xl md:text-4xl font-heading">
             Discover Bocaue
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground">

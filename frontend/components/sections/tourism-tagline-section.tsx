@@ -53,7 +53,7 @@ export function TourismTaglineSection() {
             <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-primary reveal-on-scroll">
               Official Tourism Portal
             </p>
-            <h2 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-foreground sm:text-4xl md:text-5xl reveal-on-scroll">
+            <h2 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-foreground sm:text-4xl md:text-5xl reveal-on-scroll font-heading">
               Discover the{" "}
               <span className="text-primary">Heritage, Arts, Culture</span>
               <br className="hidden sm:block" /> &amp; Tourism of{" "}

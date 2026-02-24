@@ -12,7 +12,7 @@ export function AnnouncementSection() {
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">
                 Plan Your Visit
               </span>
-              <h2 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+              <h2 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
                 Ready to Explore Bocaue?
               </h2>
               <p className="mt-3 text-muted-foreground leading-relaxed sm:text-lg">

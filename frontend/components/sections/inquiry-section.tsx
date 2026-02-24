@@ -41,7 +41,7 @@ export function InquirySection() {
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
             Get in Touch
           </span>
-          <h2 className="mt-2 text-balance text-3xl font-bold text-foreground md:text-4xl">
+          <h2 className="mt-2 text-balance text-3xl font-bold text-foreground md:text-4xl font-heading">
             Tourist Inquiry &amp; Registration
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground">

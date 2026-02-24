@@ -13,7 +13,7 @@ export function NewsSection() {
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
             Latest Updates
           </span>
-          <h2 className="mt-2 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+          <h2 className="mt-2 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
             News &amp; Stories from Bocaue
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground">

@@ -44,7 +44,7 @@ export function FeaturedSpotlight() {
         </div>
 
         {/* Title */}
-        <h3 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl max-w-2xl leading-tight animate-fade-in-up delay-300">
+        <h3 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl max-w-2xl leading-tight animate-fade-in-up delay-300 font-heading">
           {spotlight.title}
         </h3>
 

@@ -154,7 +154,7 @@ export function HeroSection() {
             <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-secondary">
               {slide.subtitle}
             </p>
-            <h1 className="max-w-3xl text-balance text-3xl font-bold leading-tight text-card sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl text-balance text-3xl font-bold leading-tight text-card sm:text-5xl md:text-6xl lg:text-7xl font-heading">
               {slide.title}{" "}
               <span className="text-primary">{slide.highlight}</span>
             </h1>

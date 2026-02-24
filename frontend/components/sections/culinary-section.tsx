@@ -45,7 +45,7 @@ export function CulinarySection() {
             <UtensilsCrossed className="h-4 w-4" />
             Taste of Bocaue
           </span>
-          <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+          <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
             Featured Culinary Delicacies
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
