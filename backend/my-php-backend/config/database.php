@@ -1,0 +1,3 @@
+<?php
+// database.php - PDO connection script
+// ...implementation here...

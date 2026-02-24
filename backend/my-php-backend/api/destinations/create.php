@@ -1,0 +1,3 @@
+<?php
+// create.php - Creates a new destination
+// ...implementation here...
