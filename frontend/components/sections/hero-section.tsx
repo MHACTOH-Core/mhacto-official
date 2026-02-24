@@ -147,7 +147,7 @@ export function HeroSection() {
         >
           {/* MHACTO Bocaue Tagline — always visible */}
           <p className="mb-4 text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-white/60 border border-white/20 rounded-full px-4 py-1 backdrop-blur-sm bg-black/20">
-            MHACTO Bocaue &mdash; Heritage, Arts, Culture &amp; Tourism
+            MHACTO Bocaue &mdash; History, Arts, Culture &amp; Tourism
           </p>
 
           <div key={currentSlide} className="flex flex-col items-center animate-hero-text-in">

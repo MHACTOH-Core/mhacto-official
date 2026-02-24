@@ -23,65 +23,67 @@ interface NavItem {
 
 const navLinks: NavItem[] = [
   { label: "Home", href: "/", isHash: false },
-  { label: "Mission & Vision", href: "/mission-vision", isHash: false },
-  { label: "Tourism Office / Organization", href: "/tourism-office", isHash: false },
   {
-    label: "History",
-    children: [
-      { label: "Timeline of Events", href: "/history/timeline", isHash: false },
-      { label: "Notable Persons", href: "/history/notable-persons", isHash: false },
-    ],
-  },
-  {
-    label: "Art & Culture",
+    label: "Bocaue Wonders",
     children: [
       {
-        label: "Culture",
+        label: "History",
+        href: "/history",
+        children: [
+          { label: "Timeline of Events", href: "/history/timeline", isHash: false },
+          { label: "Notable Figures", href: "/history/notable-persons", isHash: false },
+        ],
+      },
+      {
+        label: "Arts & Culture",
+        href: "/culture",
         children: [
           { label: "Local Cuisine", href: "/culture/local-cuisine", isHash: false },
-          { label: "Festivals & Celebrations", href: "/culture/festivals-celebrations", isHash: false },
-          { label: "Cultural Practices & Traditions", href: "/culture/practices-traditions", isHash: false },
+          { label: "Festivals", href: "/culture/festivals-celebrations", isHash: false },
+          { label: "Cultural Practices", href: "/culture/practices-traditions", isHash: false },
         ],
       },
       {
-        label: "Arts & Livelihood",
+        label: "Tourist Destinations",
+        href: "/destinations",
         children: [
-          { label: "Local Business", href: "/arts-livelihood/local-business", isHash: false },
-          { label: "Crafts & Artisans", href: "/arts-livelihood/crafts-artisans", isHash: false },
+          { label: "Destinations", href: "/destinations", isHash: false },
+          { label: "Travel & Tours", href: "/travel-tours", isHash: false },
         ],
       },
-    ],
-  },
-  {
-    label: "Tourism",
-    children: [
-      {
-        label: "Destinations",
-        children: [
-          { label: "Heritage Sites", href: "/destinations/heritage-sites", isHash: false },
-          { label: "Museums", href: "/destinations/museums", isHash: false },
-          { label: "Religious Sites", href: "/destinations/religious-sites", isHash: false },
-        ],
-      },
-      { label: "Travel and Tours", href: "/travel-tours", isHash: false },
     ],
   },
   {
     label: "Community",
     children: [
+      { label: "Schools", href: "/community/schools", isHash: false },
+      { label: "Hospitals", href: "/community/hospitals", isHash: false },
       {
-        label: "Educational Institutions",
+        label: "Arts & Livelihood",
+        href: "/arts-livelihood",
         children: [
-          { label: "Colleges", href: "/community/colleges", isHash: false },
-          { label: "Public Schools", href: "/community/public-schools", isHash: false },
+          { label: "Local Business", href: "/arts-livelihood/local-business", isHash: false },
+          { label: "Crafts", href: "/arts-livelihood/crafts-artisans", isHash: false },
         ],
       },
-      { label: "Hospitals", href: "/community/hospitals", isHash: false },
+      { label: "Bocauenos", href: "/community/bocauenos", isHash: false },
     ],
   },
-  { label: "Events", href: "/events", isHash: false },
-  { label: "News", href: "/news", isHash: false },
-  { label: "Inquiry", href: "/inquiry", isHash: false },
+  {
+    label: "News",
+    children: [
+      { label: "Events", href: "/events", isHash: false },
+      { label: "News", href: "/news", isHash: false },
+    ],
+  },
+  {
+    label: "Tourism Office",
+    children: [
+      { label: "About MHACTO", href: "/tourism-office", isHash: false },
+      { label: "Mission & Vision", href: "/mission-vision", isHash: false },
+    ],
+  },
+  { label: "Inquiry", href: "/inquire", isHash: false },
 ]
 
 export function Navbar() {
@@ -221,12 +223,22 @@ export function Navbar() {
                 {child.children ? (
                   // Category group with flyout
                   <div className="group/sub relative">
-                    <button
-                      className="flex w-full items-center justify-between gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-                    >
-                      {child.label}
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover/sub:translate-x-0.5" />
-                    </button>
+                    {child.href ? (
+                      <Link
+                        href={child.href}
+                        className="flex w-full items-center justify-between gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                      >
+                        {child.label}
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover/sub:translate-x-0.5" />
+                      </Link>
+                    ) : (
+                      <button
+                        className="flex w-full items-center justify-between gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                      >
+                        {child.label}
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover/sub:translate-x-0.5" />
+                      </button>
+                    )}
 
                     {/* Flyout submenu */}
                     <div
@@ -388,21 +400,40 @@ export function Navbar() {
                               <div key={child.label}>
                                 {child.children && child.children.length > 0 ? (
                                   <>
-                                    <button
-                                      onClick={() => toggleExpanded(child.label)}
-                                      className={`w-full text-left text-base font-medium transition-colors flex items-center justify-between hover:text-primary ${
-                                        expandedItems.includes(child.label)
-                                          ? "text-primary"
-                                          : "text-foreground"
-                                      }`}
-                                    >
-                                      {child.label}
-                                      <ChevronDown
-                                        className={`h-4 w-4 transition-transform ${
-                                          expandedItems.includes(child.label) ? "rotate-180" : ""
-                                        }`}
-                                      />
-                                    </button>
+                                    <div className="flex items-center justify-between">
+                                      {child.href ? (
+                                        <Link
+                                          href={child.href}
+                                          className={`flex-1 text-base font-medium transition-colors hover:text-primary ${
+                                            expandedItems.includes(child.label)
+                                              ? "text-primary"
+                                              : "text-foreground"
+                                          }`}
+                                          onClick={() => {
+                                            setOpen(false)
+                                            setExpandedItems([])
+                                          }}
+                                        >
+                                          {child.label}
+                                        </Link>
+                                      ) : (
+                                        <span className={`flex-1 text-base font-medium ${
+                                          expandedItems.includes(child.label) ? "text-primary" : "text-foreground"
+                                        }`}>
+                                          {child.label}
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() => toggleExpanded(child.label)}
+                                        className="p-1 hover:text-primary"
+                                      >
+                                        <ChevronDown
+                                          className={`h-4 w-4 transition-transform ${
+                                            expandedItems.includes(child.label) ? "rotate-180" : ""
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
                                     {expandedItems.includes(child.label) && (
                                       <div className="pl-4 mt-2 space-y-2 border-l-2 border-primary/10">
                                         {child.children.map((subchild) => (
