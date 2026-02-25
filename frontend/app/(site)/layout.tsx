@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: "MHACTO Bocaue | History, Arts, Culture & Tourism",
   },
   description:
-    "Discover the warmth and heritage of Bocaue, Bulacan. Plan your visit, explore attractions, and experience the festivity of one of the Philippines' most vibrant towns.",
+    "Discover the warmth and History of Bocaue, Bulacan. Plan your visit, explore attractions, and experience the festivity of one of the Philippines' most vibrant towns.",
   openGraph: {
     siteName: "MHACTO Bocaue",
     type: "website",

@@ -55,7 +55,7 @@ export function TourismTaglineSection() {
             </p>
             <h2 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-foreground sm:text-4xl md:text-5xl reveal-on-scroll font-heading">
               Discover the{" "}
-              <span className="text-primary">Heritage, Arts, Culture</span>
+              <span className="text-primary">History, Arts, Culture</span>
               <br className="hidden sm:block" /> &amp; Tourism of{" "}
               <span className="text-primary">Bocaue, Bulacan</span>
             </h2>
