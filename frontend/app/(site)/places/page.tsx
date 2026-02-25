@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Clock, Star } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Clock } from "lucide-react"
 import { format } from "date-fns"
 import {
   attractions,
@@ -15,8 +15,6 @@ import {
   categoryLabels,
   type PlaceCategory,
 } from "@/lib/data/places-data"
-import { FeaturedSpotlight } from "@/components/sections/featured-spotlight"
-import { FeaturedEventsPortrait } from "@/components/sections/featured-events-portrait"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,7 +35,6 @@ export default function PlacesPage() {
   const INITIAL_COUNT = 4
   const displayed = showAll ? filtered : filtered.slice(0, INITIAL_COUNT)
 
-  const highlightsRef = useRevealOnScroll<HTMLDivElement>()
   const spotsHeadingRef = useRevealOnScroll<HTMLDivElement>()
   const filtersRef = useRevealOnScroll<HTMLDivElement>()
   const calendarHeadingRef = useRevealOnScroll<HTMLDivElement>()
@@ -67,30 +64,6 @@ export default function PlacesPage() {
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
               A complete guide to tourist spots and the events calendar in Bocaue.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Spotlight & Highlights */}
-      <section className="border-b border-border bg-muted/40 py-10 sm:py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div ref={highlightsRef} className="reveal-on-scroll mb-6 sm:mb-10">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Star className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-foreground sm:text-2xl md:text-3xl">
-                  Spotlight &amp; Highlights
-                </h2>
-                <p className="text-muted-foreground">Featured places &amp; upcoming events</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-[1fr_auto] items-start">
-            <FeaturedSpotlight />
-            <FeaturedEventsPortrait />
           </div>
         </div>
       </section>

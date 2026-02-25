@@ -1,15 +1,21 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowLeft, Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, Star, Flame, Leaf, UtensilsCrossed, Coffee,
+  ChevronUp, ChevronLeft, ChevronRight, Star, Flame, Leaf, UtensilsCrossed, Coffee,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel"
 import { localCuisine, type CuisineItem } from "@/lib/data/culture-data"
 
 // ── type helpers ────────────────────────────────────────────────────
@@ -158,11 +164,37 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
   const [activeType, setActiveType] = useState<TypeFilter>("all")
+  const [featuredIndex, setFeaturedIndex] = useState(0)
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>()
+  const [isPlaying, setIsPlaying] = useState(true)
 
   const types: TypeFilter[] = ["all", "main", "snack", "dessert", "drink"]
   const filtered = activeType === "all" ? localCuisine : localCuisine.filter((c) => c.type === activeType)
-  const featured = localCuisine[0]
+  const featured = localCuisine[featuredIndex]
   const rest = filtered.filter((c) => c.id !== featured.id)
+
+  // Sync carousel API → featuredIndex
+  useEffect(() => {
+    if (!carouselApi) return
+    const onSelect = () => setFeaturedIndex(carouselApi.selectedScrollSnap())
+    carouselApi.on("select", onSelect)
+    return () => { carouselApi.off("select", onSelect) }
+  }, [carouselApi])
+
+  // Auto-play
+  useEffect(() => {
+    if (!carouselApi || !isPlaying) return
+    const id = setInterval(() => carouselApi.scrollNext(), 5000)
+    return () => clearInterval(id)
+  }, [carouselApi, isPlaying])
+
+  const pauseAutoPlay = useCallback(() => {
+    setIsPlaying(false)
+    setTimeout(() => setIsPlaying(true), 10000)
+  }, [])
+
+  const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
+  const handleNext = () => { pauseAutoPlay(); carouselApi?.scrollNext() }
 
   return (
     <main className="min-h-screen bg-background">
@@ -230,52 +262,160 @@ export default function LocalCuisinePage() {
 
       {/* ── Featured spotlight ── */}
       {activeType === "all" && (
-        <section className="pt-12 sm:pt-16 lg:pt-20 pb-0">
+        <section className="py-14 sm:py-20 bg-muted/30">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <div className="flex items-center gap-2 mb-6">
-              <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-500">Featured Delicacy</span>
+            {/* Section heading */}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 mb-4">
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Featured Delicacy</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground">Top Picks from Bocaue&apos;s Kitchen</h2>
+              <p className="text-sm text-muted-foreground mt-1">Slide through the iconic flavors that define Bocaue.</p>
             </div>
-            <div className="grid gap-8 lg:grid-cols-2 items-center mb-16 rounded-3xl border border-primary/20 bg-card overflow-hidden shadow-lg">
-              <div className="relative h-64 sm:h-80 lg:h-full min-h-[280px] overflow-hidden">
-                <Image
-                  src={featured.image}
-                  alt={featured.name}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
+
+            {/* Carousel */}
+            <div className="relative px-8 sm:px-12" onMouseEnter={pauseAutoPlay} onTouchStart={pauseAutoPlay}>
+              <Carousel
+                setApi={setCarouselApi}
+                opts={{ loop: true, align: "center" }}
+                className="w-full"
+              >
+                <CarouselContent className="items-stretch">
+                  {localCuisine.map((item, index) => {
+                    const extra = cuisineExtras[item.id]
+                    const isActive = index === featuredIndex
+                    return (
+                      <CarouselItem
+                        key={item.id}
+                        className="basis-[92%] sm:basis-4/5 md:basis-[68%] lg:basis-[60%]"
+                      >
+                        <div
+                          className="transition-all duration-500 ease-out h-full"
+                          style={{
+                            transform: isActive ? "scale(1)" : "scale(0.9)",
+                            opacity: isActive ? 1 : 0.4,
+                            pointerEvents: isActive ? "auto" : "none",
+                          }}
+                        >
+                          <div className="overflow-hidden rounded-2xl bg-card border border-border shadow-xl h-full flex flex-col">
+                            {/* Cinematic image */}
+                            <div className="relative h-56 sm:h-72 md:h-80 shrink-0 overflow-hidden">
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                              {/* Dark gradient from bottom */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                              {/* Badge top-left */}
+                              <div className="absolute top-4 left-4">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${typeBadge[item.type]}`}>
+                                  {typeIcon[item.type]}
+                                  {typeLabels[item.type]}
+                                </span>
+                              </div>
+
+                              {/* Rating top-right */}
+                              {extra && (
+                                <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
+                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                  <span className="text-xs font-bold text-white">{extra.rating}</span>
+                                </div>
+                              )}
+
+                              {/* Title overlaid on image bottom */}
+                              <div className="absolute bottom-0 left-0 right-0 p-5">
+                                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
+                                  {item.name}
+                                </h2>
+                                {item.tagalogName && item.tagalogName !== item.name && (
+                                  <p className="text-xs text-white/70 italic mt-0.5">{item.tagalogName}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Detail panel */}
+                            <div className="flex flex-col flex-1 p-5 sm:p-6">
+                              <p className="text-sm text-muted-foreground leading-relaxed mb-5 line-clamp-2">
+                                {item.description}
+                              </p>
+
+                              {/* Info pills row */}
+                              <div className="grid grid-cols-2 gap-2.5 mb-5">
+                                {[
+                                  { icon: <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Where to find", val: item.where[0] },
+                                  { icon: <Clock className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Best time", val: item.bestTime ?? "Year-round" },
+                                  { icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />, label: "Rating", val: `${extra?.rating ?? "—"} / 5.0` },
+                                  { icon: <Flame className="h-3.5 w-3.5 text-orange-500 shrink-0" />, label: "Best for", val: extra?.bestFor ?? "All occasions" },
+                                ].map((row) => (
+                                  <div key={row.label} className="flex items-center gap-2.5 rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
+                                    {row.icon}
+                                    <div className="min-w-0">
+                                      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        {row.label}
+                                      </p>
+                                      <p className="text-xs font-semibold text-foreground truncate">{row.val}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Story teaser */}
+                              <div className="mt-auto rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/40 p-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1.5">
+                                  The Story
+                                </p>
+                                <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">{item.story}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CarouselItem>
+                    )
+                  })}
+                </CarouselContent>
+              </Carousel>
+
+              {/* Side arrows */}
+              <button
+                onClick={handlePrev}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
+                aria-label="Previous delicacy"
+              >
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
+                aria-label="Next delicacy"
+              >
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
+              </button>
+            </div>
+
+            {/* Dots + counter */}
+            <div className="mt-7 flex items-center justify-center gap-3">
+              <div className="flex items-center gap-1.5">
+                {localCuisine.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { pauseAutoPlay(); carouselApi?.scrollTo(i) }}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === featuredIndex
+                        ? "w-7 bg-amber-500"
+                        : "w-1.5 bg-border hover:bg-muted-foreground/40"
+                    }`}
+                    aria-label={`Go to ${localCuisine[i].name}`}
+                  />
+                ))}
               </div>
-              <div className="p-6 sm:p-8">
-                <Badge variant="secondary" className="mb-3 bg-amber-100 text-amber-800 border-amber-200">
-                  {typeLabels[featured.type]}
-                </Badge>
-                <h2 className="text-3xl sm:text-4xl font-black text-foreground mb-2">{featured.name}</h2>
-                {featured.tagalogName && featured.tagalogName !== featured.name && (
-                  <p className="text-sm text-muted-foreground italic mb-4">{featured.tagalogName}</p>
-                )}
-                <p className="text-muted-foreground leading-relaxed mb-6">{featured.description}</p>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { icon: <MapPin className="h-4 w-4 text-primary" />, label: "Where to find", val: featured.where[0] },
-                    { icon: <Clock className="h-4 w-4 text-primary" />, label: "Best time",     val: featured.bestTime ?? "Year-round" },
-                    { icon: <Star className="h-4 w-4 text-amber-400 fill-amber-400" />, label: "Rating", val: `${cuisineExtras[featured.id]?.rating ?? "—"} / 5.0` },
-                    { icon: <Flame className="h-4 w-4 text-orange-500" />, label: "Best for",     val: cuisineExtras[featured.id]?.bestFor ?? "All occasions" },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-start gap-2 rounded-xl bg-muted/50 px-3 py-2.5">
-                      {row.icon}
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{row.label}</p>
-                        <p className="text-xs font-semibold text-foreground">{row.val}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-xl bg-primary/5 border border-primary/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">The Story</p>
-                  <p className="text-sm text-foreground leading-relaxed line-clamp-4">{featured.story}</p>
-                </div>
-              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {featuredIndex + 1} / {localCuisine.length}
+              </span>
             </div>
           </div>
         </section>
