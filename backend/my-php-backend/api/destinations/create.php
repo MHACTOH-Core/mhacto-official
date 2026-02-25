@@ -1,73 +1,62 @@
 <?php
-
-// CORS headers
+// 1. CORS Headers
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
 
-// Handle OPTIONS preflight request
+// 2. Handle OPTIONS preflight request (For Next.js)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Ensure the request method is POST
+// 3. Ensure the request method is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+    echo json_encode(['error' => 'Method not allowed. Use POST.']);
     exit;
 }
 
-header('Content-Type: application/json');
+// 4. Bring in the Engine and the Brains
 require_once '../../config/database.php';
+require_once '../../models/Destination.php';
 
-// Decode the JSON input
+// 5. Decode the JSON input from the frontend
 $data = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($data['title'], $data['description'], $data['location'], $data['hours'], $data['contact'])) {
+// 6. Validate input
+if (empty($data['title']) || empty($data['description']) || empty($data['location']) || empty($data['hours']) || empty($data['contact'])) {
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid input']);
+    echo json_encode(['error' => 'Incomplete data. Please fill all fields.']);
     exit;
 }
 
-$title = $data['title'];
-$description = $data['description'];
-$location = $data['location'];
-$hours = $data['hours'];
-$contact = $data['contact'];
-
 try {
-    // Start the transaction
-    $pdo->beginTransaction();
+    // 7. Initialize Database and Model
+    $database = new Database();
+    $db = $database->getConnection();
+    
+    $destination = new Destination($db);
 
-    // Insert into the cms table
-    $cmsQuery = "INSERT INTO cms (title, description, status) VALUES (:title, :description, 'PUBLISHED')";
-    $cmsStmt = $pdo->prepare($cmsQuery);
-    $cmsStmt->bindParam(':title', $title, PDO::PARAM_STR);
-    $cmsStmt->bindParam(':description', $description, PDO::PARAM_STR);
-    $cmsStmt->execute();
+    // 8. Handle the required user_id
+    // Note: We are hardcoding user 1 for now. 
+    // Later, you will grab this dynamically from the logged-in admin's token!
+    $user_id = 1; 
 
-    // Get the last inserted ID
-    $last_id = $pdo->lastInsertId();
+    // 9. Call the model's create function
+    if ($destination->create($user_id, $data['title'], $data['description'], $data['location'], $data['hours'], $data['contact'])) {
+        // 201 means "Created successfully"
+        http_response_code(201);
+        echo json_encode(['message' => 'Tourist spot created successfully!']);
+    } else {
+        // 503 means "Service Unavailable"
+        http_response_code(503);
+        echo json_encode(['error' => 'Unable to create tourist spot. Database transaction failed.']);
+    }
 
-    // Insert into the place table
-    $placeQuery = "INSERT INTO place (place_id, location, hours, contact) VALUES (:place_id, :location, :hours, :contact)";
-    $placeStmt = $pdo->prepare($placeQuery);
-    $placeStmt->bindParam(':place_id', $last_id, PDO::PARAM_INT);
-    $placeStmt->bindParam(':location', $location, PDO::PARAM_STR);
-    $placeStmt->bindParam(':hours', $hours, PDO::PARAM_STR);
-    $placeStmt->bindParam(':contact', $contact, PDO::PARAM_STR);
-    $placeStmt->execute();
-
-    // Commit the transaction
-    $pdo->commit();
-
-    // Return success response
-    http_response_code(201);
-    echo json_encode(['message' => 'Destination created successfully']);
-} catch (PDOException $e) {
-    // Roll back the transaction on error
-    $pdo->rollBack();
+} catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to create destination: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
+?>
