@@ -1,0 +1,20 @@
+-- ========================================================================
+-- MHACTO Existing Database Schema Reference (mhacto_db)
+-- DO NOT RUN — this is a reference of the existing tables.
+-- ========================================================================
+--
+-- Tables:
+--   User               — admin users (login)
+--   cms                 — main content entries
+--   place               — place-specific details (FK → cms.content_id)
+--   news                — news-specific details  (FK → cms.content_id)
+--   content_image       — images per content      (FK → cms.content_id)
+--   catergory           — content categories/labels
+--   customer_inquiries  — inquiry submissions
+--   inquiry_sender      — sender contact info     (FK → customer_inquiries.sender_id)
+--   visit_purposes      — inquiry purpose dropdown
+--   student_verify      — student verification data
+--   activity_logs       — admin activity log
+--   site_settings       — site configuration (single-row)
+--   click_analytics     — page click tracking
+--

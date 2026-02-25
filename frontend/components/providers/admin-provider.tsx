@@ -24,6 +24,7 @@ import {
   DEFAULT_SETTINGS,
   generateId,
 } from "@/lib/data/admin-data"
+import { apiLogin } from "@/lib/api"
 
 // ─── Context shape ─────────────────────────────────────────────────
 
@@ -134,27 +135,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [settings, mounted])
 
   // ── Auth ──
-  const login = useCallback(async (email: string, password: string) => {
-     try{
-      const response = await fetch("http://localhost:8000/api/auth/login.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await response.json()
-      if (response.ok) {
-        setIsLoggedIn(true)
-        setAdminEmail(data.user.email)
-        saveJson("admin_logged_in", true)
-        saveJson("admin_email", data.user.email)
-        return true
-      }
-      else {
-        console.error("Login failed:", data.error)
-        return false
-      }
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      const data = await apiLogin(email, password)
+      setIsLoggedIn(true)
+      setAdminEmail(data.user.email)
+      saveJson("admin_logged_in", true)
+      saveJson("admin_email", data.user.email)
+      return true
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("Login failed:", error instanceof Error ? error.message : error)
       return false
     }
   }, [])

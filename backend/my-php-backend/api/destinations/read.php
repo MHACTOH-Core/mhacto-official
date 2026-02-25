@@ -11,39 +11,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../../config/database.php';
+require_once '../../models/Destination.php';
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
+// Initialize Database and Model
+$database = new Database();
+$db = $database->getConnection();
+$destination = new Destination($db);
 
+// Fetch data using the model
 try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (PDOException $e) {
-    // If the database rejects us, it will print exactly why here!
-    http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
-    exit();
-}
-
-// 3. Application Logic
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(["error" => "Method not allowed. Use GET."]);
-    exit();
-}
-
-try {
-    $query = "SELECT c.content_id, c.title, c.description, c.status, p.location, p.hours, p.contact 
-              FROM cms c 
-              JOIN place p ON c.content_id = p.place_id 
-              WHERE c.status = 'PUBLISHED'";
-              
-    $stmt = $pdo->prepare($query);
-    $stmt->execute();
-
+    $stmt = $destination->readAll();
     $destinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     http_response_code(200);
@@ -53,4 +30,3 @@ try {
     http_response_code(500);
     echo json_encode(["error" => "Database error: " . $e->getMessage()]);
 }
-?>
