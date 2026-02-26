@@ -59,7 +59,7 @@ export default function PlacesPage() {
               Explore
             </span>
             <h1 className="mt-2 text-3xl font-bold text-card-foreground md:text-4xl lg:text-5xl">
-              Places &amp; Events
+              Tourist Spots &amp; Events
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
               A complete guide to tourist spots and the events calendar in Bocaue.

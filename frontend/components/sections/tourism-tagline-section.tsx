@@ -67,7 +67,7 @@ export function TourismTaglineSection() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start reveal-on-scroll">
               <Button asChild size="lg" className="rounded-full gap-2">
-                <Link href="/places">
+                <Link href="/destinations">
                   Explore Bocaue
                   <ArrowRight className="h-4 w-4" />
                 </Link>

@@ -26,7 +26,7 @@ const heroSlides = [
     highlight: "Town Wonders",
     description:
       "Where rich heritage meets vibrant culture \u2014 explore centuries of tradition, lively festivals, and the warm hospitality of Bocaue.",
-    href: "/places",
+    href: "/destinations",
   },
   {
     src: asset("/images/places/church-bocaue.jpg"),
@@ -56,7 +56,7 @@ const heroSlides = [
     highlight: "Pyrotechnic Arts",
     description:
       "Known nationwide as the fireworks capital of the Philippines, Bocaue lights up the sky with dazzling displays year-round.",
-    href: "/places",
+    href: "/destinations",
   },
 ]
 
@@ -161,38 +161,46 @@ export function HeroSection() {
             <p className="mt-4 max-w-xl text-pretty text-sm text-card/85 sm:text-base md:text-lg lg:text-xl">
               {slide.description}
             </p>
-            <Link href={slide.href} className="mt-6 sm:mt-8">
-              <Button
-                size="lg"
-                className="group gap-2 rounded-full bg-primary px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-              >
-                Learn More
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+            <div className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-3">
+              <Link href="/tourism-office">
+                <Button
+                  size="lg"
+                  className="group gap-2 rounded-full bg-primary px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Learn More
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+              <Link href="/destinations">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full border-white/40 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white/60 hover:text-white px-6 sm:px-8 text-sm sm:text-base font-semibold transition-all"
+                >
+                  Explore Bocaue
+                </Button>
+              </Link>
+            </div>
 
-        {/* Circle pagination dots */}
-        <div
-          className="absolute bottom-20 sm:bottom-24 left-1/2 z-20 flex -translate-x-1/2 gap-3"
-          style={{ opacity: textOpacity }}
-        >
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setPrevSlide(currentSlide)
-                setCurrentSlide(i)
-              }}
-              className={`rounded-full border-2 transition-all duration-500 ${
-                i === currentSlide
-                  ? "h-3.5 w-3.5 border-white bg-white scale-110"
-                  : "h-3 w-3 border-white/60 bg-transparent hover:border-white hover:bg-white/30"
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
+            {/* Pagination dots — inside text block to avoid overlap */}
+            <div className="mt-8 flex items-center gap-3">
+              {heroSlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setPrevSlide(currentSlide)
+                    setCurrentSlide(i)
+                  }}
+                  className={`rounded-full border-2 transition-all duration-500 ${
+                    i === currentSlide
+                      ? "h-3.5 w-3.5 border-white bg-white scale-110"
+                      : "h-3 w-3 border-white/60 bg-transparent hover:border-white hover:bg-white/30"
+                  }`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Scroll down indicator */}

@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
+import { asset } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -60,7 +61,7 @@ export default function HistoryPage() {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

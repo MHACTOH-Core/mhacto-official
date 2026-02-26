@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Clock, MapPin, Phone, CalendarDays, Sparkles, Tag } from "lucide-react"
 
 import { categoryLabels, type Place } from "@/lib/data/places-data"
+import { asset } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +28,7 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
               The place you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button asChild className="mt-6">
-              <Link href="/places">Back to Places</Link>
+              <Link href="/destinations">Back to Destinations</Link>
             </Button>
           </div>
         </div>
@@ -38,20 +39,28 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
   return (
     <main className="min-h-screen bg-background">
 
-      {/* Page header */}
-      <section className="border-b border-border bg-card mt-14 pt-8 pb-8 sm:mt-16 sm:pt-12 sm:pb-10 md:mt-20 md:pt-14 lg:mt-28 lg:pt-18 lg:pb-12">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <Button variant="ghost" size="sm" asChild className="mb-6 gap-1 text-muted-foreground">
-            <Link href="/places">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Places &amp; Events
-            </Link>
-          </Button>
-          <div className="text-center animate-fade-in-up">
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-              Place Details
+      {/* Hero */}
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden flex items-end"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.58), rgba(0,0,0,0.42)), url(${asset(place.image)})`,  
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="relative z-10 mx-auto max-w-7xl w-full px-4 lg:px-8 flex flex-col justify-end py-12 sm:py-16 md:py-20">
+          <Link
+            href="/destinations"
+            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Destinations</span>
+          </Link>
+          <div className="space-y-3 max-w-3xl">
+            <span className="text-sm font-bold uppercase tracking-widest text-amber-300">
+              {categoryLabels[place.category]}
             </span>
-            <h1 className="mt-2 text-3xl font-bold text-card-foreground md:text-4xl lg:text-5xl">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
               {place.title}
             </h1>
           </div>
@@ -236,10 +245,10 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
           <p className="text-muted-foreground">
             Explore more places in Bocaue.{" "}
             <Link
-              href="/places"
+              href="/destinations"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              View all places
+              View all destinations
             </Link>
             {" "}or{" "}
             <Link

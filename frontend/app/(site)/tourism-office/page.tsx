@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
+import { asset } from "@/lib/utils"
 import { ArrowLeft, Building2, Phone, Mail, Clock, MapPin, Users } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -60,7 +61,7 @@ export default function TourismOfficePage() {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
