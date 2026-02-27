@@ -213,7 +213,7 @@ export default function PeopleWondersPage() {
       </section>
 
       {/* ── Filter bar ───────────────────────────────────────────── */}
-      <section className="sticky top-[56px] z-30 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+      <section className="bg-background border-b border-border shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
             {filterButtons.map((btn) => (

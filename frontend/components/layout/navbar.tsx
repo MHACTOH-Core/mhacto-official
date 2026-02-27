@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, ChevronDown, ChevronRight, Search, X } from "lucide-react"
+import { Menu, ChevronDown, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset } from "@/lib/utils"
 import {
@@ -13,6 +13,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { SearchOverlay } from "@/components/layout/search-overlay"
 
 interface NavItem {
   label: string
@@ -91,10 +92,8 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
@@ -103,6 +102,18 @@ export function Navbar() {
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  // Ctrl+K / Cmd+K to open search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault()
+        setSearchOverlayOpen(true)
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
   }, [])
 
   // Determine if a link is active
@@ -313,6 +324,7 @@ export function Navbar() {
   }
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-white/80 backdrop-blur-md shadow-sm">
       <nav className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 lg:py-4 lg:px-8">
         {/* Left – MHACTO logo */}
@@ -337,43 +349,15 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Desktop search bar */}
-        <div className="hidden md:flex items-center relative">
-          <div
-            className={`flex items-center overflow-hidden rounded-full border border-border/60 bg-muted/40 transition-all duration-300 ${
-              searchOpen ? "w-52 lg:w-64 pl-3 pr-1" : "w-8 justify-center"
-            }`}
+        {/* Desktop search button */}
+        <div className="hidden md:flex items-center">
+          <button
+            onClick={() => setSearchOverlayOpen(true)}
+            className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            aria-label="Open search"
           >
-            {searchOpen && (
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-1.5"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setSearchOpen(false)
-                    setSearchQuery("")
-                  }
-                }}
-              />
-            )}
-            <button
-              onClick={() => {
-                setSearchOpen((prev) => !prev)
-                setSearchQuery("")
-                if (!searchOpen) {
-                  setTimeout(() => searchInputRef.current?.focus(), 50)
-                }
-              }}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary"
-              aria-label={searchOpen ? "Close search" : "Open search"}
-            >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-            </button>
-          </div>
+            <Search className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Right – Municipality of Bocaue logo + mobile menu */}
@@ -416,15 +400,14 @@ export function Navbar() {
                   className="h-8 w-auto object-contain"
                 />
               </div>
-              {/* Mobile search bar */}
-              <div className="mb-5 flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-2">
-                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                />
-              </div>
+              {/* Mobile search button */}
+              <button
+                onClick={() => { setOpen(false); setTimeout(() => setSearchOverlayOpen(true), 150) }}
+                className="mb-5 flex w-full items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span>Search…</span>
+              </button>
               <div className="flex flex-col gap-4">
                 {navLinks.map((item) => (
                   <div key={item.label}>
@@ -550,5 +533,8 @@ export function Navbar() {
         </div>
       </nav>
     </header>
+
+    <SearchOverlay open={searchOverlayOpen} onClose={() => setSearchOverlayOpen(false)} />
+    </>
   )
 }
