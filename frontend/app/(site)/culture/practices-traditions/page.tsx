@@ -85,7 +85,7 @@ export default function PracticesTraditionsPage() {
               return (
                 <Card key={practice.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                   {practice.image && (
-                    <div className="relative h-44 overflow-hidden">
+                    <div className="relative h-36 overflow-hidden">
                       <Image src={practice.image} alt={practice.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     </div>

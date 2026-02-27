@@ -160,7 +160,7 @@ export default function HistoryPage() {
             {notablePersons.map((person) => (
               <Card key={person.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {person.image && (
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image src={person.image} alt={person.name} fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-4">

@@ -96,7 +96,7 @@ export default function ArtsLivelihoodPage() {
             {localBusinesses.map((biz) => (
               <Card key={biz.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {biz.image && (
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image src={biz.image} alt={biz.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-4">
@@ -140,7 +140,7 @@ export default function ArtsLivelihoodPage() {
             {artisans.map((artisan) => (
               <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {artisan.image && (
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image src={artisan.image} alt={artisan.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   </div>

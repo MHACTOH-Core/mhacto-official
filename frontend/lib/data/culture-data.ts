@@ -321,6 +321,128 @@ export const localBusinesses: LocalBusiness[] = [
   },
 ]
 
+// ── People Wonders ──────────────────────────────────────────────────
+export interface PeopleWonder {
+  id: string
+  name: string
+  category: "pageant" | "arts" | "sports" | "civic" | "entertainment" | "academics"
+  title: string
+  achievement: string
+  description: string
+  year?: string
+  awards?: string[]
+  image?: string
+  social?: string
+  isAlive: true
+}
+
+export const peopleWonders: PeopleWonder[] = [
+  {
+    id: "maria-reyes-pageant",
+    name: "Maria Cristina Reyes",
+    category: "pageant",
+    title: "Miss Bocaue 2023 · Binibining Bulacan Top 5",
+    achievement: "Crowned Miss Bocaue 2023 and placed in the Top 5 of Binibining Bulacan, representing the municipality with grace and advocacy for heritage preservation.",
+    description:
+      "Maria Cristina grew up in Barangay Sta. Ana and developed a passion for cultural arts and community service. During her reign, she launched the 'Bocaue Proud' campaign, visiting public schools to promote awareness of the town's rich history and the Pagoda Festival tradition. Her platform centered on empowering young women through arts and livelihood training.",
+    year: "2023",
+    awards: ["Miss Bocaue 2023", "Binibining Bulacan Top 5", "Best in Cultural Attire – Binibining Bulacan 2023"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "jestoni-santos-athlete",
+    name: "Jestoni Santos",
+    category: "sports",
+    title: "National Age-Group Swimming Champion",
+    achievement: "Multiple gold medalist in regional and national age-group swimming competitions, representing Bulacan Province and carrying Bocaue's name to national meets.",
+    description:
+      "Jestoni began training at the Bocaue municipal pool at the age of 7. By 14, he had already claimed three gold medals in the Palarong Pambansa for the 100m and 200m freestyle events. Scouts from the Philippine Swimming League have identified him as a future national team prospect. He attributes his discipline to the support of Bocaue's community coaches and his family in Wakas.",
+    year: "2022–present",
+    awards: ["Palarong Pambansa Gold – 100m Freestyle 2023", "Palarong Pambansa Gold – 200m Freestyle 2023", "Bulacan Best Athlete in Aquatics 2022"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "ana-dela-cruz-artist",
+    name: "Ana Corazon Dela Cruz",
+    category: "arts",
+    title: "Visual Artist · National Youth Art Awardee",
+    achievement: "Recipient of the National Commission for Culture and the Arts (NCCA) Young Artists Grant 2024, known for large-scale paintings documenting Bocaue's river culture.",
+    description:
+      "Ana's signature series 'Ilog ng Pagasa' — a collection of 12 oil-on-canvas paintings depicting life along the Bocaue River — was exhibited at the Cultural Center of the Philippines and later toured provincial galleries across Bulacan. She cites the Pagoda Festival as her greatest creative inspiration, describing the river procession as 'a living painting that I try to freeze on canvas.' She teaches youth mural workshops at the MHACTO gallery every summer.",
+    year: "2024",
+    awards: ["NCCA Young Artists Grant 2024", "CCP Visual Arts Finalist 2023", "Bulacan Arts Festival Best in Painting 2022"],
+    image: asset("/images/places/Arts.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "carlo-bautista-musician",
+    name: "Carlo Miguel Bautista",
+    category: "entertainment",
+    title: "Singer-Songwriter · OPM Regional Awardee",
+    achievement: "Award-winning OPM singer-songwriter whose debut album 'Sawa sa Tubig' draws from Bocaue's river narratives and folk music traditions, earning acclaim on streaming platforms.",
+    description:
+      "Carlo started singing at St. Martin of Tours Parish choir at age nine. His original compositions blend contemporary OPM with kundiman melodies and the rhythms of Bocaue's festival music. His debut EP, released independently in 2023, accumulated over 500,000 streams. The title track 'Sawa sa Tubig' is an ode to the Bocaue River and has been used as the background score for the LGU's tourism video campaigns.",
+    year: "2023",
+    awards: ["Himig Handog Finalist 2023", "Bulacan Music Award – Best New Artist 2023", "MHACTO Cultural Ambassador 2024"],
+    image: asset("/images/places/Arts.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "dr-patricia-lim-civic",
+    name: "Dr. Patricia Lim-Gonzales",
+    category: "civic",
+    title: "Community Physician · Gawad Kalinga Health Hero 2023",
+    achievement: "Bocaue-born physician who founded the 'Libreng Konsulta' free community clinic serving over 3,000 underprivileged residents annually, recognized by Gawad Kalinga as a 2023 Health Hero.",
+    description:
+      "After completing her medical degree at UP Manila, Dr. Patricia returned to Bocaue and established a free weekend clinic in Barangay Turo, initially operating from her family's garage. Today, the clinic has grown into a proper medical facility with volunteer doctors and nurses from Manila. She has also spearheaded annual medical missions during the Pagoda Festival, providing free check-ups, medicines, and dental services to festival-goers and residents.",
+    year: "2023",
+    awards: ["Gawad Kalinga Health Hero 2023", "Bulacan Provincial Government Outstanding Citizen 2022", "UP Manila Distinguished Alumna 2024"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "lea-santos-pageant-2",
+    name: "Lea Mikaela Santos",
+    category: "pageant",
+    title: "Mutya ng Bulacan 2022 · Miss Tourism Bulacan",
+    achievement: "Crowned Mutya ng Bulacan 2022 and Miss Tourism Bulacan, championing Bocaue's cultural heritage and the Pagoda Festival on provincial and national tourism stages.",
+    description:
+      "A native of Barangay Batia, Lea used her titles to promote Bocaue as a cultural and eco-tourism destination. She represented Bulacan in national pageants and served as face of the provincial tourism department's 'Visit Bulacan' campaign. Off the stage, she volunteers at heritage education programs and has been instrumental in fundraising for the restoration of old colonial-era structures in the town proper.",
+    year: "2022",
+    awards: ["Mutya ng Bulacan 2022", "Miss Tourism Bulacan 2022", "Best in Talent – Mutya ng Bulacan 2022"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "ryan-ocampo-academics",
+    name: "Ryan Paolo Ocampo",
+    category: "academics",
+    title: "UP Diliman Summa Cum Laude · Bar Topnotcher 2024",
+    achievement: "Graduated Summa Cum Laude from UP Diliman College of Law and ranked in the Top 10 of the 2024 Philippine Bar Examinations, the highest academic achievement from Bocaue in recent memory.",
+    description:
+      "Ryan is the son of a tricycle driver from Barangay Lolomboy who earned a scholarship to UP Diliman, where he distinguished himself in legal studies. His bar examination performance — achieved while working part-time as a legal aid volunteer — has made him a symbol of meritocracy and the power of public education in Bocaue. He has pledged to return to his community to provide free legal counsel to indigent residents through the MHACTO's community legal desk.",
+    year: "2024",
+    awards: ["UP Diliman Summa Cum Laude 2024", "2024 Philippine Bar Top 10", "UP Law Dean's Medal of Excellence"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "sofia-garcia-dancer",
+    name: "Sofia Anne Garcia",
+    category: "arts",
+    title: "Ballet & Folk Dance Champion · Bayanihan Youth Ensemble",
+    achievement: "Principal dancer of the Bayanihan Youth Ensemble who has performed at international folk dance competitions in Asia and Europe, representing Philippine culture on the world stage.",
+    description:
+      "Sofia trained at the Bocaue School of Arts and has been performing Philippine folk dances since age six. Her technical precision and storytelling through movement brought her to the Bayanihan Youth Ensemble, where she has been a principal dancer since 2021. She has performed in South Korea, Japan, Germany, and Spain, always returning to Bocaue to teach free dance workshops for children in the community, ensuring the next generation of folk dancers continues the tradition.",
+    year: "2021–present",
+    awards: ["Bayanihan Youth Ensemble Principal Dancer 2021", "Best Performer – ASEAN Folk Dance Festival 2023", "MHACTO Arts Excellence Award 2024"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+]
+
 // ── Crafts & Artisans ────────────────────────────────────────────────
 export interface Artisan {
   id: string

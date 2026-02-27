@@ -57,7 +57,7 @@ export default function CraftsArtisansPage() {
             {artisans.map((artisan) => (
               <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                 {artisan.image && (
-                  <div className="relative h-52 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image src={artisan.image} alt={artisan.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">

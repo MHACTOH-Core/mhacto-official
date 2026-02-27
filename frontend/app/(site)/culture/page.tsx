@@ -3,10 +3,19 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
-import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
+import Link from "next/link"
+import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { localCuisine, festivals, culturalPractices } from "@/lib/data/culture-data"
+
+const subPages = [
+  { label: "Local Cuisine", href: "/culture/local-cuisine", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
+  { label: "Festivals & Celebrations", href: "/culture/festivals-celebrations", icon: Calendar, desc: "Annual events & festivities", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
+  { label: "Cultural Practices", href: "/culture/practices-traditions", icon: Flame, desc: "Living customs & traditions", color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400" },
+  { label: "Crafts & Artisan", href: "/culture/crafts-artisan", icon: Hammer, desc: "Master craftspeople of Bocaue", color: "bg-stone-100 text-stone-700 dark:bg-stone-900/20 dark:text-stone-400" },
+  { label: "People Wonders", href: "/culture/people-wonders", icon: Users, desc: "Notable living Bocaueños", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
+]
 
 const festivalTypeColor: Record<string, string> = {
   religious: "bg-amber-100 text-amber-800 border-amber-200",
@@ -101,7 +110,7 @@ export default function CulturePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {localCuisine.map((item) => (
               <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-36 overflow-hidden">
                   <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">
@@ -191,7 +200,7 @@ export default function CulturePage() {
               return (
                 <Card key={practice.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                   {practice.image && (
-                    <div className="relative h-44 overflow-hidden">
+                    <div className="relative h-36 overflow-hidden">
                       <Image src={practice.image} alt={practice.name} fill className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     </div>
@@ -211,6 +220,44 @@ export default function CulturePage() {
                     </div>
                   </CardContent>
                 </Card>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Dive Deeper ── */}
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Explore Culture</h2>
+              <p className="text-muted-foreground">Discover all aspects of Bocaue&apos;s rich cultural heritage</p>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {subPages.map((page) => {
+              const Icon = page.icon
+              return (
+                <Link
+                  key={page.href}
+                  href={page.href}
+                  className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-lg transition-all duration-200"
+                >
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${page.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-black text-foreground group-hover:text-primary transition-colors leading-snug">{page.label}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{page.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    Explore <ChevronRight className="h-3 w-3" />
+                  </div>
+                </Link>
               )
             })}
           </div>

@@ -1,0 +1,299 @@
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { asset } from "@/lib/utils"
+import {
+  ArrowLeft, Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
+} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { peopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
+
+// ── Category config ──────────────────────────────────────────────────
+type Category = PeopleWonder["category"] | "all"
+
+const categoryConfig: Record<
+  PeopleWonder["category"],
+  { label: string; icon: React.ReactNode; badge: string }
+> = {
+  pageant: {
+    label: "Pageant",
+    icon: <Crown className="h-3.5 w-3.5" />,
+    badge: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300",
+  },
+  arts: {
+    label: "Arts",
+    icon: <Palette className="h-3.5 w-3.5" />,
+    badge: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300",
+  },
+  sports: {
+    label: "Sports",
+    icon: <Dumbbell className="h-3.5 w-3.5" />,
+    badge: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300",
+  },
+  civic: {
+    label: "Civic",
+    icon: <Heart className="h-3.5 w-3.5" />,
+    badge: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300",
+  },
+  entertainment: {
+    label: "Entertainment",
+    icon: <Mic2 className="h-3.5 w-3.5" />,
+    badge: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300",
+  },
+  academics: {
+    label: "Academics",
+    icon: <GraduationCap className="h-3.5 w-3.5" />,
+    badge: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300",
+  },
+}
+
+const filterButtons: { value: Category; label: string; icon: React.ReactNode }[] = [
+  { value: "all", label: "All", icon: <Users className="h-3.5 w-3.5" /> },
+  { value: "pageant", label: "Pageant", icon: <Crown className="h-3.5 w-3.5" /> },
+  { value: "arts", label: "Arts", icon: <Palette className="h-3.5 w-3.5" /> },
+  { value: "sports", label: "Sports", icon: <Dumbbell className="h-3.5 w-3.5" /> },
+  { value: "entertainment", label: "Entertainment", icon: <Mic2 className="h-3.5 w-3.5" /> },
+  { value: "civic", label: "Civic", icon: <Heart className="h-3.5 w-3.5" /> },
+  { value: "academics", label: "Academics", icon: <GraduationCap className="h-3.5 w-3.5" /> },
+]
+
+// ── Person card ──────────────────────────────────────────────────────
+function PersonCard({ person }: { person: PeopleWonder }) {
+  const [expanded, setExpanded] = useState(false)
+  const cfg = categoryConfig[person.category]
+
+  return (
+    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
+      {/* Photo */}
+      <div className="relative h-56 overflow-hidden bg-muted">
+        <Image
+          src={person.image ?? asset("/images/placeholder-user.jpg")}
+          alt={person.name}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-700"
+        />
+        {/* gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+        {/* category badge */}
+        <div className="absolute top-3 left-3">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-sm ${cfg.badge}`}>
+            {cfg.icon}
+            {cfg.label}
+          </span>
+        </div>
+
+        {/* year chip */}
+        {person.year && (
+          <div className="absolute top-3 right-3">
+            <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              {person.year}
+            </span>
+          </div>
+        )}
+
+        {/* name on image */}
+        <div className="absolute bottom-3 left-3 right-3">
+          <h3 className="text-lg font-black text-white leading-snug drop-shadow-lg">{person.name}</h3>
+          <p className="text-xs text-white/80 leading-tight mt-0.5 line-clamp-1">{person.title}</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <CardContent className="p-5 flex flex-col flex-1">
+        {/* Achievement headline */}
+        <div className="flex items-start gap-2 mb-3">
+          <Trophy className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+          <p className="text-sm font-semibold text-foreground leading-snug">{person.achievement}</p>
+        </div>
+
+        {/* Description – expandable */}
+        <div className={`text-sm text-muted-foreground leading-relaxed overflow-hidden transition-all duration-300 ${expanded ? "max-h-none" : "max-h-20"}`}>
+          {person.description}
+        </div>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+        >
+          {expanded ? (
+            <><ChevronUp className="h-3.5 w-3.5" /> Show less</>
+          ) : (
+            <><ChevronDown className="h-3.5 w-3.5" /> Read more</>
+          )}
+        </button>
+
+        {/* Awards */}
+        {person.awards && person.awards.length > 0 && (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Award className="h-3 w-3" /> Awards & Recognition
+            </p>
+            <ul className="space-y-1.5">
+              {person.awards.map((award) => (
+                <li key={award} className="flex items-start gap-2 text-xs text-foreground leading-snug">
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400 mt-0.5 shrink-0" />
+                  {award}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────
+export default function PeopleWondersPage() {
+  const [activeFilter, setActiveFilter] = useState<Category>("all")
+
+  const filtered =
+    activeFilter === "all"
+      ? peopleWonders
+      : peopleWonders.filter((p) => p.category === activeFilter)
+
+  const counts = {
+    all: peopleWonders.length,
+    pageant: peopleWonders.filter((p) => p.category === "pageant").length,
+    arts: peopleWonders.filter((p) => p.category === "arts").length,
+    sports: peopleWonders.filter((p) => p.category === "sports").length,
+    entertainment: peopleWonders.filter((p) => p.category === "entertainment").length,
+    civic: peopleWonders.filter((p) => p.category === "civic").length,
+    academics: peopleWonders.filter((p) => p.category === "academics").length,
+  }
+
+  return (
+    <main className="min-h-screen bg-background">
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[320px] sm:min-h-[400px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(236,72,153,0.75) 50%, rgba(0,0,0,0.55) 100%), url(${asset("/images/places/Arts.jpg")})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* decorative ring */}
+        <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full border border-white/10" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-14 sm:py-20 md:py-28">
+          <Link
+            href="/culture"
+            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Arts & Culture</span>
+          </Link>
+
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-pink-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-pink-300">Arts & Culture</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
+              People Wonders
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, 
+              award-winning artists, civic heroes, and achievers who carry the pride of the town to the world.
+            </p>
+            <div className="flex items-center gap-2 pt-2">
+              <span className="flex items-center justify-center h-9 w-9 rounded-full bg-white/20 backdrop-blur-sm text-white font-black text-sm">
+                {peopleWonders.length}
+              </span>
+              <span className="text-white/80 text-sm font-medium">Notable Bocaueños featured</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Filter bar ───────────────────────────────────────────── */}
+      <section className="sticky top-[56px] z-30 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
+            {filterButtons.map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => setActiveFilter(btn.value)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 border ${
+                  activeFilter === btn.value
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/30"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {btn.icon}
+                {btn.label}
+                <span
+                  className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
+                    activeFilter === btn.value ? "bg-white/20" : "bg-border"
+                  }`}
+                >
+                  {counts[btn.value]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Grid ─────────────────────────────────────────────────── */}
+      <section className="py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          {/* Section header */}
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Trophy className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">
+                {activeFilter === "all" ? "All Notable Bocaueños" : `${categoryConfig[activeFilter as PeopleWonder["category"]]?.label} Achievers`}
+              </h2>
+              <p className="text-muted-foreground">
+                {filtered.length} {filtered.length === 1 ? "person" : "people"} featured
+              </p>
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <Users className="h-12 w-12 mb-4 opacity-30" />
+              <p className="text-lg font-semibold">No entries in this category yet.</p>
+              <p className="text-sm mt-1">Check back soon as we continue to document Bocaue&apos;s remarkable people.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filtered.map((person) => (
+                <PersonCard key={person.id} person={person} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── CTA ──────────────────────────────────────────────────── */}
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-2xl font-black text-foreground mb-3">Know a Bocaue Wonder?</h3>
+            <p className="text-muted-foreground mb-6 leading-relaxed">
+              If you know a remarkable living individual from Bocaue whose story deserves to be told here, 
+              reach out to the MHACTO office and nominate them for the People Wonders feature.
+            </p>
+            <Link
+              href="/inquire"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+            >
+              <Heart className="h-4 w-4" />
+              Nominate Someone
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}

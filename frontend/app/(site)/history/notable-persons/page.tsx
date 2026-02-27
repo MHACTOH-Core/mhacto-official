@@ -92,7 +92,7 @@ export default function NotablePersonsPage() {
                 className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"
               >
                 {person.image && (
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image
                       src={person.image}
                       alt={person.name}

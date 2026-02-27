@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, ChevronDown, ChevronRight } from "lucide-react"
+import { Menu, ChevronDown, ChevronRight, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset } from "@/lib/utils"
 import {
@@ -31,7 +31,7 @@ const navLinks: NavItem[] = [
         href: "/history",
         children: [
           { label: "Timeline of Events", href: "/history/timeline", isHash: false },
-          { label: "Notable Figures", href: "/history/notable-persons", isHash: false },
+          { label: "Notable Persons", href: "/history/notable-persons", isHash: false },
         ],
       },
       {
@@ -41,6 +41,8 @@ const navLinks: NavItem[] = [
           { label: "Local Cuisine", href: "/culture/local-cuisine", isHash: false },
           { label: "Festivals", href: "/culture/festivals-celebrations", isHash: false },
           { label: "Cultural Practices", href: "/culture/practices-traditions", isHash: false },
+          { label: "Crafts & Artisan", href: "/culture/crafts-artisan", isHash: false },
+          { label: "People Wonders", href: "/culture/people-wonders", isHash: false },
         ],
       },
       {
@@ -63,10 +65,8 @@ const navLinks: NavItem[] = [
         href: "/arts-livelihood",
         children: [
           { label: "Local Business", href: "/arts-livelihood/local-business", isHash: false },
-          { label: "Crafts", href: "/arts-livelihood/crafts-artisans", isHash: false },
         ],
       },
-      { label: "Bocauenos", href: "/community/bocauenos", isHash: false },
     ],
   },
   {
@@ -91,7 +91,10 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
@@ -334,6 +337,45 @@ export function Navbar() {
           )}
         </div>
 
+        {/* Desktop search bar */}
+        <div className="hidden md:flex items-center relative">
+          <div
+            className={`flex items-center overflow-hidden rounded-full border border-border/60 bg-muted/40 transition-all duration-300 ${
+              searchOpen ? "w-52 lg:w-64 pl-3 pr-1" : "w-8 justify-center"
+            }`}
+          >
+            {searchOpen && (
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-1.5"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setSearchOpen(false)
+                    setSearchQuery("")
+                  }
+                }}
+              />
+            )}
+            <button
+              onClick={() => {
+                setSearchOpen((prev) => !prev)
+                setSearchQuery("")
+                if (!searchOpen) {
+                  setTimeout(() => searchInputRef.current?.focus(), 50)
+                }
+              }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary"
+              aria-label={searchOpen ? "Close search" : "Open search"}
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
         {/* Right – Municipality of Bocaue logo + mobile menu */}
         <div className="flex items-center gap-2">
           <Link href="/" className="hidden md:flex shrink-0 items-center gap-2">
@@ -365,13 +407,22 @@ export function Navbar() {
             <SheetContent side="right" className="w-72 bg-card overflow-y-auto">
               <SheetTitle className="text-foreground">Menu</SheetTitle>
               {/* MHACTO logo in mobile menu */}
-              <div className="mt-4 mb-6 flex justify-center">
+              <div className="mt-4 mb-4 flex justify-center">
                 <Image
                   src={asset("/images/logos/MHACTO_LOGO.png")}
                   alt="MHACTO Bocaue Logo"
                   width={140}
                   height={36}
                   className="h-8 w-auto object-contain"
+                />
+              </div>
+              {/* Mobile search bar */}
+              <div className="mb-5 flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-2">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                 />
               </div>
               <div className="flex flex-col gap-4">

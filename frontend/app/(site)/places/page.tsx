@@ -115,7 +115,7 @@ export default function PlacesPage() {
                   href={`/places/${place.id}`}
                   className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="relative h-48 w-full overflow-hidden">
+                  <div className="relative h-36 w-full overflow-hidden">
                     <Image
                       src={place.image}
                       alt={place.title}

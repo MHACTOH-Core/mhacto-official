@@ -105,11 +105,11 @@ export function Footer() {
             {/* Left side - Bocaue */}
             <div className="flex items-center gap-3 text-center sm:text-left">
               <Image
-                src={asset("/images/logos/bocaue-logo.svg")}
+                src={asset("/images/logos/bocaue-logo.png")}
                 alt="Bocaue Logo"
-                width={50}
-                height={50}
-                className="h-12 w-12 object-contain"
+                width={56}
+                height={56}
+                className="h-14 w-14 object-contain flex-shrink-0"
               />
               <div>
                 <p className="text-card/70 font-medium">Municipality of Bocaue</p>
@@ -119,17 +119,21 @@ export function Footer() {
             </div>
             
             {/* Right side - STI and developers */}
-            <div className="flex items-center gap-3 text-center sm:text-right">
+            <div className="flex items-center gap-4 text-center sm:text-right">
               <div className="text-right">
-                <p className="text-card/70 font-medium">STI College Balagtas</p>
-                <p className="text-xs">Developed by Flores, Vissnar, Borja & Chingcuangco</p>
+                <p className="text-card/70 font-medium text-sm">Developed by</p>
+                <p className="text-xs text-card/60 leading-relaxed">
+                  Jayson Visnar &middot; Juan Miguel Borja<br />
+                  Juan Carlos Flores &middot; John Leonard Chingcuangco
+                </p>
+                <p className="text-xs text-card/40 mt-0.5">STI College Balagtas</p>
               </div>
               <Image
-                src={asset("/images/logos/sti-logo.svg")}
+                src={asset("/images/logos/sti-logo.jpg")}
                 alt="STI College Balagtas Logo"
-                width={50}
-                height={50}
-                className="h-12 w-12 object-contain"
+                width={120}
+                height={90}
+                className="h-[72px] w-[96px] object-contain rounded-lg flex-shrink-0"
               />
             </div>
           </div>
