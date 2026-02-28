@@ -1,0 +1,38 @@
+# ── Dependencies ──────────────────────────────
+node_modules/
+
+# ── Build output ─────────────────────────────
+.next/
+out/
+frontend/.next/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+
+# ── Environment variables ────────────────────
+.env
+.env.*
+.env*.local
+
+# ── OS files ─────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE / Editor ─────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Backend uploads (tracked separately) ─────
+# Uncomment if you don't want uploads in git:
+# backend/my-php-backend/uploads/
+
+# ── Logs ─────────────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── Misc ─────────────────────────────────────
+*.tsbuildinfo
