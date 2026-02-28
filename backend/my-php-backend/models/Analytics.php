@@ -1,7 +1,8 @@
 <?php
 /**
- * Analytics Model — Reads from existing `click_analytics` table.
- * Aggregates raw click data into page-view rankings and daily visit counts.
+ * Analytics Model — Optimized schema.
+ * Page views now live in `activity_logs` (action = 'page_view').
+ * No more separate `click_analytics` table.
  */
 
 class Analytics
@@ -14,21 +15,22 @@ class Analytics
     }
 
     /**
-     * Page view rankings — aggregate click_analytics by page_path.
-     * Joins with cms to get the content title.
+     * Page view rankings — aggregate activity_logs by page_path.
+     * Joins with content to get the content title.
      */
     public function getPageViews(): array
     {
         $query = "
             SELECT
-                ca.page_path          AS page,
-                COALESCE(c.title, ca.page_path) AS title,
-                COUNT(*)              AS views,
-                COALESCE(cat.label_name, 'Page') AS category
-            FROM click_analytics ca
-            LEFT JOIN cms c          ON ca.content_id  = c.content_id
-            LEFT JOIN catergory cat  ON c.category_id  = cat.category_id
-            GROUP BY ca.page_path, c.title, cat.label_name
+                al.page_path                          AS page,
+                COALESCE(c.title, al.page_path)       AS title,
+                COUNT(*)                              AS views,
+                COALESCE(cat.label_name, 'Page')      AS category
+            FROM activity_logs al
+            LEFT JOIN content    c   ON al.content_id  = c.content_id
+            LEFT JOIN categories cat ON c.category_id  = cat.category_id
+            WHERE al.action = 'page_view'
+            GROUP BY al.page_path, c.title, cat.label_name
             ORDER BY views DESC
         ";
 
@@ -38,17 +40,18 @@ class Analytics
     }
 
     /**
-     * Daily visit counts — aggregate click_analytics by date.
+     * Daily visit counts — aggregate page_view events by date.
      */
     public function getDailyVisits(int $days = 30): array
     {
         $query = "
             SELECT
-                DATE(clicked_at) AS date,
+                DATE(created_at) AS date,
                 COUNT(*)         AS views
-            FROM click_analytics
-            WHERE clicked_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
-            GROUP BY DATE(clicked_at)
+            FROM activity_logs
+            WHERE action = 'page_view'
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+            GROUP BY DATE(created_at)
             ORDER BY date ASC
         ";
 
@@ -58,17 +61,19 @@ class Analytics
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** Record a click event. */
+    /** Record a page view event. */
     public function trackClick(int $contentId, string $pagePath, ?string $visitorIp = null): void
     {
-        $query = "INSERT INTO click_analytics (content_id, page_path, visitor_ip)
-                  VALUES (:content_id, :page_path, :visitor_ip)";
+        $query = "
+            INSERT INTO activity_logs (user_id, content_id, action, page_path, ip_address)
+            VALUES (NULL, :content_id, 'page_view', :page_path, :ip)
+        ";
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute([
-            ':content_id'  => $contentId,
-            ':page_path'   => $pagePath,
-            ':visitor_ip'  => $visitorIp ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+            ':content_id' => $contentId,
+            ':page_path'  => $pagePath,
+            ':ip'         => $visitorIp ?? ($_SERVER['REMOTE_ADDR'] ?? null),
         ]);
     }
 }

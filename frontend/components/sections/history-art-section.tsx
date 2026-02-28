@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronDown } from "lucide-react"
+import { apiFetchMilestones, type Milestone } from "@/lib/api"
 
 interface TimelineEvent {
+  milestoneId?: number
   year: string
   title: string
   description: string
@@ -11,89 +13,8 @@ interface TimelineEvent {
   side: "left" | "right"
 }
 
-const timelineEvents: TimelineEvent[] = [
-  {
-    year: "1580",
-    title: "Founding of Bocaue",
-    description:
-      "One of the oldest municipalities in Bulacan, Bocaue was founded under Spanish colonial administration.",
-    detail:
-      "The name \"Bocaue\" is believed to derive from the Tagalog word \"bukaw\" \u2014 a type of owl once abundant in the marshlands and riverbanks of the area. The Augustinian friars established the parish and organized the early settlement around the Bocaue River, which served as the town\u2019s lifeline for trade, fishing, and transportation. The founding set the stage for a community that would endure for over four centuries.",
-    side: "left",
-  },
-  {
-    year: "1600s",
-    title: "The First Parish Church",
-    description:
-      "Augustinian missionaries built the first chapel that would evolve into St. Martin of Tours Church.",
-    detail:
-      "The original structure was a modest chapel of bamboo and nipa palm, erected beside the river to serve the growing Catholic population. As the town prospered, the church was rebuilt in stone with a Baroque fa\u00e7ade, hand-carved retablos, and centuries-old wooden santos. It became the spiritual anchor of Bocaue, hosting sacraments, festivals, and the annual procession that would later become the town\u2019s most famous tradition.",
-    side: "right",
-  },
-  {
-    year: "1787",
-    title: "Origin of the Pagoda Festival",
-    description:
-      "A fisherman discovered a wooden cross floating in the Bocaue River, sparking a devotion that endures to this day.",
-    detail:
-      "According to local legend, a humble fisherman pulled a small miraculous cross from the waters of the Wawa (river mouth). The townspeople enshrined it as the Holy Cross of Wawa and began an annual fluvial procession \u2014 carrying an ornate bamboo-and-cloth pagoda down the river accompanied by decorated boats, music, and prayers. This tradition, the Pagoda sa Wawa, became the spiritual heartbeat of Bocaue and one of the most iconic religious festivals in the Philippines.",
-    side: "left",
-  },
-  {
-    year: "1800s",
-    title: "Rise of the Pyrotechnics Industry",
-    description:
-      "Chinese-Filipino craftsmen introduced gunpowder-based fireworks, establishing Bocaue as the fireworks capital of the Philippines.",
-    detail:
-      "By the late Spanish colonial era, Bocaue families had mastered the art of creating fireworks \u2014 from simple sparklers and luces (ground sparks) to towering cascadas and thundering aerial shells. The craft was a closely guarded family secret, passed from parent to child in backyard workshops. Fireworks from Bocaue became the go-to choice for town fiestas, patron saint celebrations, and New Year festivities across the archipelago.",
-    side: "right",
-  },
-  {
-    year: "1896",
-    title: "The Philippine Revolution",
-    description:
-      "Bocaue\u00f1os joined the Katipunan uprising against Spanish rule, gathering at the Old Town Plaza.",
-    detail:
-      "When Andr\u00e9s Bonifacio and the Katipunan launched the revolution, Bocaue was among the Bulacan towns that rose in solidarity. Local Katipuneros gathered at the town plaza \u2014 the same square where generations had celebrated fiestas \u2014 to organize resistance. The town saw skirmishes and acts of bravery that are still commemorated today. The revolution forged a civic identity rooted in resilience and the defense of freedom.",
-    side: "left",
-  },
-  {
-    year: "1940s",
-    title: "World War II &amp; Rebuilding",
-    description:
-      "Bocaue endured Japanese occupation and the devastation of liberation, then rebuilt with determination.",
-    detail:
-      "During the Second World War, Japanese Imperial forces occupied Bocaue and used the town plaza as a garrison. The liberation battles of 1945 damaged many structures, including parts of the historic church. In the post-war years, the community pulled together to reconstruct their town \u2014 restoring the church, reopening markets, and reviving the fireworks industry. This period of rebuilding cemented the Bocaue\u00f1o spirit of perseverance.",
-    side: "right",
-  },
-  {
-    year: "1993",
-    title: "The Pagoda Tragedy &amp; Renewal",
-    description:
-      "A devastating pagoda collapse on the river claimed many lives \u2014 but the tradition survived and grew stronger.",
-    detail:
-      "During the 1993 fluvial procession, the towering pagoda structure collapsed mid-river under the weight of hundreds of devotees. The tragedy sent shockwaves through the nation. Rather than abandon the beloved tradition, Bocaue\u00f1os mourned, reformed safety protocols, and vowed to continue. The festival was restructured with engineering oversight and crowd controls. Today, the event honors both the Holy Cross and the memory of those who perished, making it an even more profound expression of faith and community resilience.",
-    side: "left",
-  },
-  {
-    year: "2014",
-    title: "The Philippine Arena Opens",
-    description:
-      "The world\u2019s largest indoor arena was inaugurated in Ciudad de Victoria, putting Bocaue on the global map.",
-    detail:
-      "Built for the Iglesia ni Cristo centennial, the Philippine Arena rose from farmland on the Bocaue\u2013Santa Maria border. With a seating capacity of over 55,000, it was recognized by Guinness World Records as the largest indoor arena on Earth. The complex, Ciudad de Victoria, also includes the Philippine Sports Stadium and an aquatic center. The development brought thousands of jobs and international visitors, transforming Bocaue from a quiet heritage town into a modern tourism destination.",
-    side: "right",
-  },
-  {
-    year: "Present",
-    title: "Heritage Meets Tomorrow",
-    description:
-      "MHACTO preserves traditions while fostering contemporary arts, sustainable tourism, and community identity.",
-    detail:
-      "Today, the Municipal History, Arts, Culture and Tourism Office (MHACTO) leads efforts to document oral histories, support local artisans, and develop heritage trails. Programs include cultural workshops, art exhibits, parol-making contests, and culinary festivals that celebrate Bocaue\u2019s kakanin and chicharon traditions. The town balances rapid urbanization with a deep commitment to preserving its identity \u2014 ensuring that the stories of the Bukaw, the river, the pagoda, and the fireworks continue to inspire future generations.",
-    side: "left",
-  },
-]
+// No hardcoded fallback — milestones come from backend
+const fallbackEvents: TimelineEvent[] = []
 
 function TimelineItem({ event, index }: { event: TimelineEvent; index: number }) {
   const [expanded, setExpanded] = useState(false)
@@ -182,6 +103,32 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
 }
 
 export function HistoryArtSection() {
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetchMilestones()
+      .then((milestones) => {
+        if (milestones && milestones.length > 0) {
+          // Convert Milestone to TimelineEvent format
+          const events: TimelineEvent[] = milestones.map(m => ({
+            milestoneId: m.milestoneId,
+            year: m.year,
+            title: m.title,
+            description: m.description,
+            detail: m.detail,
+            side: m.side,
+          }))
+          setTimelineEvents(events)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Don't render if no milestones loaded
+  if (!loading && timelineEvents.length === 0) return null
+
   return (
     <section className="relative bg-background py-20 lg:py-28 overflow-hidden">
       <div className="mx-auto max-w-5xl px-4 lg:px-8">

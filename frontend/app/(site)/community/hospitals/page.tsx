@@ -1,11 +1,14 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import { ArrowLeft, Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { hospitals, type Hospital } from "@/lib/data/community-data"
+import { hospitals as fallbackHospitals, type Hospital } from "@/lib/data/community-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHospital } from "@/lib/cms-mappers"
 
 const typeBadge: Record<Hospital["type"], string> = {
   government: "bg-blue-100 text-blue-800 border-blue-200",
@@ -21,6 +24,18 @@ const typeLabels: Record<Hospital["type"], string> = {
 }
 
 export default function HospitalsPage() {
+  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+
+  useEffect(() => {
+    apiFetchByLabel("hospitals")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setHospitals(posts.map(cmsToHospital))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

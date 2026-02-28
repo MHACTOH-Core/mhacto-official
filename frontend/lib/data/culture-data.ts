@@ -11,6 +11,7 @@ export interface CuisineItem {
   image: string
   where: string[]
   bestTime?: string
+  isFeatured?: boolean
 }
 
 export const localCuisine: CuisineItem[] = [

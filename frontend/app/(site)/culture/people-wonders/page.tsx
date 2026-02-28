@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
@@ -9,7 +9,9 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { peopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
+import { peopleWonders as fallbackPeople, type PeopleWonder } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
 // ── Category config ──────────────────────────────────────────────────
 type Category = PeopleWonder["category"] | "all"
@@ -149,7 +151,14 @@ function PersonCard({ person }: { person: PeopleWonder }) {
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default function PeopleWondersPage() {
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
+
+  useEffect(() => {
+    apiFetchByLabel("people-wonders")
+      .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
+      .catch(() => {})
+  }, [])
 
   const filtered =
     activeFilter === "all"

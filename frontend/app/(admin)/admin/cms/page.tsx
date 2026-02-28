@@ -6,7 +6,13 @@ import { useAdmin } from "@/components/providers/admin-provider"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   contentLabels,
+  contentCategories,
+  getPlaceLabels,
+  getNewsLabel,
+  getEventsLabel,
+  getLabelsByCategory,
   type CMSPost,
+  type ContentCategory,
   type ContentLabel,
   type ContentStatus,
   type PostType,
@@ -42,6 +48,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import {
   Plus,
   Search,
@@ -66,12 +73,18 @@ import {
   ChevronRight,
   Newspaper,
   Landmark,
+  Calendar,
+  FolderOpen,
+  Star,
 } from "lucide-react"
+import { MediaPicker } from "@/components/ui/media-picker"
+import { apiUploadMedia } from "@/lib/api"
 import { format, parseISO } from "date-fns"
 
 type FormData = {
   title: string
   body: string
+  contentCategory: ContentCategory
   label: ContentLabel
   postType: PostType
   status: ContentStatus
@@ -84,12 +97,14 @@ type FormData = {
   story: string
   highlights: string
   newsDate: string
+  isFeatured: boolean
 }
 
 const EMPTY_FORM: FormData = {
   title: "",
   body: "",
-  label: "historical",
+  contentCategory: "history",
+  label: "timeline-of-events",
   postType: "place",
   status: "draft",
   images: [],
@@ -101,24 +116,42 @@ const EMPTY_FORM: FormData = {
   story: "",
   highlights: "",
   newsDate: new Date().toISOString().slice(0, 10),
+  isFeatured: false,
 }
 
 const UNKNOWN_LABEL = { label: "Other", color: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300" }
 
 const PLACE_CATEGORIES = [
-  "Temple & Heritage",
-  "Nature",
-  "Festival",
-  "Arts & Culture",
-  "Cuisine",
+  "Heritage Site",
+  "Religious Site",
+  "Museum",
+  "Nature & Parks",
   "Landmark",
+  "Festival Grounds",
+  "Food & Dining",
+  "Arts & Culture",
+  "Arena & Events Venue",
 ]
+
+// Mapping: label → relevant Place Type options (empty = show none / auto-handled)
+const LABEL_PLACE_TYPES: Record<string, string[]> = {
+  "timeline-of-events": ["Heritage Site", "Religious Site", "Museum", "Landmark"],
+  "notable-figures": [],
+  "local-cuisine": ["Main Dish", "Snack", "Dessert & Sweets", "Drink"],
+  "festivals": ["Festival Grounds", "Arena & Events Venue"],
+  "cultural-practices": ["Arts & Culture", "Heritage Site"],
+  "crafts-artisan": ["Arts & Culture"],
+  "people-wonders": [],
+  "destinations": ["Heritage Site", "Religious Site", "Museum", "Nature & Parks", "Landmark", "Arena & Events Venue"],
+  "travel-tours": ["Nature & Parks", "Landmark", "Heritage Site"],
+}
 
 export default function CMSPage() {
   const router = useRouter()
   const { isLoggedIn, posts, createPost, updatePost, deletePost } = useAdmin()
 
   const [search, setSearch] = useState("")
+  const [filterCategory, setFilterCategory] = useState<ContentCategory | "all">("all")
   const [filterLabel, setFilterLabel] = useState<ContentLabel | "all">("all")
   const [filterStatus, setFilterStatus] = useState<ContentStatus | "all">("all")
 
@@ -136,8 +169,10 @@ export default function CMSPage() {
   const [previewImgIdx, setPreviewImgIdx] = useState(0)
 
   // Image input mode
-  const [imageInputMode, setImageInputMode] = useState<"url" | "upload">("url")
+  const [imageInputMode, setImageInputMode] = useState<"url" | "upload" | "browse">("url")
   const [imageUrlInput, setImageUrlInput] = useState("")
+  const [mediaBrowseOpen, setMediaBrowseOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -147,6 +182,7 @@ export default function CMSPage() {
 
   // Filtering
   const filtered = posts.filter((p) => {
+    if (filterCategory !== "all" && p.contentCategory !== filterCategory) return false
     if (filterLabel !== "all" && p.label !== filterLabel) return false
     if (filterStatus !== "all" && p.status !== filterStatus) return false
     if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false
@@ -163,10 +199,13 @@ export default function CMSPage() {
   }
 
   const selectPostType = (type: PostType) => {
+    const defaultCategory: ContentCategory = type === "news" ? "news" : type === "event" ? "events" : "history"
+    const defaultLabel: ContentLabel = type === "news" ? "news" : type === "event" ? "events" : "timeline-of-events"
     setForm({
       ...EMPTY_FORM,
       postType: type,
-      label: type === "news" ? "news" : "historical",
+      contentCategory: defaultCategory,
+      label: defaultLabel,
     })
     setShowTypeChooser(false)
   }
@@ -176,6 +215,7 @@ export default function CMSPage() {
     setForm({
       title: post.title,
       body: post.body,
+      contentCategory: post.contentCategory ?? "history",
       label: post.label,
       postType: post.postType ?? "place",
       status: post.status,
@@ -188,6 +228,7 @@ export default function CMSPage() {
       story: post.story ?? "",
       highlights: post.highlights?.join("\n") ?? "",
       newsDate: post.newsDate ?? "",
+      isFeatured: post.isFeatured ?? false,
     })
     setImageUrlInput("")
     setShowTypeChooser(false)
@@ -200,13 +241,15 @@ export default function CMSPage() {
     const payload: Record<string, unknown> = {
       title: form.title,
       body: form.body,
+      contentCategory: form.contentCategory,
       label: form.label,
       postType: form.postType,
       status: form.status,
       image: form.images,
+      isFeatured: form.isFeatured,
     }
 
-    if (form.postType === "place") {
+    if (form.postType === "place" || form.postType === "event") {
       payload.location = form.location || undefined
       payload.hours = form.hours || undefined
       payload.contact = form.contact || undefined
@@ -216,6 +259,9 @@ export default function CMSPage() {
       payload.highlights = form.highlights.trim()
         ? form.highlights.split("\n").map((h) => h.trim()).filter(Boolean)
         : undefined
+      if (form.postType === "event") {
+        payload.newsDate = form.newsDate || undefined
+      }
     } else {
       payload.newsDate = form.newsDate || undefined
     }
@@ -261,7 +307,7 @@ export default function CMSPage() {
                 Content Management
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create, edit, and manage places, cultural posts & news articles.
+                Create, edit, and manage places, cultural posts, events & news articles.
               </p>
             </div>
             <Button onClick={openCreate} className="gap-2">
@@ -286,15 +332,38 @@ export default function CMSPage() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select
+                value={filterCategory}
+                onValueChange={(v) => {
+                  setFilterCategory(v as ContentCategory | "all")
+                  setFilterLabel("all")
+                }}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Object.entries(contentCategories).map(([key, { label }]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
                 value={filterLabel}
                 onValueChange={(v) => setFilterLabel(v as ContentLabel | "all")}
               >
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-40">
                   <SelectValue placeholder="Label" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Labels</SelectItem>
-                  {Object.entries(contentLabels).map(([key, { label }]) => (
+                  {(filterCategory !== "all"
+                    ? getLabelsByCategory(filterCategory)
+                    : Object.entries(contentLabels)
+                  ).map(([key, { label }]) => (
                     <SelectItem key={key} value={key}>
                       {label}
                     </SelectItem>
@@ -375,6 +444,16 @@ export default function CMSPage() {
                   )}
                   {/* Overlay badges */}
                   <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5">
+                    {post.isFeatured && (
+                      <Badge className="text-xs shadow-sm bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        <Star className="h-3 w-3 mr-0.5 fill-amber-500" /> Featured
+                      </Badge>
+                    )}
+                    {post.contentCategory && contentCategories[post.contentCategory] && (
+                      <Badge className={`text-xs shadow-sm ${contentCategories[post.contentCategory].color}`}>
+                        {contentCategories[post.contentCategory].label}
+                      </Badge>
+                    )}
                     <Badge className={`text-xs shadow-sm ${(contentLabels[post.label] ?? UNKNOWN_LABEL).color}`}>
                       {(contentLabels[post.label] ?? UNKNOWN_LABEL).label}
                     </Badge>
@@ -468,13 +547,13 @@ export default function CMSPage() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingPost ? "Edit Post" : showTypeChooser ? "What would you like to post?" : `New ${form.postType === "news" ? "News Article" : "Place / Cultural Post"}`}
+                {editingPost ? "Edit Post" : showTypeChooser ? "What would you like to post?" : `New ${form.postType === "news" ? "News Article" : form.postType === "event" ? "Event" : "Place / Cultural Post"}`}
               </DialogTitle>
             </DialogHeader>
 
             {/* ── Type chooser (only on create, first step) ── */}
             {showTypeChooser && !editingPost ? (
-              <div className="grid gap-4 sm:grid-cols-2 py-4">
+              <div className="grid gap-4 sm:grid-cols-3 py-4">
                 <button
                   onClick={() => selectPostType("place")}
                   className="group flex flex-col items-center gap-3 rounded-xl border-2 border-border p-8 transition-all hover:border-primary hover:bg-primary/5"
@@ -485,7 +564,7 @@ export default function CMSPage() {
                   <div className="text-center">
                     <h3 className="font-semibold text-card-foreground">Place / Cultural</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Tourist spots, heritage sites, festivals, arts & culture
+                      Tourist spots, heritage sites, arts & culture
                     </p>
                   </div>
                 </button>
@@ -503,6 +582,20 @@ export default function CMSPage() {
                     </p>
                   </div>
                 </button>
+                <button
+                  onClick={() => selectPostType("event")}
+                  className="group flex flex-col items-center gap-3 rounded-xl border-2 border-border p-8 transition-all hover:border-primary hover:bg-primary/5"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 transition-transform group-hover:scale-110">
+                    <Calendar className="h-7 w-7" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-card-foreground">Event</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Festivals, celebrations & upcoming events
+                    </p>
+                  </div>
+                </button>
               </div>
             ) : (
             <>
@@ -517,18 +610,18 @@ export default function CMSPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{form.postType === "news" ? "Story / Content" : "Content"}</Label>
+                <Label>{form.postType === "news" ? "Story / Content" : form.postType === "event" ? "Event Details" : "Content"}</Label>
                 <Textarea
                   value={form.body}
                   onChange={(e) => setForm({ ...form, body: e.target.value })}
-                  placeholder={form.postType === "news" ? "Write the full news story here..." : "Write your content here..."}
+                  placeholder={form.postType === "news" ? "Write the full news story here..." : form.postType === "event" ? "Describe the event..." : "Write your content here..."}
                   rows={form.postType === "news" ? 12 : 10}
                   className="resize-y"
                 />
               </div>
 
-              {/* News-specific: Date field */}
-              {form.postType === "news" && (
+              {/* News / Event: Date field */}
+              {(form.postType === "news" || form.postType === "event") && (
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> Date
@@ -541,30 +634,70 @@ export default function CMSPage() {
                 </div>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                {/* Label select — only show Place labels for place posts, "News" for news posts */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Category select — based on navbar structure */}
                 <div className="space-y-2">
-                  <Label>Label</Label>
+                  <Label>Category</Label>
                   {form.postType === "news" ? (
                     <Input value="News" readOnly className="bg-muted cursor-not-allowed" />
+                  ) : form.postType === "event" ? (
+                    <Input value="Events" readOnly className="bg-muted cursor-not-allowed" />
                   ) : (
                     <Select
-                      value={form.label}
-                      onValueChange={(v) =>
-                        setForm({ ...form, label: v as ContentLabel })
-                      }
+                      value={form.contentCategory}
+                      onValueChange={(v) => {
+                        const cat = v as ContentCategory
+                        const firstLabel = getLabelsByCategory(cat)[0]
+                        setForm({
+                          ...form,
+                          contentCategory: cat,
+                          label: firstLabel ? firstLabel[0] : form.label,
+                        })
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(contentLabels)
-                          .filter(([key]) => key !== "news")
+                        {Object.entries(contentCategories)
+                          .filter(([key]) => key !== "news" && key !== "events")
                           .map(([key, { label }]) => (
                             <SelectItem key={key} value={key}>
                               {label}
                             </SelectItem>
                           ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* Label select — sub-items filtered by selected category */}
+                <div className="space-y-2">
+                  <Label>Label</Label>
+                  {form.postType === "news" ? (
+                    <Input value="News" readOnly className="bg-muted cursor-not-allowed" />
+                  ) : form.postType === "event" ? (
+                    <Input value="Events" readOnly className="bg-muted cursor-not-allowed" />
+                  ) : (
+                    <Select
+                      value={form.label}
+                      onValueChange={(v) => {
+                        const newLabel = v as ContentLabel
+                        // Auto-set Place Type based on label
+                        const relevantTypes = LABEL_PLACE_TYPES[newLabel] ?? PLACE_CATEGORIES
+                        const autoCategory = relevantTypes.length === 1 ? relevantTypes[0] : form.category
+                        setForm({ ...form, label: newLabel, category: autoCategory })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getLabelsByCategory(form.contentCategory).map(([key, { label }]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
@@ -588,7 +721,26 @@ export default function CMSPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              {/* Featured Toggle — per-label featured assignment */}
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Star className={`h-4 w-4 ${form.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
+                  <div>
+                    <Label className="text-sm font-medium">Featured Post</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Mark as featured for the &quot;{contentLabels[form.label]?.label ?? form.label}&quot; category. Featured posts appear prominently in dropdown menus and section highlights.
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={form.isFeatured}
+                  onCheckedChange={(checked) => setForm({ ...form, isFeatured: checked })}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label>Images (optional)</Label>
 
@@ -636,6 +788,18 @@ export default function CMSPage() {
                     >
                       <Upload className="h-3.5 w-3.5" /> Upload
                     </Button>
+                    <Button
+                      type="button"
+                      variant={imageInputMode === "browse" ? "default" : "outline"}
+                      size="sm"
+                      className="gap-1.5 h-8 text-xs"
+                      onClick={() => {
+                        setImageInputMode("browse")
+                        setMediaBrowseOpen(true)
+                      }}
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" /> Browse Existing
+                    </Button>
                   </div>
 
                   {imageInputMode === "url" ? (
@@ -668,40 +832,62 @@ export default function CMSPage() {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                  ) : (
+                  ) : imageInputMode === "upload" ? (
                     <div>
-                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                      <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-sm text-muted-foreground transition-colors ${isUploading ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary hover:text-primary"}`}>
                         <Upload className="h-5 w-5" />
-                        <span>Click to upload images</span>
+                        <span>{isUploading ? "Uploading..." : "Click to upload images"}</span>
                         <input
                           type="file"
                           accept="image/*"
                           multiple
                           className="hidden"
-                          onChange={(e) => {
+                          disabled={isUploading}
+                          onChange={async (e) => {
                             const files = e.target.files
                             if (!files) return
-                            Array.from(files).forEach((file) => {
-                              const reader = new FileReader()
-                              reader.onload = (ev) => {
-                                const dataUrl = ev.target?.result as string
-                                if (dataUrl) {
-                                  setForm((prev) => ({ ...prev, images: [...prev.images, dataUrl] }))
-                                }
+                            setIsUploading(true)
+                            try {
+                              const result = await apiUploadMedia(Array.from(files), "image")
+                              if (result.uploaded.length > 0) {
+                                const newUrls = result.uploaded.map((u) => u.url)
+                                setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls] }))
                               }
-                              reader.readAsDataURL(file)
-                            })
-                            e.target.value = ""
+                              if (result.errors.length > 0) {
+                                alert("Some files failed: " + result.errors.join("; "))
+                              }
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : "Upload failed")
+                            } finally {
+                              setIsUploading(false)
+                              e.target.value = ""
+                            }
                           }}
                         />
                       </label>
                     </div>
-                  )}
+                  ) : null}
+
+                  {/* Media Picker dialog for browsing existing files */}
+                  <MediaPicker
+                    open={mediaBrowseOpen}
+                    onOpenChange={(open) => {
+                      setMediaBrowseOpen(open)
+                      if (!open) setImageInputMode("url")
+                    }}
+                    onSelect={(url) => {
+                      setForm((prev) => ({ ...prev, images: [...prev.images, url] }))
+                      setMediaBrowseOpen(false)
+                      setImageInputMode("url")
+                    }}
+                    accept="image"
+                    title="Select Image from Library"
+                  />
                 </div>
               </div>
 
-              {/* ── Place Details Section (only for place posts) ── */}
-              {form.postType === "place" && (
+              {/* ── Place / Event Details Section ── */}
+              {(form.postType === "place" || form.postType === "event") && (
                 <>
                   <Separator />
                   <p className="text-sm font-medium text-muted-foreground">Place Details (optional)</p>
@@ -754,24 +940,43 @@ export default function CMSPage() {
 
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> Category
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : "Place Type"}
                     </Label>
-                    <Select
-                      value={form.category}
-                      onValueChange={(v) => setForm({ ...form, category: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {PLACE_CATEGORIES.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {(() => {
+                      const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
+                      // If no relevant types for this label, show info
+                      if (relevantTypes.length === 0) {
+                        return (
+                          <p className="text-xs text-muted-foreground italic py-2">
+                            No place type needed for this label.
+                          </p>
+                        )
+                      }
+                      // If exactly one type, auto-set and show read-only
+                      if (relevantTypes.length === 1) {
+                        return (
+                          <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
+                        )
+                      }
+                      return (
+                        <Select
+                          value={form.category}
+                          onValueChange={(v) => setForm({ ...form, category: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {relevantTypes.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )
+                    })()}
                   </div>
 
                   <div className="space-y-2">

@@ -1,23 +1,45 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { CalendarDays, MapPin, Sparkles, ArrowRight } from "lucide-react"
-import { getSpotlightEvent } from "@/lib/data/places-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { apiFetchSpotlight, type Spotlight, type FeaturedContent } from "@/lib/api"
+import { asset } from "@/lib/utils"
+
+// No hardcoded fallback — spotlight comes from backend
 
 export function FeaturedSpotlight() {
-  const spotlight = getSpotlightEvent()
+  const [spotlight, setSpotlight] = useState<Spotlight | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetchSpotlight()
+      .then((data) => {
+        if (data) {
+          setSpotlight(data as unknown as Spotlight)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   if (!spotlight) return null
+
+  const imageUrl = spotlight.image 
+    ? (spotlight.image.startsWith('/images') ? asset(spotlight.image) : spotlight.image)
+    : asset("/images/places/river-festival.jpg")
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-border shadow-xl reveal-on-scroll">
       {/* Background image */}
-      {spotlight.image && (
+      {imageUrl && (
         <div className="absolute inset-0">
           <Image
-            src={spotlight.image}
+            src={imageUrl}
             alt={spotlight.title}
             fill
             sizes="100vw"
@@ -50,10 +72,12 @@ export function FeaturedSpotlight() {
 
         {/* Meta info */}
         <div className="mt-3 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-sm sm:text-base text-white/80 animate-fade-in-up delay-400">
-          <span className="flex items-center gap-1.5">
-            <CalendarDays className="h-4 w-4 text-primary" />
-            {format(spotlight.date, "EEEE, MMMM d, yyyy")}
-          </span>
+          {spotlight.date && (
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              {format(new Date(spotlight.date), "EEEE, MMMM d, yyyy")}
+            </span>
+          )}
           {spotlight.location && (
             <span className="flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" />

@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback } from "react"
 import Image from "next/image"
 
-import { attractions } from "@/lib/data/places-data"
+import { type Place } from "@/lib/data/places-data"
+import { apiFetchPublishedPlaces, type CMSPost } from "@/lib/api"
+import { asset } from "@/lib/utils"
 import {
   Carousel,
   CarouselContent,
@@ -14,11 +16,37 @@ import {
 } from "@/components/ui/carousel"
 import { useRevealOnScroll } from "@/hooks/use-reveal"
 
+/** Map a CMS post to the Place shape used by the carousel */
+function cmsToPlace(post: CMSPost): Place {
+  const img = post.image?.[0] ?? ""
+  return {
+    id: post.id,
+    title: post.title,
+    description: post.body?.substring(0, 200) || "",
+    image: img.startsWith("/images") ? asset(img) : img || asset("/images/heroes/hero-bocaue.jpg"),
+    category: "landmark",
+    location: post.location ?? undefined,
+    established: post.established ?? undefined,
+  }
+}
+
 export function PlacesCarousel() {
   const [api, setApi] = useState<CarouselApi>()
   const [isPlaying, setIsPlaying] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [places, setPlaces] = useState<Place[]>([])
   const headingRef = useRevealOnScroll<HTMLDivElement>()
+
+  // Fetch places from backend API, fall back to static data
+  useEffect(() => {
+    apiFetchPublishedPlaces(10)
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setPlaces(posts.map(cmsToPlace))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // Track active slide
   useEffect(() => {
@@ -63,6 +91,9 @@ export function PlacesCarousel() {
     api?.scrollNext()
   }
 
+  // Don't render if no places loaded
+  if (places.length === 0) return null
+
   return (
     <section className="relative z-10 bg-background py-12 lg:py-16">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -94,7 +125,7 @@ export function PlacesCarousel() {
             onTouchStart={handleUserInteraction}
           >
             <CarouselContent className="items-center">
-              {attractions.map((place, index) => {
+              {places.map((place, index) => {
                 const isActive = index === activeIndex
 
                 return (

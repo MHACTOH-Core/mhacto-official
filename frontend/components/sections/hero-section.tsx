@@ -6,59 +6,9 @@ import Image from "next/image"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset } from "@/lib/utils"
+import { apiFetchHeroSlides, type HeroSlide } from "@/lib/api"
 
-const heroSlides = [
-  {
-    src: asset("/images/places/river-festival.jpg"),
-    alt: "Pagoda sa Wawa — Bocaue River Festival",
-    subtitle: "Bocaue's Grandest Tradition",
-    title: "The Iconic",
-    highlight: "Pagoda Festival",
-    description:
-      "Experience the Pagoda sa Wawa \u2014 a centuries-old fluvial celebration of faith, color, and community spirit on the historic Bocaue River.",
-    href: "/places/bocaue-river-festival",
-  },
-  {
-    src: asset("/images/heroes/hero-bocaue.jpg"),
-    alt: "Scenic view of Bocaue, Bulacan",
-    subtitle: "Bocaue, Bulacan",
-    title: "Explore The River",
-    highlight: "Town Wonders",
-    description:
-      "Where rich heritage meets vibrant culture \u2014 explore centuries of tradition, lively festivals, and the warm hospitality of Bocaue.",
-    href: "/destinations",
-  },
-  {
-    src: asset("/images/places/church-bocaue.jpg"),
-    alt: "St. Martin of Tours Parish Church",
-    subtitle: "Heritage & Faith",
-    title: "St. Martin of Tours",
-    highlight: "Parish Church",
-    description:
-      "A centuries-old landmark standing as a testament to Bocaue\u2019s enduring faith and Spanish colonial heritage.",
-    href: "/places/st-martin-church",
-  },
-  {
-    src: asset("/images/places/philippine-arena.jpg"),
-    alt: "Philippine Arena",
-    subtitle: "Modern Landmarks",
-    title: "The Iconic",
-    highlight: "Philippine Arena",
-    description:
-      "Home to the world\u2019s largest indoor arena, Bocaue is where tradition meets modernity on a grand scale.",
-    href: "/places/philippine-arena",
-  },
-  {
-    src: asset("/images/places/fireworks.jpg"),
-    alt: "Fireworks in Bocaue",
-    subtitle: "The Fireworks Capital",
-    title: "Bocaue\u2019s Famous",
-    highlight: "Pyrotechnic Arts",
-    description:
-      "Known nationwide as the fireworks capital of the Philippines, Bocaue lights up the sky with dazzling displays year-round.",
-    href: "/destinations",
-  },
-]
+// No hardcoded fallback — hero slides come from backend
 
 const SLIDE_INTERVAL = 6000
 
@@ -67,10 +17,35 @@ function lerp(a: number, b: number, t: number) {
 }
 
 export function HeroSection() {
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [prevSlide, setPrevSlide] = useState<number | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const [scrollProgress, setScrollProgress] = useState(0)
+
+  // Fetch slides from API
+  useEffect(() => {
+    apiFetchHeroSlides()
+      .then((slides) => {
+        if (slides && slides.length > 0) {
+          // Add asset prefix to image paths if needed
+          const processedSlides = slides.map(slide => ({
+            ...slide,
+            src: slide.src.startsWith('/') && !slide.src.startsWith('/images') 
+              ? asset(slide.src) 
+              : slide.src.startsWith('/images') 
+                ? asset(slide.src)
+                : slide.src
+          }))
+          setCurrentSlide(0)
+          setPrevSlide(null)
+          setHeroSlides(processedSlides)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
 
   // Scroll tracking
   useEffect(() => {
@@ -92,11 +67,12 @@ export function HeroSection() {
   const scrollIndicatorOpacity = lerp(1, 0, scrollProgress / 0.08)
 
   const nextSlide = useCallback(() => {
+    if (heroSlides.length === 0) return
     setCurrentSlide((prev) => {
       setPrevSlide(prev)
       return (prev + 1) % heroSlides.length
     })
-  }, [])
+  }, [heroSlides.length])
 
   useEffect(() => {
     const timer = setInterval(nextSlide, SLIDE_INTERVAL)
@@ -110,7 +86,7 @@ export function HeroSection() {
     return () => clearTimeout(timeout)
   }, [prevSlide])
 
-  const slide = heroSlides[currentSlide]
+  const slide = heroSlides.length > 0 ? (heroSlides[currentSlide] ?? heroSlides[0]) : null
 
   const handleScrollDown = () => {
     if (sectionRef.current) {
@@ -150,6 +126,7 @@ export function HeroSection() {
             MHACTO Bocaue &mdash; History, Arts, Culture &amp; Tourism
           </p>
 
+          {slide ? (
           <div key={currentSlide} className="flex flex-col items-center animate-hero-text-in">
             <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-secondary">
               {slide.subtitle}
@@ -201,6 +178,13 @@ export function HeroSection() {
               ))}
             </div>
           </div>
+          ) : !loaded ? (
+            <div className="flex flex-col items-center gap-4 animate-pulse">
+              <div className="h-4 w-48 rounded bg-white/20" />
+              <div className="h-12 w-80 rounded bg-white/20" />
+              <div className="h-4 w-64 rounded bg-white/10" />
+            </div>
+          ) : null}
         </div>
 
         {/* Scroll down indicator */}

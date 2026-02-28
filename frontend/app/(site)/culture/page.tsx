@@ -7,7 +7,9 @@ import Link from "next/link"
 import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localCuisine, festivals, culturalPractices } from "@/lib/data/culture-data"
+import { localCuisine as fallbackCuisine, festivals as fallbackFestivals, culturalPractices as fallbackPractices, type CuisineItem, type Festival, type CulturalPractice } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice } from "@/lib/cms-mappers"
 
 const subPages = [
   { label: "Local Cuisine", href: "/culture/local-cuisine", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
@@ -38,6 +40,22 @@ const navSections = [
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
+  const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
+
+  // Fetch data from API
+  useEffect(() => {
+    apiFetchByLabel("local-cuisine")
+      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
+    apiFetchByLabel("festivals")
+      .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
+      .catch(() => {})
+    apiFetchByLabel("cultural-practices")
+      .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {

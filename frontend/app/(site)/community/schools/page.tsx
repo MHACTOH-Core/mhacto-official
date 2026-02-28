@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { asset } from "@/lib/utils"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { School, ArrowUpDown, BookOpen, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { allSchools, type SchoolEntry } from "@/lib/data/community-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToSchoolEntry } from "@/lib/cms-mappers"
 
 // ── Label maps ──────────────────────────────────────────────────────
 const levelLabel: Record<SchoolEntry["level"], string> = {
@@ -87,11 +89,22 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function SchoolsPage() {
+  const [schools, setSchools] = useState<SchoolEntry[]>(allSchools)
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
 
+  useEffect(() => {
+    apiFetchByLabel("schools")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setSchools(posts.map(cmsToSchoolEntry))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const displayedSchools = useMemo(() => {
-    let list = [...allSchools]
+    let list = [...schools]
 
     if (filter === "public") list = list.filter((s) => s.ownership === "public")
     if (filter === "private") list = list.filter((s) => s.ownership === "private")
@@ -114,10 +127,10 @@ export default function SchoolsPage() {
   }, [filter, sort])
 
   const counts = useMemo(() => ({
-    all: allSchools.length,
-    public: allSchools.filter((s) => s.ownership === "public").length,
-    private: allSchools.filter((s) => s.ownership === "private").length,
-  }), [])
+    all: schools.length,
+    public: schools.filter((s) => s.ownership === "public").length,
+    private: schools.filter((s) => s.ownership === "private").length,
+  }), [schools])
 
   return (
     <main className="min-h-screen bg-background">

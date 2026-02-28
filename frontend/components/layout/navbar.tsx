@@ -70,13 +70,8 @@ const navLinks: NavItem[] = [
       },
     ],
   },
-  {
-    label: "News",
-    children: [
-      { label: "Events", href: "/events", isHash: false },
-      { label: "News", href: "/news", isHash: false },
-    ],
-  },
+  { label: "News", href: "/news", isHash: false },
+  { label: "Events", href: "/events", isHash: false },
   {
     label: "Tourism Office",
     children: [
@@ -347,10 +342,10 @@ export function Navbar() {
               ? renderDesktopDropdown(item)
               : renderDesktopLink(item)
           )}
-        </div>
+        
 
         {/* Desktop search button */}
-        <div className="hidden md:flex items-center">
+      
           <button
             onClick={() => setSearchOverlayOpen(true)}
             className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"

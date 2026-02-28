@@ -16,15 +16,26 @@ import {
   type PageView,
   type DailyVisit,
   type ActivityAction,
-  MOCK_POSTS,
-  MOCK_INQUIRIES,
-  MOCK_ACTIVITY_LOG,
   MOCK_PAGE_VIEWS,
   MOCK_DAILY_VISITS,
   DEFAULT_SETTINGS,
   generateId,
 } from "@/lib/data/admin-data"
-import { apiLogin } from "@/lib/api"
+import {
+  apiLogin,
+  apiFetchPosts,
+  apiCreatePost,
+  apiUpdatePost,
+  apiDeletePost,
+  apiFetchInquiries,
+  apiUpdateInquiry,
+  apiDeleteInquiry,
+  apiReplyInquiry,
+  apiFetchSettings,
+  apiUpdateSettings,
+  apiFetchActivityLog,
+  apiLogActivity,
+} from "@/lib/api"
 
 // ─── Context shape ─────────────────────────────────────────────────
 
@@ -60,6 +71,11 @@ interface AdminContextValue {
   // Activity log
   activityLog: ActivityLogEntry[]
   logActivity: (action: ActivityAction, description: string) => void
+
+  // Loading / refresh
+  loading: boolean
+  refreshPosts: () => Promise<void>
+  refreshInquiries: () => Promise<void>
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null)
@@ -101,38 +117,77 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [pageViews] = useState<PageView[]>(MOCK_PAGE_VIEWS)
   const [dailyVisits] = useState<DailyVisit[]>(MOCK_DAILY_VISITS)
   const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  // Hydrate from localStorage on mount
+  // ── Load all data from backend ──
+  const loadFromBackend = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [postsRes, inqRes, settingsRes, actRes] = await Promise.allSettled([
+        apiFetchPosts(),
+        apiFetchInquiries(),
+        apiFetchSettings(),
+        apiFetchActivityLog(),
+      ])
+      if (postsRes.status === "fulfilled") {
+        setPosts(postsRes.value)
+        saveJson("admin_posts", postsRes.value)
+      }
+      if (inqRes.status === "fulfilled") {
+        setInquiries(inqRes.value)
+        saveJson("admin_inquiries", inqRes.value)
+      }
+      if (settingsRes.status === "fulfilled" && settingsRes.value) {
+        setSettings(settingsRes.value)
+        saveJson("admin_settings", settingsRes.value)
+      }
+      if (actRes.status === "fulfilled") {
+        setActivityLog(actRes.value)
+        saveJson("admin_activity", actRes.value)
+      }
+    } catch (err) {
+      console.error("Failed to load from backend:", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const refreshPosts = useCallback(async () => {
+    try {
+      const data = await apiFetchPosts()
+      setPosts(data)
+      saveJson("admin_posts", data)
+    } catch (err) {
+      console.error("refreshPosts failed:", err)
+    }
+  }, [])
+
+  const refreshInquiries = useCallback(async () => {
+    try {
+      const data = await apiFetchInquiries()
+      setInquiries(data)
+      saveJson("admin_inquiries", data)
+    } catch (err) {
+      console.error("refreshInquiries failed:", err)
+    }
+  }, [])
+
+  // Hydrate from localStorage first (fast), then fetch from backend
   useEffect(() => {
-    setPosts(loadJson("admin_posts", MOCK_POSTS))
-    setInquiries(loadJson("admin_inquiries", MOCK_INQUIRIES))
-    setActivityLog(loadJson("admin_activity", MOCK_ACTIVITY_LOG))
+    setPosts(loadJson("admin_posts", []))
+    setInquiries(loadJson("admin_inquiries", []))
+    setActivityLog(loadJson("admin_activity", []))
     setSettings(loadJson("admin_settings", DEFAULT_SETTINGS))
     setIsLoggedIn(loadJson("admin_logged_in", false))
     setAdminEmail(loadJson("admin_email", ""))
     setMounted(true)
   }, [])
 
-  // Persist whenever state changes (after mount)
+  // Once mounted & logged in, pull fresh data from API
   useEffect(() => {
-    if (!mounted) return
-    saveJson("admin_posts", posts)
-  }, [posts, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    saveJson("admin_inquiries", inquiries)
-  }, [inquiries, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    saveJson("admin_activity", activityLog)
-  }, [activityLog, mounted])
-
-  useEffect(() => {
-    if (!mounted) return
-    saveJson("admin_settings", settings)
-  }, [settings, mounted])
+    if (!mounted || !isLoggedIn) return
+    loadFromBackend()
+  }, [mounted, isLoggedIn, loadFromBackend])
 
   // ── Auth ──
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -157,7 +212,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ── Activity log helper ──
-  const logActivity = useCallback(
+  const logActivityFn = useCallback(
     (action: ActivityAction, description: string) => {
       const entry: ActivityLogEntry = {
         id: generateId(),
@@ -166,78 +221,124 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         timestamp: new Date().toISOString(),
         user: adminEmail || "admin@mhacto.gov.ph",
       }
-      setActivityLog((prev) => [entry, ...prev])
+      setActivityLog((prev) => {
+        const next = [entry, ...prev]
+        saveJson("admin_activity", next)
+        return next
+      })
+      // Fire-and-forget to backend
+      apiLogActivity(action, description).catch(() => {})
     },
     [adminEmail],
   )
 
   // ── CMS ──
   const createPost = useCallback(
-    (data: Omit<CMSPost, "id" | "createdAt" | "updatedAt">) => {
+    async (data: Omit<CMSPost, "id" | "createdAt" | "updatedAt">) => {
       const now = new Date().toISOString()
-      const post: CMSPost = { ...data, id: generateId(), createdAt: now, updatedAt: now }
-      setPosts((prev) => [post, ...prev])
-      logActivity("create_post", `Created "${data.title}"`)
+      const tempPost: CMSPost = { ...data, id: generateId(), createdAt: now, updatedAt: now }
+      setPosts((prev) => [tempPost, ...prev])
+      logActivityFn("create_post", `Created "${data.title}"`)
+      try {
+        const res = await apiCreatePost(data as Record<string, unknown>)
+        if (res?.post) {
+          setPosts((prev) => prev.map((p) => (p.id === tempPost.id ? res.post : p)))
+        }
+        await refreshPosts()
+      } catch (err) {
+        console.error("createPost API error:", err)
+      }
     },
-    [logActivity],
+    [logActivityFn, refreshPosts],
   )
 
   const updatePost = useCallback(
-    (id: string, data: Partial<CMSPost>) => {
+    async (id: string, data: Partial<CMSPost>) => {
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p,
         ),
       )
       if (data.status === "published") {
-        logActivity("publish_post", `Published "${data.title || "post"}"`)
+        logActivityFn("publish_post", `Published "${data.title || "post"}"`)
       } else if (data.status === "archived") {
-        logActivity("archive_post", `Archived "${data.title || "post"}"`)
+        logActivityFn("archive_post", `Archived "${data.title || "post"}"`)
       } else {
-        logActivity("update_post", `Updated "${data.title || "post"}"`)
+        logActivityFn("update_post", `Updated "${data.title || "post"}"`)
+      }
+      try {
+        await apiUpdatePost(id, data as Record<string, unknown>)
+        await refreshPosts()
+      } catch (err) {
+        console.error("updatePost API error:", err)
       }
     },
-    [logActivity],
+    [logActivityFn, refreshPosts],
   )
 
   const deletePost = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const post = posts.find((p) => p.id === id)
       setPosts((prev) => prev.filter((p) => p.id !== id))
-      logActivity("delete_post", `Deleted "${post?.title || "post"}"`)
+      logActivityFn("delete_post", `Deleted "${post?.title || "post"}"`)
+      try {
+        await apiDeletePost(id)
+      } catch (err) {
+        console.error("deletePost API error:", err)
+      }
     },
-    [posts, logActivity],
+    [posts, logActivityFn],
   )
 
   // ── Inquiries ──
-  const updateInquiry = useCallback((id: string, data: Partial<Inquiry>) => {
-    setInquiries((prev) => prev.map((inq) => (inq.id === id ? { ...inq, ...data } : inq)))
-  }, [])
+  const updateInquiryFn = useCallback(
+    async (id: string, data: Partial<Inquiry>) => {
+      setInquiries((prev) => prev.map((inq) => (inq.id === id ? { ...inq, ...data } : inq)))
+      try {
+        await apiUpdateInquiry(id, data as Record<string, unknown>)
+        await refreshInquiries()
+      } catch (err) {
+        console.error("updateInquiry API error:", err)
+      }
+    },
+    [refreshInquiries],
+  )
 
   const deleteInquiry = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const inq = inquiries.find((i) => i.id === id)
       setInquiries((prev) =>
         prev.map((i) =>
           i.id === id ? { ...i, status: "trash" as const, trashedAt: new Date().toISOString() } : i,
         ),
       )
-      logActivity("archive_inquiry", `Moved inquiry from ${inq?.name || "unknown"} to trash`)
+      logActivityFn("archive_inquiry", `Moved inquiry from ${inq?.name || "unknown"} to trash`)
+      try {
+        await apiUpdateInquiry(id, { status: "trash" })
+        await refreshInquiries()
+      } catch (err) {
+        console.error("deleteInquiry API error:", err)
+      }
     },
-    [inquiries, logActivity],
+    [inquiries, logActivityFn, refreshInquiries],
   )
 
   const permanentDeleteInquiry = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const inq = inquiries.find((i) => i.id === id)
       setInquiries((prev) => prev.filter((i) => i.id !== id))
-      logActivity("archive_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
+      logActivityFn("archive_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
+      try {
+        await apiDeleteInquiry(id)
+      } catch (err) {
+        console.error("permanentDeleteInquiry API error:", err)
+      }
     },
-    [inquiries, logActivity],
+    [inquiries, logActivityFn],
   )
 
   const replyToInquiry = useCallback(
-    (id: string, message: string) => {
+    async (id: string, message: string) => {
       const now = new Date().toISOString()
       setInquiries((prev) =>
         prev.map((inq) =>
@@ -247,18 +348,33 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         ),
       )
       const inq = inquiries.find((i) => i.id === id)
-      logActivity("reply_inquiry", `Replied to ${inq?.name || "inquiry"} — ${inq?.subject || ""}`)
+      logActivityFn("reply_inquiry", `Replied to ${inq?.name || "inquiry"} — ${inq?.subject || ""}`)
+      try {
+        await apiReplyInquiry(id, message)
+        await refreshInquiries()
+      } catch (err) {
+        console.error("replyToInquiry API error:", err)
+      }
     },
-    [inquiries, logActivity],
+    [inquiries, logActivityFn, refreshInquiries],
   )
 
   // ── Settings ──
-  const updateSettings = useCallback(
-    (data: Partial<AdminSettings>) => {
-      setSettings((prev) => ({ ...prev, ...data }))
-      logActivity("update_settings", "Updated site settings")
+  const updateSettingsFn = useCallback(
+    async (data: Partial<AdminSettings>) => {
+      setSettings((prev) => {
+        const next = { ...prev, ...data }
+        saveJson("admin_settings", next)
+        return next
+      })
+      logActivityFn("update_settings", "Updated site settings")
+      try {
+        await apiUpdateSettings(data as Record<string, unknown>)
+      } catch (err) {
+        console.error("updateSettings API error:", err)
+      }
     },
-    [logActivity],
+    [logActivityFn],
   )
 
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
@@ -278,14 +394,17 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         updatePost,
         deletePost,
         inquiries,
-        updateInquiry,
+        updateInquiry: updateInquiryFn,
         deleteInquiry,
         permanentDeleteInquiry,
         replyToInquiry,
         settings,
-        updateSettings,
+        updateSettings: updateSettingsFn,
         activityLog,
-        logActivity,
+        logActivity: logActivityFn,
+        loading,
+        refreshPosts,
+        refreshInquiries,
       }}
     >
       {children}

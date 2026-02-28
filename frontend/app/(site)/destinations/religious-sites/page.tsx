@@ -1,14 +1,28 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Church, Clock, MapPin, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { religiousSites } from "@/lib/data/destinations-data"
+import { religiousSites as fallbackSites, type ReligiousSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToReligiousSite, filterReligious } from "@/lib/cms-mappers"
 
 export default function ReligiousSitesPage() {
+  const [sites, setSites] = useState<ReligiousSite[]>(fallbackSites)
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts) => {
+        const filtered = filterReligious(posts)
+        if (filtered.length > 0) setSites(filtered.map(cmsToReligiousSite))
+      })
+      .catch(() => { /* keep fallback */ })
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
@@ -52,7 +66,7 @@ export default function ReligiousSitesPage() {
           </div>
 
           <div className="space-y-8">
-            {religiousSites.map((site) => (
+            {sites.map((site) => (
               <Card key={site.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
                 <div className="grid gap-0 md:grid-cols-[2fr_3fr]">
                   <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">

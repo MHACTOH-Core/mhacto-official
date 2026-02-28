@@ -1,14 +1,28 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Landmark, Clock, MapPin, Star, Shield } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { heritageSites } from "@/lib/data/destinations-data"
+import { heritageSites as fallbackSites, type HeritageSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite, filterHeritage } from "@/lib/cms-mappers"
 
 export default function HeritageSitesPage() {
+  const [sites, setSites] = useState<HeritageSite[]>(fallbackSites)
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts) => {
+        const heritage = filterHeritage(posts)
+        if (heritage.length > 0) setSites(heritage.map(cmsToHeritageSite))
+      })
+      .catch(() => { /* keep fallback */ })
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
@@ -52,7 +66,7 @@ export default function HeritageSitesPage() {
           </div>
 
           <div className="space-y-8">
-            {heritageSites.map((site, idx) => (
+            {sites.map((site, idx) => (
               <Card key={site.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (

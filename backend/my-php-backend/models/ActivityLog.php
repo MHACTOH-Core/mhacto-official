@@ -1,7 +1,8 @@
 <?php
 /**
- * ActivityLog Model — Reads from existing `activity_logs` table.
- * Joins with `User` table to get the admin email.
+ * ActivityLog Model — Optimized schema.
+ * Now also stores page_view events (absorbed click_analytics).
+ * Joins with `users` table for admin email.
  */
 
 class ActivityLog
@@ -13,15 +14,16 @@ class ActivityLog
         $this->conn = $db;
     }
 
-    /** Fetch all entries, newest first. */
+    /** Fetch all admin-action entries (exclude page_view), newest first. */
     public function readAll(int $limit = 100): array
     {
         $query = "
-            SELECT al.log_id, al.user_id, al.action, al.details,
-                   al.ip_address, al.created_at,
+            SELECT al.log_id, al.user_id, al.content_id, al.action,
+                   al.details, al.page_path, al.ip_address, al.created_at,
                    u.email, u.username
             FROM activity_logs al
-            LEFT JOIN User u ON al.user_id = u.user_id
+            LEFT JOIN users u ON al.user_id = u.user_id
+            WHERE al.action != 'page_view'
             ORDER BY al.created_at DESC
             LIMIT :limit
         ";
@@ -33,18 +35,20 @@ class ActivityLog
     }
 
     /** Log a new activity entry. */
-    public function log(string $action, string $details, ?int $userId = null, ?string $ip = null): array|false
+    public function log(string $action, string $details, ?int $userId = null, ?string $ip = null, ?int $contentId = null, ?string $pagePath = null): array|false
     {
-        $query = "INSERT INTO activity_logs (user_id, action, details, ip_address)
-                  VALUES (:user_id, :action, :details, :ip)";
+        $query = "INSERT INTO activity_logs (user_id, content_id, action, details, page_path, ip_address)
+                  VALUES (:user_id, :content_id, :action, :details, :page_path, :ip)";
 
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
-                ':user_id' => $userId,
-                ':action'  => $action,
-                ':details' => $details,
-                ':ip'      => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+                ':user_id'    => $userId,
+                ':content_id' => $contentId,
+                ':action'     => $action,
+                ':details'    => $details,
+                ':page_path'  => $pagePath,
+                ':ip'         => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
             ]);
 
             $logId = (int) $this->conn->lastInsertId();

@@ -3,7 +3,7 @@
 
 class User {
     private $conn;
-    private $table_name = "User";
+    private $table_name = "users";
 
     public function __construct(PDO $db) {
         $this->conn = $db;

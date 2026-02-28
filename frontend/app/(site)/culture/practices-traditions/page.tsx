@@ -1,12 +1,15 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Heart, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { culturalPractices, type CulturalPractice } from "@/lib/data/culture-data"
+import { culturalPractices as fallbackPractices, type CulturalPractice } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 
 const categoryLabels: Record<CulturalPractice["category"], string> = {
   religion: "Religious",
@@ -31,6 +34,14 @@ const statusConfig: Record<CulturalPractice["status"], { label: string; icon: ty
 }
 
 export default function PracticesTraditionsPage() {
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
+
+  useEffect(() => {
+    apiFetchByLabel("cultural-practices")
+      .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

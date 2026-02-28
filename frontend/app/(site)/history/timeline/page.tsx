@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
@@ -8,7 +8,9 @@ import { ArrowLeft, Clock, BookOpen, Star, ChevronDown, ChevronUp } from "lucide
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { timelineEvents, type TimelineEvent } from "@/lib/data/history-data"
+import { timelineEvents as fallbackEvents, type TimelineEvent } from "@/lib/data/history-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTimelineEvent } from "@/lib/cms-mappers"
 
 const significanceBadge: Record<TimelineEvent["significance"], { label: string; className: string }> = {
   major: { label: "Major Event", className: "bg-primary/10 text-primary border-primary/20" },
@@ -17,7 +19,14 @@ const significanceBadge: Record<TimelineEvent["significance"], { label: string; 
 }
 
 export default function TimelinePage() {
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    apiFetchByLabel("timeline-of-events")
+      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
+      .catch(() => {})
+  }, [])
 
   const toggle = (year: string) =>
     setExpandedId((prev) => (prev === year ? null : year))

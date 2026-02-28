@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { asset } from "@/lib/utils"
-import { ArrowLeft, Send } from "lucide-react"
+import { ArrowLeft, Send, Loader2, CheckCircle } from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,26 +16,40 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { apiCreateInquiry } from "@/lib/api"
 
 export default function InquirePage() {
   const [purpose, setPurpose] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    setSuccess(false)
+
     const formData = new FormData(e.currentTarget)
-    const data = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      contact: formData.get("contact"),
-      date: formData.get("date"),
-      pax: formData.get("pax"),
-      purpose,
-      message: formData.get("message"),
+
+    try {
+      await apiCreateInquiry({
+        name: formData.get("name") as string,
+        email: formData.get("email") as string,
+        contactNumber: (formData.get("contact") as string) || undefined,
+        purpose: purpose || undefined,
+        dateOfVisit: (formData.get("date") as string) || undefined,
+        numberOfPax: formData.get("pax") ? Number(formData.get("pax")) : undefined,
+        message: (formData.get("message") as string) || "",
+      })
+      setSuccess(true)
+      e.currentTarget.reset()
+      setPurpose("")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to submit inquiry. Please try again.")
+    } finally {
+      setSubmitting(false)
     }
-    console.log("Inquiry submitted:", data)
-    alert("Inquiry sent successfully!")
-    e.currentTarget.reset()
-    setPurpose("")
   }
 
   return (
@@ -207,10 +221,32 @@ export default function InquirePage() {
                     />
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full rounded-full gap-2">
-                    <Send className="h-4 w-4" />
-                    Submit Inquiry
+                  <Button type="submit" size="lg" className="w-full rounded-full gap-2" disabled={submitting}>
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Submit Inquiry
+                      </>
+                    )}
                   </Button>
+
+                  {success && (
+                    <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 p-4 text-green-800 text-sm">
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                      <span>Your inquiry has been submitted successfully! We&apos;ll get back to you soon.</span>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800 text-sm">
+                      {error}
+                    </div>
+                  )}
                 </form>
               </CardContent>
             </Card>

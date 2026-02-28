@@ -1,12 +1,15 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Sparkles, Calendar, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { festivals, type Festival } from "@/lib/data/culture-data"
+import { festivals as fallbackFestivals, type Festival } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToFestival } from "@/lib/cms-mappers"
 
 const typeBadge: Record<Festival["type"], string> = {
   religious: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300",
@@ -22,6 +25,14 @@ const typeLabels: Record<Festival["type"], string> = {
 }
 
 export default function FestivalsCelebrationsPage() {
+  const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
+
+  useEffect(() => {
+    apiFetchByLabel("festivals")
+      .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
