@@ -9,7 +9,7 @@ A full-stack web application for the Municipality of Bocaue, Bulacan, Philippine
 | Frontend | Next.js 16, React, TypeScript, Tailwind CSS     |
 | UI       | shadcn/ui component library                     |
 | Backend  | PHP (vanilla, no framework)                     |
-| Database | MySQL (10 tables — see `backend/…/schema.sql`)  |
+| Database | MySQL (11 tables — see `backend/…/schema.sql`)  |
 | Package  | pnpm                                            |
 
 ## Project Structure
@@ -62,6 +62,43 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 ---
 
 ## Changelog
+
+### March 2, 2026 — Click Analytics (page_views) & Inquiry Form Validation
+
+#### 1. New `page_views` Table (schema table #11)
+
+Added a dedicated click-analytics table to the database that tracks every time a visitor clicks on a destination page. It references `content(content_id)` (destinations are `content` rows with `post_type = 'place'`) and stores an optional `visitor_session_id` for per-session de-duplication.
+
+#### 2. New Backend Endpoints & Model
+
+| File | Purpose |
+| ---- | ------- |
+| `models/PageView.php` | Model with `logView()` (parameterised INSERT) and `getTopDestinations()` (aggregated JOIN: `page_views → content → category`) |
+| `api/analytics/log-view.php` | **POST** — accepts `{ contentId, sessionId? }`, inserts one row into `page_views` |
+| `api/analytics/top-destinations.php` | **GET** — returns top N most-clicked destinations (name, category, total clicks) with `?limit=` param (default 10, max 50) |
+
+All SQL queries are parameterised to prevent injection. The GET query is capped at `LIMIT 50` to stay lightweight on localhost.
+
+#### 3. Frontend API Helpers
+
+| Function | Where |
+| -------- | ----- |
+| `apiLogDestinationView(contentId, sessionId?)` | `lib/api.ts` — fires POST to log a click |
+| `apiFetchTopDestinations(limit?)` | `lib/api.ts` — fetches dashboard analytics data |
+| `TopDestination` interface | `lib/data/admin-data.ts` — `{ content_id, destination_name, category, total_clicks }` |
+
+#### 4. Inquiry Form Validation Enhancements
+
+| Change | Details |
+| ------ | ------- |
+| Name validation | Only letters, spaces, hyphens, periods, and apostrophes — numbers trigger an inline warning |
+| PH phone format | Validates `09XX-XXX-XXXX` or `+639XXXXXXXXX` with a format hint; shows warning on invalid input |
+| Date range | Single date input replaced with **From / To** date pickers; both enforce `min={today}` (no past dates); warns if end < start |
+| Pax → People | Label renamed from "Number of Pax" to "Number of People" |
+
+All validations run in real-time (on change) with amber warning messages, plus a final check on submit.
+
+---
 
 ### March 2, 2026 — Frontend Refactoring & Performance Optimization
 

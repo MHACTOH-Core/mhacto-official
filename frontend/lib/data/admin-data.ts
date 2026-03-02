@@ -103,6 +103,14 @@ export interface DailyVisit {
   views: number
 }
 
+/** Row returned by GET /api/analytics/top-destinations.php */
+export interface TopDestination {
+  content_id: number
+  destination_name: string
+  category: string
+  total_clicks: number
+}
+
 export interface AdminSettings {
   siteName: string
   siteDescription: string
