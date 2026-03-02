@@ -166,7 +166,7 @@ export default function LocalCuisinePage() {
     setTimeout(() => setIsPlaying(true), 10000)
   }, [])
 
-  // Fetch from API
+  // Sends GET /api/posts/read.php?label=local-cuisine&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })

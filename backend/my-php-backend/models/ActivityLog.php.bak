@@ -1,7 +1,7 @@
 <?php
 /**
- * ActivityLog Model — Schema v2.
- * `details` column is now JSON type.
+ * ActivityLog Model — Optimized schema.
+ * Now also stores page_view events (absorbed click_analytics).
  * Joins with `users` table for admin email.
  */
 
@@ -34,22 +34,19 @@ class ActivityLog
         return array_map([$this, 'formatRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    /** Log a new activity entry. Details is stored as JSON. */
+    /** Log a new activity entry. */
     public function log(string $action, string $details, ?int $userId = null, ?string $ip = null, ?int $contentId = null, ?string $pagePath = null): array|false
     {
         $query = "INSERT INTO activity_logs (user_id, content_id, action, details, page_path, ip_address)
                   VALUES (:user_id, :content_id, :action, :details, :page_path, :ip)";
 
         try {
-            // Encode details as JSON if it isn't already
-            $jsonDetails = json_encode($details);
-
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
                 ':user_id'    => $userId,
                 ':content_id' => $contentId,
                 ':action'     => $action,
-                ':details'    => $jsonDetails,
+                ':details'    => $details,
                 ':page_path'  => $pagePath,
                 ':ip'         => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
             ]);
@@ -70,21 +67,10 @@ class ActivityLog
 
     private function formatRow(array $row): array
     {
-        // Decode JSON details back to string for display
-        $details = $row['details'] ?? '';
-        if (is_string($details)) {
-            $decoded = json_decode($details, true);
-            if (is_string($decoded)) {
-                $details = $decoded;
-            } elseif ($decoded !== null) {
-                $details = json_encode($decoded);
-            }
-        }
-
         return [
             'id'          => (string) $row['log_id'],
             'action'      => $row['action'],
-            'description' => $details,
+            'description' => $row['details'] ?? '',
             'timestamp'   => $row['created_at'],
             'user'        => $row['email'] ?? $row['username'] ?? '',
         ];

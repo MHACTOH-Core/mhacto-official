@@ -30,7 +30,6 @@ import {
   apiFetchInquiries,
   apiUpdateInquiry,
   apiDeleteInquiry,
-  apiReplyInquiry,
   apiFetchSettings,
   apiUpdateSettings,
   apiFetchActivityLog,
@@ -62,7 +61,6 @@ interface AdminContextValue {
   updateInquiry: (id: string, data: Partial<Inquiry>) => void
   deleteInquiry: (id: string) => void
   permanentDeleteInquiry: (id: string) => void
-  replyToInquiry: (id: string, message: string) => void
 
   // Settings
   settings: AdminSettings
@@ -82,25 +80,28 @@ const AdminContext = createContext<AdminContextValue | null>(null)
 
 // ─── Hook ──────────────────────────────────────────────────────────
 
+/** Hook to consume the admin context. Must be used within <AdminProvider>. */
 export function useAdmin() {
-  const ctx = useContext(AdminContext)
-  if (!ctx) throw new Error("useAdmin must be used within AdminProvider")
-  return ctx
+  const adminContext = useContext(AdminContext)
+  if (!adminContext) throw new Error("useAdmin must be used within AdminProvider")
+  return adminContext
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function loadJson<T>(key: string, fallback: T): T {
+/** Safely load and parse a JSON value from localStorage, returning `fallback` on failure. */
+function loadJsonFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback
   try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
+    const storedValue = localStorage.getItem(key)
+    return storedValue ? (JSON.parse(storedValue) as T) : fallback
   } catch {
     return fallback
   }
 }
 
-function saveJson<T>(key: string, value: T) {
+/** Persist a JSON-serialisable value to localStorage. */
+function saveJsonToStorage<T>(key: string, value: T) {
   if (typeof window === "undefined") return
   localStorage.setItem(key, JSON.stringify(value))
 }
@@ -116,47 +117,56 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS)
   const [pageViews] = useState<PageView[]>(MOCK_PAGE_VIEWS)
   const [dailyVisits] = useState<DailyVisit[]>(MOCK_DAILY_VISITS)
-  const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [isLoadingBackendData, setIsLoadingBackendData] = useState(false)
 
   // ── Load all data from backend ──
-  const loadFromBackend = useCallback(async () => {
-    setLoading(true)
+  /**
+   * Fetch all admin data from the backend and sync to both state and localStorage.
+   *
+   * Fires 4 HTTP requests in parallel (Promise.allSettled so one failure doesn't block the rest):
+   *   1. GET /api/posts/read.php           → PHP: SELECT * FROM content                → all CMS posts
+   *   2. GET /api/inquiries/read.php       → PHP: SELECT * FROM inquiries               → all inquiry submissions
+   *   3. GET /api/settings/read.php        → PHP: SELECT * FROM config                  → site-wide settings
+   *   4. GET /api/activity/read.php?limit=100 → PHP: SELECT * FROM activity_logs LIMIT 100 → recent admin activity
+   */
+  const fetchAllBackendData = useCallback(async () => {
+    setIsLoadingBackendData(true)
     try {
-      const [postsRes, inqRes, settingsRes, actRes] = await Promise.allSettled([
+      const [postsResult, inquiriesResult, settingsResult, activityResult] = await Promise.allSettled([
         apiFetchPosts(),
         apiFetchInquiries(),
         apiFetchSettings(),
         apiFetchActivityLog(),
       ])
-      if (postsRes.status === "fulfilled") {
-        setPosts(postsRes.value)
-        saveJson("admin_posts", postsRes.value)
+      if (postsResult.status === "fulfilled") {
+        setPosts(postsResult.value)
+        saveJsonToStorage("admin_posts", postsResult.value)
       }
-      if (inqRes.status === "fulfilled") {
-        setInquiries(inqRes.value)
-        saveJson("admin_inquiries", inqRes.value)
+      if (inquiriesResult.status === "fulfilled") {
+        setInquiries(inquiriesResult.value)
+        saveJsonToStorage("admin_inquiries", inquiriesResult.value)
       }
-      if (settingsRes.status === "fulfilled" && settingsRes.value) {
-        setSettings(settingsRes.value)
-        saveJson("admin_settings", settingsRes.value)
+      if (settingsResult.status === "fulfilled" && settingsResult.value) {
+        setSettings(settingsResult.value)
+        saveJsonToStorage("admin_settings", settingsResult.value)
       }
-      if (actRes.status === "fulfilled") {
-        setActivityLog(actRes.value)
-        saveJson("admin_activity", actRes.value)
+      if (activityResult.status === "fulfilled") {
+        setActivityLog(activityResult.value)
+        saveJsonToStorage("admin_activity", activityResult.value)
       }
     } catch (err) {
       console.error("Failed to load from backend:", err)
     } finally {
-      setLoading(false)
+      setIsLoadingBackendData(false)
     }
   }, [])
 
   const refreshPosts = useCallback(async () => {
     try {
-      const data = await apiFetchPosts()
-      setPosts(data)
-      saveJson("admin_posts", data)
+      const freshPosts = await apiFetchPosts()
+      setPosts(freshPosts)
+      saveJsonToStorage("admin_posts", freshPosts)
     } catch (err) {
       console.error("refreshPosts failed:", err)
     }
@@ -164,39 +174,39 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const refreshInquiries = useCallback(async () => {
     try {
-      const data = await apiFetchInquiries()
-      setInquiries(data)
-      saveJson("admin_inquiries", data)
+      const freshInquiries = await apiFetchInquiries()
+      setInquiries(freshInquiries)
+      saveJsonToStorage("admin_inquiries", freshInquiries)
     } catch (err) {
       console.error("refreshInquiries failed:", err)
     }
   }, [])
 
-  // Hydrate from localStorage first (fast), then fetch from backend
+  // Hydrate from localStorage first (fast), then fetch fresh data from backend
   useEffect(() => {
-    setPosts(loadJson("admin_posts", []))
-    setInquiries(loadJson("admin_inquiries", []))
-    setActivityLog(loadJson("admin_activity", []))
-    setSettings(loadJson("admin_settings", DEFAULT_SETTINGS))
-    setIsLoggedIn(loadJson("admin_logged_in", false))
-    setAdminEmail(loadJson("admin_email", ""))
-    setMounted(true)
+    setPosts(loadJsonFromStorage("admin_posts", []))
+    setInquiries(loadJsonFromStorage("admin_inquiries", []))
+    setActivityLog(loadJsonFromStorage("admin_activity", []))
+    setSettings(loadJsonFromStorage("admin_settings", DEFAULT_SETTINGS))
+    setIsLoggedIn(loadJsonFromStorage("admin_logged_in", false))
+    setAdminEmail(loadJsonFromStorage("admin_email", ""))
+    setIsHydrated(true)
   }, [])
 
-  // Once mounted & logged in, pull fresh data from API
+  // Once hydrated & logged in, pull fresh data from API
   useEffect(() => {
-    if (!mounted || !isLoggedIn) return
-    loadFromBackend()
-  }, [mounted, isLoggedIn, loadFromBackend])
+    if (!isHydrated || !isLoggedIn) return
+    fetchAllBackendData()
+  }, [isHydrated, isLoggedIn, fetchAllBackendData])
 
   // ── Auth ──
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      const data = await apiLogin(email, password)
+      const loginResponse = await apiLogin(email, password)
       setIsLoggedIn(true)
-      setAdminEmail(data.user.email)
-      saveJson("admin_logged_in", true)
-      saveJson("admin_email", data.user.email)
+      setAdminEmail(loginResponse.user.email)
+      saveJsonToStorage("admin_logged_in", true)
+      saveJsonToStorage("admin_email", loginResponse.user.email)
       return true
     } catch (error) {
       console.error("Login failed:", error instanceof Error ? error.message : error)
@@ -207,8 +217,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setIsLoggedIn(false)
     setAdminEmail("")
-    saveJson("admin_logged_in", false)
-    saveJson("admin_email", "")
+    saveJsonToStorage("admin_logged_in", false)
+    saveJsonToStorage("admin_email", "")
   }, [])
 
   // ── Activity log helper ──
@@ -222,9 +232,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         user: adminEmail || "admin@mhacto.gov.ph",
       }
       setActivityLog((prev) => {
-        const next = [entry, ...prev]
-        saveJson("admin_activity", next)
-        return next
+        const updatedLog = [entry, ...prev]
+        saveJsonToStorage("admin_activity", updatedLog)
+        return updatedLog
       })
       // Fire-and-forget to backend
       apiLogActivity(action, description).catch(() => {})
@@ -240,9 +250,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setPosts((prev) => [tempPost, ...prev])
       logActivityFn("create_post", `Created "${data.title}"`)
       try {
-        const res = await apiCreatePost(data as Record<string, unknown>)
-        if (res?.post) {
-          setPosts((prev) => prev.map((p) => (p.id === tempPost.id ? res.post : p)))
+        const createResult = await apiCreatePost(data as Record<string, unknown>)
+        if (createResult?.post) {
+          setPosts((prev) => prev.map((p) => (p.id === tempPost.id ? createResult.post : p)))
         }
         await refreshPosts()
       } catch (err) {
@@ -309,12 +319,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const inq = inquiries.find((i) => i.id === id)
       setInquiries((prev) =>
         prev.map((i) =>
-          i.id === id ? { ...i, status: "trash" as const, trashedAt: new Date().toISOString() } : i,
+          i.id === id ? { ...i, status: "archived" as const } : i,
         ),
       )
-      logActivityFn("archive_inquiry", `Moved inquiry from ${inq?.name || "unknown"} to trash`)
+      logActivityFn("archive_inquiry", `Archived inquiry from ${inq?.name || "unknown"}`)
       try {
-        await apiUpdateInquiry(id, { status: "trash" })
+        await apiUpdateInquiry(id, { status: "archived" })
         await refreshInquiries()
       } catch (err) {
         console.error("deleteInquiry API error:", err)
@@ -337,39 +347,17 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [inquiries, logActivityFn],
   )
 
-  const replyToInquiry = useCallback(
-    async (id: string, message: string) => {
-      const now = new Date().toISOString()
-      setInquiries((prev) =>
-        prev.map((inq) =>
-          inq.id === id
-            ? { ...inq, status: "replied" as const, replyMessage: message, repliedAt: now }
-            : inq,
-        ),
-      )
-      const inq = inquiries.find((i) => i.id === id)
-      logActivityFn("reply_inquiry", `Replied to ${inq?.name || "inquiry"} — ${inq?.subject || ""}`)
-      try {
-        await apiReplyInquiry(id, message)
-        await refreshInquiries()
-      } catch (err) {
-        console.error("replyToInquiry API error:", err)
-      }
-    },
-    [inquiries, logActivityFn, refreshInquiries],
-  )
-
   // ── Settings ──
   const updateSettingsFn = useCallback(
-    async (data: Partial<AdminSettings>) => {
+    async (settingsUpdate: Partial<AdminSettings>) => {
       setSettings((prev) => {
-        const next = { ...prev, ...data }
-        saveJson("admin_settings", next)
-        return next
+        const mergedSettings = { ...prev, ...settingsUpdate }
+        saveJsonToStorage("admin_settings", mergedSettings)
+        return mergedSettings
       })
       logActivityFn("update_settings", "Updated site settings")
       try {
-        await apiUpdateSettings(data as Record<string, unknown>)
+        await apiUpdateSettings(settingsUpdate as Record<string, unknown>)
       } catch (err) {
         console.error("updateSettings API error:", err)
       }
@@ -397,12 +385,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         updateInquiry: updateInquiryFn,
         deleteInquiry,
         permanentDeleteInquiry,
-        replyToInquiry,
         settings,
         updateSettings: updateSettingsFn,
         activityLog,
         logActivity: logActivityFn,
-        loading,
+        loading: isLoadingBackendData,
         refreshPosts,
         refreshInquiries,
       }}

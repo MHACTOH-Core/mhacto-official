@@ -154,6 +154,7 @@ export default function PeopleWondersPage() {
   const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
+  // Sends GET /api/posts/read.php?label=people-wonders&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("people-wonders")
       .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })

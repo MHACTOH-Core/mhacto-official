@@ -24,6 +24,7 @@ const categoryColors: Record<NotablePerson["category"], string> = {
 export default function NotablePersonsPage() {
   const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
 
+  // Sends GET /api/posts/read.php?label=notable-figures&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("notable-figures")
       .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })

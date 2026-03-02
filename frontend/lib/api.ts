@@ -13,13 +13,17 @@ export const API_BASE =
 
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
+/**
+ * Centralised fetch wrapper. All backend calls go through here
+ * for consistent URL resolution, JSON parsing, and error handling.
+ */
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`
 
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -28,24 +32,24 @@ export async function apiFetch<T>(
   })
 
   // Try to parse JSON even for error responses
-  const text = await res.text()
-  let data: T
+  const rawText = await response.text()
+  let parsedData: T
 
   try {
-    data = text ? JSON.parse(text) : ({} as T)
+    parsedData = rawText ? JSON.parse(rawText) : ({} as T)
   } catch {
     throw new Error(`Invalid JSON response from ${endpoint}`)
   }
 
-  if (!res.ok) {
-    const msg =
-      (data as Record<string, string>).message ??
-      (data as Record<string, string>).error ??
-      `Request failed (${res.status})`
-    throw new Error(msg)
+  if (!response.ok) {
+    const errorMessage =
+      (parsedData as Record<string, string>).message ??
+      (parsedData as Record<string, string>).error ??
+      `Request failed (${response.status})`
+    throw new Error(errorMessage)
   }
 
-  return data
+  return parsedData
 }
 
 // ─── Media Library ────────────────────────────────────────────────
@@ -81,17 +85,19 @@ export async function apiUploadMedia(
   type: "image" | "video" = "image",
 ): Promise<MediaUploadResult> {
   const formData = new FormData()
-  files.forEach((f) => formData.append("files[]", f))
+  files.forEach((file) => formData.append("files[]", file))
 
-  const url = `${API_BASE}/api/media/upload.php?type=${type}`
-  const res = await fetch(url, { method: "POST", body: formData })
-  const text = await res.text()
-  const data: MediaUploadResult = text ? JSON.parse(text) : { uploaded: [], errors: [], count: 0 }
+  const uploadUrl = `${API_BASE}/api/media/upload.php?type=${type}`
+  const response = await fetch(uploadUrl, { method: "POST", body: formData })
+  const rawText = await response.text()
+  const parsedResult: MediaUploadResult = rawText
+    ? JSON.parse(rawText)
+    : { uploaded: [], errors: [], count: 0 }
 
-  if (!res.ok) {
-    throw new Error((data as unknown as Record<string, string>).message ?? "Upload failed")
+  if (!response.ok) {
+    throw new Error((parsedResult as unknown as Record<string, string>).message ?? "Upload failed")
   }
-  return data
+  return parsedResult
 }
 
 /** Delete an uploaded media file */
@@ -113,6 +119,7 @@ export interface LoginResponse {
   }
 }
 
+/** Authenticate an admin user against the backend */
 export function apiLogin(email: string, password: string) {
   return apiFetch<LoginResponse>("/api/auth/login.php", {
     method: "POST",
@@ -133,50 +140,59 @@ import type {
 export type { CMSPost } from "@/lib/data/admin-data"
 import type { CMSPost } from "@/lib/data/admin-data"
 
+/** Fetch CMS posts, optionally filtered by publication status */
 export function apiFetchPosts(status?: string) {
-  const qs = status ? `?status=${status}` : ""
-  return apiFetch<CMSPost[]>(`/api/posts/read.php${qs}`)
+  const queryString = status ? `?status=${status}` : ""
+  return apiFetch<CMSPost[]>(`/api/posts/read.php${queryString}`)
 }
 
+/** Fetch inquiries, optionally filtered by status (unread/in-progress/etc.) */
 export function apiFetchInquiries(status?: string) {
-  const qs = status ? `?status=${status}` : ""
-  return apiFetch<Inquiry[]>(`/api/inquiries/read.php${qs}`)
+  const queryString = status ? `?status=${status}` : ""
+  return apiFetch<Inquiry[]>(`/api/inquiries/read.php${queryString}`)
 }
 
+/** Fetch recent activity log entries (admin actions, logins, page views) */
 export function apiFetchActivityLog(limit = 100) {
   return apiFetch<ActivityLogEntry[]>(
     `/api/activity/read.php?limit=${limit}`,
   )
 }
 
+/** Fetch site-wide settings (general + hero configuration) */
 export function apiFetchSettings() {
   return apiFetch<AdminSettings>("/api/settings/read.php")
 }
 
+/** Fetch page-level view counts for the analytics dashboard */
 export function apiFetchPageViews() {
   return apiFetch<PageView[]>("/api/analytics/pageviews.php")
 }
 
+/** Fetch daily visit totals over the last N days (default 30) */
 export function apiFetchDailyVisits(days = 30) {
   return apiFetch<DailyVisit[]>(`/api/analytics/visits.php?days=${days}`)
 }
 
 // ─── Posts CRUD ───────────────────────────────────────────────────
 
-export function apiCreatePost(data: Partial<CMSPost>) {
+/** Create a new CMS post (place, news, or event) */
+export function apiCreatePost(postData: Partial<CMSPost>) {
   return apiFetch<{ message: string; post: CMSPost }>("/api/posts/create.php", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify(postData),
   })
 }
 
-export function apiUpdatePost(id: string, data: Partial<CMSPost>) {
+/** Update an existing CMS post by ID */
+export function apiUpdatePost(id: string, postData: Partial<CMSPost>) {
   return apiFetch<{ message: string; post: CMSPost }>(`/api/posts/update.php?id=${id}`, {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: JSON.stringify(postData),
   })
 }
 
+/** Permanently delete a CMS post */
 export function apiDeletePost(id: string) {
   return apiFetch<{ message: string }>(`/api/posts/delete.php?id=${id}`, {
     method: "DELETE",
@@ -185,13 +201,15 @@ export function apiDeletePost(id: string) {
 
 // ─── Inquiries CRUD ───────────────────────────────────────────────
 
-export function apiUpdateInquiry(id: string, data: Partial<Inquiry>) {
+/** Update an inquiry's status or details (admin) */
+export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: JSON.stringify(inquiryData),
   })
 }
 
+/** Permanently delete an inquiry */
 export function apiDeleteInquiry(id: string) {
   return apiFetch<{ message: string }>(`/api/inquiries/delete.php?id=${id}`, {
     method: "DELETE",
@@ -199,7 +217,8 @@ export function apiDeleteInquiry(id: string) {
 }
 
 export function apiReplyInquiry(id: string, message: string) {
-  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/reply.php?id=${id}`, {
+  // DEPRECATED — reply endpoint removed in schema v3
+  return apiFetch<{ message: string }>(`/api/inquiries/reply.php?id=${id}`, {
     method: "POST",
     body: JSON.stringify({ message }),
   })
@@ -211,30 +230,36 @@ export interface CreateInquiryPayload {
   name: string
   email: string
   contactNumber?: string
+  inquiryType?: string
+  /** Alias for inquiryType, accepted by the backend */
   purpose?: string
   dateOfVisit?: string
   numberOfPax?: number
   message: string
+  additionalDetails?: Record<string, unknown>
 }
 
-export function apiCreateInquiry(data: CreateInquiryPayload) {
+/** Submit a new public inquiry from the tourist-facing form */
+export function apiCreateInquiry(inquiryData: CreateInquiryPayload) {
   return apiFetch<{ message: string }>("/api/inquiries/create.php", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify(inquiryData),
   })
 }
 
 // ─── Settings CRUD ────────────────────────────────────────────────
 
-export function apiUpdateSettings(data: Partial<AdminSettings>) {
+/** Persist changes to site-wide settings */
+export function apiUpdateSettings(settingsData: Partial<AdminSettings>) {
   return apiFetch<{ message: string; settings: AdminSettings }>("/api/settings/update.php", {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: JSON.stringify(settingsData),
   })
 }
 
 // ─── Activity Log ─────────────────────────────────────────────────
 
+/** Record an admin activity (e.g. login, post update) to the audit log */
 export function apiLogActivity(action: string, description: string) {
   return apiFetch<ActivityLogEntry>("/api/activity/log.php", {
     method: "POST",
@@ -391,19 +416,22 @@ export function apiReorderMilestones(order: number[]) {
 
 // ─── Public content fetches ───────────────────────────────────────
 
+/** Fetch the published news articles, optionally limited */
 export function apiFetchPublishedNews(limit?: number) {
-  const qs = limit ? `?type=news&limit=${limit}` : "?type=news"
-  return apiFetch<NewsArticleAPI[]>(`/api/posts/read.php${qs}`)
+  const queryString = limit ? `?type=news&limit=${limit}` : "?type=news"
+  return apiFetch<NewsArticleAPI[]>(`/api/posts/read.php${queryString}`)
 }
 
+/** Fetch the published events, optionally limited */
 export function apiFetchPublishedEvents(limit?: number) {
-  const qs = limit ? `?type=events&limit=${limit}` : "?type=events"
-  return apiFetch<NewsArticleAPI[]>(`/api/posts/read.php${qs}`)
+  const queryString = limit ? `?type=events&limit=${limit}` : "?type=events"
+  return apiFetch<NewsArticleAPI[]>(`/api/posts/read.php${queryString}`)
 }
 
+/** Fetch published place posts for the public site */
 export function apiFetchPublishedPlaces(limit?: number) {
-  const qs = limit ? `?type=places&limit=${limit}` : "?type=places"
-  return apiFetch<CMSPost[]>(`/api/posts/read.php${qs}`)
+  const queryString = limit ? `?type=places&limit=${limit}` : "?type=places"
+  return apiFetch<CMSPost[]>(`/api/posts/read.php${queryString}`)
 }
 
 export function apiFetchPostById(id: string) {

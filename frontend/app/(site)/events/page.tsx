@@ -103,6 +103,7 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("calendar")
 
+  // Sends GET /api/posts/read.php?type=events → PHP runs SQL SELECT on content WHERE post_type='event' → returns JSON
   useEffect(() => {
     apiFetchPublishedEvents()
       .then((data) => setEvents(data))

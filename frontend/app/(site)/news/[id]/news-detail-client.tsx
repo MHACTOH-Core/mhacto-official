@@ -28,6 +28,9 @@ export default function NewsDetailClient({ id }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Fetch this article + related articles in parallel:
+  //   1. GET /api/posts/read.php?id={id}        → PHP runs SELECT WHERE id={id} → returns single post JSON
+  //   2. GET /api/posts/read.php?type=news&limit=6 → PHP runs SELECT WHERE post_type='news' LIMIT 6 → returns JSON array
   useEffect(() => {
     setLoading(true)
     setError(null)

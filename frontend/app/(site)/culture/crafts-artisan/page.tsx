@@ -147,11 +147,12 @@ export default function CraftsArtisanPage() {
   const [artisanList, setArtisanList] = useState(fallbackArtisans)
   const [practiceList, setPracticeList] = useState(fallbackPractices)
 
+  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
-    apiFetchByLabel("crafts-artisan")
+    apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
       .then((posts) => { if (posts?.length) setArtisanList(posts.map(cmsToArtisan)) })
       .catch(() => {})
-    apiFetchByLabel("cultural-practices")
+    apiFetchByLabel("cultural-practices")  // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
       .then((posts) => { if (posts?.length) setPracticeList(posts.map(cmsToCulturalPractice)) })
       .catch(() => {})
   }, [])

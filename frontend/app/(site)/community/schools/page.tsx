@@ -93,6 +93,7 @@ export default function SchoolsPage() {
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
 
+  // Sends GET /api/posts/read.php?label=schools&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("schools")
       .then((posts) => {

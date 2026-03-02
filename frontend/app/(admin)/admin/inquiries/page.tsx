@@ -14,15 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,52 +33,42 @@ import {
 } from "@/components/ui/tooltip"
 import {
   Inbox,
-  UserCheck,
   Archive,
-  Send,
   Search,
   ArrowLeft,
-  Reply,
   MailOpen,
-  UserX,
-  CheckCheck,
+  CheckCircle2,
   Mail,
   Clock,
   Trash2,
-  ShieldAlert,
-  RotateCcw,
-  AlertTriangle,
   Phone,
   CalendarDays,
   Users,
-  GraduationCap,
   School,
-  Hash,
   MapPin,
+  Loader2,
+  ListFilter,
 } from "lucide-react"
-import { format, parseISO, differenceInDays } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 
-type MailboxTab = "inbox" | "assigned" | "replied" | "archived" | "spam" | "trash"
+type MailboxTab = "all" | "unread" | "in_progress" | "resolved" | "archived"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: "inbox", label: "Inbox", icon: Inbox },
-  { key: "assigned", label: "Assigned", icon: UserCheck },
-  { key: "replied", label: "Replied", icon: Send },
+  { key: "all", label: "All", icon: Inbox },
+  { key: "unread", label: "Unread", icon: Mail },
+  { key: "in_progress", label: "In Progress", icon: Loader2 },
+  { key: "resolved", label: "Resolved", icon: CheckCircle2 },
   { key: "archived", label: "Archived", icon: Archive },
-  { key: "spam", label: "Spam", icon: ShieldAlert },
-  { key: "trash", label: "Trash", icon: Trash2 },
 ]
 
 export default function InquiriesPage() {
   const router = useRouter()
-  const { isLoggedIn, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry, replyToInquiry } = useAdmin()
+  const { isLoggedIn, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry } = useAdmin()
 
-  const [activeTab, setActiveTab] = useState<MailboxTab>("inbox")
+  const [activeTab, setActiveTab] = useState<MailboxTab>("all")
   const [search, setSearch] = useState("")
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
-  const [replyOpen, setReplyOpen] = useState(false)
-  const [replyText, setReplyText] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
 
@@ -100,23 +82,19 @@ export default function InquiriesPage() {
   const getFiltered = () => {
     let list = inquiries
     switch (activeTab) {
-      case "inbox":
-        list = inquiries.filter((i) => i.status === "unread" || i.status === "read")
+      case "all":
         break
-      case "assigned":
-        list = inquiries.filter((i) => i.isAssigned)
+      case "unread":
+        list = inquiries.filter((i) => i.status === "unread")
         break
-      case "replied":
-        list = inquiries.filter((i) => i.status === "replied")
+      case "in_progress":
+        list = inquiries.filter((i) => i.status === "in_progress")
+        break
+      case "resolved":
+        list = inquiries.filter((i) => i.status === "resolved")
         break
       case "archived":
         list = inquiries.filter((i) => i.status === "archived")
-        break
-      case "spam":
-        list = inquiries.filter((i) => i.status === "spam")
-        break
-      case "trash":
-        list = inquiries.filter((i) => i.status === "trash")
         break
     }
     if (search) {
@@ -124,8 +102,8 @@ export default function InquiriesPage() {
       list = list.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
-          i.subject.toLowerCase().includes(q) ||
-          i.email.toLowerCase().includes(q),
+          i.email.toLowerCase().includes(q) ||
+          i.message.toLowerCase().includes(q),
       )
     }
     return list.sort(
@@ -136,50 +114,33 @@ export default function InquiriesPage() {
   const filtered = getFiltered()
 
   const tabCounts: Record<MailboxTab, number> = {
-    inbox: inquiries.filter((i) => i.status === "unread" || i.status === "read").length,
-    assigned: inquiries.filter((i) => i.isAssigned).length,
-    replied: inquiries.filter((i) => i.status === "replied").length,
+    all: inquiries.length,
+    unread: inquiries.filter((i) => i.status === "unread").length,
+    in_progress: inquiries.filter((i) => i.status === "in_progress").length,
+    resolved: inquiries.filter((i) => i.status === "resolved").length,
     archived: inquiries.filter((i) => i.status === "archived").length,
-    spam: inquiries.filter((i) => i.status === "spam").length,
-    trash: inquiries.filter((i) => i.status === "trash").length,
   }
 
-  const unreadCount = inquiries.filter((i) => i.status === "unread").length
+  const unreadCount = tabCounts.unread
 
-  // Open inquiry — mark as read
+  // Open inquiry — mark as in_progress if unread
   const openInquiry = (inq: Inquiry) => {
     setSelectedInquiry(inq)
     if (inq.status === "unread") {
-      updateInquiry(inq.id, { status: "read" })
+      updateInquiry(inq.id, { status: "in_progress" })
     }
   }
 
-  const handleAssign = (inq: Inquiry) => {
-    updateInquiry(inq.id, { isAssigned: !inq.isAssigned } as Partial<Inquiry>)
-    setSelectedInquiry({ ...inq, isAssigned: !inq.isAssigned })
+  const handleStatusChange = (inq: Inquiry, status: InquiryStatus) => {
+    updateInquiry(inq.id, { status })
+    if (selectedInquiry?.id === inq.id) {
+      setSelectedInquiry({ ...inq, status })
+    }
   }
 
   const handleArchive = (inq: Inquiry) => {
-    updateInquiry(inq.id, { status: "archived" })
+    handleStatusChange(inq, "archived")
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
-  }
-
-  const handleUnarchive = (inq: Inquiry) => {
-    updateInquiry(inq.id, { status: "read" })
-  }
-
-  const handleSpam = (inq: Inquiry) => {
-    updateInquiry(inq.id, { status: "spam" })
-    if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
-  }
-
-  const handleTrash = (inq: Inquiry) => {
-    deleteInquiry(inq.id)
-    if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
-  }
-
-  const handleRestore = (inq: Inquiry) => {
-    updateInquiry(inq.id, { status: "read", trashedAt: undefined })
   }
 
   const handleDelete = (inq: Inquiry) => {
@@ -192,27 +153,6 @@ export default function InquiriesPage() {
       if (selectedInquiry?.id === deleteTarget.id) setSelectedInquiry(null)
       setDeleteTarget(null)
     }
-  }
-
-  const getDaysUntilDeletion = (inq: Inquiry) => {
-    if (!inq.trashedAt) return 30
-    const trashed = parseISO(inq.trashedAt)
-    const daysElapsed = differenceInDays(new Date(), trashed)
-    return Math.max(0, 30 - daysElapsed)
-  }
-
-  const handleReply = () => {
-    if (!selectedInquiry || !replyText.trim()) return
-    replyToInquiry(selectedInquiry.id, replyText)
-    setReplyOpen(false)
-    setReplyText("")
-    // Refresh selected
-    setSelectedInquiry({
-      ...selectedInquiry,
-      status: "replied",
-      replyMessage: replyText,
-      repliedAt: new Date().toISOString(),
-    })
   }
 
   // Bulk actions
@@ -230,23 +170,12 @@ export default function InquiriesPage() {
     setSelectedIds(new Set())
   }
 
-  const bulkSpam = () => {
-    selectedIds.forEach((id) => updateInquiry(id, { status: "spam" }))
+  const bulkResolve = () => {
+    selectedIds.forEach((id) => updateInquiry(id, { status: "resolved" }))
     setSelectedIds(new Set())
   }
 
-  const bulkTrash = () => {
-    selectedIds.forEach((id) => deleteInquiry(id))
-    if (selectedInquiry && selectedIds.has(selectedInquiry.id)) setSelectedInquiry(null)
-    setSelectedIds(new Set())
-  }
-
-  const bulkRestore = () => {
-    selectedIds.forEach((id) => updateInquiry(id, { status: "read", trashedAt: undefined }))
-    setSelectedIds(new Set())
-  }
-
-  const bulkPermanentDelete = () => {
+  const bulkDelete = () => {
     selectedIds.forEach((id) => permanentDeleteInquiry(id))
     if (selectedInquiry && selectedIds.has(selectedInquiry.id)) setSelectedInquiry(null)
     setSelectedIds(new Set())
@@ -262,23 +191,32 @@ export default function InquiriesPage() {
 
   // ── Helpers ────────────────────────────────────────────────────
 
-  const hasVisitDetails = (inq: Inquiry) =>
-    inq.purposeName || inq.dateOfVisit || inq.numberOfPax
-
-  const isStudent = (inq: Inquiry) => inq.inquiryType === "student"
+  const hasAdditionalDetails = (inq: Inquiry) =>
+    inq.additionalDetails && Object.keys(inq.additionalDetails).length > 0
 
   const getInitials = (name: string) =>
     name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
 
+  // Format additional_details keys for display
+  const formatKey = (key: string) =>
+    key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").replace(/^\w/, c => c.toUpperCase())
+
+  // Icon for additional_details keys
+  const getDetailIcon = (key: string) => {
+    if (key.includes("school")) return <School className="h-3.5 w-3.5 text-primary" />
+    if (key.includes("purpose")) return <MapPin className="h-3.5 w-3.5 text-primary" />
+    if (key.includes("company")) return <ListFilter className="h-3.5 w-3.5 text-primary" />
+    return <ListFilter className="h-3.5 w-3.5 text-primary" />
+  }
+
   // ── Empty‑state messages ───────────────────────────────────────
 
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
-    inbox: { icon: Inbox, title: "All caught up!", desc: "No new inquiries to review." },
-    assigned: { icon: UserCheck, title: "Nothing assigned", desc: "Assigned inquiries will appear here." },
-    replied: { icon: Send, title: "No replies yet", desc: "Replied inquiries will appear here." },
+    all: { icon: Inbox, title: "No inquiries yet", desc: "New inquiries will appear here." },
+    unread: { icon: Mail, title: "All caught up!", desc: "No unread inquiries." },
+    in_progress: { icon: Loader2, title: "Nothing in progress", desc: "Inquiries being worked on appear here." },
+    resolved: { icon: CheckCircle2, title: "No resolved inquiries", desc: "Resolved inquiries will show here." },
     archived: { icon: Archive, title: "Archive is empty", desc: "Archived inquiries will show here." },
-    spam: { icon: ShieldAlert, title: "No spam", desc: "Messages flagged as spam appear here." },
-    trash: { icon: Trash2, title: "Trash is empty", desc: "Deleted messages appear here for 30 days." },
   }
 
   return (
@@ -325,7 +263,7 @@ export default function InquiriesPage() {
                   {tabCounts[tab.key] > 0 && (
                     <span className={cn(
                       "min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none",
-                      tab.key === "inbox" && unreadCount > 0
+                      tab.key === "unread" && unreadCount > 0
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground"
                     )}>
@@ -362,55 +300,15 @@ export default function InquiriesPage() {
                 <span className="text-xs font-medium text-muted-foreground">
                   {selectedIds.size} selected
                 </span>
-                {activeTab === "trash" ? (
-                  <>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkRestore}>
-                      <RotateCcw className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Restore</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={bulkPermanentDelete}>
-                      <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Delete Forever</span>
-                    </Button>
-                  </>
-                ) : activeTab === "spam" ? (
-                  <>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkRestore}>
-                      <RotateCcw className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Not Spam</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={bulkTrash}>
-                      <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Delete</span>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkArchive}>
-                      <Archive className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Archive</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkSpam}>
-                      <ShieldAlert className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Spam</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={bulkTrash}>
-                      <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Delete</span>
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Trash / Spam banner */}
-            {activeTab === "trash" && tabCounts.trash > 0 && (
-              <div className="flex items-center gap-2 border-b border-border bg-yellow-50 px-2 sm:px-4 py-2 sm:py-2.5 dark:bg-yellow-950/30">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-400" />
-                <p className="text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300">
-                  Messages in Trash are <strong>permanently deleted after 30 days</strong>.
-                </p>
-              </div>
-            )}
-            {activeTab === "spam" && tabCounts.spam > 0 && (
-              <div className="flex items-center gap-2 border-b border-border bg-orange-50 px-2 sm:px-4 py-2 sm:py-2.5 dark:bg-orange-950/30">
-                <ShieldAlert className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
-                <p className="text-[10px] sm:text-xs text-orange-700 dark:text-orange-300">
-                  Spam messages are hidden from your inbox.
-                </p>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkResolve}>
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Resolve</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkArchive}>
+                  <Archive className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Archive</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={bulkDelete}>
+                  <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Delete</span>
+                </Button>
               </div>
             )}
 
@@ -490,12 +388,12 @@ export default function InquiriesPage() {
                       </span>
                     </div>
 
-                    {/* Row 2: Subject */}
+                    {/* Row 2: Inquiry type */}
                     <p className={cn(
                       "mt-0.5 truncate text-xs",
                       inq.status === "unread" ? "font-semibold text-card-foreground" : "text-card-foreground",
                     )}>
-                      {inq.subject}
+                      {inquiryTypeLabels[inq.inquiryType]?.label ?? inq.inquiryType}
                     </p>
 
                     {/* Row 3: Message preview */}
@@ -508,10 +406,9 @@ export default function InquiriesPage() {
                       {/* Type badge */}
                       <Badge className={cn(
                         "text-[10px] px-1.5 py-0 gap-0.5 font-medium",
-                        inquiryTypeLabels[inq.inquiryType ?? "general"].color,
+                        inquiryTypeLabels[inq.inquiryType]?.color ?? "",
                       )}>
-                        {isStudent(inq) && <GraduationCap className="h-2.5 w-2.5" />}
-                        {inquiryTypeLabels[inq.inquiryType ?? "general"].label}
+                        {inquiryTypeLabels[inq.inquiryType]?.label ?? inq.inquiryType}
                       </Badge>
 
                       {/* Status badge */}
@@ -519,26 +416,19 @@ export default function InquiriesPage() {
                         {inquiryStatusLabels[inq.status].label}
                       </Badge>
 
-                      {/* Assigned badge */}
-                      {inq.isAssigned && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 font-medium">
-                          <UserCheck className="mr-0.5 h-2.5 w-2.5" />
-                          Assigned
-                        </Badge>
-                      )}
-
-                      {/* Pax count if available */}
-                      {inq.numberOfPax && (
+                      {/* Pax count */}
+                      {inq.numberOfPax != null && (
                         <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                           <Users className="h-2.5 w-2.5" />
                           {inq.numberOfPax} pax
                         </span>
                       )}
 
-                      {/* Auto-delete countdown for trash */}
-                      {inq.status === "trash" && inq.trashedAt && (
-                        <span className="text-[10px] text-destructive font-medium">
-                          · {getDaysUntilDeletion(inq)}d left
+                      {/* Visit date */}
+                      {inq.dateOfVisit && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                          <CalendarDays className="h-2.5 w-2.5" />
+                          {format(parseISO(inq.dateOfVisit), "MMM d")}
                         </span>
                       )}
                     </div>
@@ -579,18 +469,17 @@ export default function InquiriesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h2 className="truncate text-base sm:text-lg font-semibold text-card-foreground">
-                        {selectedInquiry.subject}
+                        {selectedInquiry.name}
                       </h2>
                       <Badge className={cn(
                         "shrink-0 text-[10px] px-1.5 py-0 font-medium",
-                        inquiryTypeLabels[selectedInquiry.inquiryType ?? "general"].color,
+                        inquiryTypeLabels[selectedInquiry.inquiryType]?.color ?? "",
                       )}>
-                        {isStudent(selectedInquiry) && <GraduationCap className="mr-0.5 h-2.5 w-2.5" />}
-                        {inquiryTypeLabels[selectedInquiry.inquiryType ?? "general"].label}
+                        {inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? selectedInquiry.inquiryType}
                       </Badge>
                     </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      From <span className="font-medium text-card-foreground">{selectedInquiry.name}</span>
+                      {selectedInquiry.email}
                       {" · "}
                       {format(parseISO(selectedInquiry.createdAt), "MMMM d, yyyy")}
                     </p>
@@ -598,111 +487,46 @@ export default function InquiriesPage() {
 
                   {/* Action buttons */}
                   <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-                    {selectedInquiry.status === "trash" ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => handleRestore(selectedInquiry)}>
-                              <RotateCcw className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                              <span className="hidden sm:inline">Restore</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Move back to inbox</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(selectedInquiry)}>
-                              <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete forever</TooltipContent>
-                        </Tooltip>
-                      </>
-                    ) : selectedInquiry.status === "spam" ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => handleRestore(selectedInquiry)}>
-                              <RotateCcw className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                              <span className="hidden sm:inline">Not Spam</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Mark as not spam</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleTrash(selectedInquiry)}>
-                              <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Move to trash</TooltipContent>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8"
-                              onClick={() => handleAssign(selectedInquiry)}
-                            >
-                              {selectedInquiry.isAssigned
-                                ? <UserX className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-purple-500" />
-                                : <UserCheck className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                              }
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{selectedInquiry.isAssigned ? "Unassign" : "Mark as assigned"}</TooltipContent>
-                        </Tooltip>
-
-                        {selectedInquiry.status !== "archived" ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleArchive(selectedInquiry)}>
-                                <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Archive</TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleUnarchive(selectedInquiry)}>
-                                <Inbox className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Move to inbox</TooltipContent>
-                          </Tooltip>
-                        )}
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex" onClick={() => handleSpam(selectedInquiry)}>
-                              <ShieldAlert className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Report spam</TooltipContent>
-                        </Tooltip>
-
-                        <Button
-                          variant="outline" size="sm"
-                          className="gap-1 sm:gap-1.5 h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3"
-                          onClick={() => { setReplyText(""); setReplyOpen(true) }}
-                        >
-                          <Reply className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                          <span className="hidden xs:inline">Reply</span>
-                        </Button>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleTrash(selectedInquiry)}>
-                              <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Move to trash</TooltipContent>
-                        </Tooltip>
-                      </>
+                    {selectedInquiry.status !== "resolved" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => handleStatusChange(selectedInquiry, "resolved")}>
+                            <CheckCircle2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                            <span className="hidden sm:inline">Resolve</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Mark as resolved</TooltipContent>
+                      </Tooltip>
                     )}
+
+                    {selectedInquiry.status !== "archived" ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleArchive(selectedInquiry)}>
+                            <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Archive</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleStatusChange(selectedInquiry, "unread")}>
+                            <Inbox className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Move to inbox</TooltipContent>
+                      </Tooltip>
+                    )}
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(selectedInquiry)}>
+                          <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete permanently</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -750,11 +574,6 @@ export default function InquiriesPage() {
                               <Badge className={cn("text-[10px] sm:text-xs", inquiryStatusLabels[selectedInquiry.status].color)}>
                                 {inquiryStatusLabels[selectedInquiry.status].label}
                               </Badge>
-                              {selectedInquiry.isAssigned && (
-                                <Badge className="text-[10px] sm:text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                                  Assigned
-                                </Badge>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -762,27 +581,14 @@ export default function InquiriesPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Visit details card — only if there is visit info */}
-                  {(hasVisitDetails(selectedInquiry) || isStudent(selectedInquiry)) && (
+                  {/* Visit info — real columns */}
+                  {(selectedInquiry.dateOfVisit || selectedInquiry.numberOfPax != null) && (
                     <Card className="border-dashed">
                       <CardContent className="p-3 sm:p-4">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                          {isStudent(selectedInquiry) ? "Student Visit Details" : "Visit Details"}
+                          Visit Information
                         </p>
-
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {selectedInquiry.purposeName && (
-                            <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
-                                <MapPin className="h-3.5 w-3.5 text-primary" />
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Purpose</p>
-                                <p className="text-xs font-medium text-card-foreground">{selectedInquiry.purposeName}</p>
-                              </div>
-                            </div>
-                          )}
-
                           {selectedInquiry.dateOfVisit && (
                             <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
@@ -796,7 +602,6 @@ export default function InquiriesPage() {
                               </div>
                             </div>
                           )}
-
                           {selectedInquiry.numberOfPax != null && (
                             <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
@@ -810,31 +615,30 @@ export default function InquiriesPage() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                          {/* Student-specific fields */}
-                          {isStudent(selectedInquiry) && selectedInquiry.schoolName && (
-                            <div className="flex items-center gap-2.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-2.5">
+                  {/* Additional details — JSON extras */}
+                  {hasAdditionalDetails(selectedInquiry) && (
+                    <Card className="border-dashed">
+                      <CardContent className="p-3 sm:p-4">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                          Additional Details
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {Object.entries(selectedInquiry.additionalDetails!).map(([key, value]) => (
+                            <div key={key} className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
-                                <School className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                {getDetailIcon(key)}
                               </div>
                               <div>
-                                <p className="text-[10px] text-muted-foreground uppercase font-medium">School</p>
-                                <p className="text-xs font-medium text-card-foreground">{selectedInquiry.schoolName}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-medium">{formatKey(key)}</p>
+                                <p className="text-xs font-medium text-card-foreground">{String(value)}</p>
                               </div>
                             </div>
-                          )}
-
-                          {isStudent(selectedInquiry) && selectedInquiry.studentNumber && (
-                            <div className="flex items-center gap-2.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
-                                <Hash className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Student Number</p>
-                                <p className="text-xs font-medium text-card-foreground">{selectedInquiry.studentNumber}</p>
-                              </div>
-                            </div>
-                          )}
+                          ))}
                         </div>
                       </CardContent>
                     </Card>
@@ -848,70 +652,10 @@ export default function InquiriesPage() {
                       </p>
                     </CardContent>
                   </Card>
-
-                  {/* Reply shown */}
-                  {selectedInquiry.replyMessage && (
-                    <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-                      <CardContent className="p-3 sm:p-5">
-                        <div className="mb-2 flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-medium text-green-700 dark:text-green-300">
-                          <CheckCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                          <span>
-                            Replied on{" "}
-                            {selectedInquiry.repliedAt &&
-                              format(parseISO(selectedInquiry.repliedAt), "MMM d, yyyy · h:mm a")}
-                          </span>
-                        </div>
-                        <Separator className="my-2 bg-green-200 dark:bg-green-800" />
-                        <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-green-900 dark:text-green-100">
-                          {selectedInquiry.replyMessage}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Quick reply prompt when not yet replied */}
-                  {selectedInquiry.status !== "replied" && selectedInquiry.status !== "trash" && selectedInquiry.status !== "spam" && (
-                    <button
-                      onClick={() => { setReplyText(""); setReplyOpen(true) }}
-                      className="w-full rounded-xl border-2 border-dashed border-border px-4 py-3 text-left text-xs sm:text-sm text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors"
-                    >
-                      <Reply className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
-                      Click to reply to {selectedInquiry.name}...
-                    </button>
-                  )}
                 </div>
               </>
             )}
           </div>
-
-          {/* ─── Reply Dialog ─────────────────────────────────── */}
-          <Dialog open={replyOpen} onOpenChange={setReplyOpen}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg mx-auto">
-              <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">
-                  Reply to {selectedInquiry?.name}
-                </DialogTitle>
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                  RE: {selectedInquiry?.subject}
-                </p>
-              </DialogHeader>
-              <Textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Type your reply..."
-                rows={8}
-                className="resize-y"
-              />
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setReplyOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleReply} disabled={!replyText.trim()} className="gap-2">
-                  <Send className="h-4 w-4" /> Send Reply
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {/* ─── Delete Confirm ───────────────────────────────── */}
           <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
@@ -919,8 +663,7 @@ export default function InquiriesPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Permanently Delete Inquiry</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to permanently delete the inquiry from &quot;{deleteTarget?.name}&quot;
-                  regarding &quot;{deleteTarget?.subject}&quot;? This action cannot be undone.
+                  Are you sure you want to permanently delete the inquiry from &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

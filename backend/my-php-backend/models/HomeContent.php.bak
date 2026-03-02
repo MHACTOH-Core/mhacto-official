@@ -1,17 +1,17 @@
 <?php
 /**
- * HomeContent Model — Schema v2.
+ * HomeContent Model — Optimized schema.
  *
  * REMOVED sections (no longer separate tables):
- *   - Hero Slides  → config table (use Settings model)
- *   - Culinary     → auto-pulled from CMS label 'local-cuisine' (via content_fields)
+ *   - Hero Slides  → single hero in site_settings (use Settings model)
+ *   - Culinary     → auto-pulled from CMS label 'local-cuisine'
  *
  * MERGED sections:
  *   - Spotlight + Featured Landmarks → `featured_content` table
  *     Each row references a CMS `content` row (no data duplication).
  *
- * KEPT:
- *   - Milestones (now `milestone` table, minor column changes)
+ * KEPT as-is:
+ *   - Milestones
  *
  * Hero settings are now served via Settings::readHero() / updateHero().
  */
@@ -30,6 +30,9 @@ class HomeContent
     // JOINs `content` + `content_images` so we return full CMS data.
     // ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Shared SELECT for featured_content with CMS data.
+     */
     private function featuredSelect(): string
     {
         return "
@@ -38,13 +41,18 @@ class HomeContent
                 fc.sort_order, fc.is_active,
                 fc.created_at, fc.updated_at,
                 c.title, c.description, c.post_type,
+                c.location, c.place_category,
+                c.news_date,
                 cat.label_name AS category_name
             FROM featured_content fc
-            LEFT JOIN content  c   ON fc.content_id  = c.content_id
-            LEFT JOIN category cat ON c.category_id  = cat.category_id
+            LEFT JOIN content    c   ON fc.content_id  = c.content_id
+            LEFT JOIN categories cat ON c.category_id  = cat.category_id
         ";
     }
 
+    /**
+     * Get the first thumbnail image for a content row.
+     */
     private function getThumbnail(int $contentId): ?string
     {
         $stmt = $this->conn->prepare("
@@ -56,15 +64,6 @@ class HomeContent
         $stmt->execute([':cid' => $contentId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $row['image_url'] : null;
-    }
-
-    /** Get a meta value for a content item. */
-    private function getContentMeta(int $contentId, string $key): ?string
-    {
-        $stmt = $this->conn->prepare("SELECT meta_value FROM content_fields WHERE content_id = :id AND meta_key = :k LIMIT 1");
-        $stmt->execute([':id' => $contentId, ':k' => $key]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ? $row['meta_value'] : null;
     }
 
     // ── SPOTLIGHT ──────────────────────────────────────────────────
@@ -87,6 +86,7 @@ class HomeContent
 
     public function createSpotlight($data)
     {
+        // If setting as active, deactivate other spotlights first
         if (!empty($data['isActive'])) {
             $this->conn->exec("UPDATE featured_content SET is_active = 0 WHERE section = 'spotlight'");
         }
@@ -105,6 +105,7 @@ class HomeContent
 
     public function updateSpotlight($id, $data)
     {
+        // If setting as active, deactivate other spotlights first
         if (!empty($data['isActive'])) {
             $this->conn->exec("UPDATE featured_content SET is_active = 0 WHERE section = 'spotlight' AND featured_id != " . intval($id));
         }
@@ -215,41 +216,30 @@ class HomeContent
         return true;
     }
 
-    // ── HERO SETTINGS (convenience — delegates to config table via Settings model) ──
+    // ── HERO SETTINGS (convenience — delegates to site_settings) ──
 
     public function getHeroSettings()
     {
         $stmt = $this->conn->prepare("
-            SELECT config_key, config_value, data_type
-            FROM config
-            WHERE config_group = 'hero'
+            SELECT settings_id AS settingId,
+                   hero_subtitle AS subtitle, hero_title AS title,
+                   hero_highlight AS highlight, hero_description AS description,
+                   hero_video_url AS videoUrl, hero_fallback_img AS fallbackImage,
+                   hero_cta_text AS ctaText, hero_cta_link AS ctaLink,
+                   updated_at AS updatedAt
+            FROM site_settings
+            ORDER BY settings_id ASC LIMIT 1
         ");
         $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($rows)) return null;
-
-        $map = [];
-        foreach ($rows as $row) {
-            $decoded = json_decode($row['config_value'] ?? 'null', true);
-            $map[$row['config_key']] = $decoded;
-        }
-
-        return [
-            'subtitle'      => $map['hero_subtitle'] ?? '',
-            'title'         => $map['hero_title'] ?? 'Explore The River',
-            'highlight'     => $map['hero_highlight'] ?? '',
-            'description'   => $map['hero_description'] ?? '',
-            'videoUrl'      => $map['hero_video_url'] ?? '',
-            'fallbackImage' => $map['hero_fallback_img'] ?? '',
-            'ctaText'       => $map['hero_cta_text'] ?? 'Explore Now',
-            'ctaLink'       => $map['hero_cta_link'] ?? '/destinations',
-        ];
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function updateHeroSettings($data)
     {
-        $heroMap = [
+        $fields = [];
+        $params = [];
+
+        $fieldMap = [
             'subtitle'      => 'hero_subtitle',
             'title'         => 'hero_title',
             'highlight'     => 'hero_highlight',
@@ -260,35 +250,51 @@ class HomeContent
             'ctaLink'       => 'hero_cta_link',
         ];
 
-        foreach ($heroMap as $apiField => $configKey) {
+        foreach ($fieldMap as $apiField => $dbField) {
             if (isset($data[$apiField])) {
-                $jsonValue = json_encode($data[$apiField]);
-                $stmt = $this->conn->prepare("
-                    INSERT INTO config (config_group, config_key, config_value, data_type)
-                    VALUES ('hero', :k, :v, 'string')
-                    ON DUPLICATE KEY UPDATE config_value = :v2
-                ");
-                $stmt->execute([
-                    ':k'  => $configKey,
-                    ':v'  => $jsonValue,
-                    ':v2' => $jsonValue,
-                ]);
+                $fields[] = "{$dbField} = :{$apiField}";
+                $params[":{$apiField}"] = $data[$apiField];
             }
         }
 
-        return true;
+        if (empty($fields)) return false;
+
+        // Get the settings row ID
+        $check = $this->conn->query("SELECT settings_id FROM site_settings ORDER BY settings_id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+
+        if (!$check) {
+            // No settings row yet — insert with hero defaults
+            $sql = "INSERT INTO site_settings (hero_subtitle, hero_title, hero_highlight, hero_description, hero_video_url, hero_fallback_img, hero_cta_text, hero_cta_link)
+                    VALUES (:subtitle, :title, :highlight, :description, :videoUrl, :fallbackImage, :ctaText, :ctaLink)";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute([
+                ':subtitle'      => $data['subtitle'] ?? '',
+                ':title'         => $data['title'] ?? '',
+                ':highlight'     => $data['highlight'] ?? '',
+                ':description'   => $data['description'] ?? '',
+                ':videoUrl'      => $data['videoUrl'] ?? '',
+                ':fallbackImage' => $data['fallbackImage'] ?? '',
+                ':ctaText'       => $data['ctaText'] ?? 'Explore Now',
+                ':ctaLink'       => $data['ctaLink'] ?? '/destinations',
+            ]);
+        }
+
+        $sql = "UPDATE site_settings SET " . implode(', ', $fields) . " WHERE settings_id = :id";
+        $params[':id'] = $check['settings_id'];
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute($params);
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // MILESTONES (History Timeline) — now uses `milestone` table
+    // MILESTONES (History Timeline) — unchanged
     // ─────────────────────────────────────────────────────────────────
 
     public function getMilestones($all = false)
     {
         $sql = "SELECT milestone_id AS milestoneId, year, title, description, detail,
-                       sort_order AS sortOrder, is_active AS isActive,
-                       created_at AS createdAt, updates_at AS updatedAt
-                FROM milestone";
+                       side, sort_order AS sortOrder, is_active AS isActive,
+                       created_at AS createdAt, updated_at AS updatedAt
+                FROM milestones";
 
         if (!$all) {
             $sql .= " WHERE is_active = 1";
@@ -308,16 +314,17 @@ class HomeContent
 
     public function createMilestone($data)
     {
-        $sql = "INSERT INTO milestone (year, title, description, detail, sort_order, is_active)
-                VALUES (:year, :title, :description, :detail, :sortOrder, :isActive)";
+        $sql = "INSERT INTO milestones (year, title, description, detail, side, sort_order, is_active)
+                VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([
-            ':year'        => $data['year'] ?? 0,
+            ':year'        => $data['year'] ?? '',
             ':title'       => $data['title'] ?? '',
             ':description' => $data['description'] ?? '',
             ':detail'      => $data['detail'] ?? '',
-            ':sortOrder'   => $data['sortOrder'] ?? '0',
+            ':side'        => $data['side'] ?? 'left',
+            ':sortOrder'   => $data['sortOrder'] ?? 0,
             ':isActive'    => isset($data['isActive']) ? ($data['isActive'] ? 1 : 0) : 1,
         ]);
 
@@ -334,6 +341,7 @@ class HomeContent
             'title'       => 'title',
             'description' => 'description',
             'detail'      => 'detail',
+            'side'        => 'side',
             'sortOrder'   => 'sort_order',
             'isActive'    => 'is_active',
         ];
@@ -349,20 +357,20 @@ class HomeContent
 
         if (empty($fields)) return false;
 
-        $sql = "UPDATE milestone SET " . implode(', ', $fields) . " WHERE milestone_id = :id";
+        $sql = "UPDATE milestones SET " . implode(', ', $fields) . " WHERE milestone_id = :id";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute($params);
     }
 
     public function deleteMilestone($id)
     {
-        $stmt = $this->conn->prepare("DELETE FROM milestone WHERE milestone_id = :id");
+        $stmt = $this->conn->prepare("DELETE FROM milestones WHERE milestone_id = :id");
         return $stmt->execute([':id' => $id]);
     }
 
     public function reorderMilestones($order)
     {
-        $stmt = $this->conn->prepare("UPDATE milestone SET sort_order = :sortOrder WHERE milestone_id = :id");
+        $stmt = $this->conn->prepare("UPDATE milestones SET sort_order = :sortOrder WHERE milestone_id = :id");
 
         foreach ($order as $index => $id) {
             $stmt->execute([
@@ -381,11 +389,6 @@ class HomeContent
         $contentId = $row['content_id'] ? (int) $row['content_id'] : null;
         $image = $contentId ? $this->getThumbnail($contentId) : null;
 
-        // Get place-specific meta from content_fields
-        $location      = $contentId ? $this->getContentMeta($contentId, 'location') : null;
-        $placeCategory = $contentId ? $this->getContentMeta($contentId, 'place_category') : null;
-        $newsDate      = $contentId ? $this->getContentMeta($contentId, 'news_date') : null;
-
         return [
             'featuredId'    => (int) $row['featured_id'],
             'contentId'     => $contentId ? (string) $contentId : null,
@@ -394,9 +397,9 @@ class HomeContent
             'description'   => $row['description'] ?? '',
             'image'         => $image,
             'postType'      => $row['post_type'] ?? null,
-            'location'      => $location,
-            'category'      => $placeCategory ?? $row['category_name'] ?? null,
-            'date'          => $newsDate,
+            'location'      => $row['location'] ?? null,
+            'category'      => $row['place_category'] ?? $row['category_name'] ?? null,
+            'date'          => $row['news_date'] ?? null,
             'sortOrder'     => (int) ($row['sort_order'] ?? 0),
             'isActive'      => (bool) ($row['is_active'] ?? true),
             'createdAt'     => $row['created_at'],

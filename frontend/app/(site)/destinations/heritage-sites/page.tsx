@@ -14,6 +14,8 @@ import { cmsToHeritageSite, filterHeritage } from "@/lib/cms-mappers"
 export default function HeritageSitesPage() {
   const [sites, setSites] = useState<HeritageSite[]>(fallbackSites)
 
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only heritage sites
   useEffect(() => {
     apiFetchByLabel("destinations")
       .then((posts) => {

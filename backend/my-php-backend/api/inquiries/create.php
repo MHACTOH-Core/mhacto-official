@@ -7,10 +7,11 @@
  *   name: string,
  *   email: string,
  *   contactNumber?: string,
- *   purpose?: string,
- *   dateOfVisit?: string,
- *   numberOfPax?: int,
- *   message: string
+ *   inquiryType?: string ('general_contact' | 'tour_booking' | 'partnership'),
+ *   dateOfVisit?: string (YYYY-MM-DD),
+ *   numberOfPax?: number,
+ *   message: string,
+ *   additionalDetails?: { schoolName?, companyName?, referralSource?, dietaryNeeds?, ... }
  * }
  */
 
@@ -35,29 +36,15 @@ try {
         Response::error('Name, email, and message are required.', 400);
     }
 
-    // Resolve purpose name → purpose_id
-    $purposeId = null;
-    if (!empty($data['purpose'])) {
-        $purposeMap = [
-            'leisure'    => 1,
-            'pilgrimage' => 1,   // maps to "Leisure & Tourism"
-            'event'      => 1,   // maps to "Leisure & Tourism"
-            'educational'=> 2,   // maps to "Educational Tour"
-            'research'   => 3,   // maps to "Research & Documentation"
-            'official'   => 1,   // fallback
-        ];
-        $purposeId = $purposeMap[strtolower($data['purpose'])] ?? null;
-    }
-
     $success = $inquiry->create([
-        'name'          => $data['name'],
-        'email'         => $data['email'],
-        'contactNumber' => $data['contactNumber'] ?? null,
-        'type'          => 1, // general inquiry
-        'purposeId'     => $purposeId,
-        'dateOfVisit'   => $data['dateOfVisit'] ?? null,
-        'numberOfPax'   => !empty($data['numberOfPax']) ? (int) $data['numberOfPax'] : null,
-        'message'       => $data['message'],
+        'name'              => $data['name'],
+        'email'             => $data['email'],
+        'contactNumber'     => $data['contactNumber'] ?? null,
+        'inquiryType'       => $data['inquiryType'] ?? 'general_contact',
+        'dateOfVisit'       => $data['dateOfVisit'] ?? null,
+        'numberOfPax'       => $data['numberOfPax'] ?? null,
+        'message'           => $data['message'],
+        'additionalDetails' => $data['additionalDetails'] ?? null,
     ]);
 
     if ($success) {

@@ -46,7 +46,8 @@ export default function DestinationsPage() {
   const [museums, setMuseums] = useState<Museum[]>(fallbackMuseums)
   const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>(fallbackReligious)
 
-  // Fetch destinations from API
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side sorts into heritage sites, museums, and religious sites
   useEffect(() => {
     apiFetchByLabel("destinations")
       .then((posts) => {

@@ -27,6 +27,8 @@ const typeColor: Record<string, string> = {
 export default function MuseumsPage() {
   const [museumList, setMuseumList] = useState<Museum[]>(fallbackMuseums)
 
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only museums
   useEffect(() => {
     apiFetchByLabel("destinations")
       .then((posts) => {

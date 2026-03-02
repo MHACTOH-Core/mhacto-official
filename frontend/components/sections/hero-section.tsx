@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, ChevronDown } from "lucide-react"
@@ -8,100 +8,133 @@ import { Button } from "@/components/ui/button"
 import { asset } from "@/lib/utils"
 import { apiFetchHeroSlides, type HeroSlide } from "@/lib/api"
 
-// No hardcoded fallback — hero slides come from backend
+/** Milliseconds between automatic slide transitions */
+const SLIDE_AUTO_ADVANCE_INTERVAL_MS = 6000
 
-const SLIDE_INTERVAL = 6000
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * Math.min(Math.max(t, 0), 1)
+/**
+ * Linear interpolation between two values, clamped to [0, 1].
+ * Used to smoothly transition visual properties based on scroll progress.
+ */
+function linearInterpolation(start: number, end: number, progress: number): number {
+  const clampedProgress = Math.min(Math.max(progress, 0), 1)
+  return start + (end - start) * clampedProgress
 }
 
 export function HeroSection() {
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [prevSlide, setPrevSlide] = useState<number | null>(null)
-  const sectionRef = useRef<HTMLDivElement>(null)
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+  const [previousSlideIndex, setPreviousSlideIndex] = useState<number | null>(null)
+  const heroSectionRef = useRef<HTMLDivElement>(null)
   const [scrollProgress, setScrollProgress] = useState(0)
+  /** Ref to prevent redundant rAF calls during scroll */
+  const scrollRafIdRef = useRef<number | null>(null)
 
-  // Fetch slides from API
+  // Fetch hero slides from the CMS backend
+  // Sends GET /api/home/hero.php → PHP runs SQL SELECT on site_settings → returns JSON
   useEffect(() => {
     apiFetchHeroSlides()
       .then((slides) => {
         if (slides && slides.length > 0) {
-          // Add asset prefix to image paths if needed
-          const processedSlides = slides.map(slide => ({
+          // Normalise image paths — prefix local assets with basePath
+          const normalizedSlides = slides.map((slide) => ({
             ...slide,
-            src: slide.src.startsWith('/') && !slide.src.startsWith('/images') 
-              ? asset(slide.src) 
-              : slide.src.startsWith('/images') 
-                ? asset(slide.src)
-                : slide.src
+            src: slide.src.startsWith("/")
+              ? asset(slide.src)
+              : slide.src,
           }))
-          setCurrentSlide(0)
-          setPrevSlide(null)
-          setHeroSlides(processedSlides)
+          setActiveSlideIndex(0)
+          setPreviousSlideIndex(null)
+          setHeroSlides(normalizedSlides)
         }
       })
       .catch(() => {})
-      .finally(() => setLoaded(true))
+      .finally(() => setIsDataLoaded(true))
   }, [])
 
-  // Scroll tracking
+  // Throttled scroll tracking via requestAnimationFrame to avoid excessive re-renders
   useEffect(() => {
-    const onScroll = () => {
-      if (!sectionRef.current) return
-      const rect = sectionRef.current.getBoundingClientRect()
-      const total = sectionRef.current.offsetHeight - window.innerHeight
-      const progress = Math.min(Math.max(-rect.top / total, 0), 1)
-      setScrollProgress(progress)
+    const handleScroll = () => {
+      if (scrollRafIdRef.current !== null) return // already scheduled
+      scrollRafIdRef.current = requestAnimationFrame(() => {
+        scrollRafIdRef.current = null
+        if (!heroSectionRef.current) return
+        const sectionRect = heroSectionRef.current.getBoundingClientRect()
+        const scrollableHeight = heroSectionRef.current.offsetHeight - window.innerHeight
+        const normalizedProgress = Math.min(Math.max(-sectionRect.top / scrollableHeight, 0), 1)
+        setScrollProgress(normalizedProgress)
+      })
     }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      if (scrollRafIdRef.current !== null) cancelAnimationFrame(scrollRafIdRef.current)
+    }
   }, [])
 
-  const imageScale = lerp(1.35, 1, scrollProgress / 0.5)
-  const overlayOpacity = lerp(0.35, 0.5, scrollProgress / 0.4)
-  const textOpacity = lerp(1, 0, scrollProgress / 0.3)
-  const textY = lerp(0, -60, scrollProgress / 0.4)
-  const scrollIndicatorOpacity = lerp(1, 0, scrollProgress / 0.08)
+  // Derive parallax / fade values from scroll progress (memoised to avoid recalc on unrelated re-renders)
+  const backgroundImageScale = useMemo(
+    () => linearInterpolation(1.35, 1, scrollProgress / 0.5),
+    [scrollProgress],
+  )
+  const darkOverlayOpacity = useMemo(
+    () => linearInterpolation(0.35, 0.5, scrollProgress / 0.4),
+    [scrollProgress],
+  )
+  const heroTextOpacity = useMemo(
+    () => linearInterpolation(1, 0, scrollProgress / 0.3),
+    [scrollProgress],
+  )
+  const heroTextTranslateY = useMemo(
+    () => linearInterpolation(0, -60, scrollProgress / 0.4),
+    [scrollProgress],
+  )
+  const scrollIndicatorOpacity = useMemo(
+    () => linearInterpolation(1, 0, scrollProgress / 0.08),
+    [scrollProgress],
+  )
 
-  const nextSlide = useCallback(() => {
+  /** Advance to the next slide, wrapping around to the first */
+  const advanceToNextSlide = useCallback(() => {
     if (heroSlides.length === 0) return
-    setCurrentSlide((prev) => {
-      setPrevSlide(prev)
-      return (prev + 1) % heroSlides.length
+    setActiveSlideIndex((currentIndex) => {
+      setPreviousSlideIndex(currentIndex)
+      return (currentIndex + 1) % heroSlides.length
     })
   }, [heroSlides.length])
 
+  // Auto-advance slides on a timer
   useEffect(() => {
-    const timer = setInterval(nextSlide, SLIDE_INTERVAL)
-    return () => clearInterval(timer)
-  }, [nextSlide])
+    const autoAdvanceTimer = setInterval(advanceToNextSlide, SLIDE_AUTO_ADVANCE_INTERVAL_MS)
+    return () => clearInterval(autoAdvanceTimer)
+  }, [advanceToNextSlide])
 
-  // Clear previous slide after crossfade completes
+  // Clear the previous-slide reference after the crossfade animation completes
   useEffect(() => {
-    if (prevSlide === null) return
-    const timeout = setTimeout(() => setPrevSlide(null), 1200)
-    return () => clearTimeout(timeout)
-  }, [prevSlide])
+    if (previousSlideIndex === null) return
+    const crossfadeTimeout = setTimeout(() => setPreviousSlideIndex(null), 1200)
+    return () => clearTimeout(crossfadeTimeout)
+  }, [previousSlideIndex])
 
-  const slide = heroSlides.length > 0 ? (heroSlides[currentSlide] ?? heroSlides[0]) : null
+  const currentSlideData = heroSlides.length > 0
+    ? (heroSlides[activeSlideIndex] ?? heroSlides[0])
+    : null
 
-  const handleScrollDown = () => {
-    if (sectionRef.current) {
-      const scrollTarget = sectionRef.current.offsetHeight - window.innerHeight
+  /** Smoothly scroll past the hero section */
+  const handleScrollDownClick = useCallback(() => {
+    if (heroSectionRef.current) {
+      const scrollTarget = heroSectionRef.current.offsetHeight - window.innerHeight
       window.scrollTo({ top: scrollTarget, behavior: "smooth" })
     }
-  }
+  }, [])
 
   return (
-    <section id="home" ref={sectionRef} className="relative z-0 h-[180svh]">
+    <section id="home" ref={heroSectionRef} className="relative z-0 h-[180svh]">
       <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
-        {/* Background video */}
+        {/* Background video — parallax zoom driven by scroll */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: `scale(${imageScale})` }}
+          style={{ transform: `scale(${backgroundImageScale})` }}
           src={asset("/images/Video2.mp4")}
           autoPlay
           loop
@@ -110,33 +143,33 @@ export function HeroSection() {
           poster={asset("/images/heroes/hero-bocaue.jpg")}
         />
 
-        {/* Dynamic overlay */}
+        {/* Dynamic dark overlay — intensifies as user scrolls */}
         <div
           className="absolute inset-0 bg-foreground"
-          style={{ opacity: overlayOpacity }}
+          style={{ opacity: darkOverlayOpacity }}
         />
 
-        {/* Hero text */}
+        {/* Hero text content — fades and shifts up on scroll */}
         <div
           className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4 text-center"
-          style={{ opacity: textOpacity, transform: `translateY(${textY}px)` }}
+          style={{ opacity: heroTextOpacity, transform: `translateY(${heroTextTranslateY}px)` }}
         >
-          {/* MHACTO Bocaue Tagline — always visible */}
+          {/* Persistent MHACTO branding pill */}
           <p className="mb-4 text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-white/60 border border-white/20 rounded-full px-4 py-1 backdrop-blur-sm bg-black/20">
             MHACTO Bocaue &mdash; History, Arts, Culture &amp; Tourism
           </p>
 
-          {slide ? (
-          <div key={currentSlide} className="flex flex-col items-center animate-hero-text-in">
+          {currentSlideData ? (
+          <div key={activeSlideIndex} className="flex flex-col items-center animate-hero-text-in">
             <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-secondary">
-              {slide.subtitle}
+              {currentSlideData.subtitle}
             </p>
             <h1 className="max-w-3xl text-balance text-3xl font-bold leading-tight text-card sm:text-5xl md:text-6xl lg:text-7xl font-heading">
-              {slide.title}{" "}
-              <span className="text-primary">{slide.highlight}</span>
+              {currentSlideData.title}{" "}
+              <span className="text-primary">{currentSlideData.highlight}</span>
             </h1>
             <p className="mt-4 max-w-xl text-pretty text-sm text-card/85 sm:text-base md:text-lg lg:text-xl">
-              {slide.description}
+              {currentSlideData.description}
             </p>
             <div className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-3">
               <Link href="/tourism-office">
@@ -159,26 +192,26 @@ export function HeroSection() {
               </Link>
             </div>
 
-            {/* Pagination dots — inside text block to avoid overlap */}
+            {/* Slide pagination dots */}
             <div className="mt-8 flex items-center gap-3">
-              {heroSlides.map((_, i) => (
+              {heroSlides.map((_, slideIndex) => (
                 <button
-                  key={i}
+                  key={slideIndex}
                   onClick={() => {
-                    setPrevSlide(currentSlide)
-                    setCurrentSlide(i)
+                    setPreviousSlideIndex(activeSlideIndex)
+                    setActiveSlideIndex(slideIndex)
                   }}
                   className={`rounded-full border-2 transition-all duration-500 ${
-                    i === currentSlide
+                    slideIndex === activeSlideIndex
                       ? "h-3.5 w-3.5 border-white bg-white scale-110"
                       : "h-3 w-3 border-white/60 bg-transparent hover:border-white hover:bg-white/30"
                   }`}
-                  aria-label={`Go to slide ${i + 1}`}
+                  aria-label={`Go to slide ${slideIndex + 1}`}
                 />
               ))}
             </div>
           </div>
-          ) : !loaded ? (
+          ) : !isDataLoaded ? (
             <div className="flex flex-col items-center gap-4 animate-pulse">
               <div className="h-4 w-48 rounded bg-white/20" />
               <div className="h-12 w-80 rounded bg-white/20" />
@@ -187,9 +220,9 @@ export function HeroSection() {
           ) : null}
         </div>
 
-        {/* Scroll down indicator */}
+        {/* Scroll-down indicator — fades out quickly on first scroll */}
         <button
-          onClick={handleScrollDown}
+          onClick={handleScrollDownClick}
           style={{ opacity: scrollIndicatorOpacity }}
           className="absolute bottom-6 sm:bottom-8 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-white/80 hover:text-white transition-colors cursor-pointer"
           aria-label="Scroll down"

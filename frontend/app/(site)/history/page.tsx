@@ -42,12 +42,12 @@ export default function HistoryPage() {
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackTimeline)
   const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
 
-  // Fetch data from API
+  // Each sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
-    apiFetchByLabel("timeline-of-events")
+    apiFetchByLabel("timeline-of-events")  // → PHP: SELECT * ... WHERE label_key='timeline-of-events'
       .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
       .catch(() => {})
-    apiFetchByLabel("notable-figures")
+    apiFetchByLabel("notable-figures")     // → PHP: SELECT * ... WHERE label_key='notable-figures'
       .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
       .catch(() => {})
   }, [])

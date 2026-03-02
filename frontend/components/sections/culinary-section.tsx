@@ -11,28 +11,30 @@ import { apiFetchCulinaryItems, type CulinaryItem } from "@/lib/api"
 
 // No hardcoded fallback — culinary items come from backend
 
-const MAX_DISPLAY = 4
+/** Maximum culinary cards shown on the homepage */
+const MAX_CULINARY_DISPLAY = 4
 
 export function CulinarySection() {
-  const [delicacies, setDelicacies] = useState<CulinaryItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [allDelicacies, setAllDelicacies] = useState<CulinaryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Sends GET /api/home/culinary.php → PHP runs SQL SELECT on content (label='local-cuisine') → returns JSON
   useEffect(() => {
     apiFetchCulinaryItems()
       .then((items) => {
         if (items && items.length > 0) {
-          setDelicacies(items)
+          setAllDelicacies(items)
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => setIsLoading(false))
   }, [])
 
-  // Limit to MAX_DISPLAY items
-  const displayItems = delicacies.slice(0, MAX_DISPLAY)
+  // Limit to MAX_CULINARY_DISPLAY items for the homepage preview
+  const displayedDelicacies = allDelicacies.slice(0, MAX_CULINARY_DISPLAY)
 
   // Don't render if no content loaded yet after API call
-  if (!loading && displayItems.length === 0) return null
+  if (!isLoading && displayedDelicacies.length === 0) return null
 
   return (
     <section
@@ -57,7 +59,7 @@ export function CulinarySection() {
 
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {displayItems.map((item, i) => {
+          {displayedDelicacies.map((item, cardIndex) => {
             const imageUrl = item.image 
               ? (item.image.startsWith('/images') ? asset(item.image) : item.image)
               : asset("/images/places/local-delicacies.jpg")
@@ -65,7 +67,7 @@ export function CulinarySection() {
             return (
               <div
                 key={item.itemId}
-                className={`group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(i + 1) * 100}`}
+                className={`group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(cardIndex + 1) * 100}`}
               >
                 {/* Image */}
                 <div className="relative h-52 w-full overflow-hidden">
@@ -110,7 +112,7 @@ export function CulinarySection() {
         </div>
 
         {/* CTA - Show only if there are items */}
-        {delicacies.length > 0 && (
+        {allDelicacies.length > 0 && (
           <div className="mt-10 text-center reveal-on-scroll delay-300">
             <Button asChild variant="outline" size="lg" className="rounded-full gap-2">
               <Link href="/culture/local-cuisine">

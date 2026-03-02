@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { ChevronDown } from "lucide-react"
 import { apiFetchMilestones, type Milestone } from "@/lib/api"
 
-interface TimelineEvent {
+/** Milestone data shape used by the timeline UI */
+interface TimelineMilestone {
   milestoneId?: number
   year: string
   title: string
@@ -13,11 +14,8 @@ interface TimelineEvent {
   side: "left" | "right"
 }
 
-// No hardcoded fallback — milestones come from backend
-const fallbackEvents: TimelineEvent[] = []
-
-function TimelineItem({ event, index }: { event: TimelineEvent; index: number }) {
-  const [expanded, setExpanded] = useState(false)
+function TimelineItem({ event, index }: { event: TimelineMilestone; index: number }) {
+  const [isDetailExpanded, setIsDetailExpanded] = useState(false)
   const isLeft = event.side === "left"
 
   return (
@@ -26,7 +24,7 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
       <div className={`hidden md:block md:w-1/2 ${isLeft ? "" : "md:order-last"}`}>
         <div className={`reveal-on-scroll ${isLeft ? "text-right pr-8" : "text-left pl-8"}`}>
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => setIsDetailExpanded(!isDetailExpanded)}
             className="w-full text-left group cursor-pointer"
           >
             <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/30 ${isLeft ? "text-right" : "text-left"}`}>
@@ -40,12 +38,12 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
                 {event.description}
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                {expanded ? "Read less" : "Read more"}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
+                {isDetailExpanded ? "Read less" : "Read more"}
+                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${isDetailExpanded ? "rotate-180" : ""}`} />
               </span>
             </div>
           </button>
-          <div className={`overflow-hidden transition-all duration-300 ${expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className={`overflow-hidden transition-all duration-300 ${isDetailExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
             <div className={`mt-2 rounded-lg bg-muted/50 border border-border p-5 ${isLeft ? "text-right" : "text-left"}`}>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {event.detail}
@@ -70,7 +68,7 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
       <div className="md:hidden pl-12 pb-2 w-full">
         <div className="reveal-on-scroll">
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => setIsDetailExpanded(!isDetailExpanded)}
             className="w-full text-left group cursor-pointer"
           >
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/30">
@@ -84,12 +82,12 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
                 {event.description}
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                {expanded ? "Read less" : "Read more"}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
+                {isDetailExpanded ? "Read less" : "Read more"}
+                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${isDetailExpanded ? "rotate-180" : ""}`} />
               </span>
             </div>
           </button>
-          <div className={`overflow-hidden transition-all duration-300 ${expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className={`overflow-hidden transition-all duration-300 ${isDetailExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
             <div className="mt-2 rounded-lg bg-muted/50 border border-border p-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {event.detail}
@@ -103,31 +101,32 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
 }
 
 export function HistoryArtSection() {
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
-  const [loading, setLoading] = useState(true)
+  const [timelineMilestones, setTimelineMilestones] = useState<TimelineMilestone[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Sends GET /api/home/milestones.php → PHP runs SQL SELECT on milestone table → returns JSON
   useEffect(() => {
     apiFetchMilestones()
       .then((milestones) => {
         if (milestones && milestones.length > 0) {
-          // Convert Milestone to TimelineEvent format
-          const events: TimelineEvent[] = milestones.map(m => ({
-            milestoneId: m.milestoneId,
-            year: m.year,
-            title: m.title,
-            description: m.description,
-            detail: m.detail,
-            side: m.side,
+          // Convert API Milestone shape to the timeline UI format
+          const mappedMilestones: TimelineMilestone[] = milestones.map((milestone) => ({
+            milestoneId: milestone.milestoneId,
+            year: milestone.year,
+            title: milestone.title,
+            description: milestone.description,
+            detail: milestone.detail,
+            side: milestone.side,
           }))
-          setTimelineEvents(events)
+          setTimelineMilestones(mappedMilestones)
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => setIsLoading(false))
   }, [])
 
   // Don't render if no milestones loaded
-  if (!loading && timelineEvents.length === 0) return null
+  if (!isLoading && timelineMilestones.length === 0) return null
 
   return (
     <section className="relative bg-background py-20 lg:py-28 overflow-hidden">
@@ -154,8 +153,8 @@ export function HistoryArtSection() {
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-primary/60 to-transparent md:-translate-x-px" />
 
           <div className="space-y-12 md:space-y-16">
-            {timelineEvents.map((event, i) => (
-              <TimelineItem key={event.year} event={event} index={i} />
+            {timelineMilestones.map((milestone, milestoneIndex) => (
+              <TimelineItem key={milestone.year} event={milestone} index={milestoneIndex} />
             ))}
           </div>
 

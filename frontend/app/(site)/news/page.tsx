@@ -15,6 +15,7 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Sends GET /api/posts/read.php?type=news → PHP runs SQL SELECT on content WHERE post_type='news' → returns JSON
   useEffect(() => {
     apiFetchPublishedNews()
       .then((data) => setArticles(data))

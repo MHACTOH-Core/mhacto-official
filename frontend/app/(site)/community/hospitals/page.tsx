@@ -26,6 +26,7 @@ const typeLabels: Record<Hospital["type"], string> = {
 export default function HospitalsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
 
+  // Sends GET /api/posts/read.php?label=hospitals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("hospitals")
       .then((posts) => {

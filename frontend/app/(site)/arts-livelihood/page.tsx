@@ -28,7 +28,7 @@ export default function ArtsLivelihoodPage() {
   const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>(fallbackBusinesses)
   const [artisans, setArtisans] = useState<Artisan[]>(fallbackArtisans)
 
-  // Fetch from API
+  // Sends GET /api/posts/read.php?label=crafts-artisan&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
   useEffect(() => {
     apiFetchByLabel("crafts-artisan")
       .then((posts) => {

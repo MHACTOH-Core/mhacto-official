@@ -53,31 +53,21 @@ export interface CMSPost {
   updatedAt: string // ISO
 }
 
-export type InquiryStatus = "unread" | "read" | "replied" | "archived" | "spam" | "trash"
+export type InquiryStatus = "unread" | "in_progress" | "resolved" | "archived"
 
-export type InquiryType = "general" | "student"
+export type InquiryType = "general_contact" | "tour_booking" | "partnership"
 
 export interface Inquiry {
   id: string
   name: string
   email: string
   contactNumber?: string
-  subject: string
+  dateOfVisit?: string
+  numberOfPax?: number
   message: string
   status: InquiryStatus
   inquiryType: InquiryType
-  isAssigned?: boolean
-  // Visit details
-  purposeName?: string
-  dateOfVisit?: string
-  numberOfPax?: number
-  // Student verification (type = 'student')
-  studentNumber?: string
-  schoolName?: string
-  // Reply
-  replyMessage?: string
-  repliedAt?: string
-  trashedAt?: string
+  additionalDetails?: Record<string, unknown>
   createdAt: string
 }
 
@@ -183,16 +173,15 @@ export function getEventsLabel(): [ContentLabel, { label: string; color: string;
 
 export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: string }> = {
   unread: { label: "Unread", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
-  read: { label: "Read", color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
-  replied: { label: "Replied", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
-  archived: { label: "Archived", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
-  spam: { label: "Spam", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
-  trash: { label: "Trash", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
+  in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
+  resolved: { label: "Resolved", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  archived: { label: "Archived", color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
 }
 
 export const inquiryTypeLabels: Record<InquiryType, { label: string; color: string; icon: string }> = {
-  general: { label: "General", color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300", icon: "mail" },
-  student: { label: "Student", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", icon: "graduation-cap" },
+  general_contact: { label: "General Contact", color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300", icon: "mail" },
+  tour_booking: { label: "Tour Booking", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", icon: "map-pin" },
+  partnership: { label: "Partnership", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", icon: "handshake" },
 }
 
 export const activityLabels: Record<ActivityAction, string> = {
@@ -343,78 +332,69 @@ export const MOCK_INQUIRIES: Inquiry[] = [
     id: "inq-1",
     name: "Maria Santos",
     email: "maria.santos@email.com",
-    contactNumber: "0917-123-4567",
-    subject: "River Festival 2026 Participation",
+    contactNumber: "+63-917-123-4567",
     message: "Good day! I am writing to inquire about how our organization can participate in the upcoming River Festival 2026. We are a cultural dance group from Manila and we would love to perform during the festivities. Could you provide information on the application process and requirements? Thank you!",
     status: "unread",
-    inquiryType: "general",
-    purposeName: "Cultural Immersion",
+    inquiryType: "general_contact",
     dateOfVisit: "2026-03-15",
     numberOfPax: 12,
+    additionalDetails: { purpose: "Cultural Immersion" },
     createdAt: "2026-02-12T14:30:00Z",
   },
   {
     id: "inq-2",
     name: "John Reyes",
     email: "john.reyes@company.com",
-    contactNumber: "0918-765-4321",
-    subject: "Venue Inquiry for Corporate Event",
+    contactNumber: "+63-918-765-4321",
     message: "Hello, I would like to inquire about available venues in Bocaue for a corporate team-building event. We are looking for a venue that can accommodate 50-80 persons sometime in March 2026. Please advise on options and rates.",
-    status: "replied",
-    inquiryType: "general",
-    purposeName: "Tourism Visit",
+    status: "resolved",
+    inquiryType: "tour_booking",
     dateOfVisit: "2026-03-20",
     numberOfPax: 65,
-    replyMessage: "Good day, Mr. Reyes! Thank you for your interest. We recommend the Ciudad de Victoria or the Philippine Arena for corporate events. I have attached a venue guide with rates and contact details for each venue. Feel free to reach out if you have further questions.",
-    repliedAt: "2026-02-11T10:00:00Z",
+    additionalDetails: { purpose: "Tourism Visit" },
     createdAt: "2026-02-10T09:15:00Z",
   },
   {
     id: "inq-3",
     name: "Dr. Elena Cruz",
     email: "elena.cruz@university.edu",
-    contactNumber: "0927-888-1234",
-    subject: "Research Request — Historical Records",
+    contactNumber: "+63-927-888-1234",
     message: "Dear MHACTO, I am a history professor at a state university conducting research on the Spanish colonial-era churches of Bulacan. I would like to request access to any historical records, documents, or archives related to St. Martin of Tours Church. Would it be possible to schedule a visit to your archives?",
-    status: "read",
-    inquiryType: "general",
-    purposeName: "Research",
-    isAssigned: true,
+    status: "in_progress",
+    inquiryType: "partnership",
+    additionalDetails: { purpose: "Research" },
     createdAt: "2026-02-08T16:20:00Z",
   },
   {
     id: "inq-4",
     name: "Carlos Mendoza",
     email: "carlos.m@gmail.com",
-    contactNumber: "0935-222-3344",
-    subject: "Tour Guide Services",
+    contactNumber: "+63-935-222-3344",
     message: "Hi! My family is planning to visit Bocaue next weekend. Do you offer guided tour services? If so, how can we book one and what are the rates? We're particularly interested in the historical sites and the river walk. Thanks!",
-    status: "read",
-    inquiryType: "general",
-    purposeName: "Tourism Visit",
+    status: "in_progress",
+    inquiryType: "tour_booking",
     dateOfVisit: "2026-02-15",
     numberOfPax: 6,
+    additionalDetails: { purpose: "Tourism Visit" },
     createdAt: "2026-02-07T11:45:00Z",
   },
   {
     id: "inq-5",
     name: "Ana Villanueva",
     email: "ana.v@hotmail.com",
-    subject: "Feedback on Visit",
     message: "Good afternoon! I just wanted to say that our family had an amazing time visiting Bocaue last weekend. The Old Town Plaza and St. Martin Church were beautiful. The locals were so warm and welcoming. We will definitely be back for the River Festival! Keep up the great work promoting Bocaue's heritage.",
     status: "archived",
-    inquiryType: "general",
+    inquiryType: "general_contact",
     createdAt: "2026-01-28T15:00:00Z",
   },
   {
     id: "inq-6",
     name: "Patrick Lim",
     email: "patrick.lim@travel.ph",
-    contactNumber: "0912-555-6789",
-    subject: "Photography Permit Request",
+    contactNumber: "+63-912-555-6789",
     message: "Hello MHACTO, I am a professional photographer working on a documentary about Philippine heritage towns. I would like to request a photography permit for the heritage sites in Bocaue. I plan to shoot for 3 days starting February 20. Please let me know the requirements and fees involved.",
     status: "unread",
-    inquiryType: "general",
+    inquiryType: "partnership",
     dateOfVisit: "2026-02-20",
     numberOfPax: 3,
     createdAt: "2026-02-13T08:00:00Z",
@@ -423,16 +403,13 @@ export const MOCK_INQUIRIES: Inquiry[] = [
     id: "inq-7",
     name: "Jasmine Dela Cruz",
     email: "jasmine.dc@bulsu.edu.ph",
-    contactNumber: "0945-111-2233",
-    subject: "Educational Tour — BSU History Class",
+    contactNumber: "+63-945-111-2233",
     message: "Good day po! We are 3rd year History students from Bulacan State University. Our professor requires us to visit the MHACTO archives and heritage sites for our thesis on Filipino colonial architecture. We would like to schedule a guided educational tour. We will bring our student IDs and a letter from our department.",
     status: "unread",
-    inquiryType: "student",
-    purposeName: "Educational Tour",
+    inquiryType: "tour_booking",
     dateOfVisit: "2026-03-05",
     numberOfPax: 35,
-    studentNumber: "2023-BSU-0567",
-    schoolName: "Bulacan State University",
+    additionalDetails: { purpose: "Educational Tour", schoolName: "Bulacan State University" },
     createdAt: "2026-02-14T07:30:00Z",
   },
 ]

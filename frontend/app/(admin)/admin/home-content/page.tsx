@@ -135,6 +135,12 @@ export default function HomeContentPage() {
     }
   }, [heroSettings])
 
+  // Fetches ALL admin home-page content in parallel (5 HTTP requests at once):
+  //   1. GET /api/home/hero-settings.php          → PHP: SELECT from site_settings
+  //   2. GET /api/home/spotlight.php?all=1         → PHP: SELECT from featured_content WHERE section='spotlight'
+  //   3. GET /api/home/milestones.php?all=1        → PHP: SELECT from milestone
+  //   4. GET /api/home/landmarks.php?all=1         → PHP: SELECT from featured_content WHERE section='landmark'
+  //   5. GET /api/posts/read.php?status=published  → PHP: SELECT from content WHERE status='published'
   const loadAllContent = async () => {
     setLoading(true)
     setError(null)

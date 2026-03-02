@@ -39,6 +39,7 @@ const difficultyColor: Record<TourPackage["difficulty"], string> = {
 export default function TravelToursPage() {
   const [tourPackages, setTourPackages] = useState<TourPackage[]>(fallbackPackages)
 
+  // Sends GET /api/posts/read.php?label=travel-tours&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
   useEffect(() => {
     apiFetchByLabel("travel-tours")
       .then((posts) => { if (posts?.length) setTourPackages(posts.map(cmsToTourPackage)) })

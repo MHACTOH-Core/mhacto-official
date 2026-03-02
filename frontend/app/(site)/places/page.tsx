@@ -25,6 +25,7 @@ export default function PlacesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all")
   const [showAll, setShowAll] = useState(false)
 
+  // Sends GET /api/posts/read.php?type=places → PHP runs SQL SELECT on content WHERE post_type='place' → returns JSON
   useEffect(() => {
     apiFetchPublishedPlaces()
       .then((data) => setPlaces(data))

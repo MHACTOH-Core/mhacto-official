@@ -44,15 +44,15 @@ export default function CulturePage() {
   const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
   const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
 
-  // Fetch data from API
+  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
   useEffect(() => {
-    apiFetchByLabel("local-cuisine")
+    apiFetchByLabel("local-cuisine")     // → PHP: SELECT * ... WHERE label_key='local-cuisine' AND status='published'
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
       .catch(() => {})
-    apiFetchByLabel("festivals")
+    apiFetchByLabel("festivals")         // → PHP: SELECT * ... WHERE label_key='festivals' AND status='published'
       .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
       .catch(() => {})
-    apiFetchByLabel("cultural-practices")
+    apiFetchByLabel("cultural-practices") // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
       .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
       .catch(() => {})
   }, [])

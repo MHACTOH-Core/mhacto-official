@@ -24,6 +24,7 @@ const typeLabels: Record<College["type"], string> = {
 export default function CollegesPage() {
   const [colleges, setColleges] = useState<College[]>(fallbackColleges)
 
+  // Sends GET /api/posts/read.php?label=colleges&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("colleges")
       .then((posts) => {

@@ -1,8 +1,8 @@
 <?php
 /**
- * Settings Model — Optimized schema.
- * `site_settings` now also stores hero section config
- * (absorbed from the old `hero_settings` table).
+ * Settings Model — Schema v2.
+ * Reads from `config` table (key-value store grouped by config_group).
+ * Replaces the old single-row `site_settings` table.
  */
 
 class Settings
@@ -14,113 +14,62 @@ class Settings
         $this->conn = $db;
     }
 
-    /** Read the first settings row. */
+    // ── Read all settings (general + hero merged) ──────────────────
+
+    /** Read all config rows and return as a flat camelCase object. */
     public function read(): array
     {
-        $query = "SELECT * FROM site_settings ORDER BY settings_id ASC LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
+        $rows = $this->readGroup(null);
+        if (empty($rows)) {
             return $this->defaults();
         }
-
-        return $this->formatRow($row);
+        return $this->formatAll($rows);
     }
 
-    /** Read hero settings only (convenience for hero-settings endpoint). */
+    /** Read only hero-group config keys. */
     public function readHero(): array
     {
-        $row = $this->readRaw();
-        if (!$row) {
+        $rows = $this->readGroup('hero');
+        if (empty($rows)) {
             return $this->heroDefaults();
         }
-        return $this->formatHero($row);
+        return $this->formatHero($rows);
     }
 
-    /** Update settings. */
+    // ── Update settings ────────────────────────────────────────────
+
+    /** Update general + hero config keys from a camelCase payload. */
     public function update(array $data): array
     {
-        $row = $this->readRaw();
-        if (!$row) return $this->read();
+        $map = $this->camelToConfigMap();
 
-        $settingsId = $row['settings_id'];
-        $fields = [];
-        $params = [':id' => $settingsId];
-
-        $map = [
-            // General settings
-            'siteName'                   => 'site_name',
-            'siteDescription'            => 'site_description',
-            'contactEmail'               => 'contact_email',
-            'contactPhone'               => 'contact_phone',
-            'address'                    => 'office_address',
-            'siteLogoUrl'                => 'site_logo_url',
-            'enableInquiryNotifications' => 'notify_inquiries',
-            'enableAnalytics'            => 'enable_analytics',
-            // Hero settings
-            'heroSubtitle'               => 'hero_subtitle',
-            'heroTitle'                  => 'hero_title',
-            'heroHighlight'              => 'hero_highlight',
-            'heroDescription'            => 'hero_description',
-            'heroVideoUrl'               => 'hero_video_url',
-            'heroFallbackImage'          => 'hero_fallback_img',
-            'heroCtaText'                => 'hero_cta_text',
-            'heroCtaLink'                => 'hero_cta_link',
-        ];
-
-        foreach ($map as $camel => $col) {
+        foreach ($map as $camel => $info) {
             if (array_key_exists($camel, $data)) {
-                $fields[] = "{$col} = :{$col}";
-                $value = $data[$camel];
-                if (is_bool($value)) $value = $value ? 1 : 0;
-                $params[":{$col}"] = $value;
+                $this->upsertKey($info['group'], $info['key'], $data[$camel], $info['type']);
             }
-        }
-
-        if (!empty($fields)) {
-            $query = "UPDATE site_settings SET " . implode(', ', $fields) . " WHERE settings_id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute($params);
         }
 
         return $this->read();
     }
 
-    /** Update hero settings only (convenience for hero-settings endpoint). */
+    /** Update hero config keys from a short-key payload (subtitle, title, etc.). */
     public function updateHero(array $data): array
     {
-        $row = $this->readRaw();
-        if (!$row) return $this->heroDefaults();
-
-        $settingsId = $row['settings_id'];
-        $fields = [];
-        $params = [':id' => $settingsId];
-
-        // Accept both camelCase (from frontend) and old key names
         $heroMap = [
-            'subtitle'      => 'hero_subtitle',
-            'title'         => 'hero_title',
-            'highlight'     => 'hero_highlight',
-            'description'   => 'hero_description',
-            'videoUrl'      => 'hero_video_url',
-            'fallbackImage' => 'hero_fallback_img',
-            'ctaText'       => 'hero_cta_text',
-            'ctaLink'       => 'hero_cta_link',
+            'subtitle'      => ['key' => 'hero_subtitle',     'type' => 'string'],
+            'title'         => ['key' => 'hero_title',        'type' => 'string'],
+            'highlight'     => ['key' => 'hero_highlight',    'type' => 'string'],
+            'description'   => ['key' => 'hero_description',  'type' => 'string'],
+            'videoUrl'      => ['key' => 'hero_video_url',    'type' => 'string'],
+            'fallbackImage' => ['key' => 'hero_fallback_img', 'type' => 'string'],
+            'ctaText'       => ['key' => 'hero_cta_text',     'type' => 'string'],
+            'ctaLink'       => ['key' => 'hero_cta_link',     'type' => 'string'],
         ];
 
-        foreach ($heroMap as $key => $col) {
-            if (array_key_exists($key, $data)) {
-                $fields[] = "{$col} = :{$col}";
-                $params[":{$col}"] = $data[$key];
+        foreach ($heroMap as $apiKey => $info) {
+            if (array_key_exists($apiKey, $data)) {
+                $this->upsertKey('hero', $info['key'], $data[$apiKey], $info['type']);
             }
-        }
-
-        if (!empty($fields)) {
-            $query = "UPDATE site_settings SET " . implode(', ', $fields) . " WHERE settings_id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute($params);
         }
 
         return $this->readHero();
@@ -128,10 +77,134 @@ class Settings
 
     // ── Private helpers ────────────────────────────────────────────
 
-    private function readRaw(): array|false
+    /** Read config rows, optionally filtered by group. */
+    private function readGroup(?string $group): array
     {
-        $stmt = $this->conn->query("SELECT * FROM site_settings ORDER BY settings_id ASC LIMIT 1");
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        if ($group) {
+            $stmt = $this->conn->prepare("SELECT config_group, config_key, config_value, data_type FROM config WHERE config_group = :g");
+            $stmt->execute([':g' => $group]);
+        } else {
+            $stmt = $this->conn->prepare("SELECT config_group, config_key, config_value, data_type FROM config");
+            $stmt->execute();
+        }
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Upsert a single config key. */
+    private function upsertKey(string $group, string $key, mixed $value, string $dataType = 'string'): void
+    {
+        $jsonValue = json_encode($value);
+
+        $stmt = $this->conn->prepare("
+            INSERT INTO config (config_group, config_key, config_value, data_type)
+            VALUES (:g, :k, :v, :dt)
+            ON DUPLICATE KEY UPDATE config_value = :v2, data_type = :dt2
+        ");
+        $stmt->execute([
+            ':g'   => $group,
+            ':k'   => $key,
+            ':v'   => $jsonValue,
+            ':dt'  => $dataType,
+            ':v2'  => $jsonValue,
+            ':dt2' => $dataType,
+        ]);
+    }
+
+    /** Decode a JSON config_value, respecting data_type hint. */
+    private function decodeValue(string $jsonValue, string $dataType): mixed
+    {
+        $decoded = json_decode($jsonValue, true);
+        // json_decode returns null for "null" string, which is correct
+        if ($decoded === null && strtolower(trim($jsonValue)) !== 'null') {
+            // Fallback: treat as raw string if not valid JSON
+            return $jsonValue;
+        }
+
+        return match ($dataType) {
+            'boolean' => (bool) $decoded,
+            'number'  => is_numeric($decoded) ? $decoded + 0 : $decoded,
+            default   => $decoded,
+        };
+    }
+
+    /** Build a flat key→value map from config rows. */
+    private function buildMap(array $rows): array
+    {
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row['config_key']] = $this->decodeValue(
+                $row['config_value'] ?? 'null',
+                $row['data_type'] ?? 'string'
+            );
+        }
+        return $map;
+    }
+
+    /** Map from camelCase frontend keys to config_group + config_key. */
+    private function camelToConfigMap(): array
+    {
+        return [
+            // General
+            'siteName'                   => ['group' => 'general', 'key' => 'site_name',          'type' => 'string'],
+            'siteDescription'            => ['group' => 'general', 'key' => 'site_description',   'type' => 'string'],
+            'contactEmail'               => ['group' => 'general', 'key' => 'contact_email',      'type' => 'string'],
+            'contactPhone'               => ['group' => 'general', 'key' => 'contact_phone',      'type' => 'string'],
+            'address'                    => ['group' => 'general', 'key' => 'office_address',     'type' => 'string'],
+            'siteLogoUrl'                => ['group' => 'general', 'key' => 'site_logo_url',      'type' => 'string'],
+            'enableInquiryNotifications' => ['group' => 'general', 'key' => 'notify_inquiries',   'type' => 'boolean'],
+            'enableAnalytics'            => ['group' => 'general', 'key' => 'enable_analytics',   'type' => 'boolean'],
+            // Hero
+            'heroSubtitle'               => ['group' => 'hero', 'key' => 'hero_subtitle',     'type' => 'string'],
+            'heroTitle'                  => ['group' => 'hero', 'key' => 'hero_title',        'type' => 'string'],
+            'heroHighlight'              => ['group' => 'hero', 'key' => 'hero_highlight',    'type' => 'string'],
+            'heroDescription'            => ['group' => 'hero', 'key' => 'hero_description',  'type' => 'string'],
+            'heroVideoUrl'               => ['group' => 'hero', 'key' => 'hero_video_url',    'type' => 'string'],
+            'heroFallbackImage'          => ['group' => 'hero', 'key' => 'hero_fallback_img', 'type' => 'string'],
+            'heroCtaText'                => ['group' => 'hero', 'key' => 'hero_cta_text',     'type' => 'string'],
+            'heroCtaLink'                => ['group' => 'hero', 'key' => 'hero_cta_link',     'type' => 'string'],
+        ];
+    }
+
+    /** Format all config rows into the frontend-expected shape. */
+    private function formatAll(array $rows): array
+    {
+        $map = $this->buildMap($rows);
+        return [
+            'siteName'                   => $map['site_name'] ?? 'MHACTO Bocaue',
+            'siteDescription'            => $map['site_description'] ?? '',
+            'contactEmail'               => $map['contact_email'] ?? '',
+            'contactPhone'               => $map['contact_phone'] ?? '',
+            'address'                    => $map['office_address'] ?? '',
+            'siteLogoUrl'                => $map['site_logo_url'] ?? null,
+            'enableInquiryNotifications' => $map['notify_inquiries'] ?? true,
+            'enableAnalytics'            => $map['enable_analytics'] ?? true,
+            'maintenanceMode'            => false,
+            // Hero
+            'heroSubtitle'      => $map['hero_subtitle'] ?? '',
+            'heroTitle'         => $map['hero_title'] ?? 'Explore The River',
+            'heroHighlight'     => $map['hero_highlight'] ?? '',
+            'heroDescription'   => $map['hero_description'] ?? '',
+            'heroVideoUrl'      => $map['hero_video_url'] ?? '',
+            'heroFallbackImage' => $map['hero_fallback_img'] ?? '',
+            'heroCtaText'       => $map['hero_cta_text'] ?? 'Explore Now',
+            'heroCtaLink'       => $map['hero_cta_link'] ?? '/destinations',
+        ];
+    }
+
+    /** Format hero config rows using short keys (for hero-settings endpoint). */
+    private function formatHero(array $rows): array
+    {
+        $map = $this->buildMap($rows);
+        return [
+            'subtitle'      => $map['hero_subtitle'] ?? '',
+            'title'         => $map['hero_title'] ?? 'Explore The River',
+            'highlight'     => $map['hero_highlight'] ?? '',
+            'description'   => $map['hero_description'] ?? '',
+            'videoUrl'      => $map['hero_video_url'] ?? '',
+            'fallbackImage' => $map['hero_fallback_img'] ?? '',
+            'ctaText'       => $map['hero_cta_text'] ?? 'Explore Now',
+            'ctaLink'       => $map['hero_cta_link'] ?? '/destinations',
+        ];
     }
 
     private function defaults(): array
@@ -160,47 +233,6 @@ class Settings
             'heroFallbackImage' => '',
             'heroCtaText'       => 'Explore Now',
             'heroCtaLink'       => '/destinations',
-        ];
-    }
-
-    private function formatRow(array $row): array
-    {
-        return [
-            'siteName'                   => $row['site_name'],
-            'siteDescription'            => $row['site_description'],
-            'contactEmail'               => $row['contact_email'],
-            'contactPhone'               => $row['contact_phone'],
-            'address'                    => $row['office_address'],
-            'siteLogoUrl'                => $row['site_logo_url'] ?? null,
-            'enableInquiryNotifications' => (bool) $row['notify_inquiries'],
-            'enableAnalytics'            => (bool) $row['enable_analytics'],
-            'maintenanceMode'            => false,
-            // Hero settings
-            'heroSubtitle'      => $row['hero_subtitle'] ?? '',
-            'heroTitle'         => $row['hero_title'] ?? 'Explore The River',
-            'heroHighlight'     => $row['hero_highlight'] ?? '',
-            'heroDescription'   => $row['hero_description'] ?? '',
-            'heroVideoUrl'      => $row['hero_video_url'] ?? '',
-            'heroFallbackImage' => $row['hero_fallback_img'] ?? '',
-            'heroCtaText'       => $row['hero_cta_text'] ?? 'Explore Now',
-            'heroCtaLink'       => $row['hero_cta_link'] ?? '/destinations',
-        ];
-    }
-
-    /** Format hero fields only (for hero-settings endpoint, uses old key names). */
-    private function formatHero(array $row): array
-    {
-        return [
-            'settingId'     => (int) $row['settings_id'],
-            'subtitle'      => $row['hero_subtitle'] ?? '',
-            'title'         => $row['hero_title'] ?? 'Explore The River',
-            'highlight'     => $row['hero_highlight'] ?? '',
-            'description'   => $row['hero_description'] ?? '',
-            'videoUrl'      => $row['hero_video_url'] ?? '',
-            'fallbackImage' => $row['hero_fallback_img'] ?? '',
-            'ctaText'       => $row['hero_cta_text'] ?? 'Explore Now',
-            'ctaLink'       => $row['hero_cta_link'] ?? '/destinations',
-            'updatedAt'     => $row['updated_at'] ?? null,
         ];
     }
 }

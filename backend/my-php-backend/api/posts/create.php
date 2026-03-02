@@ -55,6 +55,7 @@ function mapFrontendToDb(array $data): array {
     // Resolve label_id from label string
     if (isset($data['label'])) {
         $db['label_id'] = resolveLabelId($data['label']);
+        $db['label_key'] = $data['label'];  // Store label_key in meta too
     }
 
     // body → description
@@ -105,14 +106,14 @@ function resolveCategoryId(string $key): ?int {
     $name = $map[$key] ?? null;
     if (!$name) return null;
 
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE cat_type = 'category' AND label_name = :n LIMIT 1");
+    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM category WHERE category_type = 'category' AND label_name = :n LIMIT 1");
     $stmt->execute([':n' => $name]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;
 }
 
 function resolveLabelId(string $key): ?int {
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE cat_type = 'label' AND label_key = :k LIMIT 1");
+    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM category WHERE category_type = 'label' AND label_key = :k LIMIT 1");
     $stmt->execute([':k' => $key]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;

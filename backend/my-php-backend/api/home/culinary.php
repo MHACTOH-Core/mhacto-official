@@ -36,18 +36,20 @@ try {
         SELECT
             c.content_id, c.title, c.description,
             c.status, c.created_at,
-            cat.label_name AS tag,
+            COALESCE(lbl.label_name, 'Local Cuisine') AS tag,
             (SELECT ci.image_url FROM content_images ci
              WHERE ci.content_id = c.content_id
              ORDER BY ci.is_thumbnail DESC, ci.sort_order ASC, ci.image_id ASC
              LIMIT 1) AS image
         FROM content c
-        LEFT JOIN categories cat ON c.label_id = cat.category_id
-        WHERE cat.label_key = 'local-cuisine'
+        INNER JOIN content_fields cm ON c.content_id = cm.content_id
+            AND cm.meta_key = 'label_key' AND cm.meta_value = 'local-cuisine'
+        LEFT JOIN content_fields lm ON c.content_id = lm.content_id AND lm.meta_key = 'label_id'
+        LEFT JOIN category lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
     ";
 
     if (!$all) {
-        $sql .= " AND c.status = 'published'";
+        $sql .= " WHERE c.status = 'published'";
     }
 
     $sql .= " ORDER BY c.created_at DESC";

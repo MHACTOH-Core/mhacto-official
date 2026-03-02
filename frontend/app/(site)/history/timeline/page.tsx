@@ -22,6 +22,7 @@ export default function TimelinePage() {
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  // Sends GET /api/posts/read.php?label=timeline-of-events&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("timeline-of-events")
       .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })

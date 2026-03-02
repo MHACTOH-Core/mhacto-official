@@ -1,8 +1,8 @@
 <?php
 /**
- * Analytics Model — Schema v2.
+ * Analytics Model — Optimized schema.
  * Page views now live in `activity_logs` (action = 'page_view').
- * Joins with `content` and `category` (was `categories`).
+ * No more separate `click_analytics` table.
  */
 
 class Analytics
@@ -27,8 +27,8 @@ class Analytics
                 COUNT(*)                              AS views,
                 COALESCE(cat.label_name, 'Page')      AS category
             FROM activity_logs al
-            LEFT JOIN content  c   ON al.content_id  = c.content_id
-            LEFT JOIN category cat ON c.category_id  = cat.category_id
+            LEFT JOIN content    c   ON al.content_id  = c.content_id
+            LEFT JOIN categories cat ON c.category_id  = cat.category_id
             WHERE al.action = 'page_view'
             GROUP BY al.page_path, c.title, cat.label_name
             ORDER BY views DESC

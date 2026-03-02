@@ -26,6 +26,7 @@ export default function PlaceDetailsPage({ placeId }: PlaceDetailsPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Sends GET /api/posts/read.php?id={placeId} → PHP runs SQL SELECT WHERE id={placeId} → returns single post JSON
   useEffect(() => {
     apiFetchPostById(placeId)
       .then((data) => setPlace(data))

@@ -26,6 +26,8 @@ const levelColor: Record<PublicSchool["level"], string> = {
 export default function PublicSchoolsPage() {
   const [schools, setSchools] = useState<PublicSchool[]>(publicSchools)
 
+  // Sends GET /api/posts/read.php?label=schools&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only public schools
   useEffect(() => {
     apiFetchByLabel("schools")
       .then((posts) => {

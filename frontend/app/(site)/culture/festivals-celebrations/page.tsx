@@ -27,6 +27,7 @@ const typeLabels: Record<Festival["type"], string> = {
 export default function FestivalsCelebrationsPage() {
   const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
 
+  // Sends GET /api/posts/read.php?label=festivals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("festivals")
       .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })

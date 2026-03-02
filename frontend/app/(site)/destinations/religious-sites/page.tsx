@@ -14,6 +14,8 @@ import { cmsToReligiousSite, filterReligious } from "@/lib/cms-mappers"
 export default function ReligiousSitesPage() {
   const [sites, setSites] = useState<ReligiousSite[]>(fallbackSites)
 
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only religious sites
   useEffect(() => {
     apiFetchByLabel("destinations")
       .then((posts) => {

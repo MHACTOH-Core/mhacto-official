@@ -13,34 +13,35 @@ import { asset } from "@/lib/utils"
 // No hardcoded fallback — spotlight comes from backend
 
 export function FeaturedSpotlight() {
-  const [spotlight, setSpotlight] = useState<Spotlight | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [spotlightData, setSpotlightData] = useState<Spotlight | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Sends GET /api/home/spotlight.php → PHP runs SQL SELECT on featured_content WHERE section='spotlight' → returns JSON
   useEffect(() => {
     apiFetchSpotlight()
-      .then((data) => {
-        if (data) {
-          setSpotlight(data as unknown as Spotlight)
+      .then((responseData) => {
+        if (responseData) {
+          setSpotlightData(responseData as unknown as Spotlight)
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => setIsLoading(false))
   }, [])
 
-  if (!spotlight) return null
+  if (!spotlightData) return null
 
-  const imageUrl = spotlight.image 
-    ? (spotlight.image.startsWith('/images') ? asset(spotlight.image) : spotlight.image)
+  const spotlightImageUrl = spotlightData.image 
+    ? (spotlightData.image.startsWith('/images') ? asset(spotlightData.image) : spotlightData.image)
     : asset("/images/places/river-festival.jpg")
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-border shadow-xl reveal-on-scroll">
       {/* Background image */}
-      {imageUrl && (
+      {spotlightImageUrl && (
         <div className="absolute inset-0">
           <Image
-            src={imageUrl}
-            alt={spotlight.title}
+            src={spotlightImageUrl}
+            alt={spotlightData.title}
             fill
             sizes="100vw"
             className="object-cover"
@@ -67,28 +68,28 @@ export function FeaturedSpotlight() {
 
         {/* Title */}
         <h3 className="text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl max-w-2xl leading-tight animate-fade-in-up delay-300 font-heading">
-          {spotlight.title}
+          {spotlightData.title}
         </h3>
 
         {/* Meta info */}
         <div className="mt-3 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-sm sm:text-base text-white/80 animate-fade-in-up delay-400">
-          {spotlight.date && (
+          {spotlightData.date && (
             <span className="flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-primary" />
-              {format(new Date(spotlight.date), "EEEE, MMMM d, yyyy")}
+              {format(new Date(spotlightData.date), "EEEE, MMMM d, yyyy")}
             </span>
           )}
-          {spotlight.location && (
+          {spotlightData.location && (
             <span className="flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" />
-              {spotlight.location}
+              {spotlightData.location}
             </span>
           )}
         </div>
 
         {/* Description */}
         <p className="mt-4 max-w-2xl text-sm text-white/70 leading-relaxed sm:text-base md:text-lg animate-fade-in-up delay-500">
-          {spotlight.description}
+          {spotlightData.description}
         </p>
 
         {/* CTA */}

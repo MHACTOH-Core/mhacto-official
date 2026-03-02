@@ -9,6 +9,7 @@ import { apiFetchByLabel, type CMSPost } from "@/lib/api"
 export default function BocauenosPage() {
   const [people, setPeople] = useState<CMSPost[]>([])
 
+  // Sends GET /api/posts/read.php?label=bocauenos&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("bocauenos")
       .then((posts) => {

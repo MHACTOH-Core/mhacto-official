@@ -1,7 +1,7 @@
 <?php
 /**
  * PUT /api/inquiries/update.php?id=123
- * Body: { status, isRead, isAssigned, folder, ... }
+ * Body: { status: 'unread' | 'in_progress' | 'resolved' | 'archived' }
  */
 
 require_once __DIR__ . '/../../core/Response.php';
@@ -24,11 +24,16 @@ try {
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
-    if (!$data) {
-        Response::error('No data provided.', 400);
+    if (!$data || !isset($data['status'])) {
+        Response::error('Status is required.', 400);
     }
 
-    $success = $inquiry->update($id, $data);
+    $allowed = ['unread', 'in_progress', 'resolved', 'archived'];
+    if (!in_array($data['status'], $allowed, true)) {
+        Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
+    }
+
+    $success = $inquiry->update($id, ['status' => $data['status']]);
     if ($success) {
         $updated = $inquiry->readOne($id);
         Response::json([

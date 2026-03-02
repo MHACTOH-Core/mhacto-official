@@ -36,6 +36,7 @@ const statusConfig: Record<CulturalPractice["status"], { label: string; icon: ty
 export default function PracticesTraditionsPage() {
   const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
 
+  // Sends GET /api/posts/read.php?label=cultural-practices&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("cultural-practices")
       .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
