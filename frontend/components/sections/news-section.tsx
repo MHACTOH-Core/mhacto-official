@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
 
 // No hardcoded fallback — news comes from backend
@@ -27,11 +27,12 @@ export function NewsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    apiFetchPublishedNews(MAX_DISPLAY)
+    apiFetchPublishedNews()
       .then((data) => {
         if (data && data.length > 0) {
-          // Sort by date DESC (newest first) and limit
-          const sorted = data
+          // Only show featured posts on the home page
+          const featured = data
+            .filter((item) => item.isFeatured)
             .sort((a, b) => {
               const dateA = a.newsDate || a.createdAt
               const dateB = b.newsDate || b.createdAt
@@ -42,11 +43,11 @@ export function NewsSection() {
               id: item.id,
               title: item.title,
               summary: item.body?.substring(0, 200) + "..." || "",
-              image: item.image?.[0] || "/images/heroes/hero-bocaue.jpg",
+              image: resolveMediaUrl(item.image?.[0]),
               date: item.newsDate || item.createdAt,
               category: item.label || "news",
             }))
-          setArticles(sorted)
+          setArticles(featured)
         }
       })
       .catch(() => {})
@@ -60,10 +61,10 @@ export function NewsSection() {
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mb-8 sm:mb-12 text-center reveal-on-scroll">
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-            Latest Updates
+            Featured Highlights
           </span>
           <h2 className="mt-2 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            News &amp; Stories from Bocaue
+            Featured News &amp; Stories
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground">
             Stay up to date with the latest happenings, achievements, and
@@ -73,10 +74,6 @@ export function NewsSection() {
 
         <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2">
           {articles.map((article, i) => {
-            const imageUrl = article.image 
-              ? (article.image.startsWith('/images') ? asset(article.image) : article.image)
-              : asset("/images/heroes/hero-bocaue.jpg")
-            
             return (
               <article
                 key={article.id}
@@ -85,14 +82,20 @@ export function NewsSection() {
                 <Link href={`/news/${article.id}`} className="block">
                   <div className="relative h-52 sm:h-60 w-full overflow-hidden">
                     <Image
-                      src={imageUrl}
+                      src={article.image}
                       alt={article.title}
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       loading="lazy"
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex gap-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-red-500/90 text-white border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm"
+                      >
+                        Featured
+                      </Badge>
                       <Badge
                         variant="secondary"
                         className="bg-black/60 text-white border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm"

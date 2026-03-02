@@ -79,6 +79,7 @@ import {
 } from "lucide-react"
 import { MediaPicker } from "@/components/ui/media-picker"
 import { apiUploadMedia } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/utils"
 import { format, parseISO } from "date-fns"
 
 type FormData = {
@@ -425,7 +426,7 @@ export default function CMSPage() {
                   {post.image.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={post.image[0]}
+                      src={resolveMediaUrl(post.image[0])}
                       alt=""
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -750,7 +751,7 @@ export default function CMSPage() {
                       {form.images.map((img, idx) => (
                         <div key={idx} className="group/img relative aspect-video overflow-hidden rounded-md border border-border bg-muted">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={img} alt="" className="h-full w-full object-cover" />
+                          <img src={resolveMediaUrl(img)} alt="" className="h-full w-full object-cover" />
                           <button
                             type="button"
                             onClick={() =>
@@ -1047,7 +1048,7 @@ export default function CMSPage() {
                   <div className="relative overflow-hidden rounded-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={previewPost.image[previewImgIdx] ?? previewPost.image[0]}
+                      src={resolveMediaUrl(previewPost.image[previewImgIdx] ?? previewPost.image[0])}
                       alt=""
                       className="w-full h-48 object-cover"
                     />

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { ArrowLeft, ArrowRight, Calendar, Megaphone, Clock, User, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/utils"
 import NewsImage from "@/public/images/places/News.jpg"
 
 export default function NewsPage() {
@@ -20,8 +22,10 @@ export default function NewsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const featuredArticle = articles[0] ?? null
-  const regularArticles = articles.slice(1)
+  const featuredArticles = articles.filter((a) => a.isFeatured)
+  const regularArticles = articles.filter((a) => !a.isFeatured)
+  const heroFeatured = featuredArticles[0] ?? null
+  const additionalFeatured = featuredArticles.slice(1)
 
   const readingTime = (text: string) => {
     const wordsPerMinute = 200
@@ -95,23 +99,24 @@ export default function NewsPage() {
             </div>
           )}
 
-          {/* Featured Article */}
-          {!loading && featuredArticle && (
+          {/* Featured Article(s) */}
+          {!loading && heroFeatured && (
             <div className="mb-16 sm:mb-20">
               <div className="flex items-center gap-3 mb-6">
                 <Megaphone className="h-6 w-6 text-primary" />
                 <h2 className="text-2xl sm:text-3xl font-black text-foreground">Featured Story</h2>
               </div>
 
-              <div className="group block">
+              {/* Hero featured */}
+              <Link href={`/news/${heroFeatured.id}`} className="group block">
                 <Card className="overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-lg hover:shadow-2xl">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
                     {/* Image */}
                     <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-muted">
-                      {featuredArticle.image.length > 0 ? (
+                      {heroFeatured.image.length > 0 ? (
                         <Image
-                          src={featuredArticle.image[0]}
-                          alt={featuredArticle.title}
+                          src={resolveMediaUrl(heroFeatured.image[0])}
+                          alt={heroFeatured.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                           priority
@@ -136,11 +141,11 @@ export default function NewsPage() {
                           <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                             News
                           </Badge>
-                          {featuredArticle.newsDate && (
+                          {heroFeatured.newsDate && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Calendar className="h-3.5 w-3.5" />
-                              <time dateTime={featuredArticle.newsDate}>
-                                {new Date(featuredArticle.newsDate).toLocaleDateString("en-US", {
+                              <time dateTime={heroFeatured.newsDate}>
+                                {new Date(heroFeatured.newsDate).toLocaleDateString("en-US", {
                                   year: "numeric",
                                   month: "short",
                                   day: "numeric",
@@ -151,11 +156,11 @@ export default function NewsPage() {
                         </div>
 
                         <h3 className="text-2xl sm:text-3xl font-black text-foreground mb-3 group-hover:text-primary transition-colors leading-tight">
-                          {featuredArticle.title}
+                          {heroFeatured.title}
                         </h3>
 
                         <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-4 line-clamp-4">
-                          {featuredArticle.body}
+                          {heroFeatured.body}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -165,7 +170,7 @@ export default function NewsPage() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4" />
-                            <span>{readingTime(featuredArticle.body)} min read</span>
+                            <span>{readingTime(heroFeatured.body)} min read</span>
                           </div>
                         </div>
                       </div>
@@ -179,7 +184,42 @@ export default function NewsPage() {
                     </CardContent>
                   </div>
                 </Card>
-              </div>
+              </Link>
+
+              {/* Additional featured articles (2-column grid) */}
+              {additionalFeatured.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  {additionalFeatured.map((article) => (
+                    <Link key={article.id} href={`/news/${article.id}`} className="group block">
+                      <Card className="overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-xl h-full">
+                        <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
+                          {article.image.length > 0 ? (
+                            <Image
+                              src={resolveMediaUrl(article.image[0])}
+                              alt={article.title}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground/40">
+                              <Megaphone className="h-10 w-10" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                          <div className="absolute top-3 left-3">
+                            <Badge className="bg-red-500/90 hover:bg-red-600 text-white border-0 text-xs uppercase tracking-wider backdrop-blur-sm">Featured</Badge>
+                          </div>
+                        </div>
+                        <CardContent className="p-5">
+                          <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">{article.title}</h3>
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{article.body}</p>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -193,14 +233,14 @@ export default function NewsPage() {
 
             <div className="space-y-6 sm:space-y-8">
               {regularArticles.map((article) => (
-                <div key={article.id} className="group block">
+                <Link key={article.id} href={`/news/${article.id}`} className="group block">
                   <Card className="overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
                       {/* Image */}
                       <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden bg-muted md:col-span-1">
                         {article.image.length > 0 ? (
                           <Image
-                            src={article.image[0]}
+                            src={resolveMediaUrl(article.image[0])}
                             alt={article.title}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
@@ -266,7 +306,7 @@ export default function NewsPage() {
                       </CardContent>
                     </div>
                   </Card>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
