@@ -53,7 +53,7 @@ export default function CulturePage() {
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" })
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" })
   }
 
   return (
@@ -82,7 +82,7 @@ export default function CulturePage() {
       </section>
 
       {/* Sticky nav */}
-      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+      <div className="sticky top-[60px] sm:top-16 lg:top-[72px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex gap-1 overflow-x-auto py-1">
             {navSections.map((s) => (
