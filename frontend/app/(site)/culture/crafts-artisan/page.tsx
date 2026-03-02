@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
@@ -9,7 +9,9 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { artisans, culturalPractices, type Artisan } from "@/lib/data/culture-data"
+import { artisans as fallbackArtisans, culturalPractices as fallbackPractices, type Artisan } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
 
 // ── Craft category badge colours ─────────────────────────────────────
 // Artisan.craft is a free string so we do broad keyword matching
@@ -142,11 +144,24 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 
 // ── Page ──────────────────────────────────────────────────────────────
 export default function CraftsArtisanPage() {
+  const [artisanList, setArtisanList] = useState(fallbackArtisans)
+  const [practiceList, setPracticeList] = useState(fallbackPractices)
+
+  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
+      .then((posts) => { if (posts?.length) setArtisanList(posts.map(cmsToArtisan)) })
+      .catch(() => {})
+    apiFetchByLabel("cultural-practices")  // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
+      .then((posts) => { if (posts?.length) setPracticeList(posts.map(cmsToCulturalPractice)) })
+      .catch(() => {})
+  }, [])
+
   // The featured artisan is the first one (longest experience / most decorated)
-  const [featured, ...rest] = artisans
+  const [featured, ...rest] = artisanList
 
   // Craft-related cultural practices for the spotlight strip
-  const craftPractices = culturalPractices.filter(
+  const craftPractices = practiceList.filter(
     (p) => p.category === "crafts"
   )
 
@@ -187,7 +202,7 @@ export default function CraftsArtisanPage() {
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               {[
-                { label: `${artisans.length} Featured Artisans`, icon: <Hammer className="h-3.5 w-3.5" /> },
+                { label: `${artisanList.length} Featured Artisans`, icon: <Hammer className="h-3.5 w-3.5" /> },
                 { label: "Heritage Crafts Preserved", icon: <Sparkles className="h-3.5 w-3.5" /> },
               ].map((chip) => (
                 <span

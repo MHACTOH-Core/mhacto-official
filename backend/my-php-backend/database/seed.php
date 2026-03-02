@@ -1,6 +1,6 @@
 <?php
 /**
- * seed.php — Create default admin user in the existing `User` table.
+ * seed.php — Create default admin user in the `users` table.
  *
  * Usage:  php seed.php
  *
@@ -14,18 +14,18 @@ $db = $database->getConnection();
 
 echo "🌱 Seeding database...\n\n";
 
-// ── 1. Create default admin user in `User` table ──────────────────
+// ── 1. Create default admin user ───────────────────────────────
 $adminEmail    = 'admin@mhacto.gov.ph';
 $adminUsername = 'admin';
 $adminPassword = password_hash('admin123', PASSWORD_BCRYPT);
 
-$stmt = $db->prepare("SELECT user_id FROM User WHERE email = :email LIMIT 1");
+$stmt = $db->prepare("SELECT user_id FROM users WHERE email = :email LIMIT 1");
 $stmt->execute([':email' => $adminEmail]);
 
 if ($stmt->rowCount() === 0) {
     $stmt = $db->prepare(
-        "INSERT INTO User (username, email, password_hash, role)
-         VALUES (:username, :email, :password_hash, 'admin')"
+        "INSERT INTO users (username, email, password_hash)
+         VALUES (:username, :email, :password_hash)"
     );
     $stmt->execute([
         ':username'      => $adminUsername,

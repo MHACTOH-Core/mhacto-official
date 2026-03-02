@@ -1,24 +1,49 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Clock, MapPin, Phone, CalendarDays, Sparkles, Tag } from "lucide-react"
+import { ArrowLeft, Clock, MapPin, Phone, CalendarDays, Sparkles, Tag, Loader2 } from "lucide-react"
 
-import { categoryLabels, type Place } from "@/lib/data/places-data"
-import { asset } from "@/lib/utils"
+import { apiFetchPostById, type CMSPost } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-interface PlaceDetailsPageProps {
-  place?: Place
+function categoryLabel(cat?: string) {
+  if (!cat) return "Place"
+  return cat.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
 }
 
-export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
-  const router = useRouter()
+interface PlaceDetailsPageProps {
+  placeId: string
+}
 
-  if (!place) {
+export default function PlaceDetailsPage({ placeId }: PlaceDetailsPageProps) {
+  const router = useRouter()
+  const [place, setPlace] = useState<CMSPost | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Sends GET /api/posts/read.php?id={placeId} → PHP runs SQL SELECT WHERE id={placeId} → returns single post JSON
+  useEffect(() => {
+    apiFetchPostById(placeId)
+      .then((data) => setPlace(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [placeId])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading...</span>
+      </main>
+    )
+  }
+
+  if (error || !place) {
     return (
       <main className="min-h-screen bg-background">
         <div className="flex min-h-[60vh] items-center justify-center">
@@ -28,13 +53,15 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
               The place you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button asChild className="mt-6">
-              <Link href="/destinations">Back to Destinations</Link>
+              <Link href="/places">Back to Places</Link>
             </Button>
           </div>
         </div>
       </main>
     )
   }
+
+  const heroImage = place.image.length > 0 ? place.image[0] : null
 
   return (
     <main className="min-h-screen bg-background">
@@ -43,22 +70,24 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden flex items-end"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.58), rgba(0,0,0,0.42)), url(${asset(place.image)})`,  
+          backgroundImage: heroImage
+            ? `linear-gradient(rgba(0,0,0,0.58), rgba(0,0,0,0.42)), url(${heroImage})`
+            : `linear-gradient(rgba(0,0,0,0.58), rgba(0,0,0,0.42))`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
         <div className="relative z-10 mx-auto max-w-7xl w-full px-4 lg:px-8 flex flex-col justify-end py-12 sm:py-16 md:py-20">
           <Link
-            href="/destinations"
+            href="/places"
             className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to Destinations</span>
+            <span className="text-sm font-medium">Back to Places</span>
           </Link>
           <div className="space-y-3 max-w-3xl">
             <span className="text-sm font-bold uppercase tracking-widest text-amber-300">
-              {categoryLabels[place.category]}
+              {categoryLabel(place.category)}
             </span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
               {place.title}
@@ -73,30 +102,32 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Image and main description */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm animate-fade-in-up">
-                <div className="relative h-72 w-full overflow-hidden md:h-[28rem]">
-                  <Image
-                    src={place.image}
-                    alt={place.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 66vw"
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute top-4 left-4">
-                    <Badge variant="secondary" className="bg-black/60 text-white border-0 text-xs uppercase tracking-wider backdrop-blur-sm">
-                      {categoryLabels[place.category]}
-                    </Badge>
+              {heroImage && (
+                <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm animate-fade-in-up">
+                  <div className="relative h-72 w-full overflow-hidden md:h-[28rem]">
+                    <Image
+                      src={heroImage}
+                      alt={place.title}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                      className="object-cover"
+                      priority
+                    />
+                    <div className="absolute top-4 left-4">
+                      <Badge variant="secondary" className="bg-black/60 text-white border-0 text-xs uppercase tracking-wider backdrop-blur-sm">
+                        {categoryLabel(place.category)}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-4 animate-fade-in-up delay-100">
                 <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
                   About {place.title}
                 </h2>
                 <p className="text-base sm:text-lg leading-relaxed text-muted-foreground">
-                  {place.fullDescription || place.description}
+                  {place.body}
                 </p>
               </div>
 
@@ -167,7 +198,7 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
                           Category
                         </h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          {categoryLabels[place.category]}
+                          {categoryLabel(place.category)}
                         </p>
                       </div>
                     </div>
@@ -245,10 +276,10 @@ export default function PlaceDetailsPage({ place }: PlaceDetailsPageProps) {
           <p className="text-muted-foreground">
             Explore more places in Bocaue.{" "}
             <Link
-              href="/destinations"
+              href="/places"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              View all destinations
+              View all places
             </Link>
             {" "}or{" "}
             <Link

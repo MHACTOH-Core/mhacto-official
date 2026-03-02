@@ -35,7 +35,6 @@ try {
                 'id'       => $userData['user_id'],
                 'username' => $userData['username'],
                 'email'    => $userData['email'],
-                'role'     => $userData['role'],
             ],
         ]);
     } else {

@@ -1,11 +1,14 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import { ArrowLeft, GraduationCap, BookOpen, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { colleges, type College } from "@/lib/data/community-data"
+import { colleges as fallbackColleges, type College } from "@/lib/data/community-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCollege } from "@/lib/cms-mappers"
 
 const typeBadge: Record<College["type"], string> = {
   state: "bg-blue-100 text-blue-800 border-blue-200",
@@ -19,6 +22,19 @@ const typeLabels: Record<College["type"], string> = {
 }
 
 export default function CollegesPage() {
+  const [colleges, setColleges] = useState<College[]>(fallbackColleges)
+
+  // Sends GET /api/posts/read.php?label=colleges&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("colleges")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setColleges(posts.map(cmsToCollege))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

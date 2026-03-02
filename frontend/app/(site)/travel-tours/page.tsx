@@ -1,12 +1,15 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Map, Clock, Users, Star, Phone, Mail, CheckCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { tourPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { tourPackages as fallbackPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTourPackage } from "@/lib/cms-mappers"
 
 const typeBadge: Record<TourPackage["type"], string> = {
   heritage: "bg-amber-100 text-amber-800 border-amber-200",
@@ -34,6 +37,15 @@ const difficultyColor: Record<TourPackage["difficulty"], string> = {
 }
 
 export default function TravelToursPage() {
+  const [tourPackages, setTourPackages] = useState<TourPackage[]>(fallbackPackages)
+
+  // Sends GET /api/posts/read.php?label=travel-tours&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("travel-tours")
+      .then((posts) => { if (posts?.length) setTourPackages(posts.map(cmsToTourPackage)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

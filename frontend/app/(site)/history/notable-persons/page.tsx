@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
@@ -7,7 +8,9 @@ import { ArrowLeft, Users, Star, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { notablePersons, personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
+import { notablePersons as fallbackPersons, personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToNotablePerson } from "@/lib/cms-mappers"
 
 const categoryColors: Record<NotablePerson["category"], string> = {
   "national-hero": "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
@@ -19,6 +22,15 @@ const categoryColors: Record<NotablePerson["category"], string> = {
 }
 
 export default function NotablePersonsPage() {
+  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
+
+  // Sends GET /api/posts/read.php?label=notable-figures&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("notable-figures")
+      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

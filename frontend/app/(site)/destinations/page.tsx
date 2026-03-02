@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { heritageSites, museums, religiousSites } from "@/lib/data/destinations-data"
+import { heritageSites as fallbackHeritage, museums as fallbackMuseums, religiousSites as fallbackReligious, type HeritageSite, type Museum, type ReligiousSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite, cmsToMuseum, cmsToReligiousSite, filterHeritage, filterMuseums, filterReligious } from "@/lib/cms-mappers"
 
 const museumTypeLabels: Record<string, string> = {
   history: "History & Heritage", art: "Art & Culture",
@@ -40,6 +42,26 @@ type MapDestination = {
 export default function DestinationsPage() {
   const [activeSection, setActiveSection] = useState("heritage-sites")
   const [mapDest, setMapDest] = useState<MapDestination | null>(null)
+  const [heritageSites, setHeritageSites] = useState<HeritageSite[]>(fallbackHeritage)
+  const [museums, setMuseums] = useState<Museum[]>(fallbackMuseums)
+  const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>(fallbackReligious)
+
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side sorts into heritage sites, museums, and religious sites
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          const h = filterHeritage(posts)
+          const m = filterMuseums(posts)
+          const r = filterReligious(posts)
+          if (h.length > 0) setHeritageSites(h.map(cmsToHeritageSite))
+          if (m.length > 0) setMuseums(m.map(cmsToMuseum))
+          if (r.length > 0) setReligiousSites(r.map(cmsToReligiousSite))
+        }
+      })
+      .catch(() => { /* keep fallback */ })
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {

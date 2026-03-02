@@ -97,7 +97,7 @@ CREATE TABLE `catergory` (
   `color_code` varchar(50) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,10 +108,53 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `catergory` WRITE;
 /*!40000 ALTER TABLE `catergory` DISABLE KEYS */;
 INSERT INTO `catergory` VALUES
-(1,'Historical Site','#FF5733',1),
-(2,'Festival','#33FF57',1),
-(3,'Entertainment','#3357FF',1);
+(1,'History','#D97706',1),
+(2,'Arts & Culture','#7C3AED',1),
+(3,'Tourist Destinations','#059669',1),
+(4,'News & Events','#DC2626',1);
 /*!40000 ALTER TABLE `catergory` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `content_label`
+--
+
+DROP TABLE IF EXISTS `content_label`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `content_label` (
+  `label_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) DEFAULT NULL,
+  `label_key` varchar(50) NOT NULL,
+  `label_name` varchar(100) NOT NULL,
+  `color_code` varchar(50) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`label_id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `fk_label_category` FOREIGN KEY (`category_id`) REFERENCES `catergory` (`category_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `content_label`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `content_label` WRITE;
+/*!40000 ALTER TABLE `content_label` DISABLE KEYS */;
+INSERT INTO `content_label` VALUES
+(1,1,'timeline-of-events','Timeline of Events','#D97706',1),
+(2,1,'notable-figures','Notable Figures','#EA580C',1),
+(3,2,'local-cuisine','Local Cuisine','#EC4899',1),
+(4,2,'festivals','Festivals','#D946EF',1),
+(5,2,'cultural-practices','Cultural Practices','#8B5CF6',1),
+(6,3,'destinations','Destinations','#10B981',1),
+(7,3,'travel-tours','Travel & Tours','#14B8A6',1),
+(8,4,'events','Events','#3B82F6',1),
+(9,4,'news','News','#EF4444',1);
+/*!40000 ALTER TABLE `content_label` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -162,19 +205,23 @@ CREATE TABLE `cms` (
   `content_id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
+  `label_id` int(11) DEFAULT NULL,
   `image_id` int(11) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `status` enum('draft','published','archived') DEFAULT NULL,
+  `post_type` enum('place','news','event') DEFAULT 'place',
   `is_featured` tinyint(1) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`content_id`),
   KEY `user_id` (`user_id`),
   KEY `category_id` (`category_id`),
+  KEY `label_id` (`label_id`),
   KEY `fk_cms_featured_image` (`image_id`),
   CONSTRAINT `1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `2` FOREIGN KEY (`category_id`) REFERENCES `catergory` (`category_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cms_label` FOREIGN KEY (`label_id`) REFERENCES `content_label` (`label_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_cms_featured_image` FOREIGN KEY (`image_id`) REFERENCES `content_image` (`image_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -187,12 +234,12 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `cms` WRITE;
 /*!40000 ALTER TABLE `cms` DISABLE KEYS */;
 INSERT INTO `cms` VALUES
-(1,1,1,NULL,'St. Martin of Tours Parish','The diocesan shrine and home of the miraculous Krus sa Wawa.','published',1,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
-(2,1,2,NULL,'Upcoming Bocaue Pagoda Festival','Preparations are underway for the annual river festival held every first Sunday of July.','published',1,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
-(3,1,3,NULL,'Philippine Arena','The largest indoor arena in the world, hosting major international events.','published',0,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
-(6,1,NULL,NULL,'Bocaue River Festival','A historic and cultural water festival.','published',NULL,'2026-02-25 04:07:32','2026-02-25 04:07:32'),
-(7,1,NULL,NULL,'Bocaue River Festival','A historic and cultural water festival.','published',NULL,'2026-02-25 04:47:47','2026-02-25 04:47:47'),
-(8,1,NULL,NULL,'Bocaue River Festival','A historic and cultural water festival.','published',NULL,'2026-02-25 05:18:49','2026-02-25 05:18:49');
+(1,1,1,1,NULL,'St. Martin of Tours Parish','The diocesan shrine and home of the miraculous Krus sa Wawa.','published','place',1,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
+(2,1,4,8,NULL,'Upcoming Bocaue Pagoda Festival','Preparations are underway for the annual river festival held every first Sunday of July.','published','event',1,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
+(3,1,3,6,NULL,'Philippine Arena','The largest indoor arena in the world, hosting major international events.','published','place',0,'2026-02-24 03:19:41','2026-02-24 03:19:41'),
+(6,1,2,4,NULL,'Bocaue River Festival','A historic and cultural water festival.','published','event',NULL,'2026-02-25 04:07:32','2026-02-25 04:07:32'),
+(7,1,2,4,NULL,'Bocaue River Festival','A historic and cultural water festival.','published','event',NULL,'2026-02-25 04:47:47','2026-02-25 04:47:47'),
+(8,1,2,4,NULL,'Bocaue River Festival','A historic and cultural water festival.','published','event',NULL,'2026-02-25 05:18:49','2026-02-25 05:18:49');
 /*!40000 ALTER TABLE `cms` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;

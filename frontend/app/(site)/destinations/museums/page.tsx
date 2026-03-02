@@ -1,12 +1,15 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, BookOpen, Clock, MapPin, Ticket } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { museums } from "@/lib/data/destinations-data"
+import { museums as fallbackMuseums, type Museum } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToMuseum, filterMuseums } from "@/lib/cms-mappers"
 
 const typeLabels: Record<string, string> = {
   history: "History & Heritage",
@@ -22,6 +25,19 @@ const typeColor: Record<string, string> = {
 }
 
 export default function MuseumsPage() {
+  const [museumList, setMuseumList] = useState<Museum[]>(fallbackMuseums)
+
+  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only museums
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts) => {
+        const filtered = filterMuseums(posts)
+        if (filtered.length > 0) setMuseumList(filtered.map(cmsToMuseum))
+      })
+      .catch(() => { /* keep fallback */ })
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
@@ -65,7 +81,7 @@ export default function MuseumsPage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {museums.map((museum) => (
+            {museumList.map((museum) => (
               <Card key={museum.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <div className="relative h-36 overflow-hidden">
                   <Image src={museum.image} alt={museum.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />

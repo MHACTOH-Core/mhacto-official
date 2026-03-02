@@ -1,11 +1,14 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import { ArrowLeft, School, Users, BookOpen } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { publicSchools, type PublicSchool } from "@/lib/data/community-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToPublicSchool, filterPublicSchools } from "@/lib/cms-mappers"
 
 const levelLabels: Record<PublicSchool["level"], string> = {
   elementary: "Elementary School",
@@ -21,6 +24,23 @@ const levelColor: Record<PublicSchool["level"], string> = {
 }
 
 export default function PublicSchoolsPage() {
+  const [schools, setSchools] = useState<PublicSchool[]>(publicSchools)
+
+  // Sends GET /api/posts/read.php?label=schools&status=published → PHP runs SQL SELECT → returns JSON
+  // Then client-side filters to only public schools
+  useEffect(() => {
+    apiFetchByLabel("schools")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          const publicOnly = filterPublicSchools(posts)
+          if (publicOnly.length > 0) {
+            setSchools(publicOnly.map(cmsToPublicSchool))
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
@@ -64,7 +84,7 @@ export default function PublicSchoolsPage() {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {publicSchools.map((school) => (
+            {schools.map((school) => (
               <Card key={school.id} className="border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="flex items-start gap-3 mb-3">

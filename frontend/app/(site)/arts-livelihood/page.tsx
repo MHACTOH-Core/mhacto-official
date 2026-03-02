@@ -6,7 +6,9 @@ import Image from "next/image"
 import { Store, Scissors, MapPin, Award, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localBusinesses, artisans } from "@/lib/data/culture-data"
+import { localBusinesses as fallbackBusinesses, artisans as fallbackArtisans, type LocalBusiness, type Artisan } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToLocalBusiness, cmsToArtisan } from "@/lib/cms-mappers"
 
 const businessTypeColor: Record<string, string> = {
   food: "bg-orange-100 text-orange-800 border-orange-200",
@@ -23,6 +25,20 @@ const navSections = [
 
 export default function ArtsLivelihoodPage() {
   const [activeSection, setActiveSection] = useState("local-business")
+  const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>(fallbackBusinesses)
+  const [artisans, setArtisans] = useState<Artisan[]>(fallbackArtisans)
+
+  // Sends GET /api/posts/read.php?label=crafts-artisan&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("crafts-artisan")
+      .then((posts) => {
+        if (posts?.length) {
+          // Split into artisans and businesses based on post type/category
+          setArtisans(posts.map(cmsToArtisan))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {

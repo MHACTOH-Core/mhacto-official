@@ -6,7 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowLeft, Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, ChevronLeft, ChevronRight, Star, Flame, Leaf, UtensilsCrossed, Coffee,
+  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -17,7 +17,9 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import { localCuisine as fallbackCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCuisineItem } from "@/lib/cms-mappers"
 
 // ── type helpers ────────────────────────────────────────────────────
 const typeLabels: Record<CuisineItem["type"], string> = {
@@ -37,17 +39,8 @@ const typeBadge: Record<CuisineItem["type"], string> = {
 const typeIcon: Record<CuisineItem["type"], React.ReactNode> = {
   main: <Flame className="h-4 w-4" />,
   snack: <Leaf className="h-4 w-4" />,
-  dessert: <Star className="h-4 w-4" />,
+  dessert: <UtensilsCrossed className="h-4 w-4" />,
   drink: <Coffee className="h-4 w-4" />,
-}
-
-// extra inline data for richer presentation
-const cuisineExtras: Record<string, { emoji: string; rating: number; bestFor: string; season: string }> = {
-  "puto-seko":     { emoji: "🍪", rating: 4.9, bestFor: "Pasalubong & gifts",       season: "Year-round" },
-  "bocaue-taho":  { emoji: "🥛", rating: 4.8, bestFor: "Morning energy boost",     season: "Daily mornings" },
-  "bibingka-atbp":{ emoji: "🎄", rating: 4.9, bestFor: "Christmas tradition",       season: "December" },
-  "lechon-bulacan":{ emoji: "🐷", rating: 5.0, bestFor: "Fiesta centerpiece",       season: "Fiesta season" },
-  "kakanin-spread":{ emoji: "🍡", rating: 4.7, bestFor: "Weekend markets",           season: "Weekends" },
 }
 
 type TypeFilter = CuisineItem["type"] | "all"
@@ -55,7 +48,6 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   const [storyOpen, setStoryOpen] = useState(false)
-  const extra = cuisineExtras[item.id]
 
   return (
     <Card
@@ -79,7 +71,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
         {featured && (
           <div className="absolute top-3 left-3">
             <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
-              <Star className="h-3 w-3" /> Featured Delicacy
+              ✨ Featured Delicacy
             </span>
           </div>
         )}
@@ -88,46 +80,21 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           <Badge variant="outline" className={`text-xs border ${typeBadge[item.type]} backdrop-blur-sm`}>
             {typeLabels[item.type]}
           </Badge>
-          {extra && (
-            <span className="text-2xl drop-shadow-lg">{extra.emoji}</span>
-          )}
         </div>
       </div>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div>
-            <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
-              {item.name}
-            </h3>
-            {item.tagalogName && item.tagalogName !== item.name && (
-              <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
-            )}
-          </div>
-          {extra && (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-foreground">{extra.rating}</span>
-            </div>
+        <div className="mb-1">
+          <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
+            {item.name}
+          </h3>
+          {item.tagalogName && item.tagalogName !== item.name && (
+            <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
           )}
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-4">{item.description}</p>
-
-        {/* Key facts row */}
-        {extra && (
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="rounded-lg bg-muted/60 px-3 py-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Best For</p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.bestFor}</p>
-            </div>
-            <div className="rounded-lg bg-muted/60 px-3 py-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Season</p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.season}</p>
-            </div>
-          </div>
-        )}
 
         {/* Where & time */}
         <div className="border-t border-border pt-3 space-y-2 mb-3">
@@ -164,6 +131,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -171,8 +139,12 @@ export default function LocalCuisinePage() {
 
   const types: TypeFilter[] = ["all", "main", "snack", "dessert", "drink"]
   const filtered = activeType === "all" ? localCuisine : localCuisine.filter((c) => c.type === activeType)
-  const featured = localCuisine[featuredIndex]
-  const rest = filtered.filter((c) => c.id !== featured.id)
+
+  // Featured items for carousel (fall back to all if none marked)
+  const featuredItems = localCuisine.filter((c) => c.isFeatured)
+  const carouselItems = featuredItems.length > 0 ? featuredItems : localCuisine
+  const currentCarouselItem = carouselItems[featuredIndex] ?? carouselItems[0]
+  const rest = filtered.filter((c) => c.id !== currentCarouselItem?.id)
 
   // Sync carousel API → featuredIndex
   useEffect(() => {
@@ -192,6 +164,13 @@ export default function LocalCuisinePage() {
   const pauseAutoPlay = useCallback(() => {
     setIsPlaying(false)
     setTimeout(() => setIsPlaying(true), 10000)
+  }, [])
+
+  // Sends GET /api/posts/read.php?label=local-cuisine&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("local-cuisine")
+      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
   }, [])
 
   const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
@@ -268,7 +247,7 @@ export default function LocalCuisinePage() {
             {/* Section heading */}
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 mb-4">
-                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                <Utensils className="h-3.5 w-3.5 text-amber-500" />
                 <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Featured Delicacy</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-foreground">Top Picks from Bocaue&apos;s Kitchen</h2>
@@ -283,8 +262,7 @@ export default function LocalCuisinePage() {
                 className="w-full"
               >
                 <CarouselContent className="items-stretch">
-                  {localCuisine.map((item, index) => {
-                    const extra = cuisineExtras[item.id]
+                  {carouselItems.map((item, index) => {
                     const isActive = index === featuredIndex
                     return (
                       <CarouselItem
@@ -320,14 +298,6 @@ export default function LocalCuisinePage() {
                                 </span>
                               </div>
 
-                              {/* Rating top-right */}
-                              {extra && (
-                                <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                  <span className="text-xs font-bold text-white">{extra.rating}</span>
-                                </div>
-                              )}
-
                               {/* Title overlaid on image bottom */}
                               <div className="absolute bottom-0 left-0 right-0 p-5">
                                 <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
@@ -350,8 +320,6 @@ export default function LocalCuisinePage() {
                                 {[
                                   { icon: <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Where to find", val: item.where[0] },
                                   { icon: <Clock className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Best time", val: item.bestTime ?? "Year-round" },
-                                  { icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />, label: "Rating", val: `${extra?.rating ?? "—"} / 5.0` },
-                                  { icon: <Flame className="h-3.5 w-3.5 text-orange-500 shrink-0" />, label: "Best for", val: extra?.bestFor ?? "All occasions" },
                                 ].map((row) => (
                                   <div key={row.label} className="flex items-center gap-2.5 rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
                                     {row.icon}
@@ -401,7 +369,7 @@ export default function LocalCuisinePage() {
             {/* Dots + counter */}
             <div className="mt-7 flex items-center justify-center gap-3">
               <div className="flex items-center gap-1.5">
-                {localCuisine.map((_, i) => (
+                {carouselItems.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => { pauseAutoPlay(); carouselApi?.scrollTo(i) }}
@@ -410,12 +378,12 @@ export default function LocalCuisinePage() {
                         ? "w-7 bg-amber-500"
                         : "w-1.5 bg-border hover:bg-muted-foreground/40"
                     }`}
-                    aria-label={`Go to ${localCuisine[i].name}`}
+                    aria-label={`Go to ${carouselItems[i].name}`}
                   />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground tabular-nums">
-                {featuredIndex + 1} / {localCuisine.length}
+                {featuredIndex + 1} / {carouselItems.length}
               </span>
             </div>
           </div>

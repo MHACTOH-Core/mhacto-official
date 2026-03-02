@@ -1,0 +1,12 @@
+{
+  "name": "mhacto/php-backend",
+  "description": "MHACTO Bocaue Tourism Website — PHP REST API",
+  "require": {
+    "phpmailer/phpmailer": "^6.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "MHACTO\\": "src/"
+    }
+  }
+}

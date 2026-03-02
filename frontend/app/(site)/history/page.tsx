@@ -6,7 +6,9 @@ import Image from "next/image"
 import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { timelineEvents, notablePersons, personCategoryLabels } from "@/lib/data/history-data"
+import { timelineEvents as fallbackTimeline, notablePersons as fallbackPersons, personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTimelineEvent, cmsToNotablePerson } from "@/lib/cms-mappers"
 
 const eraColor: Record<string, string> = {
   "Pre-Colonial Period": "bg-amber-500",
@@ -37,6 +39,18 @@ const navSections = [
 export default function HistoryPage() {
   const [activeSection, setActiveSection] = useState("timeline")
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackTimeline)
+  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
+
+  // Each sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("timeline-of-events")  // → PHP: SELECT * ... WHERE label_key='timeline-of-events'
+      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
+      .catch(() => {})
+    apiFetchByLabel("notable-figures")     // → PHP: SELECT * ... WHERE label_key='notable-figures'
+      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
