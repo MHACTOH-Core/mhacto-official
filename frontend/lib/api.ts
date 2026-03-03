@@ -135,6 +135,7 @@ import type {
   AdminSettings,
   PageView,
   DailyVisit,
+  TopDestination,
 } from "@/lib/data/admin-data"
 
 export type { CMSPost } from "@/lib/data/admin-data"
@@ -172,6 +173,31 @@ export function apiFetchPageViews() {
 /** Fetch daily visit totals over the last N days (default 30) */
 export function apiFetchDailyVisits(days = 30) {
   return apiFetch<DailyVisit[]>(`/api/analytics/visits.php?days=${days}`)
+}
+
+/**
+ * Log a destination click.
+ * Called on the public site when a visitor navigates to a destination page.
+ * Sends a lightweight POST with the destination's content_id.
+ */
+export function apiLogDestinationView(
+  contentId: number,
+  sessionId?: string,
+) {
+  return apiFetch<{ message: string }>("/api/analytics/log-view.php", {
+    method: "POST",
+    body: JSON.stringify({ contentId, sessionId }),
+  })
+}
+
+/**
+ * Fetch the top N most-clicked destinations (default 10, max 50).
+ * Used by the admin analytics dashboard.
+ */
+export function apiFetchTopDestinations(limit = 10) {
+  return apiFetch<TopDestination[]>(
+    `/api/analytics/top-destinations.php?limit=${limit}`,
+  )
 }
 
 // ─── Posts CRUD ───────────────────────────────────────────────────

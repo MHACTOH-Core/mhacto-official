@@ -1,21 +1,22 @@
 -- ========================================================================
 -- MHACTO Database Schema v2 (mhacto_db)
 -- Bocaue, Bulacan — Tourism Website
--- Restructured: 10 tables (visit_purposes removed, inquiries v3 with JSON form_data)
+-- Restructured: 11 tables (visit_purposes removed, inquiries v3 with JSON form_data)
 -- ========================================================================
 --
--- TABLES (10)
+-- TABLES (11)
 -- ───────────────────────────────────────────────────────────────────
 --  1. users
 --  2. config              (replaces site_settings — flexible key-value)
 --  3. category            (was categories — cat_type → category_type)
 --  4. content             (simplified — place/news columns → content_fields)
---  5. content_fields        (NEW — dynamic key-value metadata per content)
+--  5. content_fields      (dynamic key-value metadata per content)
 --  6. content_images      (unchanged)
 --  7. featured_content    (unchanged)
 --  8. inquiries           (v4 — hybrid: real sortable cols + JSON additional_details)
 --  9. activity_logs       (details → JSON)
 -- 10. milestone           (was milestones — minor column changes)
+-- 11. page_views          (per-destination click analytics for admin dashboard)
 -- ========================================================================
 
 
@@ -91,7 +92,7 @@ CREATE TABLE content (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 5. CONTENT_META  (NEW — dynamic key-value metadata per content)
+-- 5. CONTENT_FIELDS  (dynamic key-value metadata per content)
 --    Replaces inlined place/news columns in content.
 --    e.g., meta_key = 'location', meta_value = 'Bocaue, Bulacan'
 --          meta_key = 'news_date', meta_value = '2026-03-01'
@@ -195,6 +196,24 @@ CREATE TABLE milestone (
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updates_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_active_order (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ────────────────────────────────────────────────────────────────
+-- 11. PAGE_VIEWS  (click analytics — one row per destination click)
+--     References content(content_id) because "destinations" are
+--     stored as content rows with post_type = 'place'.
+--     visitor_session_id is a lightweight fingerprint sent by the
+--     React frontend so we can de-duplicate per session if needed.
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE page_views (
+  view_id            INT AUTO_INCREMENT PRIMARY KEY,
+  content_id         INT          NOT NULL          COMMENT 'FK → content (post_type = place)',
+  visitor_session_id VARCHAR(100) DEFAULT NULL       COMMENT 'Optional client-generated session token',
+  clicked_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
+  INDEX idx_content  (content_id),
+  INDEX idx_clicked  (clicked_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

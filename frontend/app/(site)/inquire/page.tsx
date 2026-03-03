@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { asset } from "@/lib/utils"
-import { ArrowLeft, Send, Loader2, CheckCircle } from "lucide-react"
-import { useState, type FormEvent } from "react"
+import { ArrowLeft, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { useState, type FormEvent, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,11 +18,88 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { apiCreateInquiry } from "@/lib/api"
 
+// ─── Validation helpers ──────────────────────────────────────────────
+
+/** Today's date in YYYY-MM-DD format (for min attribute on date inputs) */
+function getTodayISO(): string {
+  return new Date().toISOString().split("T")[0]
+}
+
+/**
+ * Validates a Philippine mobile number.
+ * Accepted formats:
+ *   09XX-XXX-XXXX, 09XXXXXXXXX,
+ *   +639XX-XXX-XXXX, +639XXXXXXXXX,
+ *   639XXXXXXXXX
+ * Returns true if valid (or empty — field is optional).
+ */
+function isValidPHPhoneNumber(phone: string): boolean {
+  if (!phone) return true // optional field
+  const digitsOnly = phone.replace(/[\s\-()+ ]/g, "")
+  // Must be 09XXXXXXXXX (11 digits) or 639XXXXXXXXX (12 digits)
+  return /^09\d{9}$/.test(digitsOnly) || /^639\d{9}$/.test(digitsOnly)
+}
+
+/**
+ * Validates that a name contains only letters, spaces, hyphens, periods, and apostrophes.
+ * No numbers or special characters allowed.
+ */
+function isValidName(name: string): boolean {
+  if (!name.trim()) return false
+  return /^[A-Za-zÀ-ÿñÑ\s'.,-]+$/.test(name.trim())
+}
+
 export default function InquirePage() {
   const [purpose, setPurpose] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Per-field validation warnings
+  const [nameWarning, setNameWarning] = useState<string | null>(null)
+  const [phoneWarning, setPhoneWarning] = useState<string | null>(null)
+  const [dateWarning, setDateWarning] = useState<string | null>(null)
+
+  /** Validate name on change — must be letters only, no numbers */
+  function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    if (value && !isValidName(value)) {
+      setNameWarning("Name must contain only letters (no numbers or special characters).")
+    } else {
+      setNameWarning(null)
+    }
+  }
+
+  /** Validate PH phone number format on change */
+  function handlePhoneChange(e: ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    if (value && !isValidPHPhoneNumber(value)) {
+      setPhoneWarning("Please enter a valid PH mobile number (e.g. 09XX-XXX-XXXX or +639XXXXXXXXX).")
+    } else {
+      setPhoneWarning(null)
+    }
+  }
+
+  /** Ensure the end date is not before the start date */
+  function handleDateFromChange(e: ChangeEvent<HTMLInputElement>) {
+    const startDate = e.target.value
+    const endDateInput = document.getElementById("date-to") as HTMLInputElement | null
+    if (endDateInput && endDateInput.value && startDate > endDateInput.value) {
+      setDateWarning("The end date cannot be before the start date.")
+    } else {
+      setDateWarning(null)
+    }
+  }
+
+  function handleDateToChange(e: ChangeEvent<HTMLInputElement>) {
+    const endDate = e.target.value
+    const startDateInput = document.getElementById("date-from") as HTMLInputElement | null
+    if (startDateInput && startDateInput.value && endDate < startDateInput.value) {
+      setDateWarning("The end date cannot be before the start date.")
+    } else {
+      setDateWarning(null)
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -31,18 +108,52 @@ export default function InquirePage() {
     setSuccess(false)
 
     const formData = new FormData(e.currentTarget)
+    const name = (formData.get("name") as string).trim()
+    const contactNumber = (formData.get("contact") as string) || ""
+    const dateFrom = formData.get("date-from") as string
+    const dateTo = formData.get("date-to") as string
+
+    // Client-side validation
+    if (!isValidName(name)) {
+      setError("Please enter a valid name (letters only, no numbers).")
+      setSubmitting(false)
+      return
+    }
+
+    if (contactNumber && !isValidPHPhoneNumber(contactNumber)) {
+      setError("Please enter a valid Philippine mobile number (e.g. 09XX-XXX-XXXX).")
+      setSubmitting(false)
+      return
+    }
+
+    if (dateFrom && dateTo && dateTo < dateFrom) {
+      setError("The end date cannot be before the start date.")
+      setSubmitting(false)
+      return
+    }
+
+    // Build dateOfVisit string — "from → to" if both provided, single date otherwise
+    let dateOfVisit: string | undefined
+    if (dateFrom && dateTo) {
+      dateOfVisit = `${dateFrom} to ${dateTo}`
+    } else if (dateFrom) {
+      dateOfVisit = dateFrom
+    }
 
     try {
       await apiCreateInquiry({
-        name: formData.get("name") as string,
+        name,
         email: formData.get("email") as string,
-        contactNumber: (formData.get("contact") as string) || undefined,
+        contactNumber: contactNumber || undefined,
         purpose: purpose || undefined,
-        dateOfVisit: (formData.get("date") as string) || undefined,
+        dateOfVisit,
         numberOfPax: formData.get("pax") ? Number(formData.get("pax")) : undefined,
         message: (formData.get("message") as string) || "",
       })
       setSuccess(true)
+      setNameWarning(null)
+      setPhoneWarning(null)
+      setDateWarning(null)
       e.currentTarget.reset()
       setPurpose("")
     } catch (err: unknown) {
@@ -136,6 +247,7 @@ export default function InquirePage() {
               <CardContent className="p-6 md:p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid gap-6">
+                    {/* Full Name — letters only, no numbers */}
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-card-foreground">
                         Full Name
@@ -145,8 +257,19 @@ export default function InquirePage() {
                         name="name"
                         placeholder="Juan Dela Cruz"
                         required
+                        onChange={handleNameChange}
+                        pattern="^[A-Za-z\u00C0-\u00FF\u00F1\u00D1\s'\.,-]+$"
+                        title="Please enter a valid name (letters only, no numbers)"
                       />
+                      {nameWarning && (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                          {nameWarning}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Email */}
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-card-foreground">
                         Email Address
@@ -159,6 +282,8 @@ export default function InquirePage() {
                         required
                       />
                     </div>
+
+                    {/* Contact Number — PH format validation */}
                     <div className="space-y-2">
                       <Label htmlFor="contact" className="text-card-foreground">
                         Contact Number
@@ -167,21 +292,67 @@ export default function InquirePage() {
                         id="contact"
                         name="contact"
                         type="tel"
-                        placeholder="(+63) 9XX-XXX-XXXX"
+                        placeholder="09XX-XXX-XXXX"
+                        onChange={handlePhoneChange}
                       />
+                      <p className="text-[11px] text-muted-foreground">
+                        Philippine mobile format: 09XX-XXX-XXXX or +639XXXXXXXXX
+                      </p>
+                      {phoneWarning && (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                          {phoneWarning}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Date range — from / to */}
                   <div className="grid gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-card-foreground">
+                      <Label className="text-card-foreground">
                         Date of Visit
                       </Label>
-                      <Input id="date" name="date" type="date" required />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="date-from" className="text-[11px] text-muted-foreground">
+                            From
+                          </Label>
+                          <Input
+                            id="date-from"
+                            name="date-from"
+                            type="date"
+                            min={getTodayISO()}
+                            required
+                            onChange={handleDateFromChange}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="date-to" className="text-[11px] text-muted-foreground">
+                            To
+                          </Label>
+                          <Input
+                            id="date-to"
+                            name="date-to"
+                            type="date"
+                            min={getTodayISO()}
+                            required
+                            onChange={handleDateToChange}
+                          />
+                        </div>
+                      </div>
+                      {dateWarning && (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                          {dateWarning}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Number of People (was "Number of Pax") */}
                     <div className="space-y-2">
                       <Label htmlFor="pax" className="text-card-foreground">
-                        Number of Pax
+                        Number of People
                       </Label>
                       <Input
                         id="pax"
