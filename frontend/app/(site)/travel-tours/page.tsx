@@ -5,6 +5,7 @@ import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Map, Clock, Users, Star, Phone, Mail, CheckCircle } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { tourPackages as fallbackPackages, type TourPackage } from "@/lib/data/destinations-data"
@@ -49,31 +50,16 @@ export default function TravelToursPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.50), rgba(0,0,0,0.40)), url(${asset('/images/places/river-festival.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Map className="h-8 w-8 text-cyan-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-cyan-300">Tourism</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Travel &amp; Tours</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Curated tour packages by MHACTO Bocaue — guided experiences through history, culture, cuisine, and festival.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="travel-tours"
+        fallbackImage="/images/places/river-festival.jpg"
+        fallbackIcon="Map"
+        fallbackAccentColor="cyan-300"
+        fallbackLabel="Tourism"
+        fallbackTitle="Travel & Tours"
+        fallbackDescription="Curated tour packages by MHACTO Bocaue — guided experiences through history, culture, cuisine, and festival."
+        showBackButton
+      />
 
       {/* Content */}
       <section className="py-12 sm:py-16 lg:py-20">

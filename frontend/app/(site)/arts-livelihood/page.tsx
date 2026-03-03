@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
-import { Store, Scissors, MapPin, Award, Star } from "lucide-react"
+import { Store, Scissors, MapPin } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localBusinesses as fallbackBusinesses, artisans as fallbackArtisans, type LocalBusiness, type Artisan } from "@/lib/data/culture-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToLocalBusiness, cmsToArtisan } from "@/lib/cms-mappers"
+import { localBusinesses as fallbackBusinesses, type LocalBusiness } from "@/lib/data/culture-data"
 
 const businessTypeColor: Record<string, string> = {
   food: "bg-orange-100 text-orange-800 border-orange-200",
@@ -20,25 +19,11 @@ const businessTypeColor: Record<string, string> = {
 
 const navSections = [
   { id: "local-business", label: "Local Business" },
-  { id: "crafts-artisans", label: "Crafts & Artisans" },
 ]
 
 export default function ArtsLivelihoodPage() {
   const [activeSection, setActiveSection] = useState("local-business")
   const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>(fallbackBusinesses)
-  const [artisans, setArtisans] = useState<Artisan[]>(fallbackArtisans)
-
-  // Sends GET /api/posts/read.php?label=crafts-artisan&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("crafts-artisan")
-      .then((posts) => {
-        if (posts?.length) {
-          // Split into artisans and businesses based on post type/category
-          setArtisans(posts.map(cmsToArtisan))
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,27 +45,15 @@ export default function ArtsLivelihoodPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Scissors className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Community</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Arts &amp; Livelihood</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Explore the craft traditions and local industries that sustain Bocaue&apos;s vibrant community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="arts-livelihood"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Scissors"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Community"
+        fallbackTitle="Arts & Livelihood"
+        fallbackDescription="Explore the craft traditions and local industries that sustain Bocaue's vibrant community."
+      />
 
       {/* Sticky nav */}
       <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
@@ -99,7 +72,7 @@ export default function ArtsLivelihoodPage() {
       </div>
 
       {/* ── Local Business ── */}
-      <section id="local-business" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+      <section id="local-business" className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Store className="h-5 w-5 text-primary" /></div>
@@ -142,51 +115,7 @@ export default function ArtsLivelihoodPage() {
         </div>
       </section>
 
-      {/* ── Crafts & Artisans ── */}
-      <section id="crafts-artisans" className="py-12 sm:py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Scissors className="h-5 w-5 text-primary" /></div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Crafts &amp; Artisans</h2>
-              <p className="text-muted-foreground">Skilled hands keeping Bocaue&apos;s craft traditions alive</p>
-            </div>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-            {artisans.map((artisan) => (
-              <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                {artisan.image && (
-                  <div className="relative h-36 overflow-hidden">
-                    <Image src={artisan.image} alt={artisan.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  </div>
-                )}
-                <CardContent className="p-5 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-lg font-black text-foreground">{artisan.name}</h3>
-                    <Badge variant="outline" className="text-xs whitespace-nowrap">{artisan.experience}</Badge>
-                  </div>
-                  <p className="text-xs text-primary font-semibold mb-2">{artisan.craft}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{artisan.description}</p>
-                  <div className="space-y-2 border-t border-border pt-3">
-                    <div className="flex items-start gap-2 text-xs"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{artisan.location}</div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Products</p>
-                      <ul className="space-y-0.5">{artisan.products.map((p) => <li key={p} className="text-xs text-foreground flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 rounded-full bg-primary flex-shrink-0" />{p}</li>)}</ul>
-                    </div>
-                    {artisan.awards && artisan.awards.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1"><Award className="h-3 w-3" /> Awards</p>
-                        <ul className="space-y-0.5">{artisan.awards.map((a) => <li key={a} className="text-xs text-foreground flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 rounded-full bg-amber-500 flex-shrink-0" />{a}</li>)}</ul>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+
     </main>
   )
 }

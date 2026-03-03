@@ -4,6 +4,7 @@ import Image from "next/image"
 import { asset } from "@/lib/utils"
 import { useState, useMemo, useEffect } from "react"
 import { School, ArrowUpDown, BookOpen, Users } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -136,27 +137,17 @@ export default function SchoolsPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[280px] flex items-end overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="px-6 pb-10 pt-20 lg:px-16">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">
-            Community
-          </p>
-          <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Schools in Bocaue
-          </h1>
-          <p className="mt-2 max-w-xl text-sm text-white/80 sm:text-base">
-            All public and private educational institutions shaping the next
-            generation of Bocaueños — from elementary to college level.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="schools"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="School"
+        fallbackAccentColor="cyan-300"
+        fallbackLabel="Community"
+        fallbackTitle="Schools in Bocaue"
+        fallbackDescription="All public and private educational institutions shaping the next generation of Bocaueños — from elementary to college level."
+        showBackButton
+        alignBottom
+      />
 
       {/* Controls */}
       <section className="mx-auto max-w-7xl px-6 pt-10 pb-4 lg:px-16">

@@ -23,12 +23,17 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`
 
+  // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
+  // Omitting it on GET avoids unnecessary CORS preflight requests.
+  const headers: HeadersInit = { ...options.headers }
+  if (options.body) {
+    headers["Content-Type"] = (headers as Record<string, string>)["Content-Type"] ?? "application/json"
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    cache: 'no-store',
+    headers,
   })
 
   // Try to parse JSON even for error responses
@@ -200,6 +205,39 @@ export function apiFetchTopDestinations(limit = 10) {
   )
 }
 
+// ─── Page Heroes (per-page hero image/text CMS) ──────────────────
+
+export interface PageHeroData {
+  slug: string
+  displayName: string
+  imageUrl: string
+  iconName: string
+  accentColor: string
+  label: string
+  title: string
+  description: string
+}
+
+/** Fetch all page hero configurations */
+export function apiFetchAllPageHeroes() {
+  return apiFetch<PageHeroData[]>("/api/heroes/read.php")
+}
+
+/** Fetch a single page hero by slug (with cache-busting timestamp) */
+export function apiFetchPageHero(slug: string) {
+  return apiFetch<PageHeroData>(
+    `/api/heroes/read.php?slug=${encodeURIComponent(slug)}&_t=${Date.now()}`,
+  )
+}
+
+/** Update a page hero (admin) */
+export function apiUpdatePageHero(slug: string, data: Partial<PageHeroData>) {
+  return apiFetch<{ message: string; hero: PageHeroData }>(
+    `/api/heroes/update.php?slug=${encodeURIComponent(slug)}`,
+    { method: "POST", body: JSON.stringify(data) },
+  )
+}
+
 // ─── Posts CRUD ───────────────────────────────────────────────────
 
 /** Create a new CMS post (place, news, or event) */
@@ -230,7 +268,7 @@ export function apiDeletePost(id: string) {
 /** Update an inquiry's status or details (admin) */
 export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
-    method: "PUT",
+    method: "POST",
     body: JSON.stringify(inquiryData),
   })
 }

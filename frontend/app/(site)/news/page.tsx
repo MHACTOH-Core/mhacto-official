@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Calendar, Megaphone, Clock, User, Loader2 } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
@@ -37,40 +38,16 @@ export default function NewsPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section with Background Image */}
-      <section 
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[400px] md:min-h-[500px] overflow-hidden"
-        style={{
-  backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.4)), url(${NewsImage.src})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-         
-        }}
-      >
-        {/* Content */}
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 h-full flex flex-col justify-center py-12 sm:py-16 md:py-24 lg:py-32">
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all transform hover:scale-105 duration-200"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to home</span>
-          </button>
-
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Megaphone className="h-8 w-8 text-blue-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-blue-300">News &amp; Blog</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white drop-shadow-2xl leading-tight">
-              Stay Informed &amp; Updated
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Latest announcements, updates, and stories from the Municipality of Bocaue, Bulacan
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="news"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Megaphone"
+        fallbackAccentColor="blue-300"
+        fallbackLabel="News & Blog"
+        fallbackTitle="Stay Informed & Updated"
+        fallbackDescription="Latest announcements, updates, and stories from the Municipality of Bocaue, Bulacan"
+        showBackButton
+      />
 
       {/* Main Content */}
       <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-b from-background to-muted/30">

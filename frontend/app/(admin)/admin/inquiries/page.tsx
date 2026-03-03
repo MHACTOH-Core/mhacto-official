@@ -48,6 +48,7 @@ import {
   MapPin,
   Loader2,
   ListFilter,
+  Reply,
 } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -125,9 +126,12 @@ export default function InquiriesPage() {
 
   // Open inquiry — mark as in_progress if unread
   const openInquiry = (inq: Inquiry) => {
-    setSelectedInquiry(inq)
     if (inq.status === "unread") {
+      const updated = { ...inq, status: "in_progress" as InquiryStatus }
+      setSelectedInquiry(updated)
       updateInquiry(inq.id, { status: "in_progress" })
+    } else {
+      setSelectedInquiry(inq)
     }
   }
 
@@ -190,6 +194,18 @@ export default function InquiriesPage() {
   }
 
   // ── Helpers ────────────────────────────────────────────────────
+
+  /** Safely format a date string — returns fallback on invalid input */
+  const safeFormatDate = (dateStr: string | null | undefined, fmt: string, fallback = "—") => {
+    if (!dateStr) return fallback
+    try {
+      const parsed = parseISO(dateStr)
+      if (isNaN(parsed.getTime())) return fallback
+      return format(parsed, fmt)
+    } catch {
+      return fallback
+    }
+  }
 
   const hasAdditionalDetails = (inq: Inquiry) =>
     inq.additionalDetails && Object.keys(inq.additionalDetails).length > 0
@@ -384,7 +400,7 @@ export default function InquiriesPage() {
                         {inq.name}
                       </span>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
-                        {format(parseISO(inq.createdAt), "MMM d")}
+                        {safeFormatDate(inq.createdAt, "MMM d")}
                       </span>
                     </div>
 
@@ -412,8 +428,8 @@ export default function InquiriesPage() {
                       </Badge>
 
                       {/* Status badge */}
-                      <Badge className={cn("text-[10px] px-1.5 py-0 font-medium", inquiryStatusLabels[inq.status].color)}>
-                        {inquiryStatusLabels[inq.status].label}
+                      <Badge className={cn("text-[10px] px-1.5 py-0 font-medium", inquiryStatusLabels[inq.status]?.color ?? "")}>
+                        {inquiryStatusLabels[inq.status]?.label ?? inq.status}
                       </Badge>
 
                       {/* Pax count */}
@@ -428,7 +444,7 @@ export default function InquiriesPage() {
                       {inq.dateOfVisit && (
                         <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                           <CalendarDays className="h-2.5 w-2.5" />
-                          {format(parseISO(inq.dateOfVisit), "MMM d")}
+                          {safeFormatDate(inq.dateOfVisit, "MMM d")}
                         </span>
                       )}
                     </div>
@@ -481,7 +497,7 @@ export default function InquiriesPage() {
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
                       {selectedInquiry.email}
                       {" · "}
-                      {format(parseISO(selectedInquiry.createdAt), "MMMM d, yyyy")}
+                      {safeFormatDate(selectedInquiry.createdAt, "MMMM d, yyyy")}
                     </p>
                   </div>
 
@@ -565,14 +581,14 @@ export default function InquiriesPage() {
                                 )}
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 shrink-0" />
-                                  {format(parseISO(selectedInquiry.createdAt), "MMMM d, yyyy · h:mm a")}
+                                  {safeFormatDate(selectedInquiry.createdAt, "MMMM d, yyyy · h:mm a")}
                                 </span>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <Badge className={cn("text-[10px] sm:text-xs", inquiryStatusLabels[selectedInquiry.status].color)}>
-                                {inquiryStatusLabels[selectedInquiry.status].label}
+                              <Badge className={cn("text-[10px] sm:text-xs", inquiryStatusLabels[selectedInquiry.status]?.color ?? "")}>
+                                {inquiryStatusLabels[selectedInquiry.status]?.label ?? selectedInquiry.status}
                               </Badge>
                             </div>
                           </div>
@@ -597,7 +613,7 @@ export default function InquiriesPage() {
                               <div>
                                 <p className="text-[10px] text-muted-foreground uppercase font-medium">Date of Visit</p>
                                 <p className="text-xs font-medium text-card-foreground">
-                                  {format(parseISO(selectedInquiry.dateOfVisit), "MMMM d, yyyy")}
+                                  {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
                                 </p>
                               </div>
                             </div>
@@ -652,6 +668,25 @@ export default function InquiriesPage() {
                       </p>
                     </CardContent>
                   </Card>
+
+                  {/* Reply via email */}
+                  <div className="pt-2">
+                    <Button
+                      className="gap-2"
+                      onClick={() => {
+                        const subject = encodeURIComponent(
+                          `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
+                        )
+                        const body = encodeURIComponent(
+                          `Dear ${selectedInquiry.name},\n\nThank you for reaching out to the Municipal Heritage, Arts, Culture and Tourism Office (MHACTO) of Bocaue.\n\nRegarding your inquiry:\n---\n${selectedInquiry.message}\n---\n\n\n\nBest regards,\nMHACTO Bocaue Tourism Office`
+                        )
+                        window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
+                      }}
+                    >
+                      <Reply className="h-4 w-4" />
+                      Reply via Email
+                    </Button>
+                  </div>
                 </div>
               </>
             )}

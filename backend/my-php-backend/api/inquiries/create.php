@@ -40,7 +40,7 @@ try {
         'name'              => $data['name'],
         'email'             => $data['email'],
         'contactNumber'     => $data['contactNumber'] ?? null,
-        'inquiryType'       => $data['inquiryType'] ?? 'general_contact',
+        'inquiryType'       => $data['inquiryType'] ?? $data['purpose'] ?? 'general_contact',
         'dateOfVisit'       => $data['dateOfVisit'] ?? null,
         'numberOfPax'       => $data['numberOfPax'] ?? null,
         'message'           => $data['message'],

@@ -1,6 +1,6 @@
 <?php
 /**
- * PUT /api/inquiries/update.php?id=123
+ * PUT|POST /api/inquiries/update.php?id=123
  * Body: { status: 'unread' | 'in_progress' | 'resolved' | 'archived' }
  */
 
@@ -8,7 +8,12 @@ require_once __DIR__ . '/../../core/Response.php';
 
 Response::cors();
 Response::preflight();
-Response::requireMethod('PUT');
+
+// Accept both PUT and POST for compatibility with PHP built-in server
+$method = $_SERVER['REQUEST_METHOD'];
+if (!in_array($method, ['PUT', 'POST', 'PATCH'], true)) {
+    Response::error('Method not allowed. Use PUT or POST.', 405);
+}
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../models/Inquiry.php';
@@ -23,7 +28,8 @@ try {
         Response::error('Missing inquiry ID.', 400);
     }
 
-    $data = json_decode(file_get_contents('php://input'), true);
+    $raw = file_get_contents('php://input');
+    $data = $raw ? json_decode($raw, true) : null;
     if (!$data || !isset($data['status'])) {
         Response::error('Status is required.', 400);
     }
@@ -45,5 +51,5 @@ try {
     }
 } catch (Exception $e) {
     error_log("inquiries/update error: " . $e->getMessage());
-    Response::error('Failed to update inquiry.', 500);
+    Response::error('Failed to update inquiry: ' . $e->getMessage(), 500);
 }

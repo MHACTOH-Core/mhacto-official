@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { timelineEvents as fallbackTimeline, notablePersons as fallbackPersons, personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
@@ -72,27 +73,15 @@ export default function HistoryPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">History of Bocaue</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="history"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="BookOpen"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Bocaue Wonders"
+        fallbackTitle="History of Bocaue"
+        fallbackDescription="A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan."
+      />
 
       {/* Sticky in-page nav */}
       <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">

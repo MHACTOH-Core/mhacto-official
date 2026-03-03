@@ -1,13 +1,13 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowLeft, Utensils, Clock, MapPin, ChevronDown,
+  Utensils, Clock, MapPin, ChevronDown,
   ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee,
 } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -179,45 +179,16 @@ export default function LocalCuisinePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ── */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[380px] sm:min-h-[480px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${asset('/images/places/Food.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-16 sm:py-20 md:py-28">
-          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to home</span>
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Utensils className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Local Culinary</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
-              Taste of Bocaue
-            </h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue&apos;s most beloved delicacies.
-            </p>
-          </div>
-          {/* Quick stat pills */}
-          <div className="mt-8 flex flex-wrap gap-3">
-            {[
-              { label: "5 Signature Dishes", icon: "🍽️" },
-              { label: "Centuries of Tradition", icon: "📜" },
-              { label: "Local Vendors & Markets", icon: "🏪" },
-            ].map((s) => (
-              <span key={s.label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-semibold border border-white/20">
-                {s.icon} {s.label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="local-cuisine"
+        fallbackImage="/images/places/Food.jpg"
+        fallbackIcon="Utensils"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Local Culinary"
+        fallbackTitle="Taste of Bocaue"
+        fallbackDescription="From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue's most beloved delicacies."
+        showBackButton
+      />
 
       {/* ── Sticky filter bar ── */}
       <section className="border-b border-border bg-muted/40 py-3 sticky top-0 z-30 backdrop-blur-sm">

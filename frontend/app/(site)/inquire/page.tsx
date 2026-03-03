@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import { ArrowLeft, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { useState, type FormEvent, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,26 +28,42 @@ function getTodayISO(): string {
 
 /**
  * Validates a Philippine mobile number.
- * Accepted formats:
- *   09XX-XXX-XXXX, 09XXXXXXXXX,
- *   +639XX-XXX-XXXX, +639XXXXXXXXX,
- *   639XXXXXXXXX
+ * Must start with +63 followed by 10 digits.
+ * Accepted formats: +639XXXXXXXXX, +639XX-XXX-XXXX
  * Returns true if valid (or empty — field is optional).
  */
 function isValidPHPhoneNumber(phone: string): boolean {
   if (!phone) return true // optional field
   const digitsOnly = phone.replace(/[\s\-()+ ]/g, "")
-  // Must be 09XXXXXXXXX (11 digits) or 639XXXXXXXXX (12 digits)
-  return /^09\d{9}$/.test(digitsOnly) || /^639\d{9}$/.test(digitsOnly)
+  // Must be 639XXXXXXXXX (12 digits starting with 639)
+  return /^639\d{9}$/.test(digitsOnly)
 }
 
 /**
- * Validates that a name contains only letters, spaces, hyphens, periods, and apostrophes.
- * No numbers or special characters allowed.
+ * Validates that a name contains only letters and spaces.
+ * Max 18 characters. No numbers, special characters, hyphens, or periods.
  */
 function isValidName(name: string): boolean {
   if (!name.trim()) return false
-  return /^[A-Za-zÀ-ÿñÑ\s'.,-]+$/.test(name.trim())
+  if (name.trim().length > 18) return false
+  return /^[A-Za-zÀ-ÿñÑ\s]+$/.test(name.trim())
+}
+
+/**
+ * Validates email — must be from a real email provider.
+ */
+function isValidEmail(email: string): boolean {
+  if (!email) return false
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) return false
+  const domain = email.split("@")[1]?.toLowerCase()
+  const allowedDomains = [
+    "gmail.com", "yahoo.com", "yahoo.com.ph", "outlook.com", "hotmail.com",
+    "live.com", "icloud.com", "me.com", "aol.com", "protonmail.com",
+    "proton.me", "zoho.com", "mail.com", "ymail.com", "msn.com",
+    "rocketmail.com", "gmx.com", "fastmail.com",
+  ]
+  return allowedDomains.includes(domain)
 }
 
 export default function InquirePage() {
@@ -57,24 +74,37 @@ export default function InquirePage() {
 
   // Per-field validation warnings
   const [nameWarning, setNameWarning] = useState<string | null>(null)
+  const [emailWarning, setEmailWarning] = useState<string | null>(null)
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null)
   const [dateWarning, setDateWarning] = useState<string | null>(null)
 
-  /** Validate name on change — must be letters only, no numbers */
+  /** Validate name on change — letters/spaces only, max 18 chars */
   function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
-    if (value && !isValidName(value)) {
-      setNameWarning("Name must contain only letters (no numbers or special characters).")
+    if (value && value.length > 18) {
+      setNameWarning("Name must be 18 characters or less.")
+    } else if (value && !isValidName(value)) {
+      setNameWarning("Name must contain only letters and spaces (no numbers or special characters).")
     } else {
       setNameWarning(null)
     }
   }
 
-  /** Validate PH phone number format on change */
+  /** Validate email provider on change */
+  function handleEmailChange(e: ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    if (value && value.includes("@") && !isValidEmail(value)) {
+      setEmailWarning("Please use a valid email (Gmail, Outlook, Yahoo, etc.).")
+    } else {
+      setEmailWarning(null)
+    }
+  }
+
+  /** Validate PH phone number format on change — must start with +63 */
   function handlePhoneChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
     if (value && !isValidPHPhoneNumber(value)) {
-      setPhoneWarning("Please enter a valid PH mobile number (e.g. 09XX-XXX-XXXX or +639XXXXXXXXX).")
+      setPhoneWarning("Please enter a valid PH number starting with +63 (e.g. +639XXXXXXXXX).")
     } else {
       setPhoneWarning(null)
     }
@@ -103,11 +133,12 @@ export default function InquirePage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
     setSubmitting(true)
     setError(null)
     setSuccess(false)
 
-    const formData = new FormData(e.currentTarget)
+    const formData = new FormData(form)
     const name = (formData.get("name") as string).trim()
     const contactNumber = (formData.get("contact") as string) || ""
     const dateFrom = formData.get("date-from") as string
@@ -115,13 +146,27 @@ export default function InquirePage() {
 
     // Client-side validation
     if (!isValidName(name)) {
-      setError("Please enter a valid name (letters only, no numbers).")
+      setError(name.length > 18 ? "Name must be 18 characters or less." : "Please enter a valid name (letters and spaces only, no special characters).")
+      setSubmitting(false)
+      return
+    }
+
+    const email = (formData.get("email") as string).trim()
+    if (!isValidEmail(email)) {
+      setError("Please use a valid email address (Gmail, Outlook, Yahoo, etc.).")
       setSubmitting(false)
       return
     }
 
     if (contactNumber && !isValidPHPhoneNumber(contactNumber)) {
-      setError("Please enter a valid Philippine mobile number (e.g. 09XX-XXX-XXXX).")
+      setError("Please enter a valid Philippine number starting with +63 (e.g. +639XXXXXXXXX).")
+      setSubmitting(false)
+      return
+    }
+
+    const paxValue = formData.get("pax") ? Number(formData.get("pax")) : 0
+    if (paxValue > 20) {
+      setError("Number of people cannot exceed 20.")
       setSubmitting(false)
       return
     }
@@ -132,29 +177,42 @@ export default function InquirePage() {
       return
     }
 
-    // Build dateOfVisit string — "from → to" if both provided, single date otherwise
-    let dateOfVisit: string | undefined
-    if (dateFrom && dateTo) {
-      dateOfVisit = `${dateFrom} to ${dateTo}`
-    } else if (dateFrom) {
-      dateOfVisit = dateFrom
+    // Send only the start date as dateOfVisit (DB column is DATE).
+    // If the user picked an end date, store it in additionalDetails.
+    const dateOfVisit = dateFrom || undefined
+    const additionalDetails: Record<string, unknown> = {}
+    if (dateTo && dateTo !== dateFrom) {
+      additionalDetails.dateToVisit = dateTo
+    }
+    if (purpose) {
+      additionalDetails.purposeOfVisit = purpose
+    }
+
+    // Map purpose → inquiryType so the admin panel type labels work
+    const purposeToType: Record<string, string> = {
+      leisure: "tour_booking",
+      pilgrimage: "tour_booking",
+      event: "general_contact",
+      official: "partnership",
     }
 
     try {
       await apiCreateInquiry({
         name,
-        email: formData.get("email") as string,
+        email,
         contactNumber: contactNumber || undefined,
-        purpose: purpose || undefined,
+        inquiryType: purposeToType[purpose] || "general_contact",
         dateOfVisit,
-        numberOfPax: formData.get("pax") ? Number(formData.get("pax")) : undefined,
+        numberOfPax: paxValue || undefined,
         message: (formData.get("message") as string) || "",
+        additionalDetails: Object.keys(additionalDetails).length > 0 ? additionalDetails : undefined,
       })
       setSuccess(true)
       setNameWarning(null)
+      setEmailWarning(null)
       setPhoneWarning(null)
       setDateWarning(null)
-      e.currentTarget.reset()
+      form.reset()
       setPurpose("")
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to submit inquiry. Please try again.")
@@ -167,33 +225,17 @@ export default function InquirePage() {
     <main className="min-h-screen bg-background">
 
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[360px] overflow-hidden flex items-end"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/river-festival.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl w-full px-4 lg:px-8 flex flex-col justify-end py-12 sm:py-16 md:py-20">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to home</span>
-          </Link>
-          <div className="space-y-3 max-w-3xl">
-            <span className="text-sm font-bold uppercase tracking-widest text-cyan-300">Tourism</span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
-              Tourist Inquiry & Registration
-            </h1>
-            <p className="text-lg text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Fill out the form below and we will get back to you with all the information you need for a smooth and enjoyable visit.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="inquire"
+        fallbackImage="/images/places/river-festival.jpg"
+        fallbackAccentColor="cyan-300"
+        fallbackLabel="Tourism"
+        fallbackTitle="Tourist Inquiry & Registration"
+        fallbackDescription="Fill out the form below and we will get back to you with all the information you need for a smooth and enjoyable visit."
+        showBackButton
+        alignBottom
+
+      />
 
       {/* Inquiry Form */}
       <section className="py-16 lg:py-20">
@@ -247,7 +289,7 @@ export default function InquirePage() {
               <CardContent className="p-6 md:p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid gap-6">
-                    {/* Full Name — letters only, no numbers */}
+                    {/* Full Name — letters/spaces only, max 18 chars */}
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-card-foreground">
                         Full Name
@@ -257,9 +299,10 @@ export default function InquirePage() {
                         name="name"
                         placeholder="Juan Dela Cruz"
                         required
+                        maxLength={18}
                         onChange={handleNameChange}
-                        pattern="^[A-Za-z\u00C0-\u00FF\u00F1\u00D1\s'\.,-]+$"
-                        title="Please enter a valid name (letters only, no numbers)"
+                        pattern="^[A-Za-z\u00C0-\u00FF\u00F1\u00D1\s]+$"
+                        title="Letters and spaces only, max 18 characters"
                       />
                       {nameWarning && (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -278,9 +321,19 @@ export default function InquirePage() {
                         id="email"
                         name="email"
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="you@gmail.com"
                         required
+                        onChange={handleEmailChange}
                       />
+                      <p className="text-[11px] text-muted-foreground">
+                        Gmail, Outlook, Yahoo, iCloud, etc.
+                      </p>
+                      {emailWarning && (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                          {emailWarning}
+                        </p>
+                      )}
                     </div>
 
                     {/* Contact Number — PH format validation */}
@@ -292,11 +345,11 @@ export default function InquirePage() {
                         id="contact"
                         name="contact"
                         type="tel"
-                        placeholder="09XX-XXX-XXXX"
+                        placeholder="+639XXXXXXXXX"
                         onChange={handlePhoneChange}
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Philippine mobile format: 09XX-XXX-XXXX or +639XXXXXXXXX
+                        Must start with +63 (e.g. +639XXXXXXXXX)
                       </p>
                       {phoneWarning && (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -359,9 +412,13 @@ export default function InquirePage() {
                         name="pax"
                         type="number"
                         min={1}
+                        max={20}
                         placeholder="1"
                         required
                       />
+                      <p className="text-[11px] text-muted-foreground">
+                        Maximum of 20 people per inquiry
+                      </p>
                     </div>
                   </div>
 

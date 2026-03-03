@@ -17,6 +17,7 @@ import {
   Moon,
   Home,
   Menu,
+  ImageIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState } from "react"
@@ -29,6 +30,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/home-content", label: "Home Content", icon: Home },
+  { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon },
   { href: "/admin/cms", label: "CMS", icon: FileEdit },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
   { href: "/admin/settings", label: "Settings", icon: Settings },
