@@ -286,7 +286,7 @@ class HomeContent
     public function getMilestones($all = false)
     {
         $sql = "SELECT milestone_id AS milestoneId, year, title, description, detail,
-                       sort_order AS sortOrder, is_active AS isActive,
+                       side, sort_order AS sortOrder, is_active AS isActive,
                        created_at AS createdAt, updates_at AS updatedAt
                 FROM milestone";
 
@@ -308,8 +308,8 @@ class HomeContent
 
     public function createMilestone($data)
     {
-        $sql = "INSERT INTO milestone (year, title, description, detail, sort_order, is_active)
-                VALUES (:year, :title, :description, :detail, :sortOrder, :isActive)";
+        $sql = "INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active)
+                VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([
@@ -317,6 +317,7 @@ class HomeContent
             ':title'       => $data['title'] ?? '',
             ':description' => $data['description'] ?? '',
             ':detail'      => $data['detail'] ?? '',
+            ':side'        => $data['side'] ?? 'left',
             ':sortOrder'   => $data['sortOrder'] ?? '0',
             ':isActive'    => isset($data['isActive']) ? ($data['isActive'] ? 1 : 0) : 1,
         ]);
@@ -334,6 +335,7 @@ class HomeContent
             'title'       => 'title',
             'description' => 'description',
             'detail'      => 'detail',
+            'side'        => 'side',
             'sortOrder'   => 'sort_order',
             'isActive'    => 'is_active',
         ];

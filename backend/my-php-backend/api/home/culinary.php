@@ -77,5 +77,5 @@ try {
     Response::json($items);
 } catch (Exception $e) {
     error_log("home/culinary error: " . $e->getMessage());
-    Response::error('An error occurred.', 500);
+    Response::error('home/culinary: ' . $e->getMessage(), 500);
 }

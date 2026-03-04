@@ -1,12 +1,17 @@
 <?php
 /**
- * Inquiry Model — Schema v4 (hybrid).
+ * Inquiry Model — Schema v5 (hybrid + reply thread + assignment).
  * Real sortable columns: date_of_visit, number_of_pax.
  * Contextual extras stored in additional_details JSON:
  *   school_name, company_name, referral_source, dietary_needs, etc.
  *
  * inquiry_type is VARCHAR (general_contact, tour_booking, partnership, …).
- * status ENUM: unread, in_progress, resolved, archived.
+ * status ENUM: unread, in_progress, assigned, archived, spam, trash.
+ *   - assigned  → marked as assigned to a tourist guide (replaces 'resolved')
+ *   - spam      → flagged as spam, hidden from main inbox
+ *   - trash     → soft-deleted, shown in Trash tab, can be permanently removed
+ * reply_text / replied_at / replied_by → in-app reply thread.
+ * assigned_to → tourist guide name/ID handling this inquiry.
  */
 
 class Inquiry
@@ -25,7 +30,9 @@ class Inquiry
         return "
             SELECT inquiry_id, inquiry_type, full_name, email_address,
                    contact_number, date_of_visit, number_of_pax,
-                   message, additional_details, status, created_at
+                   message, additional_details, status,
+                   assigned_to, reply_text, replied_at, replied_by,
+                   created_at
             FROM inquiries
         ";
     }
@@ -96,7 +103,7 @@ class Inquiry
         }
     }
 
-    /** Update inquiry status. */
+    /** Update inquiry — status, assignment, or save a reply. */
     public function update(int $id, array $data): bool
     {
         $fields = [];
@@ -105,6 +112,26 @@ class Inquiry
         if (array_key_exists('status', $data)) {
             $fields[] = "status = :status";
             $params[':status'] = $data['status'];
+        }
+
+        if (array_key_exists('assigned_to', $data)) {
+            $fields[] = "assigned_to = :assigned_to";
+            $params[':assigned_to'] = $data['assigned_to'];
+        }
+
+        if (array_key_exists('reply_text', $data)) {
+            $fields[] = "reply_text = :reply_text";
+            $params[':reply_text'] = $data['reply_text'];
+        }
+
+        if (array_key_exists('replied_at', $data)) {
+            $fields[] = "replied_at = :replied_at";
+            $params[':replied_at'] = $data['replied_at'];
+        }
+
+        if (array_key_exists('replied_by', $data)) {
+            $fields[] = "replied_by = :replied_by";
+            $params[':replied_by'] = $data['replied_by'];
         }
 
         if (empty($fields)) return true;
@@ -141,6 +168,10 @@ class Inquiry
             'message'           => $row['message'] ?? '',
             'additionalDetails' => $extras,
             'status'            => $row['status'],
+            'assignedTo'        => $row['assigned_to'] ?? null,
+            'replyText'         => $row['reply_text'] ?? null,
+            'repliedAt'         => $row['replied_at'] ?? null,
+            'repliedBy'         => $row['replied_by'] ?? null,
             'createdAt'         => $row['created_at'],
         ];
     }

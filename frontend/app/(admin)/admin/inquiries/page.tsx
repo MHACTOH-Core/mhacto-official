@@ -37,7 +37,7 @@ import {
   Search,
   ArrowLeft,
   MailOpen,
-  CheckCircle2,
+  UserCheck,
   Mail,
   Clock,
   Trash2,
@@ -49,18 +49,26 @@ import {
   Loader2,
   ListFilter,
   Reply,
+  ShieldAlert,
+  RotateCcw,
+  Send,
+  X,
 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
+import { apiReplyInquiry } from "@/lib/api"
 
-type MailboxTab = "all" | "unread" | "in_progress" | "resolved" | "archived"
+type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: "all", label: "All", icon: Inbox },
-  { key: "unread", label: "Unread", icon: Mail },
+  { key: "all",         label: "All Mail",    icon: Inbox },
+  { key: "unread",      label: "Unread",      icon: Mail },
   { key: "in_progress", label: "In Progress", icon: Loader2 },
-  { key: "resolved", label: "Resolved", icon: CheckCircle2 },
-  { key: "archived", label: "Archived", icon: Archive },
+  { key: "assigned",    label: "Assigned",    icon: UserCheck },
+  { key: "archived",    label: "Archived",    icon: Archive },
+  { key: "spam",        label: "Spam",        icon: ShieldAlert },
+  { key: "trash",       label: "Trash",       icon: Trash2 },
 ]
 
 export default function InquiriesPage() {
@@ -72,6 +80,13 @@ export default function InquiriesPage() {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
+  // Assign dialog
+  const [assignTarget, setAssignTarget] = useState<Inquiry | null>(null)
+  const [assignGuideName, setAssignGuideName] = useState("")
+  // Reply composer
+  const [replyText, setReplyText] = useState("")
+  const [isSendingReply, setIsSendingReply] = useState(false)
+  const [showReplyBox, setShowReplyBox] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -79,11 +94,12 @@ export default function InquiriesPage() {
 
   if (!isLoggedIn) return null
 
-  // Filtered by tab
+  // Filtered by tab — Spam and Trash are hidden from "All Mail"
   const getFiltered = () => {
     let list = inquiries
     switch (activeTab) {
       case "all":
+        list = inquiries.filter((i) => i.status !== "spam" && i.status !== "trash")
         break
       case "unread":
         list = inquiries.filter((i) => i.status === "unread")
@@ -91,11 +107,17 @@ export default function InquiriesPage() {
       case "in_progress":
         list = inquiries.filter((i) => i.status === "in_progress")
         break
-      case "resolved":
-        list = inquiries.filter((i) => i.status === "resolved")
+      case "assigned":
+        list = inquiries.filter((i) => i.status === "assigned")
         break
       case "archived":
         list = inquiries.filter((i) => i.status === "archived")
+        break
+      case "spam":
+        list = inquiries.filter((i) => i.status === "spam")
+        break
+      case "trash":
+        list = inquiries.filter((i) => i.status === "trash")
         break
     }
     if (search) {
@@ -115,17 +137,21 @@ export default function InquiriesPage() {
   const filtered = getFiltered()
 
   const tabCounts: Record<MailboxTab, number> = {
-    all: inquiries.length,
-    unread: inquiries.filter((i) => i.status === "unread").length,
+    all:         inquiries.filter((i) => i.status !== "spam" && i.status !== "trash").length,
+    unread:      inquiries.filter((i) => i.status === "unread").length,
     in_progress: inquiries.filter((i) => i.status === "in_progress").length,
-    resolved: inquiries.filter((i) => i.status === "resolved").length,
-    archived: inquiries.filter((i) => i.status === "archived").length,
+    assigned:    inquiries.filter((i) => i.status === "assigned").length,
+    archived:    inquiries.filter((i) => i.status === "archived").length,
+    spam:        inquiries.filter((i) => i.status === "spam").length,
+    trash:       inquiries.filter((i) => i.status === "trash").length,
   }
 
   const unreadCount = tabCounts.unread
 
-  // Open inquiry — mark as in_progress if unread
+  // Open inquiry — mark as in_progress if unread; reset reply composer
   const openInquiry = (inq: Inquiry) => {
+    setShowReplyBox(false)
+    setReplyText("")
     if (inq.status === "unread") {
       const updated = { ...inq, status: "in_progress" as InquiryStatus }
       setSelectedInquiry(updated)
@@ -174,8 +200,18 @@ export default function InquiriesPage() {
     setSelectedIds(new Set())
   }
 
-  const bulkResolve = () => {
-    selectedIds.forEach((id) => updateInquiry(id, { status: "resolved" }))
+  const bulkAssign = () => {
+    selectedIds.forEach((id) => updateInquiry(id, { status: "assigned" }))
+    setSelectedIds(new Set())
+  }
+
+  const bulkSpam = () => {
+    selectedIds.forEach((id) => updateInquiry(id, { status: "spam" }))
+    setSelectedIds(new Set())
+  }
+
+  const bulkTrash = () => {
+    selectedIds.forEach((id) => updateInquiry(id, { status: "trash" }))
     setSelectedIds(new Set())
   }
 
@@ -225,14 +261,69 @@ export default function InquiriesPage() {
     return <ListFilter className="h-3.5 w-3.5 text-primary" />
   }
 
+  // ── New action handlers ────────────────────────────────────────
+
+  const handleMarkSpam = (inq: Inquiry) => {
+    handleStatusChange(inq, "spam")
+    if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
+  }
+
+  const handleMoveToTrash = (inq: Inquiry) => {
+    handleStatusChange(inq, "trash")
+    if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
+  }
+
+  const handleRestoreFromTrash = (inq: Inquiry) => {
+    handleStatusChange(inq, "unread")
+  }
+
+  const confirmAssign = () => {
+    if (!assignTarget || !assignGuideName.trim()) return
+    const guideName = assignGuideName.trim()
+    updateInquiry(assignTarget.id, { status: "assigned", assignedTo: guideName })
+    if (selectedInquiry?.id === assignTarget.id) {
+      setSelectedInquiry({ ...assignTarget, status: "assigned", assignedTo: guideName })
+    }
+    setAssignTarget(null)
+    setAssignGuideName("")
+  }
+
+  const handleSendReply = async (openEmail: boolean) => {
+    if (!selectedInquiry || !replyText.trim()) return
+    setIsSendingReply(true)
+    try {
+      await apiReplyInquiry(selectedInquiry.id, replyText.trim())
+      const updated = { ...selectedInquiry, replyText: replyText.trim(), repliedAt: new Date().toISOString(), repliedBy: "Admin" }
+      updateInquiry(selectedInquiry.id, { replyText: replyText.trim(), repliedAt: new Date().toISOString(), repliedBy: "Admin" })
+      setSelectedInquiry(updated)
+      setReplyText("")
+      setShowReplyBox(false)
+      if (openEmail) {
+        const subject = encodeURIComponent(
+          `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
+        )
+        const body = encodeURIComponent(
+          `Dear ${selectedInquiry.name},\n\nThank you for reaching out to the Municipal Heritage, Arts, Culture and Tourism Office (MHACTO) of Bocaue.\n\n${replyText.trim()}\n\nBest regards,\nMHACTO Bocaue Tourism Office`
+        )
+        window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
+      }
+    } catch {
+      // reply saved optimistically
+    } finally {
+      setIsSendingReply(false)
+    }
+  }
+
   // ── Empty‑state messages ───────────────────────────────────────
 
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
-    all: { icon: Inbox, title: "No inquiries yet", desc: "New inquiries will appear here." },
-    unread: { icon: Mail, title: "All caught up!", desc: "No unread inquiries." },
-    in_progress: { icon: Loader2, title: "Nothing in progress", desc: "Inquiries being worked on appear here." },
-    resolved: { icon: CheckCircle2, title: "No resolved inquiries", desc: "Resolved inquiries will show here." },
-    archived: { icon: Archive, title: "Archive is empty", desc: "Archived inquiries will show here." },
+    all:         { icon: Inbox,      title: "No inquiries yet",          desc: "New inquiries will appear here." },
+    unread:      { icon: Mail,       title: "All caught up!",            desc: "No unread inquiries." },
+    in_progress: { icon: Loader2,    title: "Nothing in progress",       desc: "Inquiries being worked on appear here." },
+    assigned:    { icon: UserCheck,  title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide appear here." },
+    archived:    { icon: Archive,    title: "Archive is empty",          desc: "Archived inquiries will show here." },
+    spam:        { icon: ShieldAlert, title: "No spam",                  desc: "Inquiries marked as spam appear here." },
+    trash:       { icon: Trash2,     title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
   }
 
   return (
@@ -316,14 +407,17 @@ export default function InquiriesPage() {
                 <span className="text-xs font-medium text-muted-foreground">
                   {selectedIds.size} selected
                 </span>
-                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkResolve}>
-                  <CheckCircle2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Resolve</span>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkAssign}>
+                  <UserCheck className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Assign</span>
                 </Button>
                 <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkArchive}>
                   <Archive className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Archive</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={bulkDelete}>
-                  <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Delete</span>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkSpam}>
+                  <ShieldAlert className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Spam</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2 text-destructive hover:text-destructive" onClick={activeTab === "trash" ? bulkDelete : bulkTrash}>
+                  <Trash2 className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">{activeTab === "trash" ? "Delete Forever" : "Trash"}</span>
                 </Button>
               </div>
             )}
@@ -503,46 +597,88 @@ export default function InquiriesPage() {
 
                   {/* Action buttons */}
                   <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-                    {selectedInquiry.status !== "resolved" && (
+
+                    {/* Assign button — not shown when in trash/spam */}
+                    {selectedInquiry.status !== "assigned" && selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => handleStatusChange(selectedInquiry, "resolved")}>
-                            <CheckCircle2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                            <span className="hidden sm:inline">Resolve</span>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName("") }}>
+                            <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                            <span className="hidden sm:inline">Assign</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Mark as resolved</TooltipContent>
+                        <TooltipContent>Assign to a tourist guide</TooltipContent>
                       </Tooltip>
                     )}
 
-                    {selectedInquiry.status !== "archived" ? (
+                    {/* Restore (only in trash) */}
+                    {selectedInquiry.status === "trash" && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleArchive(selectedInquiry)}>
-                            <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => handleRestoreFromTrash(selectedInquiry)}>
+                            <RotateCcw className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                            <span className="hidden sm:inline">Restore</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Archive</TooltipContent>
+                        <TooltipContent>Restore to inbox</TooltipContent>
+                      </Tooltip>
+                    )}
+
+                    {/* Archive toggle — not shown in spam/trash */}
+                    {selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
+                      selectedInquiry.status !== "archived" ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleArchive(selectedInquiry)}>
+                              <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Archive</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleStatusChange(selectedInquiry, "unread")}>
+                              <Inbox className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move to inbox</TooltipContent>
+                        </Tooltip>
+                      )
+                    )}
+
+                    {/* Spam */}
+                    {selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-orange-500 hover:text-orange-600" onClick={() => handleMarkSpam(selectedInquiry)}>
+                            <ShieldAlert className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Mark as spam</TooltipContent>
+                      </Tooltip>
+                    )}
+
+                    {/* Trash / Delete Forever */}
+                    {selectedInquiry.status !== "trash" ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleMoveToTrash(selectedInquiry)}>
+                            <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Move to trash</TooltipContent>
                       </Tooltip>
                     ) : (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleStatusChange(selectedInquiry, "unread")}>
-                            <Inbox className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(selectedInquiry)}>
+                            <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Move to inbox</TooltipContent>
+                        <TooltipContent>Delete permanently</TooltipContent>
                       </Tooltip>
                     )}
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(selectedInquiry)}>
-                          <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Delete permanently</TooltipContent>
-                    </Tooltip>
                   </div>
                 </div>
 
@@ -669,28 +805,140 @@ export default function InquiriesPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Reply via email */}
-                  <div className="pt-2">
-                    <Button
-                      className="gap-2"
-                      onClick={() => {
-                        const subject = encodeURIComponent(
-                          `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
-                        )
-                        const body = encodeURIComponent(
-                          `Dear ${selectedInquiry.name},\n\nThank you for reaching out to the Municipal Heritage, Arts, Culture and Tourism Office (MHACTO) of Bocaue.\n\nRegarding your inquiry:\n---\n${selectedInquiry.message}\n---\n\n\n\nBest regards,\nMHACTO Bocaue Tourism Office`
-                        )
-                        window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
-                      }}
-                    >
-                      <Reply className="h-4 w-4" />
-                      Reply via Email
-                    </Button>
-                  </div>
+                  {/* Assigned guide info */}
+                  {selectedInquiry.status === "assigned" && selectedInquiry.assignedTo && (
+                    <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                      <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
+                          <UserCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Assigned to Tourist Guide</p>
+                          <p className="text-sm font-semibold text-card-foreground">{selectedInquiry.assignedTo}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Existing reply thread */}
+                  {selectedInquiry.replyText && (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0 text-[10px] font-bold text-primary">
+                            ME
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <p className="text-xs font-semibold text-card-foreground">
+                                {selectedInquiry.repliedBy ?? "Admin"}
+                              </p>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {selectedInquiry.repliedAt ? safeFormatDate(selectedInquiry.repliedAt, "MMM d, yyyy · h:mm a") : ""}
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap text-xs text-card-foreground leading-relaxed">
+                              {selectedInquiry.replyText}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Reply composer */}
+                  {selectedInquiry.status !== "trash" && (
+                    <div className="pt-1">
+                      {!showReplyBox ? (
+                        <Button
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => setShowReplyBox(true)}
+                        >
+                          <Reply className="h-4 w-4" />
+                          {selectedInquiry.replyText ? "Reply Again" : "Reply"}
+                        </Button>
+                      ) : (
+                        <Card className="border-border shadow-sm">
+                          <CardContent className="p-3 sm:p-4 space-y-3">
+                            {/* To: line */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground border-b border-border pb-2">
+                              <span className="font-medium">To:</span>
+                              <span className="text-card-foreground">{selectedInquiry.name}</span>
+                              <span className="text-primary/70">&lt;{selectedInquiry.email}&gt;</span>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => { setShowReplyBox(false); setReplyText("") }}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <Textarea
+                              placeholder={`Dear ${selectedInquiry.name},\n\nThank you for your inquiry…`}
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              className="min-h-[120px] text-sm resize-none"
+                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                size="sm"
+                                className="gap-1.5"
+                                disabled={!replyText.trim() || isSendingReply}
+                                onClick={() => handleSendReply(true)}
+                              >
+                                {isSendingReply ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                Send & Open Gmail
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                                disabled={!replyText.trim() || isSendingReply}
+                                onClick={() => handleSendReply(false)}
+                              >
+                                Save Reply Only
+                              </Button>
+                              <span className="text-[10px] text-muted-foreground">
+                                "Send & Open Gmail" saves the reply and opens your email client
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </div>
+
+          {/* ─── Assign Dialog ────────────────────────────────── */}
+          <AlertDialog open={!!assignTarget} onOpenChange={() => { setAssignTarget(null); setAssignGuideName("") }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Enter the name of the tourist guide who will handle the inquiry from &quot;{assignTarget?.name}&quot;.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="px-6 pb-2">
+                <Input
+                  placeholder="Tourist guide name…"
+                  value={assignGuideName}
+                  onChange={(e) => setAssignGuideName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") confirmAssign() }}
+                  autoFocus
+                />
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmAssign}
+                  disabled={!assignGuideName.trim()}
+                  className="bg-primary text-primary-foreground"
+                >
+                  Assign
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* ─── Delete Confirm ───────────────────────────────── */}
           <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

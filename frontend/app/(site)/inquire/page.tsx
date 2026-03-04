@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { asset } from "@/lib/utils"
-import { ArrowLeft, Send, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { ArrowLeft, Send, Loader2, CheckCircle, AlertCircle, GraduationCap, MapPin } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { useState, type FormEvent, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
@@ -68,6 +68,9 @@ function isValidEmail(email: string): boolean {
 
 export default function InquirePage() {
   const [purpose, setPurpose] = useState("")
+  // "tourist" | "student" — controls whether the school name field is shown
+  const [visitorType, setVisitorType] = useState<"tourist" | "student">("tourist")
+  const [schoolName, setSchoolName] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +80,7 @@ export default function InquirePage() {
   const [emailWarning, setEmailWarning] = useState<string | null>(null)
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null)
   const [dateWarning, setDateWarning] = useState<string | null>(null)
+  const [schoolWarning, setSchoolWarning] = useState<string | null>(null)
 
   /** Validate name on change — letters/spaces only, max 18 chars */
   function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
@@ -171,6 +175,14 @@ export default function InquirePage() {
       return
     }
 
+    // Validate school name when student is selected
+    if (visitorType === "student" && !schoolName.trim()) {
+      setError("Please enter your school name.")
+      setSchoolWarning("School name is required for student visitors.")
+      setSubmitting(false)
+      return
+    }
+
     if (dateFrom && dateTo && dateTo < dateFrom) {
       setError("The end date cannot be before the start date.")
       setSubmitting(false)
@@ -187,13 +199,19 @@ export default function InquirePage() {
     if (purpose) {
       additionalDetails.purposeOfVisit = purpose
     }
+    // Always store visitor type so admin can see Tourist vs Student
+    additionalDetails.visitorType = visitorType
+    if (visitorType === "student" && schoolName.trim()) {
+      additionalDetails.schoolName = schoolName.trim()
+    }
 
-    // Map purpose → inquiryType so the admin panel type labels work
+    // Map purpose → inquiryType; students on educational trips map to tour_booking
     const purposeToType: Record<string, string> = {
       leisure: "tour_booking",
       pilgrimage: "tour_booking",
       event: "general_contact",
       official: "partnership",
+      educational: "tour_booking",
     }
 
     try {
@@ -212,8 +230,11 @@ export default function InquirePage() {
       setEmailWarning(null)
       setPhoneWarning(null)
       setDateWarning(null)
+      setSchoolWarning(null)
       form.reset()
       setPurpose("")
+      setVisitorType("tourist")
+      setSchoolName("")
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to submit inquiry. Please try again.")
     } finally {
@@ -422,9 +443,17 @@ export default function InquirePage() {
                     </div>
                   </div>
 
+                  {/* Purpose of Visit */}
                   <div className="space-y-2">
                     <Label className="text-card-foreground">Purpose of Visit</Label>
-                    <Select value={purpose} onValueChange={setPurpose}>
+                    <Select
+                      value={purpose}
+                      onValueChange={(val) => {
+                        setPurpose(val)
+                        // Auto-switch visitor type for educational visits
+                        if (val === "educational") setVisitorType("student")
+                      }}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select purpose" />
                       </SelectTrigger>
@@ -433,8 +462,92 @@ export default function InquirePage() {
                         <SelectItem value="pilgrimage">Pilgrimage</SelectItem>
                         <SelectItem value="event">Event</SelectItem>
                         <SelectItem value="official">Official Business</SelectItem>
+                        <SelectItem value="educational">Educational / Field Trip</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* ── Visitor Type ─────────────────────────── */}
+                  <div className="space-y-3">
+                    <Label className="text-card-foreground">Visitor Type</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Tourist */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisitorType("tourist")
+                          setSchoolName("")
+                          setSchoolWarning(null)
+                        }}
+                        className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${
+                          visitorType === "tourist"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-muted-foreground/50 text-muted-foreground"
+                        }`}
+                      >
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                          visitorType === "tourist" ? "bg-primary/15" : "bg-muted"
+                        }`}>
+                          <MapPin className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold leading-none">Tourist</p>
+                          <p className="mt-0.5 text-[11px] opacity-70">Leisure / personal visit</p>
+                        </div>
+                      </button>
+
+                      {/* Student */}
+                      <button
+                        type="button"
+                        onClick={() => setVisitorType("student")}
+                        className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${
+                          visitorType === "student"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-muted-foreground/50 text-muted-foreground"
+                        }`}
+                      >
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                          visitorType === "student" ? "bg-primary/15" : "bg-muted"
+                        }`}>
+                          <GraduationCap className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold leading-none">Student</p>
+                          <p className="mt-0.5 text-[11px] opacity-70">Field trip / educational</p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* School name — slides in when Student is selected */}
+                    {visitorType === "student" && (
+                      <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                        <Label htmlFor="school-name" className="text-card-foreground">
+                          School / University Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="school-name"
+                          name="school-name"
+                          placeholder="e.g. Bocaue National High School"
+                          value={schoolName}
+                          onChange={(e) => {
+                            setSchoolName(e.target.value)
+                            if (e.target.value.trim()) setSchoolWarning(null)
+                          }}
+                          className={schoolWarning ? "border-amber-500 focus-visible:ring-amber-500" : ""}
+                          autoFocus
+                        />
+                        {schoolWarning ? (
+                          <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                            {schoolWarning}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground">
+                            This helps us prepare the right information for your class.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

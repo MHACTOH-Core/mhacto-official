@@ -25,9 +25,9 @@ export async function apiFetch<T>(
 
   // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
   // Omitting it on GET avoids unnecessary CORS preflight requests.
-  const headers: HeadersInit = { ...options.headers }
+  const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
   if (options.body) {
-    headers["Content-Type"] = (headers as Record<string, string>)["Content-Type"] ?? "application/json"
+    headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
   }
 
   const response = await fetch(url, {
@@ -267,9 +267,21 @@ export function apiDeletePost(id: string) {
 
 /** Update an inquiry's status or details (admin) */
 export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
+  // Convert camelCase frontend fields to the snake_case the PHP backend expects
+  const payload: Record<string, unknown> = {}
+  if (inquiryData.status !== undefined) payload.status = inquiryData.status
+  if (inquiryData.assignedTo !== undefined) payload.assigned_to = inquiryData.assignedTo
+  if (inquiryData.replyText !== undefined) payload.reply_text = inquiryData.replyText
+  if (inquiryData.repliedAt !== undefined) payload.replied_at = inquiryData.repliedAt
+  if (inquiryData.repliedBy !== undefined) payload.replied_by = inquiryData.repliedBy
+
+  // If the only fields are reply-related (already saved via apiReplyInquiry), skip the API call
+  const hasNonReplyField = payload.status !== undefined || payload.assigned_to !== undefined
+  if (!hasNonReplyField) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
+
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
     method: "POST",
-    body: JSON.stringify(inquiryData),
+    body: JSON.stringify(payload),
   })
 }
 
@@ -280,11 +292,19 @@ export function apiDeleteInquiry(id: string) {
   })
 }
 
-export function apiReplyInquiry(id: string, message: string) {
-  // DEPRECATED — reply endpoint removed in schema v3
-  return apiFetch<{ message: string }>(`/api/inquiries/reply.php?id=${id}`, {
+export function apiReplyInquiry(id: string, replyText: string, repliedBy?: string) {
+  // Sends GET /api/inquiries/reply.php?id=... → PHP saves reply_text, replied_at, replied_by
+  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/reply.php?id=${id}`, {
     method: "POST",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ reply_text: replyText, replied_by: repliedBy ?? "Admin" }),
+  })
+}
+
+/** Assign an inquiry to a tourist guide — sets status to 'assigned' and saves guide name */
+export function apiAssignInquiry(id: string, assignedTo: string) {
+  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
+    method: "POST",
+    body: JSON.stringify({ status: "assigned", assigned_to: assignedTo }),
   })
 }
 

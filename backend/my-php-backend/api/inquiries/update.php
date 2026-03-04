@@ -1,7 +1,8 @@
 <?php
 /**
  * PUT|POST /api/inquiries/update.php?id=123
- * Body: { status: 'unread' | 'in_progress' | 'resolved' | 'archived' }
+ * Body: { status?: 'unread' | 'in_progress' | 'assigned' | 'archived' | 'spam' | 'trash',
+ *         assigned_to?: string  (tourist guide name/ID) }
  */
 
 require_once __DIR__ . '/../../core/Response.php';
@@ -30,16 +31,31 @@ try {
 
     $raw = file_get_contents('php://input');
     $data = $raw ? json_decode($raw, true) : null;
-    if (!$data || !isset($data['status'])) {
-        Response::error('Status is required.', 400);
+    if (!$data) {
+        Response::error('Request body is required.', 400);
     }
 
-    $allowed = ['unread', 'in_progress', 'resolved', 'archived'];
-    if (!in_array($data['status'], $allowed, true)) {
-        Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
+    $updatePayload = [];
+
+    // Status update
+    if (isset($data['status'])) {
+        $allowed = ['unread', 'in_progress', 'assigned', 'archived', 'spam', 'trash'];
+        if (!in_array($data['status'], $allowed, true)) {
+            Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
+        }
+        $updatePayload['status'] = $data['status'];
     }
 
-    $success = $inquiry->update($id, ['status' => $data['status']]);
+    // Assignment update
+    if (array_key_exists('assigned_to', $data)) {
+        $updatePayload['assigned_to'] = $data['assigned_to'] ? trim($data['assigned_to']) : null;
+    }
+
+    if (empty($updatePayload)) {
+        Response::error('No updatable fields provided (status, assigned_to).', 400);
+    }
+
+    $success = $inquiry->update($id, $updatePayload);
     if ($success) {
         $updated = $inquiry->readOne($id);
         Response::json([

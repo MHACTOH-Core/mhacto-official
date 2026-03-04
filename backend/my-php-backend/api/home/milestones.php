@@ -90,5 +90,5 @@ try {
     }
 } catch (Exception $e) {
     error_log("home/milestones error: " . $e->getMessage());
-    Response::error('An error occurred.', 500);
+    Response::error('home/milestones: ' . $e->getMessage(), 500);
 }

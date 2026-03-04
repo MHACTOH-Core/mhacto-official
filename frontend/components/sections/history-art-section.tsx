@@ -110,13 +110,13 @@ export function HistoryArtSection() {
       .then((milestones) => {
         if (milestones && milestones.length > 0) {
           // Convert API Milestone shape to the timeline UI format
-          const mappedMilestones: TimelineMilestone[] = milestones.map((milestone) => ({
+          const mappedMilestones: TimelineMilestone[] = milestones.map((milestone, idx) => ({
             milestoneId: milestone.milestoneId,
             year: milestone.year,
             title: milestone.title,
             description: milestone.description,
             detail: milestone.detail,
-            side: milestone.side,
+            side: milestone.side ?? (idx % 2 === 0 ? "left" : "right"),
           }))
           setTimelineMilestones(mappedMilestones)
         }

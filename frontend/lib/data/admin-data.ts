@@ -53,7 +53,7 @@ export interface CMSPost {
   updatedAt: string // ISO
 }
 
-export type InquiryStatus = "unread" | "in_progress" | "resolved" | "archived"
+export type InquiryStatus = "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
 export type InquiryType = "general_contact" | "tour_booking" | "partnership"
 
@@ -68,6 +68,14 @@ export interface Inquiry {
   status: InquiryStatus
   inquiryType: InquiryType
   additionalDetails?: Record<string, unknown>
+  /** Tourist guide name/ID assigned to handle this inquiry */
+  assignedTo?: string
+  /** Admin reply text (in-app reply thread) */
+  replyText?: string
+  /** ISO timestamp of when the admin replied */
+  repliedAt?: string
+  /** Admin username who sent the reply */
+  repliedBy?: string
   createdAt: string
 }
 
@@ -180,10 +188,12 @@ export function getEventsLabel(): [ContentLabel, { label: string; color: string;
 }
 
 export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: string }> = {
-  unread: { label: "Unread", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  unread:      { label: "Unread",      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
   in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
-  resolved: { label: "Resolved", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
-  archived: { label: "Archived", color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
+  assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  archived:    { label: "Archived",    color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
+  spam:        { label: "Spam",        color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  trash:       { label: "Trash",       color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
 }
 
 export const inquiryTypeLabels: Record<InquiryType, { label: string; color: string; icon: string }> = {
@@ -355,7 +365,7 @@ export const MOCK_INQUIRIES: Inquiry[] = [
     email: "john.reyes@company.com",
     contactNumber: "+63-918-765-4321",
     message: "Hello, I would like to inquire about available venues in Bocaue for a corporate team-building event. We are looking for a venue that can accommodate 50-80 persons sometime in March 2026. Please advise on options and rates.",
-    status: "resolved",
+    status: "assigned",
     inquiryType: "tour_booking",
     dateOfVisit: "2026-03-20",
     numberOfPax: 65,

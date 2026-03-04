@@ -89,5 +89,5 @@ try {
     }
 } catch (Exception $e) {
     error_log("home/landmarks error: " . $e->getMessage());
-    Response::error('An error occurred.', 500);
+    Response::error('home/landmarks: ' . $e->getMessage(), 500);
 }

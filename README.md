@@ -126,10 +126,6 @@ All validations run in real-time (on change) with amber warning messages, plus a
 | `history-art-section.tsx` | Expandable historical timeline with milestones — data from `api/home/milestones.php` | ✅ Complete |
 | `inquiry-section.tsx` | Full inquiry form with real-time validation (name, phone, date range, pax) — submits to `api/inquiries/create.php` | ✅ Complete |
 | `page-hero.tsx` | Reusable per-page hero banner with title/subtitle/image — data from `api/heroes/read.php?slug=` | ✅ Complete |
-| `featured-events-portrait.tsx` | Portrait-layout events card grid — static UI only, no backend integration yet | ⚠️ Static only |
-| `announcement-section.tsx` | Announcement banner/card section — static UI only, no backend integration yet | ⚠️ Static only |
-| `location-section.tsx` | Google Maps embed for the municipality — static embed, no dynamic data | ⚠️ Static only |
-| `tourism-tagline-section.tsx` | Decorative tagline/branding section — static copy only | ⚠️ Static only |
 
 ---
 
@@ -170,10 +166,6 @@ All validations run in real-time (on change) with amber warning messages, plus a
 | Hospitals | `/community/hospitals` | ✅ Complete |
 | Schools | `/community/schools` | ✅ Complete |
 | Inquire | `/inquire` | ✅ Complete |
-| Arts & Livelihood | `/arts-livelihood` | ⚠️ Static only |
-| Contact | `/contact` | ⚠️ Static only |
-| Mission & Vision | `/mission-vision` | ⚠️ Static only |
-| Tourism Office | `/tourism-office` | ⚠️ Static only |
 
 ---
 
