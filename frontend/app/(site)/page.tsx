@@ -12,6 +12,10 @@ const HistoryArtSection = dynamic(
   () => import("@/components/sections/history-art-section").then((m) => m.HistoryArtSection),
   { loading: () => <SectionSkeleton /> }
 )
+const FeaturedPeopleWonders = dynamic(
+  () => import("@/components/sections/featured-people-wonders").then((m) => m.FeaturedPeopleWonders),
+  { loading: () => <SectionSkeleton /> }
+)
 const PlacesCarousel = dynamic(
   () => import("@/components/sections/places-carousel").then((m) => m.PlacesCarousel),
   { loading: () => <SectionSkeleton /> }
@@ -59,10 +63,13 @@ export default function Home() {
       {/* 6. Places Carousel */}
       <PlacesCarousel />
 
-      {/* 7. History & Art */}
+      {/* 8. History & Art */}
       <HistoryArtSection />
 
-      {/* 8. News */}
+      {/* 9. Featured Human Wonders */}
+      <FeaturedPeopleWonders />
+
+      {/* 10. News */}
       <NewsSection />
     </main>
   )

@@ -4,20 +4,21 @@ import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
-import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight, Award, ShoppingBag } from "lucide-react"
+import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight, Award, ShoppingBag, ArrowRight } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { localCuisine as fallbackCuisine, festivals as fallbackFestivals, culturalPractices as fallbackPractices, artisans as fallbackArtisans, peopleWonders as fallbackPeople, type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
 const subPages = [
-  { label: "Local Cuisine", href: "/culture/local-cuisine", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
+  { label: "Culinary Wonders", href: "/culture/culinary-wonders", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
   { label: "Festivals & Celebrations", href: "/culture/festivals-celebrations", icon: Calendar, desc: "Annual events & festivities", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
   { label: "Cultural Practices", href: "/culture/practices-traditions", icon: Flame, desc: "Living customs & traditions", color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400" },
   { label: "Crafts & Artisan", href: "/culture/crafts-artisan", icon: Hammer, desc: "Master craftspeople of Bocaue", color: "bg-stone-100 text-stone-700 dark:bg-stone-900/20 dark:text-stone-400" },
-  { label: "People Wonders", href: "/culture/people-wonders", icon: Users, desc: "Notable living Bocaueños", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
+  { label: "People Wonders", href: "/culture/people-wonders", icon: Users, desc: "Notable Bocaueños making their mark", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
 ]
 
 const festivalTypeColor: Record<string, string> = {
@@ -34,7 +35,7 @@ const statusConfig = {
 }
 
 const navSections = [
-  { id: "cuisine", label: "Local Cuisine" },
+  { id: "cuisine", label: "Culinary Wonders" },
   { id: "festivals", label: "Festivals" },
   { id: "practices", label: "Cultural Practices" },
   { id: "crafts-artisans", label: "Crafts & Artisans" },
@@ -125,7 +126,7 @@ export default function CulturePage() {
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Utensils className="h-5 w-5 text-primary" /></div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Local Cuisine</h2>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Culinary Wonders</h2>
               <p className="text-muted-foreground">Flavors and foodways that define Bocaue&apos;s table</p>
             </div>
           </div>
@@ -150,6 +151,11 @@ export default function CulturePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/culture/culinary-wonders">See More Culinary Wonders <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -203,6 +209,11 @@ export default function CulturePage() {
               </Card>
             ))}
           </div>
+          <div className="mt-8 text-center">
+            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/culture/festivals-celebrations">See More Festivals <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -244,6 +255,11 @@ export default function CulturePage() {
                 </Card>
               )
             })}
+          </div>
+          <div className="mt-8 text-center">
+            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/culture/practices-traditions">See More Cultural Practices <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -295,6 +311,11 @@ export default function CulturePage() {
               </Card>
             ))}
           </div>
+          <div className="mt-8 text-center">
+            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/culture/crafts-artisan">See More Crafts & Artisans <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -305,7 +326,7 @@ export default function CulturePage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
             <div>
               <h2 className="text-2xl font-black text-foreground sm:text-3xl">People Wonders</h2>
-              <p className="text-muted-foreground">Notable living Bocaueños making their mark</p>
+              <p className="text-muted-foreground">Notable Bocaueños making their mark</p>
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -333,6 +354,11 @@ export default function CulturePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/culture/people-wonders">See More People Wonders <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
           </div>
         </div>
       </section>

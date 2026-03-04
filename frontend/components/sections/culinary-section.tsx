@@ -12,7 +12,7 @@ import { apiFetchCulinaryItems, type CulinaryItem } from "@/lib/api"
 // No hardcoded fallback — culinary items come from backend
 
 /** Maximum culinary cards shown on the homepage */
-const MAX_CULINARY_DISPLAY = 4
+const MAX_CULINARY_DISPLAY = 3
 
 export function CulinarySection() {
   const [allDelicacies, setAllDelicacies] = useState<CulinaryItem[]>([])
@@ -49,7 +49,7 @@ export function CulinarySection() {
             Taste of Bocaue
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            Featured Culinary Delicacies
+            Culinary Wonders
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
             From legendary crispy chicharon to generations-old kakanin, Bocaue's flavours
@@ -111,17 +111,15 @@ export function CulinarySection() {
           })}
         </div>
 
-        {/* CTA - Show only if there are items */}
-        {allDelicacies.length > 0 && (
-          <div className="mt-10 text-center reveal-on-scroll delay-300">
-            <Button asChild variant="outline" size="lg" className="rounded-full gap-2">
-              <Link href="/culture/local-cuisine">
-                Discover All Delicacies
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
+        {/* See More CTA */}
+        <div className="mt-10 text-center reveal-on-scroll delay-300">
+          <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link href="/culture/culinary-wonders">
+              See More Culinary Wonders
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </section>
   )

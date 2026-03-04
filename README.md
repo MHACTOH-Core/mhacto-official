@@ -100,6 +100,98 @@ All validations run in real-time (on change) with amber warning messages, plus a
 
 ---
 
+### March 4, 2026 — Frontend Feature Additions & Page Simplification
+
+#### 1. Culinary Section (Home Page)
+
+| Change | Details |
+|--------|---------|
+| Renamed | "Featured Culinary Delicacies" → **"Culinary Wonders"** |
+| Limit | Max featured items reduced from 4 → **3** |
+| CTA button | Changed from `outline` variant → solid **primary blue** |
+| Link | Now navigates to `/culture/culinary-wonders` |
+| Button text | "See More Culinary Wonders" |
+
+#### 2. Arts & Culture Page (`/culture`)
+
+- Renamed **"Local Cuisine"** → **"Culinary Wonders"** (nav, heading, sub-page card)
+- Renamed **"People Wonders"** sub-page label (was "Human Wonders" — see §8 below)
+- Added solid blue **"See More"** button at the bottom of every section (5 total: Culinary Wonders, Festivals, Cultural Practices, Crafts & Artisans, People Wonders)
+- Fixed duplicate `import Link from "next/link"` compiler error
+
+#### 3. Local Cuisine Page (`/culture/local-cuisine`)
+
+Added a full **Restaurants & Eateries in Bocaue** section with 6 static restaurant cards:
+- Aling Nena's Carinderia, Bocaue Lechon House, Puto Seko Central Bakery, Lutong Probinsya Restaurant, Manong Taho Kiosk, Plaza Merienda Center
+- Each card shows: type badge, price range, address, hours, and a highlight quote
+
+#### 4. Footer (`components/layout/footer.tsx`)
+
+| Before | After |
+|--------|-------|
+| `bg-foreground` (dark) | `bg-white` |
+| Dark text classes | `text-foreground` / `text-muted-foreground` |
+| No shadow | `shadow-[0_-8px_40px_rgba(0,0,0,0.18)]` |
+
+#### 5. New Pages Created
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Culinary Wonders | `/culture/culinary-wonders` | Filter bar, stats, featured carousel, all delicacies grid, restaurants section, seasonal guide |
+| People Wonders | `/culture/people-wonders` | Tab-based (Notable Persons / Master Artisans), category filter, awards expand/collapse |
+| Historical Roadmap | `/history/roadmap` | Era filter, alternating timeline cards with expand/collapse, era legend, stats bar |
+| Historical Wonders | `/history/historical-wonders` | 6 heritage sites (St. Martin Church, Philippine Arena, etc.) + historical figures grid |
+| Tourism Wonders | `/places/tourism-wonders` | Full attractions grid with search + category filter, story expand/collapse, CTA |
+
+#### 6. Inquiry Form Simplified (`/inquire`)
+
+Replaced the complex visitor type toggle + purpose dropdown with a clean 6-field form:
+
+| Field | Details |
+|-------|---------|
+| Full Name | Letters/spaces only, max 18 chars |
+| Email Address | Validated against known providers (Gmail, Yahoo, etc.) |
+| Inquiry Category | `<Select>` with **Student** or **Tourist** options only |
+| Number of People (Pax) | Numeric, min 1 |
+| Estimated Tour Dates | From / To date pickers, min = today |
+| Inquiry Details | Textarea, up to **4,000 characters** with live counter |
+
+Removed: Contact Number field, Purpose of Visit dropdown, School Name conditional, Visitor Type card toggle.
+
+#### 7. Home Page Additions (`app/(site)/page.tsx`)
+
+Added two new lazily-loaded section components:
+
+| Component | Position | Description |
+|-----------|----------|-------------|
+| `FeaturedRestaurants` | After Culinary section | 3 featured Bocaue restaurants (static data), links to `/culture/culinary-wonders` |
+| `FeaturedHumanWonders` | After History & Art section | 3 featured People Wonders cards, links to `/culture/people-wonders` |
+
+> **Note:** `FeaturedRestaurants` was subsequently moved — it now lives on `/culture/local-cuisine` only; removed from home page.
+
+#### 8. "Human Wonders" → "People Wonders" Rename
+
+All references renamed across:
+- `app/(site)/culture/page.tsx` — sub-pages array, nav label, section heading, "See More" button
+- `components/sections/featured-human-wonders.tsx` — section heading and CTA button
+- All link `href` values changed from `/culture/human-wonders` → `/culture/people-wonders`
+- The duplicate `/culture/human-wonders/page.tsx` directory was **deleted**; `/culture/people-wonders/page.tsx` is the canonical page
+
+#### 9. Travel & Tours Simplified (`/travel-tours`)
+
+| Removed | Kept |
+|---------|------|
+| Full itinerary time-block list | Name, description, type badge |
+| Difficulty badge | Duration, group size |
+| Large horizontal split-card layout | Price pill (on image) |
+| | Up to 3 included items |
+| | Booking contact (phone + email) |
+
+Layout changed from stacked horizontal cards → **3-column card grid**.
+Added "Want a custom tour?" CTA block linking to `/inquire`.
+
+---
+
 ### March 4, 2026 — Component & Page Completion Status
 
 #### Layout Components (`components/layout/`)
@@ -126,6 +218,8 @@ All validations run in real-time (on change) with amber warning messages, plus a
 | `history-art-section.tsx` | Expandable historical timeline with milestones — data from `api/home/milestones.php` | ✅ Complete |
 | `inquiry-section.tsx` | Full inquiry form with real-time validation (name, phone, date range, pax) — submits to `api/inquiries/create.php` | ✅ Complete |
 | `page-hero.tsx` | Reusable per-page hero banner with title/subtitle/image — data from `api/heroes/read.php?slug=` | ✅ Complete |
+| `featured-human-wonders.tsx` | Home page "People Wonders" preview — shows 3 featured cards, fetches `people-wonders` label, links to `/culture/people-wonders` | ✅ Complete |
+| `featured-restaurants.tsx` | Featured Restaurants preview — shows 3 Bocaue restaurant cards with rating, tags, and address (static data) | ✅ Complete |
 
 ---
 
@@ -155,13 +249,17 @@ All validations run in real-time (on change) with amber warning messages, plus a
 | Travel & Tours | `/travel-tours` | ✅ Complete |
 | History | `/history` | ✅ Complete |
 | History Timeline | `/history/timeline` | ✅ Complete |
+| Historical Roadmap | `/history/roadmap` | ✅ Complete |
+| Historical Wonders | `/history/historical-wonders` | ✅ Complete |
 | Notable Persons | `/history/notable-persons` | ✅ Complete |
 | Culture Overview | `/culture` | ✅ Complete |
+| Culinary Wonders | `/culture/culinary-wonders` | ✅ Complete |
 | Local Cuisine | `/culture/local-cuisine` | ✅ Complete |
 | Festivals & Celebrations | `/culture/festivals-celebrations` | ✅ Complete |
 | Cultural Practices & Traditions | `/culture/practices-traditions` | ✅ Complete |
 | Crafts & Artisan | `/culture/crafts-artisan` | ✅ Complete |
-| People & Wonders | `/culture/people-wonders` | ✅ Complete |
+| People Wonders | `/culture/people-wonders` | ✅ Complete |
+| Tourism Wonders | `/places/tourism-wonders` | ✅ Complete |
 | Local Business | `/arts-livelihood/local-business` | ✅ Complete |
 | Hospitals | `/community/hospitals` | ✅ Complete |
 | Schools | `/community/schools` | ✅ Complete |
