@@ -85,8 +85,8 @@ export default function InquirePage() {
   /** Validate name on change — letters/spaces only, max 18 chars */
   function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
-    if (value && value.length > 18) {
-      setNameWarning("Name must be 18 characters or less.")
+    if (value && value.length > 100) {
+      setNameWarning("Name must be 100 characters or less.")
     } else if (value && !isValidName(value)) {
       setNameWarning("Name must contain only letters and spaces (no numbers or special characters).")
     } else {
@@ -310,7 +310,7 @@ export default function InquirePage() {
               <CardContent className="p-6 md:p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid gap-6">
-                    {/* Full Name — letters/spaces only, max 18 chars */}
+                    {/* Full Name — letters/spaces only, max 100 chars */}
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-card-foreground">
                         Full Name
@@ -320,10 +320,10 @@ export default function InquirePage() {
                         name="name"
                         placeholder="Juan Dela Cruz"
                         required
-                        maxLength={18}
+                        maxLength={100}
                         onChange={handleNameChange}
                         pattern="^[A-Za-z\u00C0-\u00FF\u00F1\u00D1\s]+$"
-                        title="Letters and spaces only, max 18 characters"
+                        title="Letters and spaces only, max 100 characters"
                       />
                       {nameWarning && (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
