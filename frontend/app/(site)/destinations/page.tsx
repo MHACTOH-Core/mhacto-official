@@ -1,17 +1,15 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect } from "react"
-import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import { Landmark, BookOpen, Church, Compass, MapPin, Clock, Star, Ticket, Shield, Map, ExternalLink } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { heritageSites as fallbackHeritage, museums as fallbackMuseums, religiousSites as fallbackReligious, type HeritageSite, type Museum, type ReligiousSite } from "@/lib/data/destinations-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToHeritageSite, cmsToMuseum, cmsToReligiousSite, filterHeritage, filterMuseums, filterReligious } from "@/lib/cms-mappers"
+import { heritageSites, museums, religiousSites } from "@/lib/data/destinations-data"
 
 const museumTypeLabels: Record<string, string> = {
   history: "History & Heritage", art: "Art & Culture",
@@ -42,26 +40,6 @@ type MapDestination = {
 export default function DestinationsPage() {
   const [activeSection, setActiveSection] = useState("heritage-sites")
   const [mapDest, setMapDest] = useState<MapDestination | null>(null)
-  const [heritageSites, setHeritageSites] = useState<HeritageSite[]>(fallbackHeritage)
-  const [museums, setMuseums] = useState<Museum[]>(fallbackMuseums)
-  const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>(fallbackReligious)
-
-  // Sends GET /api/posts/read.php?label=destinations&status=published → PHP runs SQL SELECT → returns JSON
-  // Then client-side sorts into heritage sites, museums, and religious sites
-  useEffect(() => {
-    apiFetchByLabel("destinations")
-      .then((posts) => {
-        if (posts && posts.length > 0) {
-          const h = filterHeritage(posts)
-          const m = filterMuseums(posts)
-          const r = filterReligious(posts)
-          if (h.length > 0) setHeritageSites(h.map(cmsToHeritageSite))
-          if (m.length > 0) setMuseums(m.map(cmsToMuseum))
-          if (r.length > 0) setReligiousSites(r.map(cmsToReligiousSite))
-        }
-      })
-      .catch(() => { /* keep fallback */ })
-  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,37 +61,30 @@ export default function DestinationsPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Landmark className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Tourist Destinations</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              From heritage churches to riverside views — explore Bocaue&apos;s most iconic sites and sacred places.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="destinations"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Landmark"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Bocaue Wonders"
+        fallbackTitle="Tourist Destinations"
+        fallbackDescription="From heritage churches to riverside views — explore Bocaue's most iconic sites and sacred places."
+      />
 
-      {/* Sticky in-page nav */}
-      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+          {/* Sticky nav */}
+      <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex gap-1 overflow-x-auto py-1">
             {navSections.map((s) => (
-              <button key={s.id} onClick={() => scrollTo(s.id)}
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
                 className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}>
+                  activeSection === s.id
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
                 {s.label}
               </button>
             ))}
@@ -122,7 +93,7 @@ export default function DestinationsPage() {
       </div>
 
       {/* ── Heritage Sites ── */}
-      <section id="heritage-sites" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+      <section id="heritage-sites" className="py-12` sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Landmark className="h-5 w-5 text-primary" /></div>
@@ -193,7 +164,7 @@ export default function DestinationsPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {museums.map((museum) => (
               <Card key={museum.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <div className="relative h-36 overflow-hidden">
+                <div className="relative h-48 overflow-hidden">
                   <Image src={museum.image} alt={museum.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">

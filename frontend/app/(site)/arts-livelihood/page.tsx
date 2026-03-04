@@ -55,15 +55,20 @@ export default function ArtsLivelihoodPage() {
         fallbackDescription="Explore the craft traditions and local industries that sustain Bocaue's vibrant community."
       />
 
-      {/* Sticky nav */}
-      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+          {/* Sticky nav */}
+      <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex gap-1 overflow-x-auto py-1">
             {navSections.map((s) => (
-              <button key={s.id} onClick={() => scrollTo(s.id)}
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
                 className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}>
+                  activeSection === s.id
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
                 {s.label}
               </button>
             ))}
