@@ -67,7 +67,7 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 
 #### 1. New `page_views` Table (schema table #11)
 
-Added a dedicated click-analytics table to the database that tracks every time a visitor clicks on a destination page. It references `content(content_id)` (destinations are `content` rows with `post_type = 'place'`) and stores an optional `visitor_session_id` for per-session de-duplication.
+Added a dedicated click-analytics table to the database that tracks every time a visitor clickllows on a destination page. It references `content(content_id)` (destinations are `content` rows with `post_type = 'place'`) and stores an optional `visitor_session_id` for per-session de-duplication.
 
 #### 2. New Backend Endpoints & Model
 
@@ -97,6 +97,98 @@ All SQL queries are parameterised to prevent injection. The GET query is capped 
 | Pax → People | Label renamed from "Number of Pax" to "Number of People" |
 
 All validations run in real-time (on change) with amber warning messages, plus a final check on submit.
+
+---
+
+### March 4, 2026 — Component & Page Completion Status
+
+#### Layout Components (`components/layout/`)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `navbar.tsx` | Responsive top navigation with mobile menu, scroll-aware styling, desktop dropdown, and active route highlighting | ✅ Complete |
+| `footer.tsx` | Site footer with office info, navigation links, and social links | ✅ Complete |
+| `admin-sidebar.tsx` | Collapsible admin CMS sidebar with route links and active state | ✅ Complete |
+| `places-events-dropdown.tsx` | Mega-dropdown for Places & Events nav item with category links | ✅ Complete |
+| `search-overlay.tsx` | Full-screen search overlay with keyboard navigation and live results from static search index | ✅ Complete |
+
+---
+
+#### Section Components (`components/sections/`)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `hero-section.tsx` | Full-screen video/image hero with parallax scroll, animated text, and CTA — data fetched from `api/home/hero-settings.php` | ✅ Complete |
+| `featured-spotlight.tsx` | Featured place spotlight card with image and description — data from `api/home/spotlight.php` | ✅ Complete |
+| `places-carousel.tsx` | Auto-playing Embla carousel of landmark places — data from `api/home/landmarks.php` | ✅ Complete |
+| `news-section.tsx` | Tabbed news grid with category filter — data from `api/posts/read.php?type=news` | ✅ Complete |
+| `culinary-section.tsx` | Local cuisine card grid with animated reveal — data from `api/home/culinary.php` | ✅ Complete |
+| `history-art-section.tsx` | Expandable historical timeline with milestones — data from `api/home/milestones.php` | ✅ Complete |
+| `inquiry-section.tsx` | Full inquiry form with real-time validation (name, phone, date range, pax) — submits to `api/inquiries/create.php` | ✅ Complete |
+| `page-hero.tsx` | Reusable per-page hero banner with title/subtitle/image — data from `api/heroes/read.php?slug=` | ✅ Complete |
+| `featured-events-portrait.tsx` | Portrait-layout events card grid — static UI only, no backend integration yet | ⚠️ Static only |
+| `announcement-section.tsx` | Announcement banner/card section — static UI only, no backend integration yet | ⚠️ Static only |
+| `location-section.tsx` | Google Maps embed for the municipality — static embed, no dynamic data | ⚠️ Static only |
+| `tourism-tagline-section.tsx` | Decorative tagline/branding section — static copy only | ⚠️ Static only |
+
+---
+
+#### Other Components
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `providers/admin-provider.tsx` | Global admin context — handles login state, session persistence, data fetching for posts/inquiries/settings/activity log | ✅ Complete |
+| `providers/theme-provider.tsx` | Light/dark theme wrapper using `next-themes` | ✅ Complete |
+| `reveal-observer.tsx` | Intersection Observer wrapper for scroll-reveal animations with debouncing | ✅ Complete |
+| `reveal-observer-wrapper.tsx` | Provider wrapper that initialises the global reveal observer instance | ✅ Complete |
+| `ui/media-picker.tsx` | Media library picker modal with image upload and selection — calls `api/media/upload.php` and `api/media/list.php` | ✅ Complete |
+
+---
+
+#### Public Site Pages (`app/(site)/`)
+
+| Page | Route | Status |
+|------|-------|--------|
+| Home | `/` | ✅ Complete |
+| Destinations | `/destinations` | ✅ Complete |
+| Place Detail | `/places/[id]` | ✅ Complete |
+| Place Category | `/places/category/[slug]` | ✅ Complete |
+| News | `/news` | ✅ Complete |
+| News Detail | `/news/[id]` | ✅ Complete |
+| Events | `/events` | ✅ Complete |
+| Travel & Tours | `/travel-tours` | ✅ Complete |
+| History | `/history` | ✅ Complete |
+| History Timeline | `/history/timeline` | ✅ Complete |
+| Notable Persons | `/history/notable-persons` | ✅ Complete |
+| Culture Overview | `/culture` | ✅ Complete |
+| Local Cuisine | `/culture/local-cuisine` | ✅ Complete |
+| Festivals & Celebrations | `/culture/festivals-celebrations` | ✅ Complete |
+| Cultural Practices & Traditions | `/culture/practices-traditions` | ✅ Complete |
+| Crafts & Artisan | `/culture/crafts-artisan` | ✅ Complete |
+| People & Wonders | `/culture/people-wonders` | ✅ Complete |
+| Local Business | `/arts-livelihood/local-business` | ✅ Complete |
+| Hospitals | `/community/hospitals` | ✅ Complete |
+| Schools | `/community/schools` | ✅ Complete |
+| Inquire | `/inquire` | ✅ Complete |
+| Arts & Livelihood | `/arts-livelihood` | ⚠️ Static only |
+| Contact | `/contact` | ⚠️ Static only |
+| Mission & Vision | `/mission-vision` | ⚠️ Static only |
+| Tourism Office | `/tourism-office` | ⚠️ Static only |
+
+---
+
+#### Admin CMS Pages (`app/(admin)/admin/`)
+
+| Page | Route | Status |
+|------|-------|--------|
+| Login | `/admin` | ✅ Complete |
+| Dashboard | `/admin/dashboard` | ✅ Complete |
+| CMS / Posts | `/admin/cms` | ✅ Complete |
+| Inquiries | `/admin/inquiries` | ✅ Complete |
+| Heroes | `/admin/heroes` | ✅ Complete |
+| Home Content | `/admin/home-content` | ✅ Complete |
+| Settings | `/admin/settings` | ✅ Complete |
+| Activity Log | `/admin/activity-log` | ✅ Complete |
 
 ---
 
