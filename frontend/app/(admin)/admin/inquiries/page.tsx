@@ -278,11 +278,10 @@ export default function InquiriesPage() {
   }
 
   const confirmAssign = () => {
-    if (!assignTarget || !assignGuideName.trim()) return
-    const guideName = assignGuideName.trim()
-    updateInquiry(assignTarget.id, { status: "assigned", assignedTo: guideName })
+    if (!assignTarget) return
+    updateInquiry(assignTarget.id, { status: "assigned" })
     if (selectedInquiry?.id === assignTarget.id) {
-      setSelectedInquiry({ ...assignTarget, status: "assigned", assignedTo: guideName })
+      setSelectedInquiry({ ...assignTarget, status: "assigned" })
     }
     setAssignTarget(null)
     setAssignGuideName("")
@@ -915,23 +914,13 @@ export default function InquiriesPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Enter the name of the tourist guide who will handle the inquiry from &quot;{assignTarget?.name}&quot;.
+                  Mark the inquiry from &quot;{assignTarget?.name}&quot; as assigned to a tourist guide?
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <div className="px-6 pb-2">
-                <Input
-                  placeholder="Tourist guide name…"
-                  value={assignGuideName}
-                  onChange={(e) => setAssignGuideName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") confirmAssign() }}
-                  autoFocus
-                />
-              </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={confirmAssign}
-                  disabled={!assignGuideName.trim()}
                   className="bg-primary text-primary-foreground"
                 >
                   Assign

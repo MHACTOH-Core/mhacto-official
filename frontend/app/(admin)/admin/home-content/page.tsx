@@ -590,7 +590,7 @@ export default function HomeContentPage() {
                     </Card>
                   ) : (
                     spotlights.map((spot) => (
-                      <Card key={spot.spotlightId} className={`transition-all ${spot.isActive ? "ring-2 ring-primary" : "opacity-60"}`}>
+                      <Card key={spot.featuredId} className={`transition-all ${spot.isActive ? "ring-2 ring-primary" : "opacity-60"}`}>
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between">
                             <div>
