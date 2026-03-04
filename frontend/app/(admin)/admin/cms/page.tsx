@@ -139,12 +139,132 @@ const LABEL_PLACE_TYPES: Record<string, string[]> = {
   "timeline-of-events": ["Heritage Site", "Religious Site", "Museum", "Landmark"],
   "notable-figures": [],
   "local-cuisine": ["Main Dish", "Snack", "Dessert & Sweets", "Drink"],
+  "restaurants": ["Restaurant", "Carinderia / Eatery", "Bakery", "Street Food"],
   "festivals": ["Festival Grounds", "Arena & Events Venue"],
   "cultural-practices": ["Arts & Culture", "Heritage Site"],
   "crafts-artisan": ["Arts & Culture"],
-  "people-wonders": [],
+  "people-wonders": ["Pageant & Beauty", "Arts & Music", "Sports", "Academics", "Entertainment", "Civic Leader"],
+  "local-business": ["Food & Dining", "Crafts & Artisan", "Agriculture", "Retail", "Services"],
   "destinations": ["Heritage Site", "Religious Site", "Museum", "Nature & Parks", "Landmark", "Arena & Events Venue"],
-  "travel-tours": ["Nature & Parks", "Landmark", "Heritage Site"],
+  "travel-tours": ["Heritage", "Food", "Festival", "Nature", "Custom"],
+  "schools": ["Public", "Private"],
+  "colleges": ["State / Public", "Private", "Technical-Vocational"],
+  "hospitals": ["Government", "Private Hospital", "Lying-In / Birthing", "Rural Health Unit"],
+}
+
+// ── Label-specific field config ─────────────────────────────────────
+// Controls which fields appear, their labels, and placeholders per CMS label.
+// Fields not listed for a label are hidden in the form.
+interface FieldConfig {
+  field: keyof FormData
+  label: string
+  placeholder: string
+  icon: string // lucide icon name key
+  rows?: number // for textareas
+}
+
+type LabelFieldMap = Record<string, FieldConfig[]>
+
+const LABEL_FIELDS: LabelFieldMap = {
+  // ── History ────────────────────────
+  "timeline-of-events": [
+    { field: "location", label: "Location", placeholder: "e.g. Bocaue Town Center, Bulacan", icon: "map-pin" },
+    { field: "established", label: "Year", placeholder: "e.g. 1787", icon: "calendar" },
+    { field: "category", label: "Era", placeholder: "e.g. Spanish Colonial", icon: "tag" },
+    { field: "story", label: "Detailed Story", placeholder: "Write the full historical account...", icon: "sparkles", rows: 5 },
+  ],
+  "notable-figures": [
+    { field: "established", label: "Life Years", placeholder: "e.g. 1850–1920", icon: "calendar" },
+    { field: "category", label: "Role", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Legacy", placeholder: "Describe the person's legacy and contributions...", icon: "sparkles", rows: 4 },
+    { field: "highlights", label: "Awards & Recognitions", placeholder: "One award per line", icon: "list", rows: 3 },
+  ],
+  // ── Arts & Culture ─────────────────
+  "local-cuisine": [
+    { field: "location", label: "Where to Find", placeholder: "e.g. Bocaue Public Market, MacArthur Highway stalls", icon: "map-pin" },
+    { field: "hours", label: "Best Time", placeholder: "e.g. Year-round, Fiesta season, Summer", icon: "clock" },
+    { field: "category", label: "Food Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "The Story", placeholder: "Tell the cultural story behind this dish...", icon: "sparkles", rows: 4 },
+  ],
+  "restaurants": [
+    { field: "location", label: "Address", placeholder: "e.g. MacArthur Highway, Bocaue, Bulacan", icon: "map-pin" },
+    { field: "hours", label: "Operating Hours", placeholder: "e.g. Daily · 9:00 AM – 8:00 PM", icon: "clock" },
+    { field: "contact", label: "Phone", placeholder: "e.g. (044) 123-4567", icon: "phone" },
+    { field: "category", label: "Establishment Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "established", label: "Specialty", placeholder: "e.g. Lechon Bulacan & Roasted Pork", icon: "sparkles" },
+    { field: "story", label: "Price Range", placeholder: "e.g. ₱, ₱₱, or ₱₱₱", icon: "sparkles" },
+    { field: "highlights", label: "Tags", placeholder: "One tag per line, e.g.:\nFilipino\nFamily Dining\nBulalo", icon: "list", rows: 3 },
+  ],
+  "festivals": [
+    { field: "location", label: "Location", placeholder: "e.g. Bocaue River & Town Center", icon: "map-pin" },
+    { field: "established", label: "Date", placeholder: "e.g. August 2", icon: "calendar" },
+    { field: "category", label: "Festival Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Cultural Story", placeholder: "Tell the history and significance...", icon: "sparkles", rows: 4 },
+    { field: "highlights", label: "Highlights", placeholder: "One highlight per line", icon: "list", rows: 3 },
+  ],
+  "cultural-practices": [
+    { field: "category", label: "Practice Category", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Significance", placeholder: "Describe the cultural significance of this practice...", icon: "sparkles", rows: 4 },
+  ],
+  "crafts-artisan": [
+    { field: "location", label: "Workshop Location", placeholder: "e.g. Brgy. Taal, Bocaue", icon: "map-pin" },
+    { field: "established", label: "Experience", placeholder: "e.g. 30+ years", icon: "calendar" },
+    { field: "category", label: "Craft Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "highlights", label: "Products", placeholder: "One product per line, e.g.:\nPatutsáng kawayan\nBamboo furniture\nDecorative baskets", icon: "list", rows: 3 },
+  ],
+  "people-wonders": [
+    { field: "established", label: "Award Year", placeholder: "e.g. 2023", icon: "calendar" },
+    { field: "category", label: "Category", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Achievement", placeholder: "Describe the person's notable achievement...", icon: "sparkles", rows: 4 },
+    { field: "highlights", label: "Awards & Titles", placeholder: "One award per line", icon: "list", rows: 3 },
+  ],
+  "local-business": [
+    { field: "location", label: "Location", placeholder: "e.g. Bocaue Town Center", icon: "map-pin" },
+    { field: "contact", label: "Contact", placeholder: "e.g. (044) 123-4567", icon: "phone" },
+    { field: "established", label: "Year Established", placeholder: "e.g. 1995", icon: "calendar" },
+    { field: "category", label: "Business Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "highlights", label: "Products / Services", placeholder: "One item per line", icon: "list", rows: 3 },
+  ],
+  // ── Tourist Destinations ───────────
+  "destinations": [
+    { field: "location", label: "Location", placeholder: "e.g. Bocaue Town Center, Bulacan", icon: "map-pin" },
+    { field: "hours", label: "Operating Hours", placeholder: "e.g. Daily: 6:00 AM – 8:00 PM", icon: "clock" },
+    { field: "contact", label: "Contact", placeholder: "e.g. (044) 123-4567", icon: "phone" },
+    { field: "established", label: "Established", placeholder: "e.g. circa 1609", icon: "calendar" },
+    { field: "category", label: "Site Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Story", placeholder: "Write the story behind this destination...", icon: "sparkles", rows: 4 },
+    { field: "highlights", label: "Highlights", placeholder: "One highlight per line", icon: "list", rows: 3 },
+  ],
+  "travel-tours": [
+    { field: "hours", label: "Duration", placeholder: "e.g. Full Day, Half Day", icon: "clock" },
+    { field: "contact", label: "Booking Contact", placeholder: "e.g. MHACTO Office", icon: "phone" },
+    { field: "category", label: "Tour Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "highlights", label: "Includes / Highlights", placeholder: "One item per line, e.g.:\nGuided tour\nLunch at local restaurant\nFree souvenir", icon: "list", rows: 4 },
+  ],
+  // ── Community ──────────────────────
+  "schools": [
+    { field: "location", label: "Barangay", placeholder: "e.g. Bambang, Bocaue", icon: "map-pin" },
+    { field: "contact", label: "Contact", placeholder: "e.g. (044) 123-4567 or website", icon: "phone" },
+    { field: "established", label: "Year Established", placeholder: "e.g. 1952", icon: "calendar" },
+    { field: "category", label: "Ownership", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Programs Offered", placeholder: "One program per line, e.g.:\nK–6 Complete Curriculum\nSpecial Science Class\nSports Development", icon: "sparkles", rows: 4 },
+  ],
+  "colleges": [
+    { field: "location", label: "Campus Location", placeholder: "e.g. MacArthur Highway, Bocaue", icon: "map-pin" },
+    { field: "contact", label: "Contact / Website", placeholder: "e.g. (044) 234-5678 | www.example.com", icon: "phone" },
+    { field: "established", label: "Year Established", placeholder: "e.g. 1990", icon: "calendar" },
+    { field: "category", label: "Institution Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "hours", label: "Enrollment", placeholder: "e.g. ~3,500 students", icon: "clock" },
+    { field: "story", label: "Programs Offered", placeholder: "One program per line, e.g.:\nBS Information Technology\nBS Business Administration\nBS Hospitality Management", icon: "sparkles", rows: 4 },
+  ],
+  "hospitals": [
+    { field: "location", label: "Address", placeholder: "e.g. Municipal Compound, Bocaue, Bulacan", icon: "map-pin" },
+    { field: "hours", label: "Operating Hours", placeholder: "e.g. Monday–Friday: 7:00 AM – 5:00 PM", icon: "clock" },
+    { field: "contact", label: "Hotline / Phone", placeholder: "e.g. (044) 123-4567 | Emergency: (044) 234-5679", icon: "phone" },
+    { field: "established", label: "Bed Capacity", placeholder: "e.g. 75 (leave empty if N/A)", icon: "calendar" },
+    { field: "category", label: "Facility Type", placeholder: "Auto-selected above", icon: "tag" },
+    { field: "story", label: "Services Offered", placeholder: "One service per line, e.g.:\nGeneral outpatient consultation\nMaternal and child health care\nImmunization (EPI program)\nDental services", icon: "sparkles", rows: 5 },
+  ],
 }
 
 export default function CMSPage() {
@@ -724,14 +844,18 @@ export default function CMSPage() {
                 </div>
               </div>
 
-              {/* Featured Toggle — per-label featured assignment */}
+              {/* Featured Toggle — per-label featured assignment (hidden for hospitals where isFeatured = emergency) */}
+              {form.label !== "hospitals" && (
               <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
                 <div className="flex items-center gap-2">
                   <Star className={`h-4 w-4 ${form.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
                   <div>
                     <Label className="text-sm font-medium">Featured Post</Label>
                     <p className="text-xs text-muted-foreground">
-                      Mark as featured for the &quot;{contentLabels[form.label]?.label ?? form.label}&quot; category. Featured posts appear prominently in dropdown menus and section highlights.
+                      {form.label === "local-cuisine"
+                        ? "Mark as featured to show in the Featured Delicacy carousel on the Local Cuisine page."
+                        : `Mark as featured for the "${contentLabels[form.label]?.label ?? form.label}" category. Featured posts appear prominently in dropdown menus and section highlights.`
+                      }
                     </p>
                   </div>
                 </div>
@@ -740,6 +864,7 @@ export default function CMSPage() {
                   onCheckedChange={(checked) => setForm({ ...form, isFeatured: checked })}
                 />
               </div>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
@@ -887,127 +1012,140 @@ export default function CMSPage() {
                 </div>
               </div>
 
-              {/* ── Place / Event Details Section ── */}
-              {(form.postType === "place" || form.postType === "event") && (
-                <>
-                  <Separator />
-                  <p className="text-sm font-medium text-muted-foreground">Place Details (optional)</p>
+              {/* ── Label-Specific Detail Fields ── */}
+              {(form.postType === "place" || form.postType === "event") && (() => {
+                const fields = LABEL_FIELDS[form.label]
+                if (!fields || fields.length === 0) return null
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> Location
-                      </Label>
-                      <Input
-                        value={form.location}
-                        onChange={(e) => setForm({ ...form, location: e.target.value })}
-                        placeholder="e.g. Bocaue Town Center, Bulacan"
-                      />
-                    </div>
+                // Separate category/tag field from other fields
+                const categoryField = fields.find(f => f.field === "category")
+                const otherFields = fields.filter(f => f.field !== "category")
+                // Split into input-type fields (short) and textarea-type fields (long)
+                const shortFields = otherFields.filter(f => !f.rows)
+                const longFields = otherFields.filter(f => f.rows)
 
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Hours
-                      </Label>
-                      <Input
-                        value={form.hours}
-                        onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                        placeholder="e.g. Daily: 6:00 AM – 8:00 PM"
-                      />
-                    </div>
+                // Icon lookup
+                const iconMap: Record<string, React.ReactNode> = {
+                  "map-pin": <MapPin className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "clock": <Clock className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "phone": <Phone className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "calendar": <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "tag": <Tag className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "sparkles": <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />,
+                  "list": <List className="h-3.5 w-3.5 text-muted-foreground" />,
+                }
 
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> Contact
-                      </Label>
-                      <Input
-                        value={form.contact}
-                        onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                        placeholder="e.g. (044) 123-4567"
-                      />
-                    </div>
+                // Section title based on label
+                const sectionTitle: Record<string, string> = {
+                  "hospitals": "Health Facility Details",
+                  "schools": "School Information",
+                  "colleges": "Institution Details",
+                  "restaurants": "Restaurant Details",
+                  "local-cuisine": "Dish Details",
+                  "notable-figures": "Person Details",
+                  "people-wonders": "Person Details",
+                  "crafts-artisan": "Artisan Details",
+                  "local-business": "Business Details",
+                  "festivals": "Festival Details",
+                  "travel-tours": "Tour Package Details",
+                }
 
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> Established
-                      </Label>
-                      <Input
-                        value={form.established}
-                        onChange={(e) => setForm({ ...form, established: e.target.value })}
-                        placeholder="e.g. 1787"
-                      />
-                    </div>
-                  </div>
+                return (
+                  <>
+                    <Separator />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {sectionTitle[form.label] ?? "Details"}
+                    </p>
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : "Place Type"}
-                    </Label>
-                    {(() => {
+                    {/* Short input fields in a 2-column grid */}
+                    {shortFields.length > 0 && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {shortFields.map((cfg) => (
+                          <div key={cfg.field} className="space-y-2">
+                            <Label className="flex items-center gap-1.5">
+                              {iconMap[cfg.icon]} {cfg.label}
+                            </Label>
+                            <Input
+                              value={form[cfg.field] as string}
+                              onChange={(e) => setForm({ ...form, [cfg.field]: e.target.value })}
+                              placeholder={cfg.placeholder}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Category / Type selector */}
+                    {categoryField && (() => {
                       const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
-                      // If no relevant types for this label, show info
-                      if (relevantTypes.length === 0) {
-                        return (
-                          <p className="text-xs text-muted-foreground italic py-2">
-                            No place type needed for this label.
-                          </p>
-                        )
-                      }
-                      // If exactly one type, auto-set and show read-only
-                      if (relevantTypes.length === 1) {
-                        return (
-                          <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
-                        )
-                      }
+                      if (relevantTypes.length === 0) return null
                       return (
-                        <Select
-                          value={form.category}
-                          onValueChange={(v) => setForm({ ...form, category: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {relevantTypes.map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            {iconMap[categoryField.icon]} {categoryField.label}
+                          </Label>
+                          {relevantTypes.length === 1 ? (
+                            <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
+                          ) : (
+                            <Select
+                              value={form.category}
+                              onValueChange={(v) => setForm({ ...form, category: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={`Select ${categoryField.label.toLowerCase()}...`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {relevantTypes.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       )
                     })()}
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> Story
-                    </Label>
-                    <Textarea
-                      value={form.story}
-                      onChange={(e) => setForm({ ...form, story: e.target.value })}
-                      placeholder="Write the story behind this place..."
-                      rows={4}
-                      className="resize-y"
-                    />
-                  </div>
+                    {/* Emergency toggle for hospitals */}
+                    {form.label === "hospitals" && (
+                      <div className="flex items-center justify-between rounded-lg border border-red-200 dark:border-red-800 p-3 bg-red-50 dark:bg-red-900/10">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-red-500" />
+                          <div>
+                            <Label className="text-sm font-medium">24H Emergency Department</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Enable if this facility has a 24-hour emergency department
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={form.isFeatured}
+                          onCheckedChange={(checked) => setForm({ ...form, isFeatured: checked })}
+                        />
+                      </div>
+                    )}
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <List className="h-3.5 w-3.5 text-muted-foreground" /> Highlights
-                      <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
-                    </Label>
-                    <Textarea
-                      value={form.highlights}
-                      onChange={(e) => setForm({ ...form, highlights: e.target.value })}
-                      placeholder={"Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities"}
-                      rows={4}
-                      className="resize-y"
-                    />
-                  </div>
-                </>
-              )}
+                    {/* Long textarea fields */}
+                    {longFields.map((cfg) => (
+                      <div key={cfg.field} className="space-y-2">
+                        <Label className="flex items-center gap-1.5">
+                          {iconMap[cfg.icon]} {cfg.label}
+                          {(cfg.field === "highlights" || cfg.field === "story" && (form.label === "schools" || form.label === "colleges" || form.label === "hospitals")) && (
+                            <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
+                          )}
+                        </Label>
+                        <Textarea
+                          value={form[cfg.field] as string}
+                          onChange={(e) => setForm({ ...form, [cfg.field]: e.target.value })}
+                          placeholder={cfg.placeholder}
+                          rows={cfg.rows ?? 4}
+                          className="resize-y"
+                        />
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
             </div>
 
             <DialogFooter>

@@ -70,23 +70,96 @@ class ActivityLog
 
     private function formatRow(array $row): array
     {
-        // Decode JSON details back to string for display
+        $action  = $row['action'] ?? '';
         $details = $row['details'] ?? '';
+
+        // Decode JSON details
+        $data = null;
         if (is_string($details)) {
             $decoded = json_decode($details, true);
-            if (is_string($decoded)) {
+            if (is_array($decoded)) {
+                $data = $decoded;
+            } elseif (is_string($decoded)) {
+                $data = null;
                 $details = $decoded;
-            } elseif ($decoded !== null) {
-                $details = json_encode($decoded);
             }
+        }
+
+        // Build user-friendly description
+        $description = $this->friendlyDescription($action, $data, $details);
+
+        // Build user-friendly display name
+        $username = $row['username'] ?? null;
+        $email    = $row['email'] ?? null;
+        if ($username) {
+            $user = ucfirst($username);
+        } elseif ($email) {
+            $user = ucfirst(explode('@', $email)[0]);
+        } else {
+            $user = 'System';
         }
 
         return [
             'id'          => (string) $row['log_id'],
-            'action'      => $row['action'],
-            'description' => $details,
+            'action'      => $action,
+            'description' => $description,
             'timestamp'   => $row['created_at'],
-            'user'        => $row['email'] ?? $row['username'] ?? '',
+            'user'        => $user,
         ];
+    }
+
+    /**
+     * Convert raw action + JSON details into a human-readable sentence.
+     */
+    private function friendlyDescription(string $action, ?array $data, string $fallback): string
+    {
+        if ($data === null) {
+            return $fallback ?: ucfirst(str_replace('_', ' ', $action));
+        }
+
+        $title    = $data['title'] ?? null;
+        $postType = $data['post_type'] ?? null;
+        $method   = $data['method'] ?? null;
+
+        switch ($action) {
+            case 'login':
+                $via = $method ? ' via ' . $method : '';
+                return "Logged in{$via}";
+            case 'logout':
+                return 'Logged out';
+            case 'create':
+                if ($title && $postType) return "Created {$postType}: \"{$title}\"";
+                return $title ? "Created \"{$title}\"" : 'Created a new entry';
+            case 'update':
+                if ($title && $postType) return "Updated {$postType}: \"{$title}\"";
+                return $title ? "Updated \"{$title}\"" : 'Updated an entry';
+            case 'delete':
+                if ($title && $postType) return "Deleted {$postType}: \"{$title}\"";
+                return $title ? "Deleted \"{$title}\"" : 'Deleted an entry';
+            case 'create_post':
+            case 'publish_post':
+                $verb = $action === 'publish_post' ? 'Published' : 'Created';
+                $type = $postType ?? 'post';
+                return $title ? "{$verb} {$type}: \"{$title}\"" : "{$verb} a {$type}";
+            case 'update_post':
+                $type = $postType ?? 'post';
+                return $title ? "Updated {$type}: \"{$title}\"" : "Updated a {$type}";
+            case 'delete_post':
+                $type = $postType ?? 'post';
+                return $title ? "Deleted {$type}: \"{$title}\"" : "Deleted a {$type}";
+            case 'archive_post':
+                $type = $postType ?? 'post';
+                return $title ? "Archived {$type}: \"{$title}\"" : "Archived a {$type}";
+            case 'reply_inquiry':
+                return $title ? "Replied to inquiry from \"{$title}\"" : 'Replied to an inquiry';
+            case 'archive_inquiry':
+                return $title ? "Archived inquiry from \"{$title}\"" : 'Archived an inquiry';
+            case 'update_settings':
+                return 'Updated site settings';
+            case 'page_view':
+                return $title ? "Visited \"{$title}\"" : 'Page view';
+            default:
+                return $fallback ?: ucfirst(str_replace('_', ' ', $action));
+        }
     }
 }

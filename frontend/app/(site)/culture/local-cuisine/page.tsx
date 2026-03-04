@@ -17,12 +17,12 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine as fallbackCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import { localCuisine as fallbackCuisine, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
-import { cmsToCuisineItem } from "@/lib/cms-mappers"
+import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
 
-// ── Restaurant & Eatery Data ─────────────────────────────────────────
-const bocaueRestaurants = [
+// ── Restaurant & Eatery Data (fallback — CMS overrides when available) ──
+const fallbackRestaurants: Restaurant[] = [
   {
     id: "aling-nena",
     name: "Aling Nena's Carinderia",
@@ -216,6 +216,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
   const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(fallbackRestaurants)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -254,6 +255,10 @@ export default function LocalCuisinePage() {
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
+    // Fetch restaurants from CMS (falls back to hardcoded if empty)
+    apiFetchByLabel("restaurants")
+      .then((posts) => { if (posts?.length) setRestaurants(posts.map(cmsToRestaurant)) })
       .catch(() => {})
   }, [])
 
@@ -487,7 +492,7 @@ export default function LocalCuisinePage() {
             Whether you&apos;re craving a home-cooked meal, freshly baked kakanin, or the iconic Bocaue Lechon, these local establishments serve the best flavors Bocaue has to offer.
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {bocaueRestaurants.map((resto) => (
+            {restaurants.map((resto) => (
               <Card key={resto.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-2 mb-3">

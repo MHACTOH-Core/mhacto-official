@@ -14,6 +14,20 @@ export interface CuisineItem {
   isFeatured?: boolean
 }
 
+// ── Restaurant & Eatery (CMS-managed) ────────────────────────────────
+export interface Restaurant {
+  id: string
+  name: string
+  type: "restaurant" | "eatery" | "bakery" | "street-food"
+  specialty: string
+  description: string
+  address: string
+  hours: string
+  priceRange: string
+  tags: string[]
+  image?: string
+}
+
 export const localCuisine: CuisineItem[] = [
   {
     id: "puto-seko",

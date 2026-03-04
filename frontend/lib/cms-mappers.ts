@@ -12,7 +12,7 @@
 import type { CMSPost } from "@/lib/data/admin-data"
 import { asset } from "@/lib/utils"
 import type { HeritageSite, Museum, ReligiousSite, TourPackage } from "@/lib/data/destinations-data"
-import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness } from "@/lib/data/culture-data"
+import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness, Restaurant } from "@/lib/data/culture-data"
 import type { TimelineEvent, NotablePerson } from "@/lib/data/history-data"
 import type { SchoolEntry, College, PublicSchool, Hospital } from "@/lib/data/community-data"
 
@@ -124,6 +124,26 @@ export function cmsToCuisineItem(post: CMSPost): CuisineItem {
     where: post.location ? [post.location] : [],
     bestTime: post.hours ?? undefined,
     isFeatured: post.isFeatured ?? false,
+  }
+}
+
+export function cmsToRestaurant(post: CMSPost): Restaurant {
+  const cat = (post.category ?? "").toLowerCase()
+  const type: Restaurant["type"] = cat.includes("eatery") || cat.includes("carinderia") ? "eatery"
+    : cat.includes("bakery") ? "bakery"
+    : cat.includes("street") ? "street-food"
+    : "restaurant"
+  return {
+    id: post.id,
+    name: post.title,
+    type,
+    specialty: post.established ?? "",
+    description: post.body ?? "",
+    address: post.location ?? "",
+    hours: post.hours ?? "",
+    priceRange: post.story ?? "₱",
+    tags: post.highlights ?? [],
+    image: post.image?.[0] ? resolveImage(post, "/images/places/Food.jpg") : undefined,
   }
 }
 

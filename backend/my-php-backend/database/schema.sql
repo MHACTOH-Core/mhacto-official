@@ -272,6 +272,17 @@ SELECT 2, 'label', 'people-wonders', 'People & Wonders', 1
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM category WHERE label_key = 'people-wonders');
 
+-- Restaurants & Local Business labels (Arts & Culture → parent_id = 2)
+INSERT INTO category (parent_id, category_type, label_key, label_name, is_active)
+SELECT 2, 'label', 'restaurants', 'Restaurants & Eateries', 1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE label_key = 'restaurants');
+
+INSERT INTO category (parent_id, category_type, label_key, label_name, is_active)
+SELECT 2, 'label', 'local-business', 'Local Business', 1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE label_key = 'local-business');
+
 -- Default config (general settings)
 INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 ('general', 'site_name',          '"MHACTO Bocaue"', 'string'),

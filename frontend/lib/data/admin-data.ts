@@ -7,6 +7,7 @@ export type ContentCategory =
   | "history"
   | "arts-culture"
   | "tourist-destinations"
+  | "community"
   | "news"
   | "events"
 
@@ -15,12 +16,17 @@ export type ContentLabel =
   | "timeline-of-events"
   | "notable-figures"
   | "local-cuisine"
+  | "restaurants"
   | "festivals"
   | "cultural-practices"
   | "crafts-artisan"
   | "people-wonders"
+  | "local-business"
   | "destinations"
   | "travel-tours"
+  | "schools"
+  | "colleges"
+  | "hospitals"
   | "news"
   | "events"
 
@@ -82,6 +88,10 @@ export interface Inquiry {
 export type ActivityAction =
   | "login"
   | "logout"
+  | "create"
+  | "update"
+  | "delete"
+  | "page_view"
   | "create_post"
   | "update_post"
   | "delete_post"
@@ -138,6 +148,7 @@ export const contentCategories: Record<ContentCategory, { label: string; color: 
   "history": { label: "History", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
   "arts-culture": { label: "Arts & Culture", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
   "tourist-destinations": { label: "Tourist Destinations", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  "community": { label: "Community", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300" },
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
   "events": { label: "Events", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
 }
@@ -150,13 +161,19 @@ export const contentLabels: Record<ContentLabel, { label: string; color: string;
   "notable-figures": { label: "Notable Figures", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "history" },
   // Arts & Culture
   "local-cuisine": { label: "Local Cuisine", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300", category: "arts-culture" },
+  "restaurants": { label: "Restaurants & Eateries", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "arts-culture" },
   "festivals": { label: "Festivals", color: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/40 dark:text-fuchsia-300", category: "arts-culture" },
   "cultural-practices": { label: "Cultural Practices", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300", category: "arts-culture" },
   "crafts-artisan": { label: "Crafts & Artisan", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", category: "arts-culture" },
   "people-wonders": { label: "People Wonders", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", category: "arts-culture" },
+  "local-business": { label: "Local Business", color: "bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300", category: "arts-culture" },
   // Tourist Destinations
   "destinations": { label: "Destinations", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", category: "tourist-destinations" },
   "travel-tours": { label: "Travel & Tours", color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", category: "tourist-destinations" },
+  // Community
+  "schools": { label: "Schools", color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300", category: "community" },
+  "colleges": { label: "Colleges & Universities", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300", category: "community" },
+  "hospitals": { label: "Hospitals & Health", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300", category: "community" },
   // News (standalone)
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300", category: "news" },
   // Events (standalone)
@@ -205,6 +222,10 @@ export const inquiryTypeLabels: Record<InquiryType, { label: string; color: stri
 export const activityLabels: Record<ActivityAction, string> = {
   login: "Logged in",
   logout: "Logged out",
+  create: "Created",
+  update: "Updated",
+  delete: "Deleted",
+  page_view: "Page View",
   create_post: "Created a post",
   update_post: "Updated a post",
   delete_post: "Deleted a post",
