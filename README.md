@@ -100,181 +100,95 @@ All validations run in real-time (on change) with amber warning messages, plus a
 
 ---
 
-### March 4, 2026 — Implementation Status Audit
+### March 4, 2026 — Component & Page Completion Status
 
-#### Frontend — Pages & Components
+#### Layout Components (`components/layout/`)
 
-##### Public Site Pages (`app/(site)/`)
-
-| Page | Route | Backend Integrated | Status |
-|------|-------|-------------------|--------|
-| Home | `/` | ✅ Hero, Spotlight, Landmarks, News, Culinary, Timeline, Inquiries | ✅ Done |
-| Destinations | `/destinations` | ✅ `apiFetchPublishedPlaces` → posts/read.php | ✅ Done |
-| Place Detail | `/places/[id]` | ✅ `apiFetchPlaceById` + `apiLogDestinationView` | ✅ Done |
-| Place Category | `/places/category/[slug]` | ✅ `apiFetchPlacesByCategory` | ✅ Done |
-| News | `/news` | ✅ `apiFetchPublishedNews` → posts/read.php | ✅ Done |
-| News Detail | `/news/[id]` | ✅ `apiFetchPostById` | ✅ Done |
-| Events | `/events` | ✅ `apiFetchPublishedEvents` → posts/read.php | ✅ Done |
-| Travel & Tours | `/travel-tours` | ✅ `apiFetchPublishedPlaces` (label: travel-tours) | ✅ Done |
-| History | `/history` | ✅ `apiFetchMilestones` | ✅ Done |
-| History Timeline | `/history/timeline` | ✅ `apiFetchMilestones` | ✅ Done |
-| Notable Persons | `/history/notable-persons` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Culture | `/culture` | ✅ `apiFetchPublishedPlaces` (label: festivals/practices) | ✅ Done |
-| Local Cuisine | `/culture/local-cuisine` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Festivals | `/culture/festivals-celebrations` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Cultural Practices | `/culture/practices-traditions` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Crafts & Artisan | `/culture/crafts-artisan` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| People & Wonders | `/culture/people-wonders` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Arts & Livelihood | `/arts-livelihood` | ❌ Static / no integration | ⚠️ Static only |
-| Local Business | `/arts-livelihood/local-business` | ✅ `apiFetchPublishedPlaces` | ✅ Done |
-| Community | `/community` | ❌ Static layout page | ⚠️ Static only |
-| Hospitals | `/community/hospitals` | ✅ `apiFetchPublishedPlaces` (label: hospitals) | ✅ Done |
-| Schools | `/community/schools` | ✅ `apiFetchPublishedPlaces` (label: schools) | ✅ Done |
-| Inquire | `/inquire` | ✅ `apiCreateInquiry` → inquiries/create.php | ✅ Done |
-| Contact | `/contact` | ❌ Static layout page | ⚠️ Static only |
-| Mission & Vision | `/mission-vision` | ❌ Static layout page | ⚠️ Static only |
-| Tourism Office | `/tourism-office` | ❌ Static layout page | ⚠️ Static only |
-
-##### Admin CMS Pages (`app/(admin)/admin/`)
-
-| Page | Route | Backend Integrated | Status |
-|------|-------|-------------------|--------|
-| Login / Root | `/admin` | ✅ `apiLogin` → auth/login.php | ✅ Done |
-| Dashboard | `/admin/dashboard` | ✅ `apiFetchPageViews`, `apiFetchDailyVisits`, `apiFetchTopDestinations`, `apiFetchPosts`, `apiFetchInquiries` | ✅ Done |
-| CMS / Posts | `/admin/cms` | ✅ `apiFetchPosts`, `apiCreatePost`, `apiUpdatePost`, `apiDeletePost` | ✅ Done |
-| Inquiries | `/admin/inquiries` | ✅ `apiFetchInquiries`, `apiUpdateInquiry`, `apiDeleteInquiry` | ✅ Done |
-| Heroes | `/admin/heroes` | ✅ `apiFetchAllPageHeroes`, `apiUpdatePageHero` | ✅ Done |
-| Home Content | `/admin/home-content` | ✅ `apiFetchSettings`, `apiUpdateSettings` | ✅ Done |
-| Settings | `/admin/settings` | ✅ `apiFetchSettings`, `apiUpdateSettings` | ✅ Done |
-| Activity Log | `/admin/activity-log` | ✅ `apiFetchActivityLog` → activity/read.php | ✅ Done |
-
-##### Reusable Sections (`components/sections/`)
-
-| Component | Backend Integrated | Status |
-|-----------|-------------------|--------|
-| `hero-section.tsx` | ✅ `apiFetchHeroSettings` → home/hero-settings.php | ✅ Done |
-| `featured-spotlight.tsx` | ✅ `apiFetchSpotlight` → home/spotlight.php | ✅ Done |
-| `places-carousel.tsx` | ✅ `apiFetchLandmarks` → home/landmarks.php | ✅ Done |
-| `news-section.tsx` | ✅ `apiFetchPublishedNews` → posts/read.php | ✅ Done |
-| `culinary-section.tsx` | ✅ `apiFetchCulinaries` → home/culinary.php | ✅ Done |
-| `history-art-section.tsx` | ✅ `apiFetchMilestones` → home/milestones.php | ✅ Done |
-| `inquiry-section.tsx` | ✅ `apiCreateInquiry` → inquiries/create.php | ✅ Done |
-| `page-hero.tsx` | ✅ `apiFetchPageHero` → heroes/read.php | ✅ Done |
-| `featured-events-portrait.tsx` | ❌ No backend call (static/placeholder) | ⚠️ Not integrated |
-| `announcement-section.tsx` | ❌ No backend call (static/placeholder) | ⚠️ Not integrated |
-| `location-section.tsx` | ❌ Static embed | ⚠️ Static only |
-| `tourism-tagline-section.tsx` | ❌ Static copy | ⚠️ Static only |
-
-##### Layout Components (`components/layout/`)
-
-| Component | Status |
-|-----------|--------|
-| `navbar.tsx` | ✅ Done |
-| `footer.tsx` | ✅ Done |
-| `admin-sidebar.tsx` | ✅ Done |
-| `places-events-dropdown.tsx` | ✅ Done |
-| `search-overlay.tsx` | ✅ Done (uses static search index) |
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `navbar.tsx` | Responsive top navigation with mobile menu, scroll-aware styling, desktop dropdown, and active route highlighting | ✅ Complete |
+| `footer.tsx` | Site footer with office info, navigation links, and social links | ✅ Complete |
+| `admin-sidebar.tsx` | Collapsible admin CMS sidebar with route links and active state | ✅ Complete |
+| `places-events-dropdown.tsx` | Mega-dropdown for Places & Events nav item with category links | ✅ Complete |
+| `search-overlay.tsx` | Full-screen search overlay with keyboard navigation and live results from static search index | ✅ Complete |
 
 ---
 
-#### Backend — API Endpoints
+#### Section Components (`components/sections/`)
 
-##### Auth (`api/auth/`)
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `hero-section.tsx` | Full-screen video/image hero with parallax scroll, animated text, and CTA — data fetched from `api/home/hero-settings.php` | ✅ Complete |
+| `featured-spotlight.tsx` | Featured place spotlight card with image and description — data from `api/home/spotlight.php` | ✅ Complete |
+| `places-carousel.tsx` | Auto-playing Embla carousel of landmark places — data from `api/home/landmarks.php` | ✅ Complete |
+| `news-section.tsx` | Tabbed news grid with category filter — data from `api/posts/read.php?type=news` | ✅ Complete |
+| `culinary-section.tsx` | Local cuisine card grid with animated reveal — data from `api/home/culinary.php` | ✅ Complete |
+| `history-art-section.tsx` | Expandable historical timeline with milestones — data from `api/home/milestones.php` | ✅ Complete |
+| `inquiry-section.tsx` | Full inquiry form with real-time validation (name, phone, date range, pax) — submits to `api/inquiries/create.php` | ✅ Complete |
+| `page-hero.tsx` | Reusable per-page hero banner with title/subtitle/image — data from `api/heroes/read.php?slug=` | ✅ Complete |
+| `featured-events-portrait.tsx` | Portrait-layout events card grid — static UI only, no backend integration yet | ⚠️ Static only |
+| `announcement-section.tsx` | Announcement banner/card section — static UI only, no backend integration yet | ⚠️ Static only |
+| `location-section.tsx` | Google Maps embed for the municipality — static embed, no dynamic data | ⚠️ Static only |
+| `tourism-tagline-section.tsx` | Decorative tagline/branding section — static copy only | ⚠️ Static only |
 
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `login.php` | POST | Validate credentials, return session token | ✅ Done |
-| `register.php` | POST | Create new admin user | ✅ Done |
+---
 
-##### Posts / CMS (`api/posts/`)
+#### Other Components
 
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `read.php` | GET | List posts — filterable by `type`, `status`, `category` | ✅ Done |
-| `create.php` | POST | Create a new content post | ✅ Done |
-| `update.php` | PUT | Update post by `?id=` | ✅ Done |
-| `delete.php` | DELETE | Delete post by `?id=` | ✅ Done |
+| Component | Description | Status |
+|-----------|-------------|--------|
+| `providers/admin-provider.tsx` | Global admin context — handles login state, session persistence, data fetching for posts/inquiries/settings/activity log | ✅ Complete |
+| `providers/theme-provider.tsx` | Light/dark theme wrapper using `next-themes` | ✅ Complete |
+| `reveal-observer.tsx` | Intersection Observer wrapper for scroll-reveal animations with debouncing | ✅ Complete |
+| `reveal-observer-wrapper.tsx` | Provider wrapper that initialises the global reveal observer instance | ✅ Complete |
+| `ui/media-picker.tsx` | Media library picker modal with image upload and selection — calls `api/media/upload.php` and `api/media/list.php` | ✅ Complete |
 
-##### Inquiries (`api/inquiries/`)
+---
 
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `create.php` | POST | Submit public inquiry | ✅ Done |
-| `read.php` | GET | List inquiries — filterable by `status` | ✅ Done |
-| `update.php` | PUT | Update inquiry status by `?id=` | ✅ Done |
-| `delete.php` | DELETE | Delete inquiry by `?id=` | ✅ Done |
-| `reply.php` | POST | ⚠️ Deprecated — removed in schema v3 | ⚠️ Deprecated |
+#### Public Site Pages (`app/(site)/`)
 
-##### Heroes (`api/heroes/`)
+| Page | Route | Status |
+|------|-------|--------|
+| Home | `/` | ✅ Complete |
+| Destinations | `/destinations` | ✅ Complete |
+| Place Detail | `/places/[id]` | ✅ Complete |
+| Place Category | `/places/category/[slug]` | ✅ Complete |
+| News | `/news` | ✅ Complete |
+| News Detail | `/news/[id]` | ✅ Complete |
+| Events | `/events` | ✅ Complete |
+| Travel & Tours | `/travel-tours` | ✅ Complete |
+| History | `/history` | ✅ Complete |
+| History Timeline | `/history/timeline` | ✅ Complete |
+| Notable Persons | `/history/notable-persons` | ✅ Complete |
+| Culture Overview | `/culture` | ✅ Complete |
+| Local Cuisine | `/culture/local-cuisine` | ✅ Complete |
+| Festivals & Celebrations | `/culture/festivals-celebrations` | ✅ Complete |
+| Cultural Practices & Traditions | `/culture/practices-traditions` | ✅ Complete |
+| Crafts & Artisan | `/culture/crafts-artisan` | ✅ Complete |
+| People & Wonders | `/culture/people-wonders` | ✅ Complete |
+| Local Business | `/arts-livelihood/local-business` | ✅ Complete |
+| Hospitals | `/community/hospitals` | ✅ Complete |
+| Schools | `/community/schools` | ✅ Complete |
+| Inquire | `/inquire` | ✅ Complete |
+| Arts & Livelihood | `/arts-livelihood` | ⚠️ Static only |
+| Contact | `/contact` | ⚠️ Static only |
+| Mission & Vision | `/mission-vision` | ⚠️ Static only |
+| Tourism Office | `/tourism-office` | ⚠️ Static only |
 
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `read.php` | GET | Get all page heroes or single by `?slug=` | ✅ Done |
-| `update.php` | PUT | Update hero config by `?slug=` | ✅ Done |
+---
 
-##### Home Content (`api/home/`)
+#### Admin CMS Pages (`app/(admin)/admin/`)
 
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `hero.php` | GET | Hero section data | ✅ Done |
-| `hero-settings.php` | GET | Hero config from `config` table | ✅ Done |
-| `spotlight.php` | GET | Featured spotlight content | ✅ Done |
-| `landmarks.php` | GET | Landmark places for carousel | ✅ Done |
-| `milestones.php` | GET | Historical timeline milestones | ✅ Done |
-| `culinary.php` | GET | Culinary/food section content | ✅ Done |
-
-##### Destinations (`api/destinations/`)
-
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `read.php` | GET | List destinations/places | ✅ Done |
-| `create.php` | POST | Create destination | ✅ Done |
-
-##### Analytics (`api/analytics/`)
-
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `log-view.php` | POST | Log a destination page click | ✅ Done |
-| `top-destinations.php` | GET | Top N most-clicked destinations | ✅ Done |
-| `pageviews.php` | GET | Page view stats for dashboard | ✅ Done |
-| `visits.php` | GET | Daily visit counts (`?days=`) | ✅ Done |
-
-##### Activity Logs (`api/activity/`)
-
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `log.php` | POST | Record a CMS action (create/update/delete/login) | ✅ Done |
-| `read.php` | GET | List activity log entries (`?limit=`) | ✅ Done |
-
-##### Media (`api/media/`)
-
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `upload.php` | POST | Upload image/video to `uploads/images/` | ✅ Done |
-| `list.php` | GET | List uploaded media files (`?type=`) | ✅ Done |
-| `delete.php` | DELETE | Delete media file by `?path=` | ✅ Done |
-
-##### Settings (`api/settings/`)
-
-| File | Method | Description | Status |
-|------|--------|-------------|--------|
-| `read.php` | GET | Read all settings from `config` table | ✅ Done |
-| `update.php` | PUT | Bulk-update settings | ✅ Done |
-
-##### Models (`models/`)
-
-| Model | Tables Used | Status |
-|-------|-------------|--------|
-| `User.php` | `users` | ✅ Done |
-| `Post.php` | `content`, `content_fields`, `content_images`, `category` | ✅ Done |
-| `Inquiry.php` | `inquiries` | ✅ Done |
-| `HomeContent.php` | `config`, `content`, `featured_content` | ✅ Done |
-| `PageHero.php` | `config` | ✅ Done |
-| `Destination.php` | `content`, `category`, `content_images` | ✅ Done |
-| `Analytics.php` | `page_views`, `activity_logs` | ✅ Done |
-| `ActivityLog.php` | `activity_logs` | ✅ Done |
-| `PageView.php` | `page_views`, `content` | ✅ Done |
-| `Settings.php` | `config` | ✅ Done |
+| Page | Route | Status |
+|------|-------|--------|
+| Login | `/admin` | ✅ Complete |
+| Dashboard | `/admin/dashboard` | ✅ Complete |
+| CMS / Posts | `/admin/cms` | ✅ Complete |
+| Inquiries | `/admin/inquiries` | ✅ Complete |
+| Heroes | `/admin/heroes` | ✅ Complete |
+| Home Content | `/admin/home-content` | ✅ Complete |
+| Settings | `/admin/settings` | ✅ Complete |
+| Activity Log | `/admin/activity-log` | ✅ Complete |
 
 ---
 
