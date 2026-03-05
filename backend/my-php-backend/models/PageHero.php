@@ -30,15 +30,7 @@ class PageHero
             'title'        => 'Arts & Culture',
             'description'  => 'Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan.',
         ],
-        'arts-livelihood' => [
-            'displayName'  => 'Arts & Livelihood',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
-            'iconName'     => 'Scissors',
-            'accentColor'  => 'amber-300',
-            'label'        => 'Community',
-            'title'        => 'Arts & Livelihood',
-            'description'  => 'Explore the craft traditions and local industries that sustain Bocaue\'s vibrant community.',
-        ],
+
         'history' => [
             'displayName'  => 'History of Bocaue',
             'imageUrl'     => '/images/places/oldtownbocaue.jpg',
@@ -173,7 +165,7 @@ class PageHero
             'imageUrl'     => '/images/places/Food.jpg',
             'iconName'     => 'Store',
             'accentColor'  => 'green-300',
-            'label'        => 'Arts & Livelihood',
+            'label'        => 'Community',
             'title'        => 'Local Business',
             'description'  => 'The enterprises and industries rooted in Bocaue\'s culture and heritage, sustaining livelihoods for generations.',
         ],

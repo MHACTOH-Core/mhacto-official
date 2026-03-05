@@ -31,7 +31,7 @@ export default function LocalBusinessPage() {
         fallbackImage="/images/places/Food.jpg"
         fallbackIcon="Store"
         fallbackAccentColor="green-300"
-        fallbackLabel="Arts & Livelihood"
+        fallbackLabel="Community"
         fallbackTitle="Local Business"
         fallbackDescription="The enterprises and industries rooted in Bocaue's culture and heritage, sustaining livelihoods for generations."
         showBackButton
