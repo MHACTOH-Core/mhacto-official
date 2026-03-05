@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Image from "next/image"
 
-import { attractions } from "@/lib/data/places-data"
+import { type Place } from "@/lib/data/places-data"
+import { apiFetchPublishedPlaces, type CMSPost } from "@/lib/api"
+import { asset } from "@/lib/utils"
 import {
   Carousel,
   CarouselContent,
@@ -14,60 +16,102 @@ import {
 } from "@/components/ui/carousel"
 import { useRevealOnScroll } from "@/hooks/use-reveal"
 
+/** Seconds between automatic carousel advances */
+const AUTOPLAY_INTERVAL_MS = 5000
+/** How long auto-play pauses after user interaction */
+const AUTOPLAY_RESUME_DELAY_MS = 10000
+
+/** Map a CMS post to the Place shape used by the carousel */
+function mapCmsPostToPlace(post: CMSPost): Place {
+  const firstImageUrl = post.image?.[0] ?? ""
+  return {
+    id: post.id,
+    title: post.title,
+    description: post.body?.substring(0, 200) || "",
+    image: firstImageUrl.startsWith("/images")
+      ? asset(firstImageUrl)
+      : firstImageUrl || asset("/images/heroes/hero-bocaue.jpg"),
+    category: "landmark",
+    location: post.location ?? undefined,
+    established: post.established ?? undefined,
+  }
+}
+
 export function PlacesCarousel() {
-  const [api, setApi] = useState<CarouselApi>()
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const headingRef = useRevealOnScroll<HTMLDivElement>()
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>()
+  /** Ref-based flag — avoids re-renders when toggling auto-play on/off */
+  const isAutoPlayActiveRef = useRef(true)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+  const [places, setPlaces] = useState<Place[]>([])
+  const sectionHeadingRef = useRevealOnScroll<HTMLDivElement>()
 
-  // Track active slide
+  // Fetch places from backend API
+  // Sends GET /api/posts/read.php?type=places&limit=10 → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
-    if (!api) return
-
-    const onSelect = () => {
-      setActiveIndex(api.selectedScrollSnap())
-    }
-
-    api.on("select", onSelect)
-    onSelect()
-
-    return () => {
-      api.off("select", onSelect)
-    }
-  }, [api])
-
-  // Auto-play functionality
-  useEffect(() => {
-    if (!api || !isPlaying) return
-
-    const interval = setInterval(() => {
-      api.scrollNext()
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [api, isPlaying])
-
-  // Pause auto-play on user interaction
-  const handleUserInteraction = useCallback(() => {
-    setIsPlaying(false)
-    setTimeout(() => setIsPlaying(true), 10000)
+    apiFetchPublishedPlaces(10)
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setPlaces(posts.map(mapCmsPostToPlace))
+        }
+      })
+      .catch(() => {})
   }, [])
 
-  const handlePrevious = () => {
-    handleUserInteraction()
-    api?.scrollPrev()
+  // Sync active slide index with the carousel's internal state
+  useEffect(() => {
+    if (!carouselApi) return
+
+    const handleSlideSelect = () => {
+      setActiveSlideIndex(carouselApi.selectedScrollSnap())
+    }
+
+    carouselApi.on("select", handleSlideSelect)
+    handleSlideSelect()
+
+    return () => {
+      carouselApi.off("select", handleSlideSelect)
+    }
+  }, [carouselApi])
+
+  // Auto-play: advance slides on a timer (uses ref to avoid re-render loop)
+  useEffect(() => {
+    if (!carouselApi) return
+
+    const autoPlayInterval = setInterval(() => {
+      if (isAutoPlayActiveRef.current) {
+        carouselApi.scrollNext()
+      }
+    }, AUTOPLAY_INTERVAL_MS)
+
+    return () => clearInterval(autoPlayInterval)
+  }, [carouselApi])
+
+  /** Temporarily pause auto-play when the user interacts manually */
+  const pauseAutoPlayOnInteraction = useCallback(() => {
+    isAutoPlayActiveRef.current = false
+    setTimeout(() => {
+      isAutoPlayActiveRef.current = true
+    }, AUTOPLAY_RESUME_DELAY_MS)
+  }, [])
+
+  const handlePreviousSlide = () => {
+    pauseAutoPlayOnInteraction()
+    carouselApi?.scrollPrev()
   }
 
-  const handleNext = () => {
-    handleUserInteraction()
-    api?.scrollNext()
+  const handleNextSlide = () => {
+    pauseAutoPlayOnInteraction()
+    carouselApi?.scrollNext()
   }
+
+  // Don't render if no places loaded
+  if (places.length === 0) return null
 
   return (
     <section className="relative z-10 bg-background py-12 lg:py-16">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div
-          ref={headingRef}
+          ref={sectionHeadingRef}
           className="reveal-on-scroll mb-6 text-center md:mb-8"
         >
           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
@@ -84,18 +128,18 @@ export function PlacesCarousel() {
 
         <div className="relative">
           <Carousel
-            setApi={setApi}
+            setApi={setCarouselApi}
             opts={{
               loop: true,
               align: "center",
             }}
             className="w-full"
-            onMouseEnter={handleUserInteraction}
-            onTouchStart={handleUserInteraction}
+            onMouseEnter={pauseAutoPlayOnInteraction}
+            onTouchStart={pauseAutoPlayOnInteraction}
           >
             <CarouselContent className="items-center">
-              {attractions.map((place, index) => {
-                const isActive = index === activeIndex
+              {places.map((place, index) => {
+                const isActiveSlide = index === activeSlideIndex
 
                 return (
                   <CarouselItem
@@ -106,8 +150,8 @@ export function PlacesCarousel() {
                       <article
                         className="relative w-full h-[280px] sm:h-[340px] md:h-[400px] overflow-hidden rounded-2xl border border-border shadow-sm transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
                         style={{
-                          transform: isActive ? "scale(1)" : "scale(0.85)",
-                          opacity: isActive ? 1 : 0.45,
+                          transform: isActiveSlide ? "scale(1)" : "scale(0.85)",
+                          opacity: isActiveSlide ? 1 : 0.45,
                         }}
                       >
                         {/* Landscape image - fixed height, fills entire card */}
@@ -128,9 +172,9 @@ export function PlacesCarousel() {
                           <p
                             className="mt-1.5 sm:mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
                             style={{
-                              opacity: isActive ? 1 : 0,
-                              transform: isActive ? "translateY(0)" : "translateY(8px)",
-                              maxHeight: isActive ? "200px" : "0",
+                              opacity: isActiveSlide ? 1 : 0,
+                              transform: isActiveSlide ? "translateY(0)" : "translateY(8px)",
+                              maxHeight: isActiveSlide ? "200px" : "0",
                               overflow: "hidden",
                             }}
                           >
@@ -146,11 +190,11 @@ export function PlacesCarousel() {
 
             <CarouselPrevious
               className="h-9 w-9 sm:h-10 sm:w-10 -left-2 sm:-left-4 md:-left-12 bg-primary hover:bg-primary/80 text-primary-foreground"
-              onClick={handlePrevious}
+              onClick={handlePreviousSlide}
             />
             <CarouselNext
               className="h-9 w-9 sm:h-10 sm:w-10 -right-2 sm:-right-4 md:-right-12 bg-primary hover:bg-primary/80 text-primary-foreground"
-              onClick={handleNext}
+              onClick={handleNextSlide}
             />
           </Carousel>
         </div>

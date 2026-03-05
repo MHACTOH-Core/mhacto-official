@@ -26,6 +26,8 @@ const navLinks: NavItem[] = [
   { label: "Home", href: "/", isHash: false },
   {
     label: "Bocaue Wonders",
+    href: "/bocaue-wonders",
+    isHash: false,
     children: [
       {
         label: "History",
@@ -58,21 +60,26 @@ const navLinks: NavItem[] = [
   },
   {
     label: "Community",
+    href: "/community",
+    isHash: false,
     children: [
       { label: "Schools", href: "/community/schools", isHash: false },
       { label: "Hospitals", href: "/community/hospitals", isHash: false },
-      { label: "Local Businesses", href: "/arts-livelihood/local-business", isHash: false },
+      {
+        label: "Arts & Livelihood",
+        href: "/arts-livelihood",
+        children: [
+          { label: "Local Business", href: "/arts-livelihood/local-business", isHash: false },
+        ],
+      },
     ],
   },
-  {
-    label: "News",
-    children: [
-      { label: "Events", href: "/events", isHash: false },
-      { label: "News", href: "/news", isHash: false },
-    ],
-  },
+  { label: "News", href: "/news", isHash: false },
+  { label: "Events", href: "/events", isHash: false },
   {
     label: "Tourism Office",
+    href: "/tourism-office",
+    isHash: false,
     children: [
       { label: "About MHACTO", href: "/tourism-office", isHash: false },
       { label: "Mission & Vision", href: "/mission-vision", isHash: false },
@@ -82,18 +89,18 @@ const navLinks: NavItem[] = [
 ]
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<string[]>([])
-  const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null)
-  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [expandedMobileItems, setExpandedMobileItems] = useState<string[]>([])
+  const [activeDesktopDropdown, setActiveDesktopDropdown] = useState<string | null>(null)
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+  const dropdownCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
+    const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -103,7 +110,7 @@ export function Navbar() {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault()
-        setSearchOverlayOpen(true)
+        setIsSearchOverlayOpen(true)
       }
     }
     window.addEventListener("keydown", handler)
@@ -165,12 +172,12 @@ export function Navbar() {
     [isHomePage, router]
   )
 
-  // Toggle expanded items in mobile menu
-  const toggleExpanded = (label: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(label)
-        ? prev.filter((item) => item !== label)
-        : [...prev, label]
+  /** Toggle a mobile menu item's expanded/collapsed state */
+  const toggleMobileExpanded = (label: string) => {
+    setExpandedMobileItems((previousItems) =>
+      previousItems.includes(label)
+        ? previousItems.filter((item) => item !== label)
+        : [...previousItems, label]
     )
   }
 
@@ -183,17 +190,17 @@ export function Navbar() {
         key={item.label}
         className="relative group"
         onMouseEnter={() => {
-          if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-          setHoveredDropdown(item.label)
+          if (dropdownCloseTimerRef.current) clearTimeout(dropdownCloseTimerRef.current)
+          setActiveDesktopDropdown(item.label)
         }}
         onMouseLeave={() => {
-          closeTimerRef.current = setTimeout(() => setHoveredDropdown(null), 350)
+          dropdownCloseTimerRef.current = setTimeout(() => setActiveDesktopDropdown(null), 350)
         }}
       >
         {/* Trigger button */}
         <button
           className={`flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-all duration-150 hover:text-primary ${
-            hasActiveChild(item) || hoveredDropdown === item.label
+            hasActiveChild(item) || activeDesktopDropdown === item.label
               ? "text-primary"
               : "text-foreground"
           }`}
@@ -201,7 +208,7 @@ export function Navbar() {
           {item.label}
           <ChevronDown
             className={`mt-px h-3.5 w-3.5 transition-transform duration-200 ${
-              hoveredDropdown === item.label ? "rotate-180" : ""
+              activeDesktopDropdown === item.label ? "rotate-180" : ""
             }`}
           />
         </button>
@@ -213,7 +220,7 @@ export function Navbar() {
             rounded-xl border border-border/50 bg-white/95 shadow-xl backdrop-blur-md
             transition-all duration-200
             ${
-              hoveredDropdown === item.label
+              activeDesktopDropdown === item.label
                 ? "opacity-100 translate-y-0 pointer-events-auto"
                 : "opacity-0 -translate-y-1 pointer-events-none"
             }
@@ -341,12 +348,12 @@ export function Navbar() {
               ? renderDesktopDropdown(item)
               : renderDesktopLink(item)
           )}
-        </div>
+        
 
         {/* Desktop search button */}
-        <div className="hidden md:flex items-center">
+      
           <button
-            onClick={() => setSearchOverlayOpen(true)}
+            onClick={() => setIsSearchOverlayOpen(true)}
             className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             aria-label="Open search"
           >
@@ -371,7 +378,7 @@ export function Navbar() {
           </Link>
 
           {/* Mobile nav */}
-          <Sheet open={open} onOpenChange={setOpen}>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
@@ -396,7 +403,7 @@ export function Navbar() {
               </div>
               {/* Mobile search button */}
               <button
-                onClick={() => { setOpen(false); setTimeout(() => setSearchOverlayOpen(true), 150) }}
+                onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsSearchOverlayOpen(true), 150) }}
                 className="mb-5 flex w-full items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
                 <Search className="h-4 w-4 shrink-0" />
@@ -408,9 +415,9 @@ export function Navbar() {
                     {item.children && item.children.length > 0 ? (
                       <>
                         <button
-                          onClick={() => toggleExpanded(item.label)}
+                          onClick={() => toggleMobileExpanded(item.label)}
                           className={`w-full text-left text-lg font-medium transition-colors flex items-center justify-between hover:text-primary ${
-                            hasActiveChild(item) || expandedItems.includes(item.label)
+                            hasActiveChild(item) || expandedMobileItems.includes(item.label)
                               ? "text-primary"
                               : "text-foreground"
                           }`}
@@ -418,11 +425,11 @@ export function Navbar() {
                           {item.label}
                           <ChevronDown
                             className={`h-5 w-5 transition-transform ${
-                              expandedItems.includes(item.label) ? "rotate-180" : ""
+                              expandedMobileItems.includes(item.label) ? "rotate-180" : ""
                             }`}
                           />
                         </button>
-                        {expandedItems.includes(item.label) && (
+                        {expandedMobileItems.includes(item.label) && (
                           <div className="pl-4 mt-2 space-y-3 border-l-2 border-primary/20">
                             {item.children.map((child) => (
                               <div key={child.label}>
@@ -433,36 +440,36 @@ export function Navbar() {
                                         <Link
                                           href={child.href}
                                           className={`flex-1 text-base font-medium transition-colors hover:text-primary ${
-                                            expandedItems.includes(child.label)
+                                            expandedMobileItems.includes(child.label)
                                               ? "text-primary"
                                               : "text-foreground"
                                           }`}
                                           onClick={() => {
-                                            setOpen(false)
-                                            setExpandedItems([])
+                                            setIsMobileMenuOpen(false)
+                                            setExpandedMobileItems([])
                                           }}
                                         >
                                           {child.label}
                                         </Link>
                                       ) : (
                                         <span className={`flex-1 text-base font-medium ${
-                                          expandedItems.includes(child.label) ? "text-primary" : "text-foreground"
+                                          expandedMobileItems.includes(child.label) ? "text-primary" : "text-foreground"
                                         }`}>
                                           {child.label}
                                         </span>
                                       )}
                                       <button
-                                        onClick={() => toggleExpanded(child.label)}
+                                        onClick={() => toggleMobileExpanded(child.label)}
                                         className="p-1 hover:text-primary"
                                       >
                                         <ChevronDown
                                           className={`h-4 w-4 transition-transform ${
-                                            expandedItems.includes(child.label) ? "rotate-180" : ""
+                                            expandedMobileItems.includes(child.label) ? "rotate-180" : ""
                                           }`}
                                         />
                                       </button>
                                     </div>
-                                    {expandedItems.includes(child.label) && (
+                                    {expandedMobileItems.includes(child.label) && (
                                       <div className="pl-4 mt-2 space-y-2 border-l-2 border-primary/10">
                                         {child.children.map((subchild) => (
                                           <Link
@@ -474,8 +481,8 @@ export function Navbar() {
                                                 : "text-foreground"
                                             }`}
                                             onClick={() => {
-                                              setOpen(false)
-                                              setExpandedItems([])
+                                              setIsMobileMenuOpen(false)
+                                              setExpandedMobileItems([])
                                             }}
                                           >
                                             {subchild.label}
@@ -493,8 +500,8 @@ export function Navbar() {
                                         : "text-foreground"
                                     }`}
                                     onClick={() => {
-                                      setOpen(false)
-                                      setExpandedItems([])
+                                      setIsMobileMenuOpen(false)
+                                      setExpandedMobileItems([])
                                     }}
                                   >
                                     {child.label}
@@ -513,7 +520,7 @@ export function Navbar() {
                         }`}
                         onClick={(e) => {
                           handleHashClick(e, item)
-                          setOpen(false)
+                          setIsMobileMenuOpen(false)
                         }}
                       >
                         {item.label}
@@ -528,7 +535,7 @@ export function Navbar() {
       </nav>
     </header>
 
-    <SearchOverlay open={searchOverlayOpen} onClose={() => setSearchOverlayOpen(false)} />
+    <SearchOverlay open={isSearchOverlayOpen} onClose={() => setIsSearchOverlayOpen(false)} />
     </>
   )
 }

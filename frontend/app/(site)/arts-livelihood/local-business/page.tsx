@@ -1,9 +1,8 @@
 ﻿"use client"
 
 import Image from "next/image"
-import { asset } from "@/lib/utils"
-import Link from "next/link"
-import { ArrowLeft, Store, MapPin, Phone, Calendar } from "lucide-react"
+import { MapPin, Phone, Calendar, Store } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { localBusinesses, type LocalBusiness } from "@/lib/data/culture-data"
@@ -32,7 +31,7 @@ export default function LocalBusinessPage() {
         fallbackImage="/images/places/Food.jpg"
         fallbackIcon="Store"
         fallbackAccentColor="green-300"
-        fallbackLabel="Community"
+        fallbackLabel="Arts & Livelihood"
         fallbackTitle="Local Business"
         fallbackDescription="The enterprises and industries rooted in Bocaue's culture and heritage, sustaining livelihoods for generations."
         showBackButton

@@ -1,15 +1,15 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { asset } from "@/lib/utils"
-import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowLeft, Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, ChevronLeft, ChevronRight, Star, Flame, Leaf, UtensilsCrossed, Coffee,
+  Utensils, Clock, MapPin, ChevronDown,
+  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee, Store, Star,
 } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
@@ -17,87 +17,29 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import { localCuisine as fallbackCuisine, restaurants as fallbackRestaurants, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
 
-// ── Restaurant & Eatery Data (fallback — CMS overrides when available) ──
-const fallbackRestaurants: Restaurant[] = [
-  {
-    id: "aling-nena",
-    name: "Aling Nena's Carinderia",
-    type: "eatery",
-    specialty: "Home-style Filipino meals",
-    description: "A beloved neighborhood eatery serving authentic Bulacan comfort food — from sinigang na baboy to pinakbet and freshly cooked rice. Regulars swear by the nilaga laced with fresh vegetables from the local market.",
-    address: "Near Bocaue Public Market, Bocaue, Bulacan",
-    hours: "Mon–Sat · 6:00 AM – 3:00 PM",
-    tags: ["Filipino", "Carinderia", "Budget-Friendly"],
-  },
-  {
-    id: "bocaue-lechon-house",
-    name: "Bocaue Lechon House",
-    type: "restaurant",
-    specialty: "Lechon Bulacan & Roasted Pork",
-    description: "A local institution offering freshly roasted lechon by the kilo. The master roasters use the traditional Bulacan method with lemongrass, bay leaves, and aromatics stuffed inside — crispy skin, juicy meat.",
-    address: "MacArthur Highway, Bocaue, Bulacan",
-    hours: "Daily · 9:00 AM – 8:00 PM",
-    tags: ["Lechon", "Bulacan Specialty", "Catering Available"],
-  },
-  {
-    id: "puto-seko-central",
-    name: "Puto Seko Central Bakery",
-    type: "bakery",
-    specialty: "Puto Seko & Bocaue Kakanin",
-    description: "The go-to spot for authentic Bocaue Puto Seko, baked fresh daily. Also carries sapin-sapin, biko, suman, and seasonal rice cakes. A must-visit for pasalubong shoppers.",
-    address: "Rizal Street, Bocaue Town Center, Bulacan",
-    hours: "Daily · 6:00 AM – 6:00 PM",
-    tags: ["Bakery", "Kakanin", "Pasalubong"],
-  },
-  {
-    id: "lutong-probinsya",
-    name: "Lutong Probinsya Restaurant",
-    type: "restaurant",
-    specialty: "Traditional Filipino Provincial Cuisine",
-    description: "A sit-down family restaurant specializing in Filipino provincial cooking — bulalo, kare-kare, crispy pata, and fresh river fish sourced from nearby tributaries. Known for generous portions and homestyle flavors.",
-    address: "Brgy. San Nicolas, Bocaue, Bulacan",
-    hours: "Daily · 10:00 AM – 9:00 PM",
-    tags: ["Filipino", "Family Dining", "Bulalo"],
-  },
-  {
-    id: "taho-manong",
-    name: "Manong Taho Kiosk",
-    type: "street-food",
-    specialty: "Fresh Morning Taho & Sago",
-    description: "Bocaue's famous silken taho is poured warm every morning from this long-standing kiosk near the church plaza. Using smooth tofu from a local maker, served with dark arnibal syrup and sago pearls.",
-    address: "St. Martin of Tours Church Plaza, Bocaue",
-    hours: "Daily · 5:00 AM – 10:00 AM",
-    tags: ["Street Food", "Breakfast", "Traditional"],
-  },
-  {
-    id: "plaza-merienda",
-    name: "Plaza Merienda Center",
-    type: "eatery",
-    specialty: "Merienda & Afternoon Snacks",
-    description: "A popular merienda spot along the town plaza where locals gather for pandesal, hot choco, arroz caldo, and lomi. Perfect for a mid-afternoon break after exploring the town's heritage sites.",
-    address: "Bocaue Town Plaza, Bulacan",
-    hours: "Daily · 3:00 PM – 9:00 PM",
-    tags: ["Merienda", "Snacks", "Local Hangout"],
-  },
-]
-
-const restaurantTypeColor: Record<string, string> = {
-  restaurant: "bg-blue-100 text-blue-800 border-blue-200",
-  eatery: "bg-orange-100 text-orange-800 border-orange-200",
-  bakery: "bg-amber-100 text-amber-800 border-amber-200",
-  "street-food": "bg-green-100 text-green-800 border-green-200",
-}
-
-const restaurantTypeLabel: Record<string, string> = {
+// ── Restaurant type config ───────────────────────────────────────────
+const restaurantTypeLabel: Record<Restaurant["type"], string> = {
   restaurant: "Restaurant",
-  eatery: "Carinderia / Eatery",
+  eatery: "Eatery",
+  cafe: "Café",
+  carinderia: "Carinderia",
   bakery: "Bakery",
-  "street-food": "Street Food",
 }
 
-// ── type helpers ─────────────────────────────────────────────────────
+const restaurantTypeBadge: Record<Restaurant["type"], string> = {
+  restaurant: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300",
+  eatery: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300",
+  cafe: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300",
+  carinderia: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300",
+  bakery: "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300",
+}
+
+
+// ── type helpers ────────────────────────────────────────────────────
 const typeLabels: Record<CuisineItem["type"], string> = {
   main: "Main Dish",
   snack: "Snack",
@@ -115,17 +57,8 @@ const typeBadge: Record<CuisineItem["type"], string> = {
 const typeIcon: Record<CuisineItem["type"], React.ReactNode> = {
   main: <Flame className="h-4 w-4" />,
   snack: <Leaf className="h-4 w-4" />,
-  dessert: <Star className="h-4 w-4" />,
+  dessert: <UtensilsCrossed className="h-4 w-4" />,
   drink: <Coffee className="h-4 w-4" />,
-}
-
-// extra inline data for richer presentation
-const cuisineExtras: Record<string, { emoji: string; rating: number; bestFor: string; season: string }> = {
-  "puto-seko":     { emoji: "🍪", rating: 4.9, bestFor: "Pasalubong & gifts",       season: "Year-round" },
-  "bocaue-taho":  { emoji: "🥛", rating: 4.8, bestFor: "Morning energy boost",     season: "Daily mornings" },
-  "bibingka-atbp":{ emoji: "🎄", rating: 4.9, bestFor: "Christmas tradition",       season: "December" },
-  "lechon-bulacan":{ emoji: "🐷", rating: 5.0, bestFor: "Fiesta centerpiece",       season: "Fiesta season" },
-  "kakanin-spread":{ emoji: "🍡", rating: 4.7, bestFor: "Weekend markets",           season: "Weekends" },
 }
 
 type TypeFilter = CuisineItem["type"] | "all"
@@ -133,7 +66,6 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   const [storyOpen, setStoryOpen] = useState(false)
-  const extra = cuisineExtras[item.id]
 
   return (
     <Card
@@ -144,20 +76,20 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
       }`}
     >
       {/* Image */}
-      <div className={`relative overflow-hidden ${featured ? "h-72 sm:h-80" : "h-52"}`}>
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-700"
-        />
+      <GalleryImage
+        src={item.image}
+        gallery={item.gallery}
+        alt={item.name}
+        className={`relative overflow-hidden ${featured ? "h-72 sm:h-80" : "h-52"}`}
+        imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      >
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         {featured && (
           <div className="absolute top-3 left-3">
             <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
-              <Star className="h-3 w-3" /> Featured Delicacy
+              ✨ Featured Delicacy
             </span>
           </div>
         )}
@@ -166,46 +98,21 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           <Badge variant="outline" className={`text-xs border ${typeBadge[item.type]} backdrop-blur-sm`}>
             {typeLabels[item.type]}
           </Badge>
-          {extra && (
-            <span className="text-2xl drop-shadow-lg">{extra.emoji}</span>
-          )}
         </div>
-      </div>
+      </GalleryImage>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div>
-            <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
-              {item.name}
-            </h3>
-            {item.tagalogName && item.tagalogName !== item.name && (
-              <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
-            )}
-          </div>
-          {extra && (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-foreground">{extra.rating}</span>
-            </div>
+        <div className="mb-1">
+          <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
+            {item.name}
+          </h3>
+          {item.tagalogName && item.tagalogName !== item.name && (
+            <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
           )}
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-4">{item.description}</p>
-
-        {/* Key facts row */}
-        {extra && (
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="rounded-lg bg-muted/60 px-3 py-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Best For</p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.bestFor}</p>
-            </div>
-            <div className="rounded-lg bg-muted/60 px-3 py-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Season</p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.season}</p>
-            </div>
-          </div>
-        )}
 
         {/* Where & time */}
         <div className="border-t border-border pt-3 space-y-2 mb-3">
@@ -242,6 +149,8 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(fallbackRestaurants)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -249,8 +158,12 @@ export default function LocalCuisinePage() {
 
   const types: TypeFilter[] = ["all", "main", "snack", "dessert", "drink"]
   const filtered = activeType === "all" ? localCuisine : localCuisine.filter((c) => c.type === activeType)
-  const featured = localCuisine[featuredIndex]
-  const rest = filtered.filter((c) => c.id !== featured.id)
+
+  // Featured items for carousel (fall back to all if none marked)
+  const featuredItems = localCuisine.filter((c) => c.isFeatured)
+  const carouselItems = featuredItems.length > 0 ? featuredItems : localCuisine
+  const currentCarouselItem = carouselItems[featuredIndex] ?? carouselItems[0]
+  const rest = filtered.filter((c) => c.id !== currentCarouselItem?.id)
 
   // Sync carousel API → featuredIndex
   useEffect(() => {
@@ -272,51 +185,32 @@ export default function LocalCuisinePage() {
     setTimeout(() => setIsPlaying(true), 10000)
   }, [])
 
+  // Sends GET /api/posts/read.php?label=local-cuisine&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("local-cuisine")
+      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
+    apiFetchByLabel("restaurants")
+      .then((posts) => { if (posts?.length) setRestaurantList(posts.map(cmsToRestaurant)) })
+      .catch(() => {})
+  }, [])
+
   const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
   const handleNext = () => { pauseAutoPlay(); carouselApi?.scrollNext() }
 
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ── */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[380px] sm:min-h-[480px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${asset('/images/places/Food.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-16 sm:py-20 md:py-28">
-          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to home</span>
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Utensils className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Local Culinary</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
-              Taste of Bocaue
-            </h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue&apos;s most beloved delicacies.
-            </p>
-          </div>
-          {/* Quick stat pills */}
-          <div className="mt-8 flex flex-wrap gap-3">
-            {[
-              { label: "5 Signature Dishes", icon: "🍽️" },
-              { label: "Centuries of Tradition", icon: "📜" },
-              { label: "Local Vendors & Markets", icon: "🏪" },
-            ].map((s) => (
-              <span key={s.label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-semibold border border-white/20">
-                {s.icon} {s.label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="local-cuisine"
+        fallbackImage="/images/places/Food.jpg"
+        fallbackIcon="Utensils"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Local Culinary"
+        fallbackTitle="Taste of Bocaue"
+        fallbackDescription="From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue's most beloved delicacies."
+        showBackButton
+      />
 
       {/* ── Sticky filter bar ── */}
       <section className="border-b border-border bg-muted/40 py-3 sticky top-0 z-30 backdrop-blur-sm">
@@ -346,7 +240,7 @@ export default function LocalCuisinePage() {
             {/* Section heading */}
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 mb-4">
-                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                <Utensils className="h-3.5 w-3.5 text-amber-500" />
                 <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Featured Delicacy</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-foreground">Top Picks from Bocaue&apos;s Kitchen</h2>
@@ -361,8 +255,7 @@ export default function LocalCuisinePage() {
                 className="w-full"
               >
                 <CarouselContent className="items-stretch">
-                  {localCuisine.map((item, index) => {
-                    const extra = cuisineExtras[item.id]
+                  {carouselItems.map((item, index) => {
                     const isActive = index === featuredIndex
                     return (
                       <CarouselItem
@@ -379,14 +272,15 @@ export default function LocalCuisinePage() {
                         >
                           <div className="overflow-hidden rounded-2xl bg-card border border-border shadow-xl h-full flex flex-col">
                             {/* Cinematic image */}
-                            <div className="relative h-56 sm:h-72 md:h-80 shrink-0 overflow-hidden">
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                fill
-                                sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
+                            <GalleryImage
+                              src={item.image}
+                              gallery={item.gallery}
+                              alt={item.name}
+                              outerClassName="shrink-0"
+                              className="relative h-56 sm:h-72 md:h-80 overflow-hidden"
+                              imageClassName="object-cover transition-transform duration-700 group-hover:scale-105"
+                              sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
+                            >
                               {/* Dark gradient from bottom */}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
@@ -398,14 +292,6 @@ export default function LocalCuisinePage() {
                                 </span>
                               </div>
 
-                              {/* Rating top-right */}
-                              {extra && (
-                                <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                  <span className="text-xs font-bold text-white">{extra.rating}</span>
-                                </div>
-                              )}
-
                               {/* Title overlaid on image bottom */}
                               <div className="absolute bottom-0 left-0 right-0 p-5">
                                 <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
@@ -415,7 +301,7 @@ export default function LocalCuisinePage() {
                                   <p className="text-xs text-white/70 italic mt-0.5">{item.tagalogName}</p>
                                 )}
                               </div>
-                            </div>
+                            </GalleryImage>
 
                             {/* Detail panel */}
                             <div className="flex flex-col flex-1 p-5 sm:p-6">
@@ -428,8 +314,6 @@ export default function LocalCuisinePage() {
                                 {[
                                   { icon: <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Where to find", val: item.where[0] },
                                   { icon: <Clock className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Best time", val: item.bestTime ?? "Year-round" },
-                                  { icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />, label: "Rating", val: `${extra?.rating ?? "—"} / 5.0` },
-                                  { icon: <Flame className="h-3.5 w-3.5 text-orange-500 shrink-0" />, label: "Best for", val: extra?.bestFor ?? "All occasions" },
                                 ].map((row) => (
                                   <div key={row.label} className="flex items-center gap-2.5 rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
                                     {row.icon}
@@ -479,7 +363,7 @@ export default function LocalCuisinePage() {
             {/* Dots + counter */}
             <div className="mt-7 flex items-center justify-center gap-3">
               <div className="flex items-center gap-1.5">
-                {localCuisine.map((_, i) => (
+                {carouselItems.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => { pauseAutoPlay(); carouselApi?.scrollTo(i) }}
@@ -488,12 +372,12 @@ export default function LocalCuisinePage() {
                         ? "w-7 bg-amber-500"
                         : "w-1.5 bg-border hover:bg-muted-foreground/40"
                     }`}
-                    aria-label={`Go to ${localCuisine[i].name}`}
+                    aria-label={`Go to ${carouselItems[i].name}`}
                   />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground tabular-nums">
-                {featuredIndex + 1} / {localCuisine.length}
+                {featuredIndex + 1} / {carouselItems.length}
               </span>
             </div>
           </div>
@@ -527,56 +411,94 @@ export default function LocalCuisinePage() {
       </section>
 
       {/* ── Restaurants & Eateries ── */}
-      <section className="py-12 sm:py-16 lg:py-20 border-t border-border">
+      <section className="py-12 sm:py-16 lg:py-20 bg-muted/20 border-t border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Store className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Restaurants & Eateries in Bocaue</h2>
-              <p className="text-muted-foreground text-sm">Discover where to eat — from local carinderias to family restaurants</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground">Restaurants &amp; Eateries</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Where to eat in Bocaue — from heritage kitchens to street-side carinderias</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-8 max-w-3xl">
-            Whether you&apos;re craving a home-cooked meal, freshly baked kakanin, or the iconic Bocaue Lechon, these local establishments serve the best flavors Bocaue has to offer.
-          </p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {restaurants.map((resto) => (
-              <Card key={resto.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <CardContent className="p-5 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                      <Utensils className="h-5 w-5 text-primary" />
-                    </div>
-                    <Badge variant="outline" className={`text-xs capitalize shrink-0 ${restaurantTypeColor[resto.type] ?? ""}`}>
-                      {restaurantTypeLabel[resto.type]}
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+            {restaurantList.map((place) => (
+              <div
+                key={place.id}
+                className="group rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300 flex flex-col"
+              >
+                {/* Image */}
+                <GalleryImage
+                  src={place.image ?? "/images/places/Food.jpg"}
+                  alt={place.name}
+                  className="relative h-44 overflow-hidden"
+                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs border backdrop-blur-sm ${restaurantTypeBadge[place.type]}`}
+                    >
+                      {restaurantTypeLabel[place.type]}
                     </Badge>
                   </div>
-                  <h3 className="text-lg font-black text-foreground mb-0.5 group-hover:text-primary transition-colors">{resto.name}</h3>
-                  <p className="text-xs font-semibold text-primary mb-2">{resto.specialty}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{resto.description}</p>
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <div className="flex items-start gap-2 text-xs text-foreground">
-                      <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{resto.address}</span>
+                  {place.isOpen && (
+                    <div className="absolute top-3 right-3">
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
+                        Open
+                      </span>
                     </div>
-                    <div className="flex items-start gap-2 text-xs text-foreground">
-                      <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{resto.hours}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {resto.tags.map((tag) => (
-                          <span key={tag} className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                  )}
+                </GalleryImage>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="text-base font-black text-card-foreground group-hover:text-primary transition-colors leading-snug mb-1">
+                    {place.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">
+                    {place.description}
+                  </p>
+
+                  {/* Specialties */}
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                      <Star className="h-3 w-3 text-amber-500" /> Specialties
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {place.specialties.slice(0, 3).map((s) => (
+                        <span key={s} className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-foreground border border-border">
+                          {s}
+                        </span>
+                      ))}
+                      {place.specialties.length > 3 && (
+                        <span className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-muted-foreground border border-border">
+                          +{place.specialties.length - 3} more
+                        </span>
+                      )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Location & Hours */}
+                  <div className="border-t border-border pt-3 space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-foreground">{place.location}</p>
+                    </div>
+                    {place.hours && (
+                      <div className="flex items-start gap-2">
+                        <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-foreground">{place.hours}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>

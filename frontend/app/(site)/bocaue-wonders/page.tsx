@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { asset } from "@/lib/utils"
 import {
   Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
@@ -8,12 +9,11 @@ import {
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { GalleryImage } from "@/components/ui/gallery-image"
 import { peopleWonders as fallbackPeople, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
-// ── Category config ──────────────────────────────────────────────────
+// Category config
 type Category = PeopleWonder["category"] | "all"
 
 const categoryConfig: Record<
@@ -62,34 +62,27 @@ const filterButtons: { value: Category; label: string; icon: React.ReactNode }[]
   { value: "academics", label: "Academics", icon: <GraduationCap className="h-3.5 w-3.5" /> },
 ]
 
-// ── Person card ──────────────────────────────────────────────────────
 function PersonCard({ person }: { person: PeopleWonder }) {
   const [expanded, setExpanded] = useState(false)
   const cfg = categoryConfig[person.category]
 
   return (
     <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
-      {/* Photo */}
-      <GalleryImage
-        src={person.image ?? asset("/images/placeholder-user.jpg")}
-        gallery={person.gallery}
-        alt={person.name}
-        className="relative h-56 overflow-hidden bg-muted"
-        imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      >
-        {/* gradient overlay */}
+      <div className="relative h-56 overflow-hidden bg-muted">
+        <Image
+          src={person.image ?? asset("/images/placeholder-user.jpg")}
+          alt={person.name}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-700"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-
-        {/* category badge */}
         <div className="absolute top-3 left-3">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-sm ${cfg.badge}`}>
             {cfg.icon}
             {cfg.label}
           </span>
         </div>
-
-        {/* year chip */}
         {person.year && (
           <div className="absolute top-3 right-3">
             <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
@@ -97,23 +90,17 @@ function PersonCard({ person }: { person: PeopleWonder }) {
             </span>
           </div>
         )}
-
-        {/* name on image */}
         <div className="absolute bottom-3 left-3 right-3">
           <h3 className="text-lg font-black text-white leading-snug drop-shadow-lg">{person.name}</h3>
           <p className="text-xs text-white/80 leading-tight mt-0.5 line-clamp-1">{person.title}</p>
         </div>
-      </GalleryImage>
+      </div>
 
-      {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
-        {/* Achievement headline */}
         <div className="flex items-start gap-2 mb-3">
           <Trophy className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-sm font-semibold text-foreground leading-snug">{person.achievement}</p>
         </div>
-
-        {/* Description – expandable */}
         <div className={`text-sm text-muted-foreground leading-relaxed overflow-hidden transition-all duration-300 ${expanded ? "max-h-none" : "max-h-20"}`}>
           {person.description}
         </div>
@@ -127,8 +114,6 @@ function PersonCard({ person }: { person: PeopleWonder }) {
             <><ChevronDown className="h-3.5 w-3.5" /> Read more</>
           )}
         </button>
-
-        {/* Awards */}
         {person.awards && person.awards.length > 0 && (
           <div className="mt-4 border-t border-border pt-3">
             <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
@@ -149,12 +134,10 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   )
 }
 
-// ── Page ─────────────────────────────────────────────────────────────
-export default function PeopleWondersPage() {
+export default function BocaueWondersPage() {
   const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
-  // Sends GET /api/posts/read.php?label=people-wonders&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("people-wonders")
       .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
@@ -178,20 +161,17 @@ export default function PeopleWondersPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* ── Hero ─────────────────────────────────────────────────── */}
       <PageHero
-        pageSlug="people-wonders"
+        pageSlug="bocaue-wonders"
         fallbackImage="/images/places/Arts.jpg"
         fallbackIcon="Users"
         fallbackAccentColor="pink-300"
-        fallbackLabel="Arts & Culture"
-        fallbackTitle="People Wonders"
-        fallbackDescription="Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, award-winning artists, civic heroes, and achievers who carry the pride of the town to the world."
+        fallbackLabel="Bocaue, Bulacan"
+        fallbackTitle="Bocaue Wonders"
+        fallbackDescription="Celebrating the remarkable living individuals of Bocaue  pageant queens, champion athletes, award-winning artists, civic heroes, and achievers who carry the pride of the town to the world."
         showBackButton
-        backHref="/culture"
       />
 
-      {/* ── Filter bar ───────────────────────────────────────────── */}
       <section className="bg-background border-b border-border shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
@@ -220,17 +200,17 @@ export default function PeopleWondersPage() {
         </div>
       </section>
 
-      {/* ── Grid ─────────────────────────────────────────────────── */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          {/* Section header */}
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Trophy className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h2 className="text-2xl font-black text-foreground sm:text-3xl">
-                {activeFilter === "all" ? "All Notable Bocaueños" : `${categoryConfig[activeFilter as PeopleWonder["category"]]?.label} Achievers`}
+                {activeFilter === "all"
+                  ? "All Notable Bocaueños"
+                  : `${categoryConfig[activeFilter as PeopleWonder["category"]]?.label} Achievers`}
               </h2>
               <p className="text-muted-foreground">
                 {filtered.length} {filtered.length === 1 ? "person" : "people"} featured
@@ -253,7 +233,6 @@ export default function PeopleWondersPage() {
           )}
         </div>
       </section>
-
     </main>
   )
 }

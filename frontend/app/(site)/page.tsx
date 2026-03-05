@@ -2,10 +2,19 @@ import dynamic from "next/dynamic"
 import { HeroSection } from "@/components/sections/hero-section"
 import { TourismTaglineSection } from "@/components/sections/tourism-tagline-section"
 import { FeaturedSpotlight } from "@/components/sections/featured-spotlight"
+import { ArtsCultureSliderSection } from "@/components/sections/arts-culture-slider-section"
 
 // Lazy-load below-the-fold sections to reduce initial bundle size
 const CulinarySection = dynamic(
   () => import("@/components/sections/culinary-section").then((m) => m.CulinarySection),
+  { loading: () => <SectionSkeleton /> }
+)
+const RestaurantsSection = dynamic(
+  () => import("@/components/sections/restaurants-section").then((m) => m.RestaurantsSection),
+  { loading: () => <SectionSkeleton /> }
+)
+const HumanWondersSection = dynamic(
+  () => import("@/components/sections/human-wonders-section").then((m) => m.HumanWondersSection),
   { loading: () => <SectionSkeleton /> }
 )
 const HistoryArtSection = dynamic(
@@ -53,16 +62,25 @@ export default function Home() {
         <FeaturedSpotlight />
       </section>
 
+      {/* 4. Arts & Culture Slider */}
+      <ArtsCultureSliderSection />
+
       {/* 5. Featured Culinary Delicacies */}
       <CulinarySection />
 
-      {/* 6. Places Carousel */}
+      {/* 6. Featured Restaurants & Eateries */}
+      <RestaurantsSection />
+
+      {/* 7. Places Carousel */}
       <PlacesCarousel />
 
-      {/* 7. History & Art */}
+      {/* 8. Featured People Wonders */}
+      <HumanWondersSection />
+
+      {/* 9. History & Art */}
       <HistoryArtSection />
 
-      {/* 8. News */}
+      {/* 10. News */}
       <NewsSection />
     </main>
   )

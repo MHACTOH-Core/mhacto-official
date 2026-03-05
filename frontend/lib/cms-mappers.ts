@@ -125,25 +125,6 @@ export function cmsToCuisineItem(post: CMSPost): CuisineItem {
   }
 }
 
-export function cmsToRestaurant(post: CMSPost): Restaurant {
-  const cat = (post.category ?? "").toLowerCase()
-  const type: Restaurant["type"] = cat.includes("eatery") || cat.includes("carinderia") ? "eatery"
-    : cat.includes("bakery") ? "bakery"
-    : cat.includes("street") ? "street-food"
-    : "restaurant"
-  return {
-    id: post.id,
-    name: post.title,
-    type,
-    specialty: post.established ?? "",
-    description: post.body ?? "",
-    address: post.location ?? "",
-    hours: post.hours ?? "",
-    tags: post.highlights ?? [],
-    image: post.image?.[0] ? resolveImage(post, "/images/places/Food.jpg") : undefined,
-  }
-}
-
 export function cmsToFestival(post: CMSPost): Festival {
   const cat = (post.category ?? "").toLowerCase()
   const type: Festival["type"] = cat.includes("religious") ? "religious"
@@ -398,4 +379,28 @@ export function filterPublicSchools(posts: CMSPost[]): CMSPost[] {
 
 export function filterPrivateSchools(posts: CMSPost[]): CMSPost[] {
   return posts.filter(p => (p.category ?? "").toLowerCase().includes("private"))
+}
+
+// ─── Restaurant mapper ────────────────────────────────────────────
+
+export function cmsToRestaurant(post: CMSPost): Restaurant {
+  const cat = (post.category ?? "").toLowerCase()
+  const type: Restaurant["type"] =
+    cat.includes("cafe") || cat.includes("coffee") ? "cafe"
+    : cat.includes("bakery") ? "bakery"
+    : cat.includes("carinderia") ? "carinderia"
+    : cat.includes("eatery") ? "eatery"
+    : "restaurant"
+
+  return {
+    id: post.id,
+    name: post.title,
+    type,
+    description: post.body ?? "",
+    specialties: parseList(post.story),
+    location: post.location ?? "",
+    hours: post.hours ?? "",
+    image: resolveImage(post, "/images/places/Food.jpg"),
+    isOpen: post.isFeatured ?? true,
+  }
 }

@@ -62,7 +62,7 @@ export default function TourismOfficePage() {
         fallbackIcon="Building2"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Organization"
-        fallbackTitle="About MHACTO"
+        fallbackTitle="Tourism Office"
         fallbackDescription="The Municipal History, Arts, Culture and Tourism Office (MHACTO) of Bocaue, Bulacan — your gateway to heritage tourism and cultural programming."
         showBackButton
       />

@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
-import Image from "next/image"
 import Link from "next/link"
-import { Utensils, Sparkles, Flame, MapPin, Clock, Star, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight } from "lucide-react"
+import { Utensils, Sparkles, Flame, MapPin, Clock, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localCuisine, festivals, culturalPractices } from "@/lib/data/culture-data"
+import { GalleryImage } from "@/components/ui/gallery-image"
+import { localCuisine as fallbackCuisine, festivals as fallbackFestivals, culturalPractices as fallbackPractices, artisans as fallbackArtisans, peopleWonders as fallbackPeople, type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
 const subPages = [
   { label: "Local Cuisine", href: "/culture/local-cuisine", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
@@ -34,10 +37,36 @@ const navSections = [
   { id: "cuisine", label: "Local Cuisine" },
   { id: "festivals", label: "Festivals" },
   { id: "practices", label: "Cultural Practices" },
+  { id: "crafts-artisans", label: "Crafts & Artisans" },
+  { id: "people-wonders", label: "People Wonders" },
 ]
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
+  const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
+  const [artisansList, setArtisansList] = useState<Artisan[]>(fallbackArtisans)
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
+
+  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("local-cuisine")     // → PHP: SELECT * ... WHERE label_key='local-cuisine' AND status='published'
+      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
+    apiFetchByLabel("festivals")         // → PHP: SELECT * ... WHERE label_key='festivals' AND status='published'
+      .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
+      .catch(() => {})
+    apiFetchByLabel("cultural-practices") // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
+      .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
+      .catch(() => {})
+    apiFetchByLabel("crafts-artisan")
+      .then((posts) => { if (posts?.length) setArtisansList(posts.map(cmsToArtisan)) })
+      .catch(() => {})
+    apiFetchByLabel("people-wonders")
+      .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,49 +82,42 @@ export default function CulturePage() {
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" })
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" })
   }
 
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Arts &amp; Culture</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="culture"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Sparkles"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Bocaue Wonders"
+        fallbackTitle="Arts & Culture"
+        fallbackDescription="Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan."
+      />
 
-      {/* Sticky nav */}
-      <div className="sticky top-[60px] sm:top-16 lg:top-[72px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto py-1">
-            {navSections.map((s) => (
-              <button key={s.id} onClick={() => scrollTo(s.id)}
-                className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}>
-                {s.label}
-              </button>
-            ))}
+              {/* Sticky nav */}
+        <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            <div className="flex gap-1 overflow-x-auto py-1">
+              {navSections.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => scrollTo(s.id)}
+                  className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                    activeSection === s.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* ── Local Cuisine ── */}
       <section id="cuisine" className="py-12 sm:py-16 lg:py-20 border-b border-border">
@@ -103,20 +125,25 @@ export default function CulturePage() {
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Utensils className="h-5 w-5 text-primary" /></div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Local Cuisine</h2>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Culinary Wonders</h2>
               <p className="text-muted-foreground">Flavors and foodways that define Bocaue&apos;s table</p>
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {localCuisine.map((item) => (
+            {localCuisine.slice(0, 3).map((item) => (
               <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <div className="relative h-36 overflow-hidden">
-                  <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                <GalleryImage
+                  src={item.image}
+                  gallery={item.gallery}
+                  alt={item.name}
+                  className="relative h-36 overflow-hidden"
+                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">
                     <Badge className="text-xs bg-orange-500 text-white border-0 capitalize">{item.type}</Badge>
                   </div>
-                </div>
+                </GalleryImage>
                 <CardContent className="p-5 flex flex-col flex-1">
                   <h3 className="text-lg font-black text-foreground mb-0.5">{item.name}</h3>
                   {item.tagalogName && item.tagalogName !== item.name && <p className="text-xs text-muted-foreground italic mb-2">{item.tagalogName}</p>}
@@ -130,9 +157,13 @@ export default function CulturePage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/culture/local-cuisine">See More Local Cuisine <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
+            <Link
+              href="/culture/local-cuisine"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -152,13 +183,18 @@ export default function CulturePage() {
               <Card key={fest.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
-                      <Image src={fest.image} alt={fest.name} fill className="object-cover" />
+                    <GalleryImage
+                      src={fest.image}
+                      gallery={fest.gallery}
+                      alt={fest.name}
+                      outerClassName="h-full"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       <div className="absolute bottom-3 left-4">
                         <Badge variant="outline" className={`text-xs ${festivalTypeColor[fest.type] ?? ""}`}>{fest.type}</Badge>
                       </div>
-                    </div>
+                    </GalleryImage>
                   )}
                   <CardContent className="p-6 sm:p-8 flex flex-col justify-start">
                     <div className="flex items-center gap-2 mb-2">
@@ -166,31 +202,41 @@ export default function CulturePage() {
                       <span className="text-xs font-semibold text-primary">{fest.date}</span>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{fest.name}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{fest.description}</p>
-                    <p className="text-sm text-foreground leading-relaxed mb-4">{fest.story}</p>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Star className="h-3 w-3" /> Highlights</p>
-                      <ul className="space-y-1">{fest.highlights.map((h) => <li key={h} className="text-sm text-foreground flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{h}</li>)}</ul>
-                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{fest.description}</p>
+                    <p className="text-xs text-primary/70 font-medium mt-3">Click card for full details →</p>
                   </CardContent>
                   {idx % 2 !== 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px] order-first md:order-last">
-                      <Image src={fest.image} alt={fest.name} fill className="object-cover" />
+                    <GalleryImage
+                      src={fest.image}
+                      gallery={fest.gallery}
+                      alt={fest.name}
+                      outerClassName="h-full order-first md:order-last"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       <div className="absolute bottom-3 right-4">
                         <Badge variant="outline" className={`text-xs ${festivalTypeColor[fest.type] ?? ""}`}>{fest.type}</Badge>
                       </div>
-                    </div>
+                    </GalleryImage>
                   )}
                 </div>
               </Card>
             ))}
           </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/culture/festivals-celebrations"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ── Cultural Practices ── */}
-      <section id="practices" className="py-12 sm:py-16 lg:py-20">
+      <section id="practices" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Flame className="h-5 w-5 text-primary" /></div>
@@ -205,10 +251,14 @@ export default function CulturePage() {
               return (
                 <Card key={practice.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                   {practice.image && (
-                    <div className="relative h-36 overflow-hidden">
-                      <Image src={practice.image} alt={practice.name} fill className="object-cover" />
+                    <GalleryImage
+                      src={practice.image}
+                      gallery={practice.gallery}
+                      alt={practice.name}
+                      className="relative h-36 overflow-hidden"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    </div>
+                    </GalleryImage>
                   )}
                   <CardContent className="p-5 flex flex-col flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -218,15 +268,123 @@ export default function CulturePage() {
                       </span>
                     </div>
                     <h3 className="text-lg font-black text-foreground mb-2">{practice.name}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{practice.description}</p>
-                    <div className="border-t border-border pt-3">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Significance</p>
-                      <p className="text-xs text-foreground leading-relaxed">{practice.significance}</p>
-                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{practice.description}</p>
+                    <p className="text-xs text-primary/70 font-medium">Click card for full details →</p>
                   </CardContent>
                 </Card>
               )
             })}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/culture/practices-traditions"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Crafts & Artisans ── */}
+      <section id="crafts-artisans" className="py-12 sm:py-16 lg:py-20 border-b border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Hammer className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Crafts &amp; Artisans</h2>
+              <p className="text-muted-foreground">Master craftspeople keeping Bocaue&apos;s traditions alive</p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {artisansList.map((artisan) => (
+              <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                {artisan.image && (
+                  <GalleryImage
+                    src={artisan.image}
+                    gallery={artisan.gallery}
+                    alt={artisan.name}
+                    className="relative h-44 overflow-hidden"
+                    imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-200 backdrop-blur-sm">{artisan.craft}</Badge>
+                    </div>
+                  </GalleryImage>
+                )}
+                <CardContent className="p-5 flex flex-col flex-1">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="text-lg font-black text-foreground">{artisan.name}</h3>
+                    <Badge variant="outline" className="text-xs whitespace-nowrap">{artisan.experience}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{artisan.description}</p>
+                  <div className="border-t border-border pt-3 space-y-1.5">
+                    <div className="flex items-start gap-2 text-xs"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{artisan.location}</div>
+                    <div className="flex flex-wrap gap-1">
+                      {artisan.products.slice(0, 3).map((p) => <Badge key={p} variant="outline" className="text-xs">{p}</Badge>)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/culture/crafts-artisan"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── People Wonders ── */}
+      <section id="people-wonders" className="py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">People Wonders</h2>
+              <p className="text-muted-foreground">Notable living Bocaueños making their mark</p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {peopleWonders.map((person) => (
+              <Card key={person.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                {person.image && (
+                  <GalleryImage
+                    src={person.image}
+                    gallery={person.gallery}
+                    alt={person.name}
+                    className="relative h-44 overflow-hidden"
+                    imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <Badge variant="outline" className="text-xs capitalize bg-blue-100 text-blue-800 border-blue-200 backdrop-blur-sm">{person.category}</Badge>
+                    </div>
+                  </GalleryImage>
+                )}
+                <CardContent className="p-5 flex flex-col flex-1">
+                  <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
+                  <p className="text-xs text-primary font-semibold mb-2">{person.title}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{person.achievement}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/culture/people-wonders"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

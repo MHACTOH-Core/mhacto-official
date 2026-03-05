@@ -3,173 +3,143 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import {
-  Landmark, MapPin, Clock, BookOpen, ChevronDown, ChevronUp,
-  ArrowRight, Star, Shield, Calendar,
-} from "lucide-react"
+import { asset } from "@/lib/utils"
+import { Landmark, MapPin, Clock, Shield, Star, ChevronDown, ChevronUp, BookOpen, Building2 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { timelineEvents as fallbackTimeline, notablePersons as fallbackPersons, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
+import { heritageSites as fallbackHeritage, type HeritageSite } from "@/lib/data/destinations-data"
 import { apiFetchByLabel } from "@/lib/api"
-import { cmsToTimelineEvent, cmsToNotablePerson } from "@/lib/cms-mappers"
-import { asset } from "@/lib/utils"
+import { cmsToHeritageSite } from "@/lib/cms-mappers"
 
-// ── Static Heritage Sites ─────────────────────────────────────────────
-const heritageSites = [
-  {
-    id: "st-martin-church",
-    name: "St. Martin of Tours Parish Church",
-    period: "1609 – Present",
-    category: "Religious Heritage",
-    significance: "major",
-    description: "One of Bulacan's oldest Baroque stone churches, originally established by Augustinian missionaries in 1609. The present stone structure dates from the mid-1800s and features a twin bell-tower façade with hand-carved retablos inside.",
-    details: "The church survived the Philippine Revolution, Japanese occupation, and multiple earthquakes, making it one of the most resilient structures in the province. Its massive stone walls, circa-1850 carved altarpiece, and colonial-era religious paraphernalia are protected as national cultural heritage under the NHCP.",
-    image: asset("/images/places/Church.jpg"),
-    location: "Bocaue Town Center, near the river",
-    visitHours: "Daily · 6:00 AM – 7:00 PM",
-    heritage: "NHCP National Cultural Treasure",
-    tags: ["Baroque", "Church", "Colonial", "Religious"],
-  },
-  {
-    id: "bocaue-river",
-    name: "Bocaue River & Pagoda Route",
-    period: "c. 900 – Present",
-    category: "Natural & Cultural Heritage",
-    significance: "major",
-    description: "The life-giving river that gave Bocaue its name. The site of the miraculous cross discovery in the 18th century and the route of the annual Pagoda Festival fluvial procession. The river waterfront is a living heritage landscape.",
-    details: "Pre-colonial Tagalog communities built their first settlements along this river, drawn by its abundant fish and fertile banks. For over 230 years, the Pagoda Festival fluvial procession has moved along this sacred waterway, making it inseparable from Bocaue's collective memory and spiritual life.",
-    image: asset("/images/places/river-festival.jpg"),
-    location: "Bocaue River, beside the town church",
-    visitHours: "Public waterfront open daily",
-    heritage: "NCCA Recognized Cultural Tradition",
-    tags: ["River", "Festival", "Natural", "UNESCO Potential"],
-  },
-  {
-    id: "jose-corazon-plaza",
-    name: "José Corazón de Jesús Town Plaza",
-    period: "Spanish Colonial – Present",
-    category: "Civic Heritage",
-    significance: "notable",
-    description: "The historic town plaza named in honor of Bocaue's most celebrated poet, 'Huseng Batute' (José Corazón de Jesús). The plaza has been the center of civic life for centuries.",
-    details: "Originally a colonial-era gathering place beside the parish church, the plaza has witnessed patriotic proclamations, civic parades, Christmas celebrations, and festival gatherings. The poet Jose Corazon de Jesus — born in Bocaue in 1896 — is immortalized in a marker here. The plaza remains a living public space used for community events, markets, and cultural performances.",
-    image: asset("/images/places/Arts.jpg"),
-    location: "Bocaue Town Center, fronting the church",
-    visitHours: "Open daily",
-    heritage: "Municipal Heritage Site",
-    tags: ["Plaza", "Civic", "Poetry", "Community"],
-  },
-  {
-    id: "philippine-arena",
-    name: "Philippine Arena",
-    period: "2014 – Present",
-    category: "Modern Wonder",
-    significance: "major",
-    description: "The world's largest indoor arena, with a seating capacity of 55,000. Located in Ciudad de Victoria, Bocaue, the Philippine Arena earned a Guinness World Record on its inaugural day in 2014 and put Bocaue on the global map.",
-    details: "Designed by the world-renowned architectural firm Populous and built by the Iglesia ni Cristo to commemorate their centennial year, the Philippine Arena is a feat of modern engineering. Its cable-supported roof spans 170,000 square meters. The building is part of the 750-hectare Ciudad de Victoria integrated complex, which also includes a stadium, hotel, mall, and medical city.",
-    image: asset("/images/places/philippine-arena.jpg"),
-    location: "Ciudad de Victoria, Bocaue, Bulacan",
-    visitHours: "Event-based; tours available",
-    heritage: "Guinness World Record Holder",
-    tags: ["Arena", "Guinness Record", "Modern", "Architecture"],
-  },
-  {
-    id: "old-bocaue-cemetery",
-    name: "Old Bocaue Municipal Cemetery",
-    period: "Spanish Colonial – Present",
-    category: "Historical Heritage",
-    significance: "notable",
-    description: "A colonial-era cemetery containing the graves of Bocaue's notable historical figures, revolutionaries, and civic leaders. The cemetery features Spanish-era mausoleums and ornate funerary art.",
-    details: "Many of the graves in this cemetery date back to the 1800s, and several historical figures — including local heroes of the Philippine Revolution — are interred here. The cemetery's old sections feature distinctive Baroque funerary chapels, ornate iron railings, and marble markers inscribed in Spanish. The NHCP has identified several structures within the cemetery as having heritage value.",
-    image: asset("/images/places/oldtownbocaue.jpg"),
-    location: "Bocaue Town Center",
-    visitHours: "Daily · 6:00 AM – 6:00 PM",
-    heritage: "Pending NHCP Documentation",
-    tags: ["Cemetery", "Colonial", "Monuments"],
-  },
-  {
-    id: "fireworks-industry-zone",
-    name: "Bocaue Fireworks Heritage Zone",
-    period: "Spanish Colonial – Present",
-    category: "Industrial & Cultural Heritage",
-    significance: "cultural",
-    description: "The designated zone where Bocaue's centuries-old fireworks industry continues its craft. A living museum of Filipino pyrotechnics tradition, Bocaue has been the 'Fireworks Capital of the Philippines' for generations.",
-    details: "Families in Bocaue have been crafting fireworks for over 200 years, a tradition traceable to Chinese merchant settlers during the colonial period. The industry today operates under strict safety regulations while maintaining its cultural identity. Artisan workshops in the heritage zone create elaborate displays for major Philippine festivals and civic events. The New Year's fireworks created by Bocaue craftsmen light up cities across the country.",
-    image: asset("/images/places/fireworks.jpg"),
-    location: "Bocaue Fireworks Zone, Bulacan",
-    visitHours: "Guided tours available; contact MHACTO",
-    heritage: "Living Industrial Heritage",
-    tags: ["Fireworks", "Industry", "Tradition", "Crafts"],
-  },
+const categoryConfig: Record<HeritageSite["category"], { label: string; color: string }> = {
+  church:      { label: "Church",        color: "bg-amber-100 text-amber-800 border-amber-200" },
+  monument:    { label: "Monument",      color: "bg-purple-100 text-purple-800 border-purple-200" },
+  building:    { label: "Building",      color: "bg-blue-100 text-blue-800 border-blue-200" },
+  streetscape: { label: "Streetscape",   color: "bg-green-100 text-green-800 border-green-200" },
+  bridge:      { label: "Bridge",        color: "bg-stone-100 text-stone-800 border-stone-200" },
+}
+
+const filterButtons: { value: HeritageSite["category"] | "all"; label: string }[] = [
+  { value: "all",           label: "All" },
+  { value: "church",        label: "Churches" },
+  { value: "monument",      label: "Monuments" },
+  { value: "building",      label: "Buildings" },
+  { value: "bridge",        label: "Bridges" },
+  { value: "streetscape",   label: "Streetscapes" },
 ]
 
-const significanceBadge: Record<string, string> = {
-  major: "bg-red-100 text-red-800 border-red-200",
-  notable: "bg-blue-100 text-blue-800 border-blue-200",
-  cultural: "bg-amber-100 text-amber-800 border-amber-200",
-}
-
-const categoryColor: Record<string, string> = {
-  "Religious Heritage": "bg-amber-100 text-amber-800",
-  "Natural & Cultural Heritage": "bg-green-100 text-green-800",
-  "Civic Heritage": "bg-blue-100 text-blue-800",
-  "Modern Wonder": "bg-purple-100 text-purple-800",
-  "Historical Heritage": "bg-stone-100 text-stone-800",
-  "Industrial & Cultural Heritage": "bg-red-100 text-red-800",
-}
-
-function SiteCard({ site }: { site: typeof heritageSites[0] }) {
+function HeritageCard({ site }: { site: HeritageSite }) {
   const [expanded, setExpanded] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(site.image)
+  const cfg = categoryConfig[site.category]
+  const thumbs = site.gallery && site.gallery.length > 0 ? site.gallery : [site.image]
 
   return (
-    <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col">
-      {site.image && (
-        <div className="relative h-56 overflow-hidden">
-          <Image src={site.image} alt={site.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
-            <Badge variant="outline" className={`text-xs backdrop-blur-sm border-0 ${categoryColor[site.category] ?? "bg-muted"}`}>
-              {site.category}
-            </Badge>
-            <Badge variant="outline" className={`text-xs backdrop-blur-sm ${significanceBadge[site.significance]}`}>
-              {site.significance === "major" ? "★ Major" : site.significance === "cultural" ? "♦ Cultural" : "Notable"}
-            </Badge>
+    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
+      <div className="relative h-56 overflow-hidden">
+        <Image
+          src={selectedImage}
+          alt={site.name}
+          fill
+          sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+          className="object-cover transition-all duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <Badge variant="outline" className={`text-xs border backdrop-blur-sm ${cfg.color}`}>
+            {cfg.label}
+          </Badge>
+          {site.isProtected && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-emerald-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+              <Shield className="h-2.5 w-2.5" /> Protected
+            </span>
+          )}
+        </div>
+        {site.established && (
+          <div className="absolute top-3 right-3">
+            <span className="text-[10px] font-bold text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+              Est. {site.established}
+            </span>
           </div>
+        )}
+        <div className="absolute bottom-3 left-4 right-4">
+          <h3 className="text-base font-black text-white leading-snug drop-shadow-md">{site.name}</h3>
+        </div>
+      </div>
+
+      {/* Thumbnail strip */}
+      {thumbs.length > 1 && (
+        <div className="flex gap-1.5 px-3 pt-2.5 pb-0">
+          {thumbs.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedImage(img)}
+              className={`relative h-14 flex-1 overflow-hidden rounded-md border-2 transition-all duration-200 ${
+                selectedImage === img ? "border-primary shadow-sm" : "border-transparent opacity-60 hover:opacity-90"
+              }`}
+            >
+              <Image src={img} alt={`${site.name} photo ${i + 1}`} fill sizes="80px" className="object-cover" />
+            </button>
+          ))}
         </div>
       )}
+
       <CardContent className="p-5 flex flex-col flex-1">
-        <div className="flex items-start gap-2 mb-1">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <span className="text-xs text-muted-foreground">{site.period}</span>
-        </div>
-        <h3 className="text-lg font-black text-foreground mb-2 group-hover:text-primary transition-colors">{site.name}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{site.description}</p>
 
-        <div className="border-t border-border pt-3 space-y-2">
-          <div className="flex items-start gap-2 text-xs text-foreground">
-            <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.location}
-          </div>
-          <div className="flex items-start gap-2 text-xs text-foreground">
-            <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.visitHours}
-          </div>
-          <div className="flex items-start gap-2 text-xs">
-            <Shield className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-            <span className="text-amber-700 dark:text-amber-400 font-semibold">{site.heritage}</span>
-          </div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {site.tags.map((tag) => (
-              <span key={tag} className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">{tag}</span>
-            ))}
-          </div>
+        <div className="border-t border-border pt-3 space-y-1.5 mb-4">
+          {site.location && (
+            <div className="flex items-start gap-2 text-xs">
+              <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">{site.location}</span>
+            </div>
+          )}
+          {site.hours && (
+            <div className="flex items-start gap-2 text-xs">
+              <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">{site.hours}</span>
+            </div>
+          )}
+          {site.protectionLevel && (
+            <div className="flex items-start gap-2 text-xs">
+              <Shield className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">{site.protectionLevel}</span>
+            </div>
+          )}
         </div>
 
-        <button onClick={() => setExpanded(v => !v)} className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-          {expanded ? <><ChevronUp className="h-3 w-3" /> Less detail</> : <><ChevronDown className="h-3 w-3" /> Full details</>}
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+        >
+          <span className="uppercase tracking-wider">Historical Story</span>
+          {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
+
         {expanded && (
-          <div className="mt-3 rounded-xl bg-muted/40 border border-border p-4">
-            <p className="text-sm text-foreground leading-relaxed">{site.details}</p>
+          <div className="mt-3 space-y-3 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+            {site.story && (
+              <div className="rounded-xl bg-muted/40 border border-border p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">The Story</p>
+                <p className="text-xs text-foreground leading-relaxed">{site.story}</p>
+              </div>
+            )}
+            {site.highlights && site.highlights.length > 0 && (
+              <div className="rounded-xl bg-primary/5 border border-primary/10 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-1">
+                  <Star className="h-3 w-3" /> Highlights
+                </p>
+                <ul className="space-y-1">
+                  {site.highlights.map((h) => (
+                    <li key={h} className="flex items-start gap-2 text-xs text-foreground">
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -178,143 +148,121 @@ function SiteCard({ site }: { site: typeof heritageSites[0] }) {
 }
 
 export default function HistoricalWondersPage() {
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
-  const [activeCategory, setActiveCategory] = useState<string>("all")
+  const [sites, setSites] = useState<HeritageSite[]>(fallbackHeritage)
+  const [activeFilter, setActiveFilter] = useState<HeritageSite["category"] | "all">("all")
 
+  // Sends GET /api/posts/read.php?label=heritage-sites&status=published → PHP SQL SELECT → returns JSON
   useEffect(() => {
-    apiFetchByLabel("notable-figures")
-      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
+    apiFetchByLabel("heritage-sites")
+      .then((posts) => { if (posts?.length) setSites(posts.map(cmsToHeritageSite)) })
       .catch(() => {})
   }, [])
 
-  const categories = ["all", ...Array.from(new Set(heritageSites.map((s) => s.category)))]
-  const filteredSites = activeCategory === "all" ? heritageSites : heritageSites.filter(s => s.category === activeCategory)
+  const filtered = activeFilter === "all"
+    ? sites
+    : sites.filter((s) => s.category === activeFilter)
 
   return (
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="historical-wonders"
-        fallbackImage="/images/places/Church.jpg"
+        fallbackImage="/images/places/church-bocaue.jpg"
         fallbackIcon="Landmark"
         fallbackAccentColor="amber-300"
-        fallbackLabel="Heritage of Bocaue"
-        fallbackTitle="Historical Wonders"
-        fallbackDescription="Discover the historical landmarks, sacred sites, and enduring monuments that define Bocaue's remarkable heritage spanning over four centuries."
+        fallbackLabel="Heritage & History"
+        fallbackTitle="Historical Wonders of Bocaue"
+        fallbackDescription="Step into the living history of Bocaue — where centuries-old churches, colonial monuments, and heritage buildings tell the story of a town shaped by faith, revolution, and resilience."
         showBackButton
       />
 
       {/* Stats */}
-      <section className="border-b border-border bg-primary/5 py-4">
+      <section className="py-8 bg-gradient-to-b from-muted/40 to-background border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex flex-wrap gap-6 justify-center sm:justify-start">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-center">
             {[
-              { value: `${heritageSites.length}`, label: "Heritage Sites" },
-              { value: "400+", label: "Years of History" },
-              { value: "2", label: "National Treasures" },
-              { value: "1", label: "Guinness Record Site" },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center sm:items-start">
-                <span className="text-2xl font-black text-primary">{stat.value}</span>
-                <span className="text-xs text-muted-foreground">{stat.label}</span>
+              { icon: <Building2 className="h-5 w-5" />, label: "Heritage Structures", value: `${sites.length}+` },
+              { icon: <Shield className="h-5 w-5" />,    label: "Protected Sites",    value: `${sites.filter(s => s.isProtected).length}+` },
+              { icon: <BookOpen className="h-5 w-5" />,  label: "Years of History",   value: "400+" },
+              { icon: <Star className="h-5 w-5" />,      label: "Cultural Layers",    value: "7" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border">
+                <div className="text-primary">{s.icon}</div>
+                <p className="text-xl font-black text-primary">{s.value}</p>
+                <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Category filter */}
+      {/* Filter bar */}
       <section className="border-b border-border bg-muted/40 py-3 sticky top-0 z-30 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex flex-wrap items-center gap-2">
-            <Landmark className="h-4 w-4 text-muted-foreground" />
-            {categories.map((cat) => (
-              <Button
-                key={cat}
-                variant={activeCategory === cat ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveCategory(cat)}
-                className="text-xs"
+            <Landmark className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            {filterButtons.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setActiveFilter(f.value as HeritageSite["category"] | "all")}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  activeFilter === f.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                }`}
               >
-                {cat === "all" ? "All Sites" : cat}
-              </Button>
+                {f.label}
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Heritage Sites Grid */}
+      {/* Grid */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Landmark className="h-5 w-5 text-primary" />
-            </div>
+          <div className="flex items-center justify-between gap-4 mb-8">
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">
-                {activeCategory === "all" ? "Heritage Sites & Landmarks" : activeCategory}
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground">
+                {activeFilter === "all" ? "All Historical Wonders" : categoryConfig[activeFilter as HeritageSite["category"]]?.label ?? ""}
               </h2>
-              <p className="text-muted-foreground text-sm">{filteredSites.length} site{filteredSites.length !== 1 ? "s" : ""} found</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {filtered.length} site{filtered.length !== 1 ? "s" : ""} — click &quot;Historical Story&quot; to learn more
+              </p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredSites.map((site) => <SiteCard key={site.id} site={site} />)}
-          </div>
+
+          {filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-16">No sites in this category.</p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((site) => (
+                <HeritageCard key={site.id} site={site} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Notable Historical Figures */}
-      <section className="py-12 sm:py-16 border-t border-border bg-muted/20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <BookOpen className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Historical Figures</h2>
-              <p className="text-muted-foreground text-sm">Bocaueños who shaped history</p>
-            </div>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {notablePersons.slice(0, 6).map((person) => (
-              <Card key={person.id} className="group border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors">{person.name}</h3>
-                      <p className="text-xs text-primary font-semibold">{person.title}</p>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">{person.years}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{person.description}</p>
-                  <div className="border-t border-border pt-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Legacy</p>
-                    <p className="text-xs text-foreground leading-relaxed line-clamp-3">{person.legacy}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/history">See All Historical Figures <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-10 bg-primary/5 border-t border-primary/10">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+      {/* Bottom nav */}
+      <section className="py-10 bg-muted/30 border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-black text-foreground">Explore Bocaue&apos;s full history</h3>
-            <p className="text-sm text-muted-foreground mt-1">Dive into the timeline of events that shaped this remarkable town.</p>
+            <h3 className="text-lg font-black text-foreground">Explore more of Bocaue's history</h3>
+            <p className="text-sm text-muted-foreground mt-1">Follow the historical roadmap from pre-colonial times to today.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/history/roadmap" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              <Clock className="h-4 w-4" /> Historical Roadmap
+            <Link
+              href="/history/timeline"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <BookOpen className="h-4 w-4" />
+              Historical Roadmap
             </Link>
-            <Link href="/inquire" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-background text-foreground text-sm font-semibold hover:bg-muted transition-colors">
-              Plan a Heritage Visit
+            <Link
+              href="/history/notable-persons"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-background text-foreground text-sm font-semibold hover:bg-muted transition-colors"
+            >
+              Notable Persons
             </Link>
           </div>
         </div>
