@@ -653,7 +653,6 @@ export interface MunicipalEvent {
   description: string
   highlights: string[]
   ticketed: boolean
-  price?: string
   organizer: string
   image?: string
 }

@@ -83,67 +83,61 @@ function Highlight({ text, query }: { text: string; query: string }) {
   )
 }
 
-/**
- * Full-screen search overlay with fuzzy matching against the static search index.
- * Supports keyboard navigation (arrow keys + enter) and quick-access links.
- */
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [highlightedResultIndex, setHighlightedResultIndex] = useState(0)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const resultsContainerRef = useRef<HTMLDivElement>(null)
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Auto-focus the search input when the overlay opens
+  // Focus input on open
   useEffect(() => {
     if (open) {
-      setTimeout(() => searchInputRef.current?.focus(), 60)
-      setSearchQuery("")
-      setSearchResults([])
-      setHighlightedResultIndex(0)
+      setTimeout(() => inputRef.current?.focus(), 60)
+      setQuery("")
+      setResults([])
+      setActiveIndex(0)
     }
   }, [open])
 
-  // Debounced search — waits 180ms after the user stops typing before querying
+  // Debounced search
   useEffect(() => {
-    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current)
-    if (!searchQuery.trim()) { setSearchResults([]); setIsSearching(false); return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!query.trim()) { setResults([]); setLoading(false); return }
 
-    setIsSearching(true)
-    searchDebounceTimerRef.current = setTimeout(() => {
-      setSearchResults(searchContent(searchQuery))
-      setHighlightedResultIndex(0)
-      setIsSearching(false)
+    setLoading(true)
+    debounceRef.current = setTimeout(() => {
+      setResults(searchContent(query))
+      setActiveIndex(0)
+      setLoading(false)
     }, 180)
 
-    return () => { if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current) }
-  }, [searchQuery])
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [query])
 
-  /** Handle arrow-key navigation and Enter selection within the results list */
-  const handleKeyboardNavigation = useCallback(
-    (event: React.KeyboardEvent) => {
-      const visibleList = searchQuery.trim() ? searchResults : quickLinks
-      const listLength = visibleList.length
-      if (!listLength) return
+  // Keyboard nav
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const list = query.trim() ? results : quickLinks
+      const len = list.length
+      if (!len) return
 
-      if (event.key === "ArrowDown") {
-        event.preventDefault()
-        setHighlightedResultIndex((currentIndex) => (currentIndex + 1) % listLength)
-      } else if (event.key === "ArrowUp") {
-        event.preventDefault()
-        setHighlightedResultIndex((currentIndex) => (currentIndex - 1 + listLength) % listLength)
-      } else if (event.key === "Enter") {
-        event.preventDefault()
-        const targetHref = searchQuery.trim()
-          ? searchResults[highlightedResultIndex]?.href
-          : quickLinks[highlightedResultIndex]?.href
-        if (targetHref) { router.push(targetHref); onClose() }
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setActiveIndex((i) => (i + 1) % len)
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setActiveIndex((i) => (i - 1 + len) % len)
+      } else if (e.key === "Enter") {
+        e.preventDefault()
+        const target = query.trim() ? results[activeIndex]?.href : quickLinks[activeIndex]?.href
+        if (target) { router.push(target); onClose() }
       }
     },
-    [searchQuery, searchResults, highlightedResultIndex, router, onClose]
+    [query, results, activeIndex, router, onClose]
   )
 
   // Close on Escape
@@ -162,13 +156,12 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
-  /** Navigate to a result page and close the overlay */
-  const navigateToResult = (href: string) => { router.push(href); onClose() }
+  const navigate = (href: string) => { router.push(href); onClose() }
 
   if (!open) return null
 
-  const hasSearchResults = searchResults.length > 0
-  const isShowingQuickLinks = !searchQuery.trim()
+  const hasResults = results.length > 0
+  const showQuick = !query.trim()
 
   return (
     <>
@@ -184,22 +177,22 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
 
           {/* Search input row */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
-            {isSearching
+            {loading
               ? <Loader2 className="h-5 w-5 shrink-0 text-muted-foreground animate-spin" />
               : <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
             }
             <input
-              ref={searchInputRef}
+              ref={inputRef}
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyboardNavigation}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Search Bocaue — places, culture, history, news…"
               className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none"
             />
-            {searchQuery && (
+            {query && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => setQuery("")}
                 className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -211,8 +204,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           </div>
 
           {/* Results / Quick links */}
-          <div ref={resultsContainerRef} className="max-h-[60vh] overflow-y-auto">
-            {isShowingQuickLinks && (
+          <div ref={listRef} className="max-h-[60vh] overflow-y-auto">
+            {showQuick && (
               <div className="p-3">
                 <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   Quick Access
@@ -221,9 +214,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                   {quickLinks.map((link, i) => (
                     <button
                       key={link.href}
-                      onClick={() => navigateToResult(link.href)}
+                      onClick={() => navigate(link.href)}
                       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                        highlightedResultIndex === i ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        activeIndex === i ? "bg-primary/10 text-primary" : "hover:bg-muted"
                       }`}
                     >
                       <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs ${categoryColor[link.category] ?? "bg-muted text-muted-foreground"}`}>
@@ -237,37 +230,37 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               </div>
             )}
 
-            {!isShowingQuickLinks && !isSearching && !hasSearchResults && (
+            {!showQuick && !loading && !hasResults && (
               <div className="flex flex-col items-center justify-center py-14 text-muted-foreground">
                 <Search className="h-10 w-10 mb-3 opacity-20" />
-                <p className="text-sm font-semibold">No results for &ldquo;{searchQuery}&rdquo;</p>
+                <p className="text-sm font-semibold">No results for &ldquo;{query}&rdquo;</p>
                 <p className="text-xs mt-1">Try different keywords or browse the menu above.</p>
               </div>
             )}
 
-            {!isShowingQuickLinks && hasSearchResults && (
+            {!showQuick && hasResults && (
               <div className="p-3">
                 <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+                  {results.length} result{results.length !== 1 ? "s" : ""}
                 </p>
                 <div className="space-y-0.5">
-                  {searchResults.map((result, i) => (
+                  {results.map((result, i) => (
                     <button
                       key={result.id}
-                      onClick={() => navigateToResult(result.href)}
+                      onClick={() => navigate(result.href)}
                       className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                        highlightedResultIndex === i ? "bg-primary/10" : "hover:bg-muted"
+                        activeIndex === i ? "bg-primary/10" : "hover:bg-muted"
                       }`}
                     >
                       <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs ${categoryColor[result.category] ?? "bg-muted text-muted-foreground"}`}>
                         {iconMap[result.category] ?? <FileText className="h-3.5 w-3.5" />}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold leading-snug truncate ${highlightedResultIndex === i ? "text-primary" : "text-foreground group-hover:text-primary"} transition-colors`}>
-                          <Highlight text={result.title} query={searchQuery} />
+                        <p className={`text-sm font-semibold leading-snug truncate ${activeIndex === i ? "text-primary" : "text-foreground group-hover:text-primary"} transition-colors`}>
+                          <Highlight text={result.title} query={query} />
                         </p>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          <Highlight text={result.subtitle} query={searchQuery} />
+                          <Highlight text={result.subtitle} query={query} />
                         </p>
                       </div>
                       <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${categoryColor[result.category] ?? "bg-muted text-muted-foreground"}`}>

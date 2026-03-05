@@ -240,6 +240,10 @@ export default function InquirePage() {
     } finally {
       setSubmitting(false)
     }
+    console.log("Inquiry submitted:", data)
+    alert("Inquiry sent successfully!")
+    e.currentTarget.reset()
+    setPurpose("")
   }
 
   return (
@@ -583,6 +587,30 @@ export default function InquirePage() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-card-foreground">
+                        Email Address
+                      </Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact" className="text-card-foreground">
+                        Contact Number
+                      </Label>
+                      <Input
+                        id="contact"
+                        name="contact"
+                        type="tel"
+                        placeholder="(+63) 9XX-XXX-XXXX"
+                      />
+                    </div>
+                  </div>
 
                     {/* ── Submit ── */}
                     <Button
@@ -618,7 +646,6 @@ export default function InquirePage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>

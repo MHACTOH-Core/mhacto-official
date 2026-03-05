@@ -13,7 +13,6 @@ const featuredRestaurants = [
     name: "Aling Nena's Carinderia",
     tagline: "Classic Filipino comfort food since 1978",
     type: "carinderia" as const,
-    priceRange: "₱" as const,
     address: "123 Rizal Avenue, Bocaue, Bulacan",
     hours: "Mon–Sun · 6:00 AM – 8:00 PM",
     rating: 4.7,
@@ -25,7 +24,6 @@ const featuredRestaurants = [
     name: "Bocaue Lechon House",
     tagline: "Award-winning whole roast pig, lechon manok & liempo",
     type: "restaurant" as const,
-    priceRange: "₱₱" as const,
     address: "Mc Arthur Highway, Bocaue, Bulacan",
     hours: "Tue–Sun · 10:00 AM – 9:00 PM",
     rating: 4.9,
@@ -37,7 +35,6 @@ const featuredRestaurants = [
     name: "Plaza Merienda Center",
     tagline: "Street food hub in the heart of the old town plaza",
     type: "eatery" as const,
-    priceRange: "₱" as const,
     address: "Old Town Plaza, Bocaue, Bulacan",
     hours: "Daily · 3:00 PM – 10:00 PM",
     rating: 4.5,
@@ -105,7 +102,6 @@ export function FeaturedRestaurants() {
                       >
                         {typeLabel[r.type]}
                       </Badge>
-                      <span className="text-xs font-semibold text-muted-foreground">{r.priceRange}</span>
                     </div>
                     <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors leading-snug">
                       {r.name}

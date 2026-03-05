@@ -2,14 +2,11 @@ import { asset } from "@/lib/utils"
 
 export type PlaceCategory =
   | "heritage"
-  | "religious"
-  | "museum"
   | "nature"
   | "festival"
   | "arts"
   | "cuisine"
   | "landmark"
-  | "venue"
 
 export interface Place {
   id: string
@@ -27,15 +24,12 @@ export interface Place {
 }
 
 export const categoryLabels: Record<PlaceCategory, string> = {
-  heritage: "Heritage Site",
-  religious: "Religious Site",
-  museum: "Museum",
-  nature: "Nature & Parks",
-  festival: "Festival Grounds",
+  heritage: "Temple & Heritage",
+  nature: "Nature",
+  festival: "Festival",
   arts: "Arts & Culture",
-  cuisine: "Food & Dining",
+  cuisine: "Cuisine",
   landmark: "Landmark",
-  venue: "Arena & Events Venue",
 }
 
 export const attractions: Place[] = [

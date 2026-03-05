@@ -235,10 +235,25 @@ class HomeContent
             $map[$row['config_key']] = $decoded;
         }
 
+        // Parse up to 4 title/highlight pairs from config
+        $titles = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $t = $map["hero_title_$i"] ?? null;
+            $h = $map["hero_highlight_$i"] ?? null;
+            if ($t !== null && trim($t) !== '') {
+                $titles[] = ['title' => $t, 'highlight' => $h ?? ''];
+            }
+        }
+        // Fallback: if no numbered titles found, try legacy single title
+        if (empty($titles)) {
+            $legacyTitle = $map['hero_title'] ?? 'Explore The River';
+            $legacyHighlight = $map['hero_highlight'] ?? 'Town Wonders';
+            $titles[] = ['title' => $legacyTitle, 'highlight' => $legacyHighlight];
+        }
+
         return [
             'subtitle'      => $map['hero_subtitle'] ?? '',
-            'title'         => $map['hero_title'] ?? 'Explore The River',
-            'highlight'     => $map['hero_highlight'] ?? '',
+            'titles'        => $titles,
             'description'   => $map['hero_description'] ?? '',
             'videoUrl'      => $map['hero_video_url'] ?? '',
             'fallbackImage' => $map['hero_fallback_img'] ?? '',
@@ -251,8 +266,6 @@ class HomeContent
     {
         $heroMap = [
             'subtitle'      => 'hero_subtitle',
-            'title'         => 'hero_title',
-            'highlight'     => 'hero_highlight',
             'description'   => 'hero_description',
             'videoUrl'      => 'hero_video_url',
             'fallbackImage' => 'hero_fallback_img',
@@ -273,6 +286,30 @@ class HomeContent
                     ':v'  => $jsonValue,
                     ':v2' => $jsonValue,
                 ]);
+            }
+        }
+
+        // Save up to 4 title/highlight pairs
+        if (isset($data['titles']) && is_array($data['titles'])) {
+            for ($i = 0; $i < 4; $i++) {
+                $title = $data['titles'][$i]['title'] ?? '';
+                $highlight = $data['titles'][$i]['highlight'] ?? '';
+                foreach ([
+                    "hero_title_" . ($i + 1)     => $title,
+                    "hero_highlight_" . ($i + 1) => $highlight,
+                ] as $configKey => $value) {
+                    $jsonValue = json_encode($value);
+                    $stmt = $this->conn->prepare("
+                        INSERT INTO config (config_group, config_key, config_value, data_type)
+                        VALUES ('hero', :k, :v, 'string')
+                        ON DUPLICATE KEY UPDATE config_value = :v2
+                    ");
+                    $stmt->execute([
+                        ':k'  => $configKey,
+                        ':v'  => $jsonValue,
+                        ':v2' => $jsonValue,
+                    ]);
+                }
             }
         }
 

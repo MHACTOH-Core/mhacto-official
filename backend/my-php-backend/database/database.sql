@@ -171,7 +171,7 @@ CREATE TABLE inquiries (
   number_of_pax      INT          DEFAULT NULL  COMMENT 'Real column — aggregatable crowd volume',
   message            TEXT         DEFAULT NULL,
   additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, referral_source, dietary_needs, etc.',
-  status             ENUM('unread','in_progress','assigned','archived','spam','trash') DEFAULT 'unread' COMMENT 'assigned = handed off to a tourist guide',
+  status             ENUM('unread','assigned','archived','spam','trash') DEFAULT 'unread' COMMENT 'assigned = handed off to a tourist guide',
   assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name/ID assigned to handle this inquiry',
   reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply stored for in-app thread display',
   replied_at         TIMESTAMP    DEFAULT NULL  COMMENT 'When the admin sent the reply',
@@ -531,7 +531,7 @@ INSERT INTO inquiries (inquiry_type, full_name, email_address, contact_number, d
 
 ('general_contact', 'Kim Park', 'kimpark@travel.kr', '+821012345678', '2026-06-20', 4,
  'Hi, my friends and I are visiting from South Korea and we heard about the Pagoda Festival. Is it still happening in July? We would love to attend and also try the local food. Any recommendations?',
- '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'in_progress'),
+ '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'unread'),
 
 ('partnership', 'Elena Fernandez', 'elena@bulacan-tourism.gov.ph', '+639351234567', NULL, NULL,
  'On behalf of the Provincial Tourism Office, we would like to discuss a potential collaboration for the Bulacan Heritage Trail project. Bocaue would be a key stop on the trail. Please get back to us at your earliest convenience.',

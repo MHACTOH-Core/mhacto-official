@@ -1,13 +1,13 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee, Store, Phone, Star,
+  ArrowLeft, Utensils, Clock, MapPin, ChevronDown,
+  ChevronUp, ChevronLeft, ChevronRight, Star, Flame, Leaf, UtensilsCrossed, Coffee,
 } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,9 +17,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine as fallbackCuisine, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
+import { localCuisine, type CuisineItem } from "@/lib/data/culture-data"
 
 // ── Restaurant & Eatery Data (fallback — CMS overrides when available) ──
 const fallbackRestaurants: Restaurant[] = [
@@ -31,7 +29,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "A beloved neighborhood eatery serving authentic Bulacan comfort food — from sinigang na baboy to pinakbet and freshly cooked rice. Regulars swear by the nilaga laced with fresh vegetables from the local market.",
     address: "Near Bocaue Public Market, Bocaue, Bulacan",
     hours: "Mon–Sat · 6:00 AM – 3:00 PM",
-    priceRange: "₱",
     tags: ["Filipino", "Carinderia", "Budget-Friendly"],
   },
   {
@@ -42,7 +39,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "A local institution offering freshly roasted lechon by the kilo. The master roasters use the traditional Bulacan method with lemongrass, bay leaves, and aromatics stuffed inside — crispy skin, juicy meat.",
     address: "MacArthur Highway, Bocaue, Bulacan",
     hours: "Daily · 9:00 AM – 8:00 PM",
-    priceRange: "₱₱",
     tags: ["Lechon", "Bulacan Specialty", "Catering Available"],
   },
   {
@@ -53,7 +49,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "The go-to spot for authentic Bocaue Puto Seko, baked fresh daily. Also carries sapin-sapin, biko, suman, and seasonal rice cakes. A must-visit for pasalubong shoppers.",
     address: "Rizal Street, Bocaue Town Center, Bulacan",
     hours: "Daily · 6:00 AM – 6:00 PM",
-    priceRange: "₱",
     tags: ["Bakery", "Kakanin", "Pasalubong"],
   },
   {
@@ -64,7 +59,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "A sit-down family restaurant specializing in Filipino provincial cooking — bulalo, kare-kare, crispy pata, and fresh river fish sourced from nearby tributaries. Known for generous portions and homestyle flavors.",
     address: "Brgy. San Nicolas, Bocaue, Bulacan",
     hours: "Daily · 10:00 AM – 9:00 PM",
-    priceRange: "₱₱",
     tags: ["Filipino", "Family Dining", "Bulalo"],
   },
   {
@@ -75,7 +69,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "Bocaue's famous silken taho is poured warm every morning from this long-standing kiosk near the church plaza. Using smooth tofu from a local maker, served with dark arnibal syrup and sago pearls.",
     address: "St. Martin of Tours Church Plaza, Bocaue",
     hours: "Daily · 5:00 AM – 10:00 AM",
-    priceRange: "₱",
     tags: ["Street Food", "Breakfast", "Traditional"],
   },
   {
@@ -86,7 +79,6 @@ const fallbackRestaurants: Restaurant[] = [
     description: "A popular merienda spot along the town plaza where locals gather for pandesal, hot choco, arroz caldo, and lomi. Perfect for a mid-afternoon break after exploring the town's heritage sites.",
     address: "Bocaue Town Plaza, Bulacan",
     hours: "Daily · 3:00 PM – 9:00 PM",
-    priceRange: "₱",
     tags: ["Merienda", "Snacks", "Local Hangout"],
   },
 ]
@@ -123,8 +115,17 @@ const typeBadge: Record<CuisineItem["type"], string> = {
 const typeIcon: Record<CuisineItem["type"], React.ReactNode> = {
   main: <Flame className="h-4 w-4" />,
   snack: <Leaf className="h-4 w-4" />,
-  dessert: <UtensilsCrossed className="h-4 w-4" />,
+  dessert: <Star className="h-4 w-4" />,
   drink: <Coffee className="h-4 w-4" />,
+}
+
+// extra inline data for richer presentation
+const cuisineExtras: Record<string, { emoji: string; rating: number; bestFor: string; season: string }> = {
+  "puto-seko":     { emoji: "🍪", rating: 4.9, bestFor: "Pasalubong & gifts",       season: "Year-round" },
+  "bocaue-taho":  { emoji: "🥛", rating: 4.8, bestFor: "Morning energy boost",     season: "Daily mornings" },
+  "bibingka-atbp":{ emoji: "🎄", rating: 4.9, bestFor: "Christmas tradition",       season: "December" },
+  "lechon-bulacan":{ emoji: "🐷", rating: 5.0, bestFor: "Fiesta centerpiece",       season: "Fiesta season" },
+  "kakanin-spread":{ emoji: "🍡", rating: 4.7, bestFor: "Weekend markets",           season: "Weekends" },
 }
 
 type TypeFilter = CuisineItem["type"] | "all"
@@ -132,6 +133,7 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   const [storyOpen, setStoryOpen] = useState(false)
+  const extra = cuisineExtras[item.id]
 
   return (
     <Card
@@ -155,7 +157,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
         {featured && (
           <div className="absolute top-3 left-3">
             <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
-              ✨ Featured Delicacy
+              <Star className="h-3 w-3" /> Featured Delicacy
             </span>
           </div>
         )}
@@ -164,21 +166,46 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           <Badge variant="outline" className={`text-xs border ${typeBadge[item.type]} backdrop-blur-sm`}>
             {typeLabels[item.type]}
           </Badge>
+          {extra && (
+            <span className="text-2xl drop-shadow-lg">{extra.emoji}</span>
+          )}
         </div>
       </div>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
-        <div className="mb-1">
-          <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
-            {item.name}
-          </h3>
-          {item.tagalogName && item.tagalogName !== item.name && (
-            <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div>
+            <h3 className={`font-black text-foreground leading-snug group-hover:text-primary transition-colors ${featured ? "text-xl" : "text-lg"}`}>
+              {item.name}
+            </h3>
+            {item.tagalogName && item.tagalogName !== item.name && (
+              <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
+            )}
+          </div>
+          {extra && (
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              <span className="text-xs font-bold text-foreground">{extra.rating}</span>
+            </div>
           )}
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-4">{item.description}</p>
+
+        {/* Key facts row */}
+        {extra && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="rounded-lg bg-muted/60 px-3 py-2">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Best For</p>
+              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.bestFor}</p>
+            </div>
+            <div className="rounded-lg bg-muted/60 px-3 py-2">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Season</p>
+              <p className="text-xs font-semibold text-foreground mt-0.5">{extra.season}</p>
+            </div>
+          </div>
+        )}
 
         {/* Where & time */}
         <div className="border-t border-border pt-3 space-y-2 mb-3">
@@ -215,8 +242,6 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(fallbackRestaurants)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -224,12 +249,8 @@ export default function LocalCuisinePage() {
 
   const types: TypeFilter[] = ["all", "main", "snack", "dessert", "drink"]
   const filtered = activeType === "all" ? localCuisine : localCuisine.filter((c) => c.type === activeType)
-
-  // Featured items for carousel (fall back to all if none marked)
-  const featuredItems = localCuisine.filter((c) => c.isFeatured)
-  const carouselItems = featuredItems.length > 0 ? featuredItems : localCuisine
-  const currentCarouselItem = carouselItems[featuredIndex] ?? carouselItems[0]
-  const rest = filtered.filter((c) => c.id !== currentCarouselItem?.id)
+  const featured = localCuisine[featuredIndex]
+  const rest = filtered.filter((c) => c.id !== featured.id)
 
   // Sync carousel API → featuredIndex
   useEffect(() => {
@@ -251,33 +272,51 @@ export default function LocalCuisinePage() {
     setTimeout(() => setIsPlaying(true), 10000)
   }, [])
 
-  // Sends GET /api/posts/read.php?label=local-cuisine&status=published → PHP runs SQL SELECT → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("local-cuisine")
-      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
-      .catch(() => {})
-    // Fetch restaurants from CMS (falls back to hardcoded if empty)
-    apiFetchByLabel("restaurants")
-      .then((posts) => { if (posts?.length) setRestaurants(posts.map(cmsToRestaurant)) })
-      .catch(() => {})
-  }, [])
-
   const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
   const handleNext = () => { pauseAutoPlay(); carouselApi?.scrollNext() }
 
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ── */}
-      <PageHero
-        pageSlug="local-cuisine"
-        fallbackImage="/images/places/Food.jpg"
-        fallbackIcon="Utensils"
-        fallbackAccentColor="amber-300"
-        fallbackLabel="Local Culinary"
-        fallbackTitle="Taste of Bocaue"
-        fallbackDescription="From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue's most beloved delicacies."
-        showBackButton
-      />
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[380px] sm:min-h-[480px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${asset('/images/places/Food.jpg')})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-16 sm:py-20 md:py-28">
+          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to home</span>
+          </Link>
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Utensils className="h-8 w-8 text-amber-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Local Culinary</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
+              Taste of Bocaue
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue&apos;s most beloved delicacies.
+            </p>
+          </div>
+          {/* Quick stat pills */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            {[
+              { label: "5 Signature Dishes", icon: "🍽️" },
+              { label: "Centuries of Tradition", icon: "📜" },
+              { label: "Local Vendors & Markets", icon: "🏪" },
+            ].map((s) => (
+              <span key={s.label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-semibold border border-white/20">
+                {s.icon} {s.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── Sticky filter bar ── */}
       <section className="border-b border-border bg-muted/40 py-3 sticky top-0 z-30 backdrop-blur-sm">
@@ -307,7 +346,7 @@ export default function LocalCuisinePage() {
             {/* Section heading */}
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 mb-4">
-                <Utensils className="h-3.5 w-3.5 text-amber-500" />
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                 <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Featured Delicacy</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-foreground">Top Picks from Bocaue&apos;s Kitchen</h2>
@@ -322,7 +361,8 @@ export default function LocalCuisinePage() {
                 className="w-full"
               >
                 <CarouselContent className="items-stretch">
-                  {carouselItems.map((item, index) => {
+                  {localCuisine.map((item, index) => {
+                    const extra = cuisineExtras[item.id]
                     const isActive = index === featuredIndex
                     return (
                       <CarouselItem
@@ -358,6 +398,14 @@ export default function LocalCuisinePage() {
                                 </span>
                               </div>
 
+                              {/* Rating top-right */}
+                              {extra && (
+                                <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
+                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                  <span className="text-xs font-bold text-white">{extra.rating}</span>
+                                </div>
+                              )}
+
                               {/* Title overlaid on image bottom */}
                               <div className="absolute bottom-0 left-0 right-0 p-5">
                                 <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
@@ -380,6 +428,8 @@ export default function LocalCuisinePage() {
                                 {[
                                   { icon: <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Where to find", val: item.where[0] },
                                   { icon: <Clock className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Best time", val: item.bestTime ?? "Year-round" },
+                                  { icon: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />, label: "Rating", val: `${extra?.rating ?? "—"} / 5.0` },
+                                  { icon: <Flame className="h-3.5 w-3.5 text-orange-500 shrink-0" />, label: "Best for", val: extra?.bestFor ?? "All occasions" },
                                 ].map((row) => (
                                   <div key={row.label} className="flex items-center gap-2.5 rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
                                     {row.icon}
@@ -429,7 +479,7 @@ export default function LocalCuisinePage() {
             {/* Dots + counter */}
             <div className="mt-7 flex items-center justify-center gap-3">
               <div className="flex items-center gap-1.5">
-                {carouselItems.map((_, i) => (
+                {localCuisine.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => { pauseAutoPlay(); carouselApi?.scrollTo(i) }}
@@ -438,12 +488,12 @@ export default function LocalCuisinePage() {
                         ? "w-7 bg-amber-500"
                         : "w-1.5 bg-border hover:bg-muted-foreground/40"
                     }`}
-                    aria-label={`Go to ${carouselItems[i].name}`}
+                    aria-label={`Go to ${localCuisine[i].name}`}
                   />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground tabular-nums">
-                {featuredIndex + 1} / {carouselItems.length}
+                {featuredIndex + 1} / {localCuisine.length}
               </span>
             </div>
           </div>
@@ -523,7 +573,6 @@ export default function LocalCuisinePage() {
                           </span>
                         ))}
                       </div>
-                      <span className="text-sm font-bold text-primary ml-2 shrink-0">{resto.priceRange}</span>
                     </div>
                   </div>
                 </CardContent>

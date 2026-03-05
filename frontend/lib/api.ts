@@ -13,107 +13,44 @@ export const API_BASE =
 
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
-/**
- * Centralised fetch wrapper. All backend calls go through here
- * for consistent URL resolution, JSON parsing, and error handling.
- */
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`
 
-  // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
-  // Omitting it on GET avoids unnecessary CORS preflight requests.
-  const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
-  if (options.body) {
-    headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
-  }
-
-  const response = await fetch(url, {
+  const res = await fetch(url, {
     ...options,
-    cache: 'no-store',
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   })
 
   // Try to parse JSON even for error responses
-  const rawText = await response.text()
-  let parsedData: T
+  const text = await res.text()
+  let data: T
 
   try {
-    parsedData = rawText ? JSON.parse(rawText) : ({} as T)
+    data = text ? JSON.parse(text) : ({} as T)
   } catch {
     throw new Error(`Invalid JSON response from ${endpoint}`)
   }
 
-  if (!response.ok) {
-    const errorMessage =
-      (parsedData as Record<string, string>).message ??
-      (parsedData as Record<string, string>).error ??
-      `Request failed (${response.status})`
-    throw new Error(errorMessage)
+  if (!res.ok) {
+    const msg =
+      (data as Record<string, string>).message ??
+      (data as Record<string, string>).error ??
+      `Request failed (${res.status})`
+    throw new Error(msg)
   }
 
-  return parsedData
+  return data
 }
 
-// ─── Media Library ────────────────────────────────────────────────
+// ─── Typed endpoint helpers ───────────────────────────────────────
 
-export interface MediaFile {
-  name: string
-  url: string
-  size: number
-  modified: string
-  extension: string
-  type: "image" | "video"
-}
-
-export interface MediaListResponse {
-  images?: MediaFile[]
-  videos?: MediaFile[]
-}
-
-export interface MediaUploadResult {
-  uploaded: { name: string; url: string; size: number; type: string }[]
-  errors: string[]
-  count: number
-}
-
-/** List existing uploaded media files */
-export function apiListMedia(type: "images" | "videos" | "all" = "all") {
-  return apiFetch<MediaListResponse>(`/api/media/list.php?type=${type}`)
-}
-
-/** Upload one or more files. Uses FormData (multipart). */
-export async function apiUploadMedia(
-  files: File[],
-  type: "image" | "video" = "image",
-): Promise<MediaUploadResult> {
-  const formData = new FormData()
-  files.forEach((file) => formData.append("files[]", file))
-
-  const uploadUrl = `${API_BASE}/api/media/upload.php?type=${type}`
-  const response = await fetch(uploadUrl, { method: "POST", body: formData })
-  const rawText = await response.text()
-  const parsedResult: MediaUploadResult = rawText
-    ? JSON.parse(rawText)
-    : { uploaded: [], errors: [], count: 0 }
-
-  if (!response.ok) {
-    throw new Error((parsedResult as unknown as Record<string, string>).message ?? "Upload failed")
-  }
-  return parsedResult
-}
-
-/** Delete an uploaded media file */
-export function apiDeleteMedia(path: string) {
-  return apiFetch<{ message: string }>(`/api/media/delete.php?path=${encodeURIComponent(path)}`, {
-    method: "DELETE",
-  })
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────
-
+/** POST /api/auth/login.php */
 export interface LoginResponse {
   message: string
   user: {
@@ -124,7 +61,6 @@ export interface LoginResponse {
   }
 }
 
-/** Authenticate an admin user against the backend */
 export function apiLogin(email: string, password: string) {
   return apiFetch<LoginResponse>("/api/auth/login.php", {
     method: "POST",
@@ -132,9 +68,10 @@ export function apiLogin(email: string, password: string) {
   })
 }
 
-// ─── Admin data-fetching helpers ──────────────────────────────────
+// ── Data-fetching helpers (read-only for now) ─────────────────────
 
 import type {
+  CMSPost,
   Inquiry,
   ActivityLogEntry,
   AdminSettings,
@@ -143,39 +80,30 @@ import type {
   TopDestination,
 } from "@/lib/data/admin-data"
 
-export type { CMSPost } from "@/lib/data/admin-data"
-import type { CMSPost } from "@/lib/data/admin-data"
-
-/** Fetch CMS posts, optionally filtered by publication status */
 export function apiFetchPosts(status?: string) {
-  const queryString = status ? `?status=${status}` : ""
-  return apiFetch<CMSPost[]>(`/api/posts/read.php${queryString}`)
+  const qs = status ? `?status=${status}` : ""
+  return apiFetch<CMSPost[]>(`/api/posts/read.php${qs}`)
 }
 
-/** Fetch inquiries, optionally filtered by status (unread/in-progress/etc.) */
 export function apiFetchInquiries(status?: string) {
-  const queryString = status ? `?status=${status}` : ""
-  return apiFetch<Inquiry[]>(`/api/inquiries/read.php${queryString}`)
+  const qs = status ? `?status=${status}` : ""
+  return apiFetch<Inquiry[]>(`/api/inquiries/read.php${qs}`)
 }
 
-/** Fetch recent activity log entries (admin actions, logins, page views) */
 export function apiFetchActivityLog(limit = 100) {
   return apiFetch<ActivityLogEntry[]>(
     `/api/activity/read.php?limit=${limit}`,
   )
 }
 
-/** Fetch site-wide settings (general + hero configuration) */
 export function apiFetchSettings() {
   return apiFetch<AdminSettings>("/api/settings/read.php")
 }
 
-/** Fetch page-level view counts for the analytics dashboard */
 export function apiFetchPageViews() {
   return apiFetch<PageView[]>("/api/analytics/pageviews.php")
 }
 
-/** Fetch daily visit totals over the last N days (default 30) */
 export function apiFetchDailyVisits(days = 30) {
   return apiFetch<DailyVisit[]>(`/api/analytics/visits.php?days=${days}`)
 }
@@ -265,19 +193,12 @@ export function apiDeletePost(id: string) {
 
 // ─── Inquiries CRUD ───────────────────────────────────────────────
 
-/** Update an inquiry's status or details (admin) */
+/** Update an inquiry's status (admin) */
 export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
-  // Convert camelCase frontend fields to the snake_case the PHP backend expects
   const payload: Record<string, unknown> = {}
   if (inquiryData.status !== undefined) payload.status = inquiryData.status
-  if (inquiryData.assignedTo !== undefined) payload.assigned_to = inquiryData.assignedTo
-  if (inquiryData.replyText !== undefined) payload.reply_text = inquiryData.replyText
-  if (inquiryData.repliedAt !== undefined) payload.replied_at = inquiryData.repliedAt
-  if (inquiryData.repliedBy !== undefined) payload.replied_by = inquiryData.repliedBy
 
-  // If the only fields are reply-related (already saved via apiReplyInquiry), skip the API call
-  const hasNonReplyField = payload.status !== undefined || payload.assigned_to !== undefined
-  if (!hasNonReplyField) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
+  if (Object.keys(payload).length === 0) return Promise.resolve({ message: "No update needed", inquiry: {} as Inquiry })
 
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
     method: "POST",
@@ -384,8 +305,7 @@ export interface Milestone {
 export interface HeroSettings {
   settingId: number
   subtitle: string
-  title: string
-  highlight: string
+  titles: { title: string; highlight: string }[]
   description: string
   videoUrl: string
   fallbackImage: string

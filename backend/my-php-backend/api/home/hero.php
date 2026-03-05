@@ -28,25 +28,29 @@ try {
         Response::error('Hero slides are deprecated. Use /api/home/hero-settings.php to manage the hero section.', 405);
     }
 
-    // Synthesize a single HeroSlide from site_settings for backward compat
+    // Synthesize HeroSlide[] from hero settings – one slide per title/highlight pair
     $settings = $homeContent->getHeroSettings();
 
     if (!$settings) {
         Response::json([]);
     } else {
-        $slide = [
-            'slideId'     => 1,
-            'src'         => $settings['videoUrl'] ?: $settings['fallbackImage'] ?: '',
-            'alt'         => $settings['title'] ?? 'Hero',
-            'subtitle'    => $settings['subtitle'] ?? '',
-            'title'       => $settings['title'] ?? '',
-            'highlight'   => $settings['highlight'] ?? '',
-            'description' => $settings['description'] ?? '',
-            'href'        => $settings['ctaLink'] ?? '/destinations',
-            'sortOrder'   => 1,
-            'isActive'    => true,
-        ];
-        Response::json([$slide]);
+        $titles = $settings['titles'] ?? [['title' => '', 'highlight' => '']];
+        $slides = [];
+        foreach ($titles as $idx => $pair) {
+            $slides[] = [
+                'slideId'     => $idx + 1,
+                'src'         => $settings['videoUrl'] ?: $settings['fallbackImage'] ?: '',
+                'alt'         => $pair['title'] ?: 'Hero',
+                'subtitle'    => $settings['subtitle'] ?? '',
+                'title'       => $pair['title'] ?? '',
+                'highlight'   => $pair['highlight'] ?? '',
+                'description' => $settings['description'] ?? '',
+                'href'        => $settings['ctaLink'] ?? '/destinations',
+                'sortOrder'   => $idx + 1,
+                'isActive'    => true,
+            ];
+        }
+        Response::json($slides);
     }
 } catch (Exception $e) {
     error_log("home/hero error: " . $e->getMessage());

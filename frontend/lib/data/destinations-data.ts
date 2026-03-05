@@ -256,6 +256,8 @@ export interface TourPackage {
   duration: string
   type: "heritage" | "food" | "festival" | "nature" | "custom"
   difficulty: "easy" | "moderate" | "active"
+  groupSize: string
+  price: string
   description: string
   itinerary: { time: string; activity: string }[]
   includes: string[]
@@ -271,6 +273,8 @@ export const tourPackages: TourPackage[] = [
     duration: "Full Day (8 hours)",
     type: "heritage",
     difficulty: "easy",
+    groupSize: "2–30 persons",
+    price: "₱750 per person (minimum 10 pax)",
     description:
       "A guided walking and jeepney tour through Bocaue's heritage sites, including the St. Martin of Tours Church, the historic plaza, the MHACTO Heritage Gallery, and the Bocaue River waterfront.",
     itinerary: [
@@ -304,6 +308,8 @@ export const tourPackages: TourPackage[] = [
     duration: "2 Days / 1 Night (August festival weekend)",
     type: "festival",
     difficulty: "active",
+    groupSize: "4–20 persons",
+    price: "₱2,500 per person (includes accommodation)",
     description:
       "An all-inclusive festival experience package for the annual Bocaue Pagoda Festival — including riverside viewing area access, the solemn mass, street fair access, and a post-festival heritage tour.",
     itinerary: [
@@ -338,6 +344,8 @@ export const tourPackages: TourPackage[] = [
     duration: "Half Day (4 hours)",
     type: "food",
     difficulty: "easy",
+    groupSize: "4–15 persons",
+    price: "₱450 per person",
     description:
       "A guided food tour through the edible heritage of Bocaue — visiting the public market, local bakeries, kakanin stalls, and a live cooking demonstration of traditional dishes.",
     itinerary: [
@@ -368,7 +376,6 @@ export const tourPackages: TourPackage[] = [
     duration: "Half Day (3 hours)",
     type: "heritage",
     difficulty: "easy",
-    price: "₱500 per person (arena entrance included)",
     description:
       "A guided tour of the Philippine Arena — the world's largest indoor arena — including the Visitor Center, architectural highlights, and the Ciudad de Victoria grounds.",
     itinerary: [

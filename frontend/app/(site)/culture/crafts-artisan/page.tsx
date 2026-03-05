@@ -1,17 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { asset } from "@/lib/utils"
 import {
-  Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
+  ArrowLeft, Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
 } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { artisans as fallbackArtisans, culturalPractices as fallbackPractices, type Artisan } from "@/lib/data/culture-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
+import { artisans, culturalPractices, type Artisan } from "@/lib/data/culture-data"
 
 // ── Craft category badge colours ─────────────────────────────────────
 // Artisan.craft is a free string so we do broad keyword matching
@@ -144,41 +142,66 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 
 // ── Page ──────────────────────────────────────────────────────────────
 export default function CraftsArtisanPage() {
-  const [artisanList, setArtisanList] = useState(fallbackArtisans)
-  const [practiceList, setPracticeList] = useState(fallbackPractices)
-
-  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
-      .then((posts) => { if (posts?.length) setArtisanList(posts.map(cmsToArtisan)) })
-      .catch(() => {})
-    apiFetchByLabel("cultural-practices")  // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
-      .then((posts) => { if (posts?.length) setPracticeList(posts.map(cmsToCulturalPractice)) })
-      .catch(() => {})
-  }, [])
-
   // The featured artisan is the first one (longest experience / most decorated)
-  const [featured, ...rest] = artisanList
+  const [featured, ...rest] = artisans
 
   // Craft-related cultural practices for the spotlight strip
-  const craftPractices = practiceList.filter(
+  const craftPractices = culturalPractices.filter(
     (p) => p.category === "crafts"
   )
 
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <PageHero
-        pageSlug="crafts-artisan"
-        fallbackImage="/images/places/Arts.jpg"
-        fallbackIcon="Hammer"
-        fallbackAccentColor="amber-300"
-        fallbackLabel="Arts & Culture"
-        fallbackTitle="Crafts & Artisan"
-        fallbackDescription="Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists who keep centuries-old traditions alive with their hands and their hearts."
-        showBackButton
-        backHref="/culture"
-      />
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[320px] sm:min-h-[400px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(180,83,9,0.85) 0%, rgba(120,53,15,0.75) 50%, rgba(0,0,0,0.55) 100%), url(${asset("/images/places/Arts.jpg")})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full border border-white/10" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-14 sm:py-20 md:py-28">
+          <Link
+            href="/culture"
+            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Arts & Culture</span>
+          </Link>
+
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Hammer className="h-8 w-8 text-amber-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Arts & Culture</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
+              Crafts &amp; Artisan
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists
+              who keep centuries-old traditions alive with their hands and their hearts.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              {[
+                { label: `${artisans.length} Featured Artisans`, icon: <Hammer className="h-3.5 w-3.5" /> },
+                { label: "Heritage Crafts Preserved", icon: <Sparkles className="h-3.5 w-3.5" /> },
+              ].map((chip) => (
+                <span
+                  key={chip.label}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 border border-white/20"
+                >
+                  {chip.icon}
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Craft Traditions Strip ──────────────────────────────── */}
       {craftPractices.length > 0 && (
@@ -255,7 +278,7 @@ export default function CraftsArtisanPage() {
             </div>
           </div>
 
-          <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((artisan) => (
               <ArtisanCard key={artisan.id} artisan={artisan} />
             ))}

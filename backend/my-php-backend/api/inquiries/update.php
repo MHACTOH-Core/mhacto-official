@@ -1,7 +1,7 @@
 <?php
 /**
  * PUT|POST /api/inquiries/update.php?id=123
- * Body: { status?: 'unread' | 'in_progress' | 'assigned' | 'archived' | 'spam' | 'trash',
+ * Body: { status?: 'unread' | 'assigned' | 'archived' | 'spam' | 'trash',
  *         assigned_to?: string  (tourist guide name/ID) }
  */
 
@@ -39,7 +39,7 @@ try {
 
     // Status update
     if (isset($data['status'])) {
-        $allowed = ['unread', 'in_progress', 'assigned', 'archived', 'spam', 'trash'];
+        $allowed = ['unread', 'assigned', 'archived', 'spam', 'trash'];
         if (!in_array($data['status'], $allowed, true)) {
             Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
         }

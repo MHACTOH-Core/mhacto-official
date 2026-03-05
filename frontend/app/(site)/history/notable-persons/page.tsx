@@ -1,17 +1,13 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { ArrowLeft, Star, Clock } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
+import { ArrowLeft, Users, Star, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { notablePersons as fallbackPersons, personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToNotablePerson } from "@/lib/cms-mappers"
+import { notablePersons, personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
 
 const categoryColors: Record<NotablePerson["category"], string> = {
   "national-hero": "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
@@ -23,27 +19,40 @@ const categoryColors: Record<NotablePerson["category"], string> = {
 }
 
 export default function NotablePersonsPage() {
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
-
-  // Sends GET /api/posts/read.php?label=notable-figures&status=published → PHP runs SQL SELECT → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("notable-figures")
-      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
-      .catch(() => {})
-  }, [])
-
   return (
     <main className="min-h-screen bg-background">
-      <PageHero
-        pageSlug="notable-persons"
-        fallbackImage="/images/places/Arts.jpg"
-        fallbackIcon="Users"
-        fallbackAccentColor="purple-300"
-        fallbackLabel="History"
-        fallbackTitle="Notable Persons"
-        fallbackDescription="The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of the municipality."
-        showBackButton
-      />
+      {/* Hero */}
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/Arts.jpg')})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to home</span>
+          </Link>
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-purple-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-purple-300">History</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
+              Notable Persons
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of
+              the municipality.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Intro stat bar */}
       <section className="border-b border-border bg-muted/40 py-6">

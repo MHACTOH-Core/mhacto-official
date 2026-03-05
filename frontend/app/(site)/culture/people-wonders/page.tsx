@@ -1,18 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import {
-  Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
+  ArrowLeft, Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
 } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { peopleWonders as fallbackPeople, type PeopleWonder } from "@/lib/data/culture-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToPeopleWonder } from "@/lib/cms-mappers"
+import { peopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
 
 // ── Category config ──────────────────────────────────────────────────
 type Category = PeopleWonder["category"] | "all"
@@ -152,15 +149,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default function PeopleWondersPage() {
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
-
-  // Sends GET /api/posts/read.php?label=people-wonders&status=published → PHP runs SQL SELECT → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("people-wonders")
-      .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
-      .catch(() => {})
-  }, [])
 
   const filtered =
     activeFilter === "all"
@@ -180,17 +169,48 @@ export default function PeopleWondersPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <PageHero
-        pageSlug="people-wonders"
-        fallbackImage="/images/places/Arts.jpg"
-        fallbackIcon="Users"
-        fallbackAccentColor="pink-300"
-        fallbackLabel="Arts & Culture"
-        fallbackTitle="People Wonders"
-        fallbackDescription="Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, award-winning artists, civic heroes, and achievers who carry the pride of the town to the world."
-        showBackButton
-        backHref="/culture"
-      />
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[320px] sm:min-h-[400px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(236,72,153,0.75) 50%, rgba(0,0,0,0.55) 100%), url(${asset("/images/places/Arts.jpg")})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* decorative ring */}
+        <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full border border-white/10" />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-14 sm:py-20 md:py-28">
+          <Link
+            href="/culture"
+            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Arts & Culture</span>
+          </Link>
+
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-pink-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-pink-300">Arts & Culture</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
+              People Wonders
+            </h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, 
+              award-winning artists, civic heroes, and achievers who carry the pride of the town to the world.
+            </p>
+            <div className="flex items-center gap-2 pt-2">
+              <span className="flex items-center justify-center h-9 w-9 rounded-full bg-white/20 backdrop-blur-sm text-white font-black text-sm">
+                {peopleWonders.length}
+              </span>
+              <span className="text-white/80 text-sm font-medium">Notable Bocaueños featured</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Filter bar ───────────────────────────────────────────── */}
       <section className="bg-background border-b border-border shadow-sm">
@@ -246,7 +266,7 @@ export default function PeopleWondersPage() {
               <p className="text-sm mt-1">Check back soon as we continue to document Bocaue&apos;s remarkable people.</p>
             </div>
           ) : (
-            <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filtered.map((person) => (
                 <PersonCard key={person.id} person={person} />
               ))}

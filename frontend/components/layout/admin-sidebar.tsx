@@ -15,9 +15,6 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Home,
-  Menu,
-  ImageIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState } from "react"
@@ -25,38 +22,34 @@ import { cn } from "@/lib/utils"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/home-content", label: "Home Content", icon: Home },
-  { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon },
   { href: "/admin/cms", label: "CMS", icon: FileEdit },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/activity-log", label: "Activity Log", icon: ClipboardList },
 ]
 
-function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
-  collapsed: boolean
-  setCollapsed: (v: boolean) => void
-  isMobile: boolean
-  onLinkClick?: () => void
-}) {
+export function AdminSidebar() {
   const pathname = usePathname()
   const { logout, inquiries } = useAdmin()
+  const [collapsed, setCollapsed] = useState(false)
   const { theme, setTheme } = useTheme()
 
   const unreadCount = inquiries.filter((i) => i.status === "unread").length
 
-  const showLabels = isMobile || !collapsed
-
   return (
-    <>
+    <aside
+      className={cn(
+        "flex h-screen flex-col border-r border-border bg-card transition-all duration-300",
+        collapsed ? "w-[68px]" : "w-64",
+      )}
+    >
       {/* Brand */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
         <Image src={asset("/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={36} height={36} className="shrink-0" />
-        {showLabels && (
+        {!collapsed && (
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-card-foreground">MHACTO</p>
             <p className="truncate text-[10px] text-muted-foreground">Admin Panel</p>
@@ -72,26 +65,25 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
             <Link
               key={item.href}
               href={item.href}
-              onClick={onLinkClick}
               className={cn(
-                "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                !showLabels && "justify-center px-2",
+                collapsed && "justify-center px-2",
               )}
-              title={!showLabels ? item.label : undefined}
+              title={collapsed ? item.label : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0" />
-              {showLabels && (
+              {!collapsed && (
                 <span className="flex-1">{item.label}</span>
               )}
-              {showLabels && item.label === "Inquiries" && unreadCount > 0 && (
+              {!collapsed && item.label === "Inquiries" && unreadCount > 0 && (
                 <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">
                   {unreadCount}
                 </Badge>
               )}
-              {!showLabels && item.label === "Inquiries" && unreadCount > 0 && (
+              {collapsed && item.label === "Inquiries" && unreadCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] text-destructive-foreground">
                   {unreadCount}
                 </span>
@@ -109,86 +101,39 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className={cn(
             "w-full",
-            !showLabels ? "justify-center" : "justify-start gap-3",
+            collapsed ? "justify-center" : "justify-start gap-3",
           )}
-          title={!showLabels ? "Toggle dark mode" : undefined}
+          title={collapsed ? "Toggle dark mode" : undefined}
         >
           {theme === "dark" ? (
             <Sun className="h-4 w-4 shrink-0" />
           ) : (
             <Moon className="h-4 w-4 shrink-0" />
           )}
-          {showLabels && <span className="text-xs">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          {!collapsed && <span className="text-xs">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
         </Button>
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full justify-center"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            {!collapsed && <span className="ml-2 text-xs">Collapse</span>}
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full justify-center"
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {!collapsed && <span className="ml-2 text-xs">Collapse</span>}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={logout}
           className={cn(
             "w-full text-destructive hover:bg-destructive/10 hover:text-destructive",
-            !showLabels ? "justify-center" : "justify-start gap-3",
+            collapsed ? "justify-center" : "justify-start gap-3",
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {showLabels && <span>Logout</span>}
+          {!collapsed && <span>Logout</span>}
         </Button>
       </div>
-    </>
-  )
-}
-
-export function AdminSidebar() {
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  return (
-    <>
-      {/* Mobile hamburger button — fixed top-left */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="fixed left-3 top-3 z-50 h-10 w-10 md:hidden"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 flex flex-col">
-          <SidebarContent
-            collapsed={false}
-            setCollapsed={() => {}}
-            isMobile
-            onLinkClick={() => setMobileOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Desktop sidebar — hidden on mobile */}
-      <aside
-        className={cn(
-          "hidden md:flex h-screen flex-col border-r border-border bg-card transition-all duration-300",
-          collapsed ? "w-[68px]" : "w-64",
-        )}
-      >
-        <SidebarContent
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          isMobile={false}
-        />
-      </aside>
-    </>
+    </aside>
   )
 }

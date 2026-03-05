@@ -4,12 +4,9 @@ import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { timelineEvents as fallbackTimeline, notablePersons as fallbackPersons, personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
-import { apiFetchByLabel } from "@/lib/api"
-import { cmsToTimelineEvent, cmsToNotablePerson } from "@/lib/cms-mappers"
+import { timelineEvents, notablePersons, personCategoryLabels } from "@/lib/data/history-data"
 
 const eraColor: Record<string, string> = {
   "Pre-Colonial Period": "bg-amber-500",
@@ -40,18 +37,6 @@ const navSections = [
 export default function HistoryPage() {
   const [activeSection, setActiveSection] = useState("timeline")
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackTimeline)
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
-
-  // Each sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
-  useEffect(() => {
-    apiFetchByLabel("timeline-of-events")  // → PHP: SELECT * ... WHERE label_key='timeline-of-events'
-      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
-      .catch(() => {})
-    apiFetchByLabel("notable-figures")     // → PHP: SELECT * ... WHERE label_key='notable-figures'
-      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,42 +52,49 @@ export default function HistoryPage() {
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" })
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" })
   }
 
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <PageHero
-        pageSlug="history"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
-        fallbackIcon="BookOpen"
-        fallbackAccentColor="amber-300"
-        fallbackLabel="Bocaue Wonders"
-        fallbackTitle="History of Bocaue"
-        fallbackDescription="A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan."
-      />
-
-            {/* Sticky nav */}
-        <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
-          <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <div className="flex gap-1 overflow-x-auto py-1">
-              {navSections.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => scrollTo(s.id)}
-                  className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                    activeSection === s.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+      <section
+        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-8 w-8 text-amber-300" />
+              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
             </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">History of Bocaue</h1>
+            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
+              A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan.
+            </p>
           </div>
         </div>
+      </section>
+
+      {/* Sticky in-page nav */}
+      <div className="sticky top-[60px] sm:top-16 lg:top-[72px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto py-1">
+            {navSections.map((s) => (
+              <button key={s.id} onClick={() => scrollTo(s.id)}
+                className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ── Timeline ── */}
       <section id="timeline" className="py-12 sm:py-16 lg:py-20 border-b border-border">

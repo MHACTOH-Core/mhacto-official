@@ -152,7 +152,7 @@ export const searchIndex: SearchResult[] = [
   ...tourPackages.map((t) => ({
     id: `tour-${t.id}`,
     title: t.name,
-    subtitle: `${t.duration} · ${t.price}`,
+    subtitle: t.duration,
     href: "/travel-tours",
     category: "Tour Package",
     keywords: `${t.name} ${t.description} ${t.duration} ${t.highlights?.join(" ") ?? ""}`.toLowerCase(),

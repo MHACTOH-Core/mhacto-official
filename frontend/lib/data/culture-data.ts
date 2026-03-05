@@ -23,7 +23,6 @@ export interface Restaurant {
   description: string
   address: string
   hours: string
-  priceRange: string
   tags: string[]
   image?: string
 }

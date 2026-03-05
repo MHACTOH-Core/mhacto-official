@@ -34,10 +34,6 @@ import { format, parseISO } from "date-fns"
 const actionIcons: Record<ActivityAction, React.ComponentType<{ className?: string }>> = {
   login: LogIn,
   logout: LogOut,
-  create: FileEdit,
-  update: FileEdit,
-  delete: Trash2,
-  page_view: ClipboardList,
   create_post: FileEdit,
   update_post: FileEdit,
   delete_post: Trash2,
@@ -51,10 +47,6 @@ const actionIcons: Record<ActivityAction, React.ComponentType<{ className?: stri
 const actionColors: Record<ActivityAction, string> = {
   login: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   logout: "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-300",
-  create: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  update: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-  delete: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  page_view: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300",
   create_post: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   update_post: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
   delete_post: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
@@ -174,14 +166,14 @@ export default function ActivityLogPage() {
               <Card>
                 <CardContent className="divide-y divide-border p-0">
                   {entries.map((entry) => {
-                    const Icon = actionIcons[entry.action] ?? ClipboardList
+                    const Icon = actionIcons[entry.action]
                     return (
                       <div
                         key={entry.id}
                         className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-accent/50"
                       >
                         <div
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${actionColors[entry.action] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-300"}`}
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${actionColors[entry.action]}`}
                         >
                           <Icon className="h-4 w-4" />
                         </div>
@@ -194,7 +186,7 @@ export default function ActivityLogPage() {
                           </p>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
-                          {activityLabels[entry.action] ?? entry.action}
+                          {activityLabels[entry.action]}
                         </Badge>
                         <span className="shrink-0 text-sm text-muted-foreground">
                           {format(parseISO(entry.timestamp), "h:mm a")}

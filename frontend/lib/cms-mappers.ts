@@ -94,8 +94,6 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
     duration: post.hours ?? "Full Day",
     type,
     difficulty: "easy",
-    groupSize: "2–30 persons",
-    price: "Contact for pricing",
     description: post.body ?? "",
     itinerary: [],
     includes: post.highlights ?? [],
@@ -141,7 +139,6 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     description: post.body ?? "",
     address: post.location ?? "",
     hours: post.hours ?? "",
-    priceRange: post.story ?? "₱",
     tags: post.highlights ?? [],
     image: post.image?.[0] ? resolveImage(post, "/images/places/Food.jpg") : undefined,
   }

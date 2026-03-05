@@ -122,10 +122,15 @@ export default function HomeContentPage() {
   // Initialize hero form data when heroSettings loads
   useEffect(() => {
     if (heroSettings) {
+      // Ensure we always have exactly 4 title slots
+      const existingTitles = heroSettings.titles ?? []
+      const titles: { title: string; highlight: string }[] = Array.from({ length: 4 }, (_, i) => ({
+        title: existingTitles[i]?.title ?? "",
+        highlight: existingTitles[i]?.highlight ?? "",
+      }))
       setHeroFormData({
         subtitle: heroSettings.subtitle ?? "",
-        title: heroSettings.title ?? "",
-        highlight: heroSettings.highlight ?? "",
+        titles,
         description: heroSettings.description ?? "",
         videoUrl: heroSettings.videoUrl ?? "",
         fallbackImage: heroSettings.fallbackImage ?? "",
@@ -214,7 +219,7 @@ export default function HomeContentPage() {
         }
       } else if (dialogType === "landmark") {
         if (editingItem) {
-          await apiUpdateFeaturedLandmark((editingItem as FeaturedLandmark).landmarkId, formData as Partial<FeaturedLandmark>)
+          await apiUpdateFeaturedLandmark((editingItem as FeaturedContent).featuredId, formData as Partial<FeaturedLandmark>)
         } else {
           await apiCreateFeaturedLandmark(formData as Partial<FeaturedLandmark>)
         }
@@ -278,7 +283,7 @@ export default function HomeContentPage() {
       const swapIndex = direction === "up" ? index - 1 : index + 1
       if (swapIndex < 0 || swapIndex >= newLandmarks.length) return
       [newLandmarks[index], newLandmarks[swapIndex]] = [newLandmarks[swapIndex], newLandmarks[index]]
-      const order = newLandmarks.map(l => l.landmarkId)
+      const order = newLandmarks.map(l => l.featuredId)
       try {
         await apiReorderFeaturedLandmarks(order)
         loadAllContent()
@@ -374,34 +379,59 @@ export default function HomeContentPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="heroSubtitle">Subtitle</Label>
-                        <Input
-                          id="heroSubtitle"
-                          value={heroFormData.subtitle ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
-                          placeholder="Bocaue, Bulacan"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="heroHighlight">Highlight Text (optional)</Label>
-                        <Input
-                          id="heroHighlight"
-                          value={heroFormData.highlight ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, highlight: e.target.value })}
-                          placeholder="Town Wonders"
-                        />
-                      </div>
-                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="heroTitle">Main Title</Label>
+                      <Label htmlFor="heroSubtitle">Subtitle</Label>
                       <Input
-                        id="heroTitle"
-                        value={heroFormData.title ?? ""}
-                        onChange={(e) => setHeroFormData({ ...heroFormData, title: e.target.value })}
-                        placeholder="Explore The River"
+                        id="heroSubtitle"
+                        value={heroFormData.subtitle ?? ""}
+                        onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
+                        placeholder="Bocaue, Bulacan"
                       />
+                      <p className="text-xs text-muted-foreground">Small label shown above the main title on every slide</p>
+                    </div>
+
+                    {/* 4 Title / Highlight pairs — each pair becomes one rotating hero slide */}
+                    <div className="space-y-3">
+                      <Label>Hero Titles (up to 4 rotating slides)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Each title rotates automatically on the hero section. Leave a row blank to skip it.
+                      </p>
+                      {(heroFormData.titles ?? Array.from({ length: 4 }, () => ({ title: "", highlight: "" }))).map(
+                        (pair, idx) => (
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-border p-3">
+                            <div className="space-y-1">
+                              <Label htmlFor={`heroTitle${idx}`} className="text-xs">
+                                Title {idx + 1}
+                              </Label>
+                              <Input
+                                id={`heroTitle${idx}`}
+                                value={pair.title}
+                                onChange={(e) => {
+                                  const newTitles = [...(heroFormData.titles ?? [])]
+                                  newTitles[idx] = { ...newTitles[idx], title: e.target.value }
+                                  setHeroFormData({ ...heroFormData, titles: newTitles })
+                                }}
+                                placeholder={`e.g. Explore The River`}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label htmlFor={`heroHighlight${idx}`} className="text-xs">
+                                Highlight {idx + 1} <span className="text-muted-foreground">(colored accent)</span>
+                              </Label>
+                              <Input
+                                id={`heroHighlight${idx}`}
+                                value={pair.highlight}
+                                onChange={(e) => {
+                                  const newTitles = [...(heroFormData.titles ?? [])]
+                                  newTitles[idx] = { ...newTitles[idx], highlight: e.target.value }
+                                  setHeroFormData({ ...heroFormData, titles: newTitles })
+                                }}
+                                placeholder={`e.g. Town Wonders`}
+                              />
+                            </div>
+                          </div>
+                        ),
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="heroDescription">Description</Label>
@@ -492,7 +522,7 @@ export default function HomeContentPage() {
                     </Card>
                   ) : (
                     landmarks.map((land, index) => (
-                      <Card key={land.landmarkId} className={`transition-opacity ${!land.isActive ? "opacity-60" : ""}`}>
+                      <Card key={land.featuredId} className={`transition-opacity ${!land.isActive ? "opacity-60" : ""}`}>
                         <CardContent className="flex items-center gap-4 p-4">
                           <div className="flex flex-col gap-1">
                             <Button
@@ -536,7 +566,7 @@ export default function HomeContentPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => toggleActive("landmark", land.landmarkId, land.isActive ?? true)}
+                              onClick={() => toggleActive("landmark", land.featuredId, land.isActive ?? true)}
                             >
                               {land.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                             </Button>
@@ -551,7 +581,7 @@ export default function HomeContentPage() {
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ type: "landmark", id: land.landmarkId })}
+                              onClick={() => setDeleteTarget({ type: "landmark", id: land.featuredId })}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

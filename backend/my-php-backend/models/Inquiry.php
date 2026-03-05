@@ -6,7 +6,7 @@
  *   school_name, company_name, referral_source, dietary_needs, etc.
  *
  * inquiry_type is VARCHAR (general_contact, tour_booking, partnership, …).
- * status ENUM: unread, in_progress, assigned, archived, spam, trash.
+ * status ENUM: unread, assigned, archived, spam, trash.
  *   - assigned  → marked as assigned to a tourist guide (replaces 'resolved')
  *   - spam      → flagged as spam, hidden from main inbox
  *   - trash     → soft-deleted, shown in Trash tab, can be permanently removed

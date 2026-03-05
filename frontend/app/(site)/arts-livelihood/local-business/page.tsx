@@ -1,8 +1,9 @@
 ﻿"use client"
 
 import Image from "next/image"
-import { MapPin, Phone, Calendar, Store } from "lucide-react"
-import { PageHero } from "@/components/sections/page-hero"
+import { asset } from "@/lib/utils"
+import Link from "next/link"
+import { ArrowLeft, Store, MapPin, Phone, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { localBusinesses, type LocalBusiness } from "@/lib/data/culture-data"

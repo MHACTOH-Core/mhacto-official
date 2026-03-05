@@ -215,7 +215,7 @@ INSERT INTO inquiries (inquiry_type, full_name, email_address, contact_number, d
 
 ('general_contact', 'Kim Park', 'kimpark@travel.kr', '+821012345678', '2026-06-20', 4,
  'Hi, my friends and I are visiting from South Korea and we heard about the Pagoda Festival. Is it still happening in July? We would love to attend and also try the local food. Any recommendations?',
- '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'in_progress'),
+ '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'unread'),
 
 ('partnership', 'Elena Fernandez', 'elena@bulacan-tourism.gov.ph', '+639351234567', NULL, NULL,
  'On behalf of the Provincial Tourism Office, we would like to discuss a potential collaboration for the Bulacan Heritage Trail project. Bocaue would be a key stop on the trail. Please get back to us at your earliest convenience.',
