@@ -32,7 +32,7 @@ const dropdownItems = [
   },
   {
     id: 4,
-    title: "Culinary Wonders",
+    title: "Local Cuisine",
     href: "/places/category/culinary",
     description: "Experience local cuisines and dining experiences",
   },

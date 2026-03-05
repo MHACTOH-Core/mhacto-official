@@ -49,7 +49,7 @@ export function CulinarySection() {
             Taste of Bocaue
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            Culinary Wonders
+            Local Cuisine
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
             From legendary crispy chicharon to generations-old kakanin, Bocaue's flavours
@@ -114,8 +114,8 @@ export function CulinarySection() {
         {/* See More CTA */}
         <div className="mt-10 text-center reveal-on-scroll delay-300">
           <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/culture/culinary-wonders">
-              See More Culinary Wonders
+            <Link href="/culture/local-cuisine">
+              See More Local Cuisine
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

@@ -33,7 +33,7 @@ export const categoryData: Record<CategoryType, { title: string; icon: string; d
     heroImage: asset("/images/places/Arena.JPG"),
   },
   culinary: {
-    title: "Culinary Wonders",
+    title: "Local Cuisine",
     icon: "🍽️",
     description: "Experience local cuisines and dining experiences that showcase Bocaue's flavors",
     heroImage: asset("/images/places/Food.JPG"),

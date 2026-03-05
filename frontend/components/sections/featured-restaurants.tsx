@@ -81,8 +81,8 @@ export function FeaturedRestaurants() {
             </p>
           </div>
           <Button asChild size="lg" className="rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 self-start sm:self-auto">
-            <Link href="/culture/culinary-wonders">
-              See All Culinary Wonders <ArrowRight className="h-4 w-4" />
+            <Link href="/culture/local-cuisine">
+              See All Local Cuisine <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
