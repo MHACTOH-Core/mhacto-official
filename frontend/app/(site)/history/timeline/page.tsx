@@ -42,8 +42,8 @@ export default function TimelinePage() {
         fallbackIcon="Clock"
         fallbackAccentColor="amber-300"
         fallbackLabel="History"
-        fallbackTitle="Timeline of Events"
-        fallbackDescription="From pre-colonial settlements to modern milestones — a chronological journey through the rich history of Bocaue, Bulacan."
+        fallbackTitle="Historical Roadmap of Bocaue"
+        fallbackDescription="Trace Bocaue's journey from pre-colonial river settlements to a world-record-holding modern municipality — a living roadmap through over 1,000 years of heritage."
         showBackButton
       />
 
@@ -76,8 +76,8 @@ export default function TimelinePage() {
               <Clock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Chronological History</h2>
-              <p className="text-muted-foreground">Click any event to read the full story</p>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Historical Roadmap</h2>
+              <p className="text-muted-foreground">Click any milestone to read the full story</p>
             </div>
           </div>
 

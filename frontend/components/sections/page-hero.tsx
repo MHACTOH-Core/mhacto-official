@@ -105,7 +105,9 @@ export function PageHero({
           if (!cancelled && data?.slug) setHero(data)
         })
         .catch((err) => {
-          console.error(`[PageHero] Failed to load hero for "${pageSlug}":`, err)
+          // Silently ignore "Failed to fetch" — backend not running, fallback data is used
+          if (err instanceof TypeError && err.message.toLowerCase().includes("failed to fetch")) return
+          console.warn(`[PageHero] Could not load hero for "${pageSlug}":`, err)
         })
     }
 

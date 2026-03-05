@@ -12,7 +12,7 @@
 import type { CMSPost } from "@/lib/data/admin-data"
 import { asset } from "@/lib/utils"
 import type { HeritageSite, Museum, ReligiousSite, TourPackage } from "@/lib/data/destinations-data"
-import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness } from "@/lib/data/culture-data"
+import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness, Restaurant } from "@/lib/data/culture-data"
 import type { TimelineEvent, NotablePerson } from "@/lib/data/history-data"
 import type { SchoolEntry, College, PublicSchool, Hospital } from "@/lib/data/community-data"
 
@@ -381,4 +381,31 @@ export function filterPublicSchools(posts: CMSPost[]): CMSPost[] {
 
 export function filterPrivateSchools(posts: CMSPost[]): CMSPost[] {
   return posts.filter(p => (p.category ?? "").toLowerCase().includes("private"))
+}
+
+// ─── Restaurant mapper ────────────────────────────────────────────
+
+export function cmsToRestaurant(post: CMSPost): Restaurant {
+  const cat = (post.category ?? "").toLowerCase()
+  const type: Restaurant["type"] =
+    cat.includes("cafe") || cat.includes("coffee") ? "cafe"
+    : cat.includes("bakery") ? "bakery"
+    : cat.includes("carinderia") ? "carinderia"
+    : cat.includes("eatery") ? "eatery"
+    : "restaurant"
+
+  const price = (post.priceRange ?? "") as Restaurant["priceRange"]
+
+  return {
+    id: post.id,
+    name: post.title,
+    type,
+    description: post.body ?? "",
+    specialties: parseList(post.story),
+    location: post.location ?? "",
+    hours: post.hours ?? "",
+    priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
+    image: resolveImage(post, "/images/places/Food.jpg"),
+    isOpen: post.isFeatured ?? true,
+  }
 }

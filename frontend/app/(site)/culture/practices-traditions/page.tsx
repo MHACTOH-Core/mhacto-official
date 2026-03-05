@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -78,10 +78,15 @@ export default function PracticesTraditionsPage() {
               return (
                 <Card key={practice.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                   {practice.image && (
-                    <div className="relative h-36 overflow-hidden">
-                      <Image src={practice.image} alt={practice.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <GalleryImage
+                      src={practice.image}
+                      gallery={practice.gallery}
+                      alt={practice.name}
+                      className="relative h-36 overflow-hidden"
+                      imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    </div>
+                    </GalleryImage>
                   )}
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between gap-2 mb-3">

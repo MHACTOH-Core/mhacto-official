@@ -1,15 +1,15 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import {
   Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee,
+  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee, Store, Star,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
@@ -17,9 +17,32 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine as fallbackCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import { localCuisine as fallbackCuisine, restaurants as fallbackRestaurants, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
-import { cmsToCuisineItem } from "@/lib/cms-mappers"
+import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
+
+// ── Restaurant type config ───────────────────────────────────────────
+const restaurantTypeLabel: Record<Restaurant["type"], string> = {
+  restaurant: "Restaurant",
+  eatery: "Eatery",
+  cafe: "Café",
+  carinderia: "Carinderia",
+  bakery: "Bakery",
+}
+
+const restaurantTypeBadge: Record<Restaurant["type"], string> = {
+  restaurant: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300",
+  eatery: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300",
+  cafe: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300",
+  carinderia: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300",
+  bakery: "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300",
+}
+
+const priceLabel: Record<string, string> = {
+  "\u20b1": "Budget-friendly",
+  "\u20b1\u20b1": "Mid-range",
+  "\u20b1\u20b1\u20b1": "Premium",
+}
 
 // ── type helpers ────────────────────────────────────────────────────
 const typeLabels: Record<CuisineItem["type"], string> = {
@@ -58,14 +81,14 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
       }`}
     >
       {/* Image */}
-      <div className={`relative overflow-hidden ${featured ? "h-72 sm:h-80" : "h-52"}`}>
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-700"
-        />
+      <GalleryImage
+        src={item.image}
+        gallery={item.gallery}
+        alt={item.name}
+        className={`relative overflow-hidden ${featured ? "h-72 sm:h-80" : "h-52"}`}
+        imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      >
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         {featured && (
@@ -81,7 +104,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
             {typeLabels[item.type]}
           </Badge>
         </div>
-      </div>
+      </GalleryImage>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
@@ -132,6 +155,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
   const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(fallbackRestaurants)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -170,6 +194,9 @@ export default function LocalCuisinePage() {
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .catch(() => {})
+    apiFetchByLabel("restaurants")
+      .then((posts) => { if (posts?.length) setRestaurantList(posts.map(cmsToRestaurant)) })
       .catch(() => {})
   }, [])
 
@@ -250,14 +277,15 @@ export default function LocalCuisinePage() {
                         >
                           <div className="overflow-hidden rounded-2xl bg-card border border-border shadow-xl h-full flex flex-col">
                             {/* Cinematic image */}
-                            <div className="relative h-56 sm:h-72 md:h-80 shrink-0 overflow-hidden">
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                fill
-                                sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
+                            <GalleryImage
+                              src={item.image}
+                              gallery={item.gallery}
+                              alt={item.name}
+                              outerClassName="shrink-0"
+                              className="relative h-56 sm:h-72 md:h-80 overflow-hidden"
+                              imageClassName="object-cover transition-transform duration-700 group-hover:scale-105"
+                              sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
+                            >
                               {/* Dark gradient from bottom */}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
@@ -278,7 +306,7 @@ export default function LocalCuisinePage() {
                                   <p className="text-xs text-white/70 italic mt-0.5">{item.tagalogName}</p>
                                 )}
                               </div>
-                            </div>
+                            </GalleryImage>
 
                             {/* Detail panel */}
                             <div className="flex flex-col flex-1 p-5 sm:p-6">
@@ -384,6 +412,108 @@ export default function LocalCuisinePage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ── Restaurants & Eateries ── */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-muted/20 border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Store className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground">Restaurants &amp; Eateries</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Where to eat in Bocaue — from heritage kitchens to street-side carinderias</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+            {restaurantList.map((place) => (
+              <div
+                key={place.id}
+                className="group rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300 flex flex-col"
+              >
+                {/* Image */}
+                <GalleryImage
+                  src={place.image ?? "/images/places/Food.jpg"}
+                  alt={place.name}
+                  className="relative h-44 overflow-hidden"
+                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs border backdrop-blur-sm ${restaurantTypeBadge[place.type]}`}
+                    >
+                      {restaurantTypeLabel[place.type]}
+                    </Badge>
+                    {place.priceRange && (
+                      <span className="text-[11px] font-bold text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        {place.priceRange}
+                      </span>
+                    )}
+                  </div>
+                  {place.isOpen && (
+                    <div className="absolute top-3 right-3">
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
+                        Open
+                      </span>
+                    </div>
+                  )}
+                </GalleryImage>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="text-base font-black text-card-foreground group-hover:text-primary transition-colors leading-snug mb-1">
+                    {place.name}
+                  </h3>
+                  {place.priceRange && (
+                    <p className="text-[11px] text-muted-foreground mb-2">{priceLabel[place.priceRange]}</p>
+                  )}
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">
+                    {place.description}
+                  </p>
+
+                  {/* Specialties */}
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                      <Star className="h-3 w-3 text-amber-500" /> Specialties
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {place.specialties.slice(0, 3).map((s) => (
+                        <span key={s} className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-foreground border border-border">
+                          {s}
+                        </span>
+                      ))}
+                      {place.specialties.length > 3 && (
+                        <span className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-muted-foreground border border-border">
+                          +{place.specialties.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location & Hours */}
+                  <div className="border-t border-border pt-3 space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-foreground">{place.location}</p>
+                    </div>
+                    {place.hours && (
+                      <div className="flex items-start gap-2">
+                        <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-foreground">{place.hours}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

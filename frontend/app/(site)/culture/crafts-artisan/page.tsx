@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { asset } from "@/lib/utils"
 import {
   Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
@@ -9,6 +8,7 @@ import {
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { artisans as fallbackArtisans, culturalPractices as fallbackPractices, type Artisan } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
@@ -36,15 +36,14 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
           : "hover:shadow-lg hover:border-primary/30"
       }`}
     >
-      {/* Photo */}
-      <div className={`relative overflow-hidden bg-muted ${featured ? "h-72" : "h-52"}`}>
-        <Image
-          src={artisan.image ?? asset("/images/places/Arts.jpg")}
-          alt={artisan.name}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-700"
-        />
+      <GalleryImage
+        src={artisan.image ?? asset("/images/places/Arts.jpg")}
+        gallery={artisan.gallery}
+        alt={artisan.name}
+        className={`relative overflow-hidden bg-muted ${featured ? "h-72" : "h-52"}`}
+        imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      >
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
         {featured && (
@@ -75,7 +74,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
             <span className="text-xs text-white/80">{artisan.experience} of experience</span>
           </div>
         </div>
-      </div>
+      </GalleryImage>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">

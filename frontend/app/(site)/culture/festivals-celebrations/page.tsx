@@ -1,11 +1,11 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { Sparkles, Calendar, Star } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { festivals as fallbackFestivals, type Festival } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToFestival } from "@/lib/cms-mappers"
@@ -64,9 +64,13 @@ export default function FestivalsCelebrationsPage() {
               <Card key={festival.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden">
-                      <Image src={festival.image} alt={festival.name} fill className="object-cover" />
-                    </div>
+                    <GalleryImage
+                      src={festival.image}
+                      gallery={festival.gallery}
+                      alt={festival.name}
+                      outerClassName="h-full"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    />
                   )}
                   <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -99,9 +103,13 @@ export default function FestivalsCelebrationsPage() {
                     </div>
                   </CardContent>
                   {idx % 2 !== 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden order-first md:order-last">
-                      <Image src={festival.image} alt={festival.name} fill className="object-cover" />
-                    </div>
+                    <GalleryImage
+                      src={festival.image}
+                      gallery={festival.gallery}
+                      alt={festival.name}
+                      outerClassName="h-full order-first md:order-last"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    />
                   )}
                 </div>
               </Card>

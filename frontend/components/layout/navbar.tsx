@@ -26,6 +26,8 @@ const navLinks: NavItem[] = [
   { label: "Home", href: "/", isHash: false },
   {
     label: "Bocaue Wonders",
+    href: "/bocaue-wonders",
+    isHash: false,
     children: [
       {
         label: "History",
@@ -58,6 +60,8 @@ const navLinks: NavItem[] = [
   },
   {
     label: "Community",
+    href: "/community",
+    isHash: false,
     children: [
       { label: "Schools", href: "/community/schools", isHash: false },
       { label: "Hospitals", href: "/community/hospitals", isHash: false },
@@ -74,6 +78,8 @@ const navLinks: NavItem[] = [
   { label: "Events", href: "/events", isHash: false },
   {
     label: "Tourism Office",
+    href: "/tourism-office",
+    isHash: false,
     children: [
       { label: "About MHACTO", href: "/tourism-office", isHash: false },
       { label: "Mission & Vision", href: "/mission-vision", isHash: false },

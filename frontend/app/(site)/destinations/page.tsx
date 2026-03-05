@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
-import { Landmark, BookOpen, Church, Compass, MapPin, Clock, Star, Ticket, Shield, Map, ExternalLink } from "lucide-react"
+import { Landmark, BookOpen, Church, Compass, MapPin, Clock, Ticket, Shield, Map, ExternalLink, Star } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { GalleryImage } from "@/components/ui/gallery-image"
 import { heritageSites, museums, religiousSites } from "@/lib/data/destinations-data"
 
 const museumTypeLabels: Record<string, string> = {
@@ -104,45 +104,51 @@ export default function DestinationsPage() {
           </div>
           <div className="space-y-8">
             {heritageSites.map((site, idx) => (
-              <Card key={site.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+              <Card key={site.id} className="relative overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 group cursor-pointer">
+                <Link href={`/destinations/${site.id}`} className="absolute inset-0 z-10" aria-label={site.name} />
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
-                      <Image src={site.image} alt={site.name} fill className="object-cover" />
+                    <GalleryImage
+                      src={site.image}
+                      gallery={site.gallery}
+                      alt={site.name}
+                      outerClassName="h-full"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    >
                       {site.isProtected && <div className="absolute top-3 left-3"><Badge className="text-xs bg-amber-500 text-white border-0 flex items-center gap-1"><Shield className="h-3 w-3" /> Protected</Badge></div>}
-                    </div>
+                    </GalleryImage>
                   )}
-                  <CardContent className="p-6 sm:p-8 flex flex-col justify-start">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="outline" className="text-xs">Est. {site.established}</Badge>
-                      {site.protectionLevel && <Badge variant="outline" className="text-xs bg-amber-50 text-amber-800 border-amber-200">{site.protectionLevel}</Badge>}
-                    </div>
-                    <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{site.name}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{site.description}</p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-start gap-2 text-xs text-foreground"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.location}</div>
-                      <div className="flex items-start gap-2 text-xs text-foreground"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.hours}</div>
-                    </div>
-                    <div className="mb-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">About</p>
-                      <p className="text-sm text-foreground leading-relaxed">{site.story}</p>
-                    </div>
+                  <CardContent className="p-6 sm:p-8 flex flex-col justify-between h-full">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Star className="h-3 w-3" /> Highlights</p>
-                      <ul className="space-y-1">{site.highlights.map((h) => <li key={h} className="text-sm text-foreground flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{h}</li>)}</ul>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" className="text-xs">Est. {site.established}</Badge>
+                        {site.protectionLevel && <Badge variant="outline" className="text-xs bg-amber-50 text-amber-800 border-amber-200">{site.protectionLevel}</Badge>}
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">{site.name}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{site.description}</p>
+                      <div className="space-y-1.5">
+                        <div className="flex items-start gap-2 text-xs text-foreground"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.location}</div>
+                        <div className="flex items-start gap-2 text-xs text-foreground"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.hours}</div>
+                      </div>
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-5 flex items-center gap-3 relative z-20">
                       <Button size="sm" variant="outline" className="gap-2"
-                        onClick={() => setMapDest({ name: site.name, location: site.location, hours: site.hours, description: site.description, details: site.highlights, detailsLabel: "Highlights" })}>
+                        onClick={(e) => { e.preventDefault(); setMapDest({ name: site.name, location: site.location, hours: site.hours, description: site.description, details: site.highlights, detailsLabel: "Highlights" }) }}>
                         <Map className="h-4 w-4" /> View on Map
                       </Button>
+                      <span className="text-xs text-primary font-semibold">Click card for full details →</span>
                     </div>
                   </CardContent>
                   {idx % 2 !== 0 && (
-                    <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px] order-first md:order-last">
-                      <Image src={site.image} alt={site.name} fill className="object-cover" />
+                    <GalleryImage
+                      src={site.image}
+                      gallery={site.gallery}
+                      alt={site.name}
+                      outerClassName="h-full order-first md:order-last"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                    >
                       {site.isProtected && <div className="absolute top-3 right-3"><Badge className="text-xs bg-amber-500 text-white border-0 flex items-center gap-1"><Shield className="h-3 w-3" /> Protected</Badge></div>}
-                    </div>
+                    </GalleryImage>
                   )}
                 </div>
               </Card>
@@ -163,31 +169,30 @@ export default function DestinationsPage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {museums.map((museum) => (
-              <Card key={museum.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <div className="relative h-48 overflow-hidden">
-                  <Image src={museum.image} alt={museum.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+              <Card key={museum.id} className="relative group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
+                <Link href={`/destinations/${museum.id}`} className="absolute inset-0 z-10" aria-label={museum.name} />
+                <GalleryImage
+                  src={museum.image}
+                  gallery={museum.gallery}
+                  alt={museum.name}
+                  className="relative h-48 overflow-hidden"
+                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">
                     <Badge variant="outline" className={`text-xs ${museumTypeColor[museum.type] ?? ""}`}>{museumTypeLabels[museum.type] ?? museum.type}</Badge>
                   </div>
-                </div>
+                </GalleryImage>
                 <CardContent className="p-5 flex flex-col flex-1">
                   <h3 className="text-lg font-black text-foreground mb-2">{museum.name}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{museum.description}</p>
-                  <div className="space-y-2 mb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">{museum.description}</p>
+                  <div className="space-y-1.5 mb-4">
                     <div className="flex items-start gap-2 text-xs text-foreground"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{museum.location}</div>
                     <div className="flex items-start gap-2 text-xs text-foreground"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{museum.hours}</div>
                     <div className="flex items-start gap-2 text-xs text-foreground"><Ticket className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{museum.admission}</div>
                   </div>
-                  <div className="border-t border-border pt-3 mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Collections</p>
-                    <ul className="space-y-1">
-                      {museum.collections.slice(0, 4).map((c) => <li key={c} className="text-xs text-foreground flex items-start gap-2"><span className="mt-1.5 h-1 w-1 rounded-full bg-primary flex-shrink-0" />{c}</li>)}
-                      {museum.collections.length > 4 && <li className="text-xs text-muted-foreground">+{museum.collections.length - 4} more</li>}
-                    </ul>
-                  </div>
-                  <Button size="sm" variant="outline" className="gap-2 w-full"
-                    onClick={() => setMapDest({ name: museum.name, location: museum.location, hours: museum.hours, description: museum.description, details: museum.collections.slice(0, 5), detailsLabel: "Collections" })}>
+                  <Button size="sm" variant="outline" className="relative z-20 gap-2 w-full"
+                    onClick={(e) => { e.preventDefault(); setMapDest({ name: museum.name, location: museum.location, hours: museum.hours, description: museum.description, details: museum.collections.slice(0, 5), detailsLabel: "Collections" }) }}>
                     <Map className="h-4 w-4" /> View on Map
                   </Button>
                 </CardContent>
@@ -209,34 +214,35 @@ export default function DestinationsPage() {
           </div>
           <div className="space-y-8">
             {religiousSites.map((site) => (
-              <Card key={site.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+              <Card key={site.id} className="relative overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
+                <Link href={`/destinations/${site.id}`} className="absolute inset-0 z-10" aria-label={site.name} />
                 <div className="grid gap-0 md:grid-cols-[2fr_3fr]">
-                  <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
-                    <Image src={site.image} alt={site.name} fill className="object-cover" />
+                  <GalleryImage
+                    src={site.image}
+                    gallery={site.gallery}
+                    alt={site.name}
+                    outerClassName="h-full"
+                    className="relative flex-1 overflow-hidden min-h-[260px]"
+                  >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute bottom-3 left-4"><Badge className="text-xs bg-amber-500 text-white border-0">{site.denomination}</Badge></div>
-                  </div>
-                  <CardContent className="p-6 sm:p-8 flex flex-col justify-start">
-                    <div className="mb-1"><span className="text-xs text-muted-foreground">Est. {site.established}</span></div>
-                    <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{site.name}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{site.description}</p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-start gap-2 text-xs text-foreground"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.location}</div>
-                      <div className="flex items-start gap-2 text-xs text-foreground"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.hours}</div>
-                    </div>
-                    <div className="mb-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Significance</p>
-                      <p className="text-sm text-foreground leading-relaxed">{site.significance}</p>
-                    </div>
+                  </GalleryImage>
+                  <CardContent className="p-6 sm:p-8 flex flex-col justify-between h-full">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1"><Star className="h-3 w-3" /> Highlights</p>
-                      <ul className="space-y-1">{site.highlights.map((h) => <li key={h} className="text-sm text-foreground flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{h}</li>)}</ul>
+                      <div className="mb-2"><span className="text-xs text-muted-foreground font-medium">Est. {site.established}</span></div>
+                      <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">{site.name}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{site.description}</p>
+                      <div className="space-y-1.5">
+                        <div className="flex items-start gap-2 text-xs text-foreground"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.location}</div>
+                        <div className="flex items-start gap-2 text-xs text-foreground"><Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{site.hours}</div>
+                      </div>
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-5 flex items-center gap-3 relative z-20">
                       <Button size="sm" variant="outline" className="gap-2"
-                        onClick={() => setMapDest({ name: site.name, location: site.location, hours: site.hours, description: site.description, details: site.highlights, detailsLabel: "Highlights" })}>
+                        onClick={(e) => { e.preventDefault(); setMapDest({ name: site.name, location: site.location, hours: site.hours, description: site.description, details: site.highlights, detailsLabel: "Highlights" }) }}>
                         <Map className="h-4 w-4" /> View on Map
                       </Button>
+                      <span className="text-xs text-primary font-semibold">Click card for full details →</span>
                     </div>
                   </CardContent>
                 </div>
@@ -273,14 +279,23 @@ export default function DestinationsPage() {
           </DialogHeader>
           {mapDest && (
             <div className="grid md:grid-cols-[1fr_1fr] min-h-[420px]">
-              <div className="relative bg-muted min-h-[300px] md:min-h-0">
+              <div className="relative bg-muted min-h-[300px] md:min-h-0 flex flex-col">
                 <iframe
                   title={`Map of ${mapDest.name}`}
                   src={`https://maps.google.com/maps?q=${encodeURIComponent(mapDest.name + ", Bocaue, Bulacan, Philippines")}&output=embed&z=16`}
-                  className="w-full h-full min-h-[300px] border-0"
+                  className="w-full flex-1 min-h-[260px] border-0"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
+                <a
+                  href={`https://maps.google.com/maps?q=${encodeURIComponent(mapDest.name + ", Bocaue, Bulacan, Philippines")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold py-3 hover:bg-primary/90 transition-colors"
+                >
+                  <Map className="h-4 w-4" />
+                  Open in Google Maps
+                </a>
               </div>
               <div className="p-6 overflow-y-auto max-h-[520px] flex flex-col gap-4">
                 <div className="space-y-2">
