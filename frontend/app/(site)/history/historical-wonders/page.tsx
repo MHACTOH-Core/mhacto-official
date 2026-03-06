@@ -234,7 +234,7 @@ export default function HistoricalWondersPage() {
           {filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-16">No sites in this category.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {filtered.map((site) => (
                 <HeritageCard key={site.id} site={site} />
               ))}

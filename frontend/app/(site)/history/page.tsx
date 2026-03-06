@@ -164,7 +164,7 @@ export default function HistoryPage() {
               <p className="text-muted-foreground">Remarkable people who shaped Bocaue&apos;s identity</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {notablePersons.map((person) => (
               <Card key={person.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {person.image && (

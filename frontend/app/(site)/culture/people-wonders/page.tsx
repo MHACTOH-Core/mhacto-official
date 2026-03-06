@@ -245,7 +245,7 @@ export default function PeopleWondersPage() {
               <p className="text-sm mt-1">Check back soon as we continue to document Bocaue&apos;s remarkable people.</p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start">
               {filtered.map((person) => (
                 <PersonCard key={person.id} person={person} />
               ))}

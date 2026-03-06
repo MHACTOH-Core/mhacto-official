@@ -166,7 +166,7 @@ export default function NewsPage() {
 
               {/* Additional featured articles (2-column grid) */}
               {additionalFeatured.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 items-start">
                   {additionalFeatured.map((article) => (
                     <Link key={article.id} href={`/news/${article.id}`} className="group block">
                       <Card className="overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-xl h-full">

@@ -74,7 +74,7 @@ export default function HospitalsPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 items-start">
             {hospitals.map((hospital) => (
               <Card key={hospital.id} className={`border-border hover:shadow-lg transition-all duration-300 flex flex-col ${hospital.emergency ? "hover:border-red-300" : "hover:border-primary/30"}`}>
                 <CardContent className="p-6 flex flex-col flex-1">

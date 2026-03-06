@@ -139,7 +139,7 @@ export default function PlacesPage() {
             )}
 
             {/* Place cards */}
-            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-start">
               {displayed.map((place, i) => (
                 <div
                   key={place.id}

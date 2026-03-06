@@ -186,7 +186,7 @@ export default function CraftsArtisanPage() {
             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-5 flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Living Craft Traditions of Bocaue
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 items-start">
               {craftPractices.map((practice) => (
                 <div
                   key={practice.id}
@@ -254,7 +254,7 @@ export default function CraftsArtisanPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {rest.map((artisan) => (
               <ArtisanCard key={artisan.id} artisan={artisan} />
             ))}

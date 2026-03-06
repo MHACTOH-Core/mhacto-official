@@ -129,7 +129,7 @@ export default function CulturePage() {
               <p className="text-muted-foreground">Flavors and foodways that define Bocaue&apos;s table</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {localCuisine.slice(0, 3).map((item) => (
               <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <GalleryImage
@@ -245,7 +245,7 @@ export default function CulturePage() {
               <p className="text-muted-foreground">Living customs that define Bocaue&apos;s identity</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {culturalPractices.map((practice) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
@@ -297,7 +297,7 @@ export default function CulturePage() {
               <p className="text-muted-foreground">Master craftspeople keeping Bocaue&apos;s traditions alive</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {artisansList.map((artisan) => (
               <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {artisan.image && (
@@ -352,7 +352,7 @@ export default function CulturePage() {
               <p className="text-muted-foreground">Notable living Bocaueños making their mark</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {peopleWonders.map((person) => (
               <Card key={person.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {person.image && (

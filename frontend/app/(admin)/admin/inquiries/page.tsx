@@ -52,17 +52,21 @@ import {
   RotateCcw,
   Send,
   X,
+  UserCheck,
+  UserX,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { apiReplyInquiry } from "@/lib/api"
 
-type MailboxTab = "all" | "unread" | "archived" | "spam" | "trash"
+type MailboxTab = "all" | "unread" | "read" | "assigned" | "archived" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all",         label: "All Mail",    icon: Inbox },
   { key: "unread",      label: "Unread",      icon: Mail },
+  { key: "read",        label: "Read",        icon: MailOpen },
+  { key: "assigned",    label: "Assigned",    icon: UserCheck },
   { key: "archived",    label: "Archived",    icon: Archive },
   { key: "spam",        label: "Spam",        icon: ShieldAlert },
   { key: "trash",       label: "Trash",       icon: Trash2 },
@@ -81,6 +85,7 @@ export default function InquiriesPage() {
   const [replyText, setReplyText] = useState("")
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [showReplyBox, setShowReplyBox] = useState(false)
+  const [isAssigning, setIsAssigning] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -97,6 +102,12 @@ export default function InquiriesPage() {
         break
       case "unread":
         list = inquiries.filter((i) => i.status === "unread")
+        break
+      case "read":
+        list = inquiries.filter((i) => i.status === "read")
+        break
+      case "assigned":
+        list = inquiries.filter((i) => i.status === "assigned")
         break
       case "archived":
         list = inquiries.filter((i) => i.status === "archived")
@@ -127,6 +138,8 @@ export default function InquiriesPage() {
   const tabCounts: Record<MailboxTab, number> = {
     all:         inquiries.filter((i) => i.status !== "spam" && i.status !== "trash").length,
     unread:      inquiries.filter((i) => i.status === "unread").length,
+    read:        inquiries.filter((i) => i.status === "read").length,
+    assigned:    inquiries.filter((i) => i.status === "assigned").length,
     archived:    inquiries.filter((i) => i.status === "archived").length,
     spam:        inquiries.filter((i) => i.status === "spam").length,
     trash:       inquiries.filter((i) => i.status === "trash").length,
@@ -134,11 +147,18 @@ export default function InquiriesPage() {
 
   const unreadCount = tabCounts.unread
 
-  // Open inquiry — reset reply composer
+  // Open inquiry — reset reply composer and auto-mark as read
   const openInquiry = (inq: Inquiry) => {
     setShowReplyBox(false)
     setReplyText("")
-    setSelectedInquiry(inq)
+    // Auto-mark unread → read when clicking
+    if (inq.status === "unread") {
+      updateInquiry(inq.id, { status: "read" })
+      const updated = { ...inq, status: "read" as const }
+      setSelectedInquiry(updated)
+    } else {
+      setSelectedInquiry(inq)
+    }
   }
 
   const handleStatusChange = (inq: Inquiry, status: InquiryStatus) => {
@@ -278,14 +298,47 @@ export default function InquiriesPage() {
     }
   }
 
+  // ── Assign Tourist Guide ───────────────────────────────────────
+
+  const handleAssignTouristGuide = async (inq: Inquiry) => {
+    setIsAssigning(true)
+    try {
+      // Just update status — the provider handles both optimistic UI + API call
+      updateInquiry(inq.id, { status: "assigned" })
+      if (selectedInquiry?.id === inq.id) {
+        setSelectedInquiry({ ...inq, status: "assigned" })
+      }
+    } catch (err) {
+      console.error("Assign tourist guide error:", err)
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
+  const handleUnassignTouristGuide = async (inq: Inquiry) => {
+    setIsAssigning(true)
+    try {
+      updateInquiry(inq.id, { status: "read" })
+      if (selectedInquiry?.id === inq.id) {
+        setSelectedInquiry({ ...inq, status: "read", assignedTo: null })
+      }
+    } catch (err) {
+      console.error("Unassign tourist guide error:", err)
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
   // ── Empty‑state messages ───────────────────────────────────────
 
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
-    all:         { icon: Inbox,      title: "No inquiries yet",          desc: "New inquiries will appear here." },
-    unread:      { icon: Mail,       title: "All caught up!",            desc: "No unread inquiries." },
-    archived:    { icon: Archive,    title: "Archive is empty",          desc: "Archived inquiries will show here." },
+    all:         { icon: Inbox,       title: "No inquiries yet",          desc: "New inquiries will appear here." },
+    unread:      { icon: Mail,        title: "All caught up!",            desc: "No unread inquiries." },
+    read:        { icon: MailOpen,    title: "No read inquiries",         desc: "Inquiries you've opened will appear here." },
+    assigned:    { icon: UserCheck,   title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide will show here." },
+    archived:    { icon: Archive,     title: "Archive is empty",          desc: "Archived inquiries will show here." },
     spam:        { icon: ShieldAlert, title: "No spam",                  desc: "Inquiries marked as spam appear here." },
-    trash:       { icon: Trash2,     title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
+    trash:       { icon: Trash2,      title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
   }
 
   return (
@@ -557,6 +610,43 @@ export default function InquiriesPage() {
                   {/* Action buttons */}
                   <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 
+                    {/* Assign / Unassign Tourist Guide */}
+                    {selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
+                      selectedInquiry.status !== "assigned" ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950"
+                              disabled={isAssigning}
+                              onClick={() => handleAssignTouristGuide(selectedInquiry)}
+                            >
+                              {isAssigning ? <Loader2 className="h-3 sm:h-3.5 w-3 sm:w-3.5 animate-spin" /> : <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />}
+                              <span className="hidden sm:inline">Assign Guide</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Assign a tourist guide to this inquiry</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-950"
+                              disabled={isAssigning}
+                              onClick={() => handleUnassignTouristGuide(selectedInquiry)}
+                            >
+                              {isAssigning ? <Loader2 className="h-3 sm:h-3.5 w-3 sm:w-3.5 animate-spin" /> : <UserX className="h-3 sm:h-3.5 w-3 sm:w-3.5" />}
+                              <span className="hidden sm:inline">Unassign</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove tourist guide assignment</TooltipContent>
+                        </Tooltip>
+                      )
+                    )}
+
                     {/* Restore (only in trash) */}
                     {selectedInquiry.status === "trash" && (
                       <Tooltip>
@@ -678,6 +768,33 @@ export default function InquiriesPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Assigned to Tourist Guide banner */}
+                  {selectedInquiry.status === "assigned" && (
+                    <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-950/40">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50 shrink-0">
+                        <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                          Tourist Guide Assigned
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          This inquiry has been assigned to a tourist guide for handling.
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+                        disabled={isAssigning}
+                        onClick={() => handleUnassignTouristGuide(selectedInquiry)}
+                      >
+                        {isAssigning ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <UserX className="h-3.5 w-3.5 mr-1" />}
+                        Unassign
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Visit info — real columns */}
                   {(selectedInquiry.dateOfVisit || selectedInquiry.numberOfPax != null) && (

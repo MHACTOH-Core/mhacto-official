@@ -71,7 +71,7 @@ export default function PracticesTraditionsPage() {
       {/* Content */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {culturalPractices.map((practice) => {
               const status = statusConfig[practice.status]
               const StatusIcon = status.icon

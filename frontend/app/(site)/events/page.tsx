@@ -212,7 +212,7 @@ export default function EventsPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start">
               {MONTHS.map((month, idx) => (
                 <MonthCard key={month} month={month} monthIndex={idx} events={eventsByMonth[idx] ?? []} />
               ))}
@@ -225,7 +225,7 @@ export default function EventsPage() {
       {!loading && events.length > 0 && viewMode === "grid" && (
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {events.map((event) => {
                 const dateStr = event.newsDate ?? event.createdAt
                 return (

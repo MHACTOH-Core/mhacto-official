@@ -53,7 +53,7 @@ export interface CMSPost {
   updatedAt: string // ISO
 }
 
-export type InquiryStatus = "unread" | "archived" | "spam" | "trash"
+export type InquiryStatus = "unread" | "read" | "assigned" | "archived" | "spam" | "trash"
 
 export type InquiryType = "general_contact" | "tour_booking" | "partnership"
 
@@ -68,6 +68,10 @@ export interface Inquiry {
   status: InquiryStatus
   inquiryType: InquiryType
   additionalDetails?: Record<string, unknown>
+  assignedTo?: string | null
+  replyText?: string | null
+  repliedAt?: string | null
+  repliedBy?: string | null
   createdAt: string
 }
 
@@ -181,6 +185,8 @@ export function getEventsLabel(): [ContentLabel, { label: string; color: string;
 
 export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: string }> = {
   unread:      { label: "Unread",      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  read:        { label: "Read",        color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" },
+  assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   archived:    { label: "Archived",    color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
   spam:        { label: "Spam",        color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
   trash:       { label: "Trash",       color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },

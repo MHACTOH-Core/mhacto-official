@@ -61,7 +61,7 @@ export default function CollegesPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {colleges.map((college) => (
               <Card key={college.id} className="border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <CardContent className="p-6 flex flex-col flex-1">

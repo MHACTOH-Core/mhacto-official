@@ -156,7 +156,7 @@ CREATE TABLE inquiries (
   number_of_pax      INT          DEFAULT NULL  COMMENT 'Real column — aggregatable crowd volume',
   message            TEXT         DEFAULT NULL,
   additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, referral_source, dietary_needs, etc.',
-  status             ENUM('unread','assigned','archived','spam','trash') DEFAULT 'unread' COMMENT 'assigned = handed off to a tourist guide',
+  status             ENUM('unread','read','assigned','archived','spam','trash') DEFAULT 'unread' COMMENT 'read = opened by admin; assigned = handed off to a tourist guide',
   assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name/ID assigned to handle this inquiry',
   reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply stored for in-app thread display',
   replied_at         TIMESTAMP    DEFAULT NULL  COMMENT 'When the admin sent the reply',

@@ -401,7 +401,7 @@ export default function LocalCuisinePage() {
           {filtered.length === 0 ? (
             <p className="text-muted-foreground text-center py-16">No dishes in this category.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {(activeType === "all" ? rest : filtered).map((item) => (
                 <CuisineCard key={item.id} item={item} />
               ))}
@@ -423,7 +423,7 @@ export default function LocalCuisinePage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start mt-8">
             {restaurantList.map((place) => (
               <div
                 key={place.id}

@@ -166,7 +166,7 @@ export default function ActivityLogPage() {
               <Card>
                 <CardContent className="divide-y divide-border p-0">
                   {entries.map((entry) => {
-                    const Icon = actionIcons[entry.action]
+                    const Icon = actionIcons[entry.action] ?? ClipboardList
                     return (
                       <div
                         key={entry.id}

@@ -231,7 +231,7 @@ export default function CommunityPage() {
           </section>
 
           <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-16">
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {displayedSchools.map((school) => (
                 <div
                   key={school.id}
@@ -306,7 +306,7 @@ export default function CommunityPage() {
                 </div>
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 items-start">
                 {hospitals.map((hospital) => (
                   <Card key={hospital.id} className={`border-border hover:shadow-lg transition-all duration-300 flex flex-col ${hospital.emergency ? "hover:border-red-300" : "hover:border-primary/30"}`}>
                     <CardContent className="p-6 flex flex-col flex-1">

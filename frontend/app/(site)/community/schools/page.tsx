@@ -201,7 +201,7 @@ export default function SchoolsPage() {
 
       {/* School cards */}
       <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-16">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {displayedSchools.map((school) => (
             <div
               key={school.id}

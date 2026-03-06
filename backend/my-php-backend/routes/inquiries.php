@@ -101,7 +101,7 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
     $payload = [];
 
     if (isset($data['status'])) {
-        $allowed = ['unread', 'assigned', 'archived', 'spam', 'trash'];
+        $allowed = ['unread', 'read', 'assigned', 'archived', 'spam', 'trash'];
         if (!in_array($data['status'], $allowed, true)) {
             Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
         }

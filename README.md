@@ -142,6 +142,50 @@ Fixed React "Each child in a list should have a unique key prop" warning in the 
 | handleSave casts | `(editingItem as FeaturedLandmark).landmarkId` | `(editingItem as FeaturedContent).featuredId` |
 | Reorder mapping | `l.landmarkId` | `l.featuredId` |
 
+#### 6. Inquiry Read/Unread Status + Assign Tourist Guide
+
+Added `read` status to the inquiry system and implemented one-click tourist guide assignment.
+
+**Database:**
+- ENUM changed from `('unread','in_progress','assigned','archived','spam','trash')` → `('unread','read','assigned','archived','spam','trash')`
+- Migrated existing `in_progress` rows to `unread`, then altered the column
+
+**Backend (`routes/inquiries.php`):**
+- Added `'read'` to the allowed statuses array
+
+**Frontend — Admin Inquiries (`/admin/inquiries`):**
+
+| Feature | Details |
+|---------|---------|
+| Auto mark-as-read | Clicking an unread inquiry automatically sets status to `read` (unbolds it) |
+| Read tab | New "Read" tab with `MailOpen` icon + filter + empty state |
+| Bold styling | Unread = bold name + semibold type; read/other = normal weight |
+| Assign Tourist Guide | One-click button sets status to `assigned` |
+| Unassign Tourist Guide | Reverts status to `read` (not `unread`, since admin already opened it) |
+| Assigned banner | Green banner shown in detail view when assigned |
+
+**Frontend types (`admin-data.ts`):**
+- `InquiryStatus` → added `"read"`
+- `inquiryStatusLabels` → added `read` entry (slate color)
+
+**API (`api.ts`):**
+- `apiAssignTouristGuide()` and `apiUnassignTouristGuide()` helpers added
+- Unassign now sends `status: "read"` instead of `"unread"`
+
+#### 7. Card Grid Independence (`items-start`)
+
+Added `items-start` to 25 CSS grid containers across 22 pages so that expanding one card (e.g. "Read Story") no longer stretches sibling cards in the same row.
+
+**Pages fixed:** local-cuisine, people-wonders, practices-traditions, crafts-artisan, culture (×4 sections), news, history, notable-persons, historical-wonders, bocaue-wonders, events (×2), destinations, museums, community (×2), colleges, public-schools, local-business, hospitals, schools, places, places/category, tourism-wonders
+
+#### 8. Removed Redundant Page — Bocaueños
+
+Deleted `app/(site)/community/bocauenos/page.tsx` and removed the README reference. No navbar/footer/search-index links existed for this page.
+
+#### 9. Activity Log Fallback Icon Fix
+
+`ActivityLogPage` crashed when `actionIcons[entry.action]` returned `undefined` for unrecognized action types. Added `?? ClipboardList` fallback.
+
 ---
 
 ### March 5, 2026 — Full REST API Rewrite (Central Router)
@@ -489,7 +533,6 @@ Renamed vague/abbreviated identifiers to be descriptive and intent-revealing acr
 - `app/(site)/destinations/museums/page.tsx`
 - `app/(site)/destinations/religious-sites/page.tsx`
 - `app/(site)/community/colleges/page.tsx`
-- `app/(site)/community/bocauenos/page.tsx`
 - `app/(site)/community/hospitals/page.tsx`
 - `app/(site)/community/schools/page.tsx`
 - `app/(site)/community/public-schools/page.tsx`

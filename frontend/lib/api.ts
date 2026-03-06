@@ -265,10 +265,11 @@ export function apiDeletePost(id: string) {
 
 // ─── Inquiries CRUD ───────────────────────────────────────────────
 
-/** Update an inquiry's status (admin) */
-export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
+/** Update an inquiry's status and/or assignment (admin) */
+export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry> & { assigned_to?: string | null }) {
   const payload: Record<string, unknown> = {}
   if (inquiryData.status !== undefined) payload.status = inquiryData.status
+  if (inquiryData.assigned_to !== undefined) payload.assigned_to = inquiryData.assigned_to
 
   if (Object.keys(payload).length === 0) return Promise.resolve({ message: "No update needed", inquiry: {} as Inquiry })
 
@@ -292,8 +293,21 @@ export function apiReplyInquiry(id: string, replyText: string, repliedBy?: strin
   })
 }
 
-/** Assign an inquiry to a tourist guide — sets status to 'assigned' and saves guide name */
+/** Assign an inquiry to a tourist guide — sets status to 'assigned' with a single click */
+export function apiAssignTouristGuide(id: string) {
+  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "assigned" }),
+  })
+}
 
+/** Unassign a tourist guide — reverts status back to 'read' */
+export function apiUnassignTouristGuide(id: string) {
+  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "read", assigned_to: null }),
+  })
+}
 
 // ─── Public Inquiry (tourist site form) ───────────────────────────
 

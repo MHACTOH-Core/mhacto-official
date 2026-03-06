@@ -50,7 +50,7 @@ export default function LocalBusinessPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 items-start">
             {localBusinesses.map((biz) => (
               <Card key={biz.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
                 {biz.image && (
