@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Image from "next/image"
 import { MapPin, Phone, Calendar, Store } from "lucide-react"
@@ -31,8 +31,8 @@ export default function LocalBusinessPage() {
         fallbackImage="/images/places/Food.jpg"
         fallbackIcon="Store"
         fallbackAccentColor="green-300"
-        fallbackLabel="Arts & Livelihood"
-        fallbackTitle="Local Business"
+        fallbackLabel="Community"
+        fallbackTitle="Local Businesses"
         fallbackDescription="The enterprises and industries rooted in Bocaue's culture and heritage, sustaining livelihoods for generations."
         showBackButton
       />

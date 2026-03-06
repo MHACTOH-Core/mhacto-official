@@ -65,13 +65,7 @@ const navLinks: NavItem[] = [
     children: [
       { label: "Schools", href: "/community/schools", isHash: false },
       { label: "Hospitals", href: "/community/hospitals", isHash: false },
-      {
-        label: "Arts & Livelihood",
-        href: "/arts-livelihood",
-        children: [
-          { label: "Local Business", href: "/arts-livelihood/local-business", isHash: false },
-        ],
-      },
+      { label: "Local Businesses", href: "/community/local-business", isHash: false },
     ],
   },
   { label: "News", href: "/news", isHash: false },

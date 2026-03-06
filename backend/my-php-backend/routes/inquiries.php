@@ -101,15 +101,19 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
     $payload = [];
 
     if (isset($data['status'])) {
-        $allowed = ['unread', 'archived', 'spam', 'trash'];
+        $allowed = ['unread', 'assigned', 'archived', 'spam', 'trash'];
         if (!in_array($data['status'], $allowed, true)) {
             Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
         }
         $payload['status'] = $data['status'];
     }
 
+    if (array_key_exists('assigned_to', $data)) {
+        $payload['assigned_to'] = $data['assigned_to'] ? trim($data['assigned_to']) : null;
+    }
+
     if (empty($payload)) {
-        Response::error('No updatable fields provided.', 400);
+        Response::error('No updatable fields provided (status, assigned_to).', 400);
     }
 
     $success = $inquiry->update($id, $payload);
