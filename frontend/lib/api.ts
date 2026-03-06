@@ -382,11 +382,15 @@ export interface Milestone {
   isActive?: boolean
 }
 
+export interface HeroTitlePair {
+  title: string
+  highlight: string
+}
+
 export interface HeroSettings {
   settingId: number
   subtitle: string
-  title: string
-  highlight: string
+  titles: HeroTitlePair[]
   description: string
   videoUrl: string
   fallbackImage: string

@@ -50,13 +50,11 @@ import {
   ChevronDown,
   Save,
   Video,
-  Map,
 } from "lucide-react"
 import { MediaPickerInput } from "@/components/ui/media-picker"
 import {
   apiFetchAllSpotlights,
   apiFetchAllMilestones,
-  apiFetchAllFeaturedLandmarks,
   apiFetchHeroSettings,
   apiCreateSpotlight,
   apiUpdateSpotlight,
@@ -65,21 +63,16 @@ import {
   apiUpdateMilestone,
   apiDeleteMilestone,
   apiReorderMilestones,
-  apiCreateFeaturedLandmark,
-  apiUpdateFeaturedLandmark,
-  apiDeleteFeaturedLandmark,
-  apiReorderFeaturedLandmarks,
   apiUpdateHeroSettings,
   apiFetchPosts,
   type Spotlight,
   type Milestone,
-  type FeaturedLandmark,
   type HeroSettings,
   type FeaturedContent,
 } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 
-type ContentType = "spotlight" | "milestone" | "landmark"
+type ContentType = "spotlight" | "milestone"
 
 export default function HomeContentPage() {
   const router = useRouter()
@@ -89,18 +82,16 @@ export default function HomeContentPage() {
   const [heroSettings, setHeroSettings] = useState<HeroSettings | null>(null)
   const [spotlights, setSpotlights] = useState<(FeaturedContent & Spotlight)[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
-  const [landmarks, setLandmarks] = useState<(FeaturedContent & FeaturedLandmark)[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // CMS posts for selection
-  const [cmsPlaces, setCmsPlaces] = useState<CMSPost[]>([])
   const [cmsEvents, setCmsEvents] = useState<CMSPost[]>([])
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogType, setDialogType] = useState<ContentType>("spotlight")
-  const [editingItem, setEditingItem] = useState<Spotlight | Milestone | FeaturedLandmark | null>(null)
+  const [editingItem, setEditingItem] = useState<Spotlight | Milestone | null>(null)
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ type: ContentType; id: number } | null>(null)
@@ -122,10 +113,15 @@ export default function HomeContentPage() {
   // Initialize hero form data when heroSettings loads
   useEffect(() => {
     if (heroSettings) {
+      // Ensure we always have exactly 4 title/highlight slots
+      const existingTitles = heroSettings.titles ?? []
+      const paddedTitles = Array.from({ length: 4 }, (_, i) => ({
+        title: existingTitles[i]?.title ?? "",
+        highlight: existingTitles[i]?.highlight ?? "",
+      }))
       setHeroFormData({
         subtitle: heroSettings.subtitle ?? "",
-        title: heroSettings.title ?? "",
-        highlight: heroSettings.highlight ?? "",
+        titles: paddedTitles,
         description: heroSettings.description ?? "",
         videoUrl: heroSettings.videoUrl ?? "",
         fallbackImage: heroSettings.fallbackImage ?? "",
@@ -135,33 +131,27 @@ export default function HomeContentPage() {
     }
   }, [heroSettings])
 
-  // Fetches ALL admin home-page content in parallel (5 HTTP requests at once):
+  // Fetches ALL admin home-page content in parallel (4 HTTP requests at once):
   //   1. GET /api/home/hero-settings.php          → PHP: SELECT from site_settings
   //   2. GET /api/home/spotlight.php?all=1         → PHP: SELECT from featured_content WHERE section='spotlight'
   //   3. GET /api/home/milestones.php?all=1        → PHP: SELECT from milestone
-  //   4. GET /api/home/landmarks.php?all=1         → PHP: SELECT from featured_content WHERE section='landmark'
-  //   5. GET /api/posts/read.php?status=published  → PHP: SELECT from content WHERE status='published'
+  //   4. GET /api/posts/read.php?status=published  → PHP: SELECT from content WHERE status='published'
   const loadAllContent = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [settings, spots, miles, lands, allPosts] = await Promise.all([
+      const [settings, spots, miles, allPosts] = await Promise.all([
         apiFetchHeroSettings().catch(() => null),
         apiFetchAllSpotlights().catch(() => []),
         apiFetchAllMilestones().catch(() => []),
-        apiFetchAllFeaturedLandmarks().catch(() => []),
         apiFetchPosts("published").catch(() => []),
       ])
       setHeroSettings(settings)
       setSpotlights(Array.isArray(spots) ? spots : spots ? [spots] : [])
       setMilestones(miles)
-      setLandmarks(lands)
       
       // Filter CMS posts by type/category
-      const places = allPosts.filter((p: CMSPost) => p.postType === "place")
       const events = allPosts.filter((p: CMSPost) => p.postType === "event" || p.label === "events" || p.label === "festivals")
-      
-      setCmsPlaces(places)
       setCmsEvents(events)
     } catch (err) {
       setError("Failed to load content. Make sure the backend is running.")
@@ -178,7 +168,7 @@ export default function HomeContentPage() {
     setDialogOpen(true)
   }
 
-  const openEditDialog = (type: ContentType, item: Spotlight | Milestone | FeaturedLandmark) => {
+  const openEditDialog = (type: ContentType, item: Spotlight | Milestone) => {
     setDialogType(type)
     setEditingItem(item)
     setFormData({ ...item })
@@ -191,8 +181,6 @@ export default function HomeContentPage() {
         return { contentId: "", sortOrder: spotlights.length + 1, isActive: false }
       case "milestone":
         return { year: "", title: "", description: "", detail: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
-      case "landmark":
-        return { contentId: "", sortOrder: landmarks.length + 1, isActive: true }
       default:
         return {}
     }
@@ -212,12 +200,6 @@ export default function HomeContentPage() {
         } else {
           await apiCreateMilestone(formData as Partial<Milestone>)
         }
-      } else if (dialogType === "landmark") {
-        if (editingItem) {
-          await apiUpdateFeaturedLandmark((editingItem as FeaturedContent).featuredId, formData as Partial<FeaturedLandmark>)
-        } else {
-          await apiCreateFeaturedLandmark(formData as Partial<FeaturedLandmark>)
-        }
       }
       setDialogOpen(false)
       loadAllContent()
@@ -234,8 +216,6 @@ export default function HomeContentPage() {
         await apiDeleteSpotlight(deleteTarget.id)
       } else if (deleteTarget.type === "milestone") {
         await apiDeleteMilestone(deleteTarget.id)
-      } else if (deleteTarget.type === "landmark") {
-        await apiDeleteFeaturedLandmark(deleteTarget.id)
       }
       setDeleteTarget(null)
       loadAllContent()
@@ -251,8 +231,6 @@ export default function HomeContentPage() {
         await apiUpdateSpotlight(id, { isActive: !currentState })
       } else if (type === "milestone") {
         await apiUpdateMilestone(id, { isActive: !currentState })
-      } else if (type === "landmark") {
-        await apiUpdateFeaturedLandmark(id, { isActive: !currentState })
       }
       loadAllContent()
     } catch (err) {
@@ -269,18 +247,6 @@ export default function HomeContentPage() {
       const order = newMilestones.map(m => m.milestoneId)
       try {
         await apiReorderMilestones(order)
-        loadAllContent()
-      } catch (err) {
-        console.error("Reorder failed:", err)
-      }
-    } else if (type === "landmark") {
-      const newLandmarks = [...landmarks]
-      const swapIndex = direction === "up" ? index - 1 : index + 1
-      if (swapIndex < 0 || swapIndex >= newLandmarks.length) return
-      [newLandmarks[index], newLandmarks[swapIndex]] = [newLandmarks[swapIndex], newLandmarks[index]]
-      const order = newLandmarks.map(l => l.featuredId)
-      try {
-        await apiReorderFeaturedLandmarks(order)
         loadAllContent()
       } catch (err) {
         console.error("Reorder failed:", err)
@@ -314,7 +280,7 @@ export default function HomeContentPage() {
                 Home Page Content
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage hero settings, featured spotlight, landmarks carousel, and heritage milestones.
+                Manage hero slides, featured spotlight, and heritage milestones.
               </p>
             </div>
           </div>
@@ -336,14 +302,10 @@ export default function HomeContentPage() {
             </div>
           ) : (
             <Tabs defaultValue="hero" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-grid">
+              <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
                 <TabsTrigger value="hero" className="gap-2">
                   <Video className="h-4 w-4" />
                   <span className="hidden sm:inline">Hero</span>
-                </TabsTrigger>
-                <TabsTrigger value="landmark" className="gap-2">
-                  <Map className="h-4 w-4" />
-                  <span className="hidden sm:inline">Landmarks</span>
                 </TabsTrigger>
                 <TabsTrigger value="spotlight" className="gap-2">
                   <Sparkles className="h-4 w-4" />
@@ -355,13 +317,13 @@ export default function HomeContentPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Hero Settings Tab (Single hero with video background) */}
+              {/* Hero Settings Tab (Multi-slide hero with video background) */}
               <TabsContent value="hero" className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold">Hero Section Settings</h2>
                     <p className="text-sm text-muted-foreground">
-                      Configure the main hero section with video background. Only one hero is displayed.
+                      Configure the hero section with up to 4 rotating title slides. All slides share the same video, subtitle, description, and CTA.
                     </p>
                   </div>
                 </div>
@@ -370,39 +332,71 @@ export default function HomeContentPage() {
                   <CardHeader>
                     <CardTitle className="text-base">Hero Content</CardTitle>
                     <CardDescription>
-                      This content is displayed on the home page hero section with video background.
+                      The hero auto-cycles through up to 4 title/highlight pairs on the home page.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="heroSubtitle">Subtitle</Label>
-                        <Input
-                          id="heroSubtitle"
-                          value={heroFormData.subtitle ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
-                          placeholder="Bocaue, Bulacan"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="heroHighlight">Highlight Text (optional)</Label>
-                        <Input
-                          id="heroHighlight"
-                          value={heroFormData.highlight ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, highlight: e.target.value })}
-                          placeholder="Town Wonders"
-                        />
-                      </div>
-                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="heroTitle">Main Title</Label>
+                      <Label htmlFor="heroSubtitle">Subtitle</Label>
                       <Input
-                        id="heroTitle"
-                        value={heroFormData.title ?? ""}
-                        onChange={(e) => setHeroFormData({ ...heroFormData, title: e.target.value })}
-                        placeholder="Explore The River"
+                        id="heroSubtitle"
+                        value={heroFormData.subtitle ?? ""}
+                        onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
+                        placeholder="Bocaue, Bulacan"
                       />
+                      <p className="text-xs text-muted-foreground">Shared across all slides (appears above the title)</p>
                     </div>
+
+                    {/* 4 Title/Highlight Slots */}
+                    <div className="space-y-3">
+                      <Label>Hero Slides (up to 4)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Each slide has a main title and an optional highlighted word. Leave a slot empty to skip it.
+                      </p>
+                      {(heroFormData.titles ?? [{title:"",highlight:""},{title:"",highlight:""},{title:"",highlight:""},{title:"",highlight:""}]).map((pair, idx) => (
+                        <Card key={idx} className={`border ${pair.title ? "border-primary/30 bg-primary/5" : "border-dashed"}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant={pair.title ? "default" : "outline"} className="text-xs">
+                                Slide {idx + 1}
+                              </Badge>
+                              {!pair.title && (
+                                <span className="text-xs text-muted-foreground">(empty — will be skipped)</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label htmlFor={`heroTitle${idx}`} className="text-xs">Main Title</Label>
+                                <Input
+                                  id={`heroTitle${idx}`}
+                                  value={pair.title}
+                                  onChange={(e) => {
+                                    const newTitles = [...(heroFormData.titles ?? [])]
+                                    newTitles[idx] = { ...newTitles[idx], title: e.target.value }
+                                    setHeroFormData({ ...heroFormData, titles: newTitles })
+                                  }}
+                                  placeholder={idx === 0 ? "Explore The River" : `Slide ${idx + 1} title...`}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label htmlFor={`heroHighlight${idx}`} className="text-xs">Highlight Text</Label>
+                                <Input
+                                  id={`heroHighlight${idx}`}
+                                  value={pair.highlight}
+                                  onChange={(e) => {
+                                    const newTitles = [...(heroFormData.titles ?? [])]
+                                    newTitles[idx] = { ...newTitles[idx], highlight: e.target.value }
+                                    setHeroFormData({ ...heroFormData, titles: newTitles })
+                                  }}
+                                  placeholder={idx === 0 ? "Town Wonders" : "Highlighted word..."}
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="heroDescription">Description</Label>
                       <Textarea
@@ -412,6 +406,7 @@ export default function HomeContentPage() {
                         placeholder="Where rich heritage meets vibrant culture..."
                         rows={3}
                       />
+                      <p className="text-xs text-muted-foreground">Shared across all slides</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -463,104 +458,6 @@ export default function HomeContentPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              {/* Featured Landmarks Tab */}
-              <TabsContent value="landmark" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Slide through Bocaue&apos;s Landmarks</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Manage the places/landmarks carousel displayed on the home page.
-                    </p>
-                  </div>
-                  <Button onClick={() => openCreateDialog("landmark")} className="gap-2">
-                    <Plus className="h-4 w-4" /> Add Landmark
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {landmarks.length === 0 ? (
-                    <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center py-10">
-                        <Map className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No featured landmarks yet.</p>
-                        <Button variant="outline" size="sm" className="mt-4" onClick={() => openCreateDialog("landmark")}>
-                          Add First Landmark
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    landmarks.map((land, index) => (
-                      <Card key={land.featuredId} className={`transition-opacity ${!land.isActive ? "opacity-60" : ""}`}>
-                        <CardContent className="flex items-center gap-4 p-4">
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              disabled={index === 0}
-                              onClick={() => moveItem("landmark", index, "up")}
-                            >
-                              <ChevronUp className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              disabled={index === landmarks.length - 1}
-                              onClick={() => moveItem("landmark", index, "down")}
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="h-16 w-24 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                            {land.image && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={land.image} alt={land.title} className="h-full w-full object-cover" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold truncate">{land.title}</h3>
-                              {land.category && (
-                                <Badge variant="secondary" className="text-xs capitalize">{land.category}</Badge>
-                              )}
-                              {!land.isActive && (
-                                <Badge variant="outline" className="text-xs">Hidden</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1">{land.description}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleActive("landmark", land.featuredId, land.isActive ?? true)}
-                            >
-                              {land.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog("landmark", land)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ type: "landmark", id: land.featuredId })}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
               </TabsContent>
 
               {/* Spotlight Tab */}
@@ -754,7 +651,6 @@ export default function HomeContentPage() {
               {editingItem ? "Edit" : "Create"}{" "}
               {dialogType === "spotlight" && "Spotlight"}
               {dialogType === "milestone" && "Milestone"}
-              {dialogType === "landmark" && "Featured Landmark"}
             </DialogTitle>
           </DialogHeader>
 
@@ -937,97 +833,6 @@ export default function HomeContentPage() {
               </>
             )}
 
-            {/* Landmark Form */}
-            {dialogType === "landmark" && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="contentId">Select Place from CMS</Label>
-                  <Select
-                    value={(formData.contentId as string) || ""}
-                    onValueChange={(v) => {
-                      const selectedPlace = cmsPlaces.find(p => p.id === v)
-                      setFormData({
-                        ...formData,
-                        contentId: v,
-                        title: selectedPlace?.title || "",
-                        description: selectedPlace?.body?.substring(0, 200) || "",
-                        image: selectedPlace?.image?.[0] || "",
-                        category: selectedPlace?.category || selectedPlace?.label || "",
-                      })
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a place..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cmsPlaces.length === 0 ? (
-                        <p className="p-2 text-sm text-muted-foreground">No published places found. Create places in CMS first.</p>
-                      ) : (
-                        cmsPlaces.map((place) => (
-                          <SelectItem key={place.id} value={place.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{place.title}</span>
-                              {place.category && (
-                                <Badge variant="secondary" className="text-xs">{place.category}</Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Landmarks are linked to CMS places. Data is pulled from the CMS automatically.
-                  </p>
-                </div>
-                
-                {/* Preview of selected place */}
-                {formData.contentId && (
-                  <Card className="bg-muted/50">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Selected Place Preview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        {(formData.image as string) && (
-                          <div className="h-12 w-16 rounded bg-muted overflow-hidden flex-shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={formData.image as string} alt="" className="h-full w-full object-cover" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium">{formData.title as string}</p>
-                          {(formData.category as string) && (
-                            <Badge variant="outline" className="text-xs">{formData.category as string}</Badge>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{formData.description as string}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sortOrder">Sort Order</Label>
-                    <Input
-                      id="sortOrder"
-                      type="number"
-                      value={(formData.sortOrder as number) || 0}
-                      onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 pt-8">
-                    <Switch
-                      id="isActive"
-                      checked={(formData.isActive as boolean) ?? true}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                    />
-                    <Label htmlFor="isActive">Active (visible in carousel)</Label>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
           <DialogFooter>
