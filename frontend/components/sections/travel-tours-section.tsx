@@ -27,7 +27,7 @@ const FEATURED_TOURS: TourPackage[] = [
   tourPackages[1], // Pagoda Festival Immersion
 ].filter(Boolean)
 
-export function TravelToursSection() {
+export function RestaurantsSection() {
   if (FEATURED_TOURS.length === 0) return null
 
   return (

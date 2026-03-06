@@ -13,10 +13,6 @@ const RestaurantsSection = dynamic(
   () => import("@/components/sections/restaurants-section").then((m) => m.RestaurantsSection),
   { loading: () => <SectionSkeleton /> }
 )
-const TravelToursSection = dynamic(
-  () => import("@/components/sections/travel-tours-section").then((m) => m.TravelToursSection),
-  { loading: () => <SectionSkeleton /> }
-)
 const HumanWondersSection = dynamic(
   () => import("@/components/sections/human-wonders-section").then((m) => m.HumanWondersSection),
   { loading: () => <SectionSkeleton /> }
@@ -75,19 +71,16 @@ export default function Home() {
       {/* 6. Featured Restaurants & Eateries */}
       <RestaurantsSection />
 
-      {/* 7. Travel & Tours */}
-      <TravelToursSection />
-
-      {/* 8. Places Carousel */}
+      {/* 7. Places Carousel */}
       <PlacesCarousel />
 
-      {/* 9. Featured People Wonders */}
+      {/* 8. Featured People Wonders */}
       <HumanWondersSection />
 
-      {/* 10. History & Art */}
+      {/* 9. History & Art */}
       <HistoryArtSection />
 
-      {/* 11. News */}
+      {/* 10. News */}
       <NewsSection />
     </main>
   )
