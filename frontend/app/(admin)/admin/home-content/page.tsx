@@ -202,7 +202,7 @@ export default function HomeContentPage() {
     try {
       if (dialogType === "spotlight") {
         if (editingItem) {
-          await apiUpdateSpotlight((editingItem as Spotlight).spotlightId, formData as Partial<Spotlight>)
+          await apiUpdateSpotlight((editingItem as FeaturedContent).featuredId, formData as Partial<Spotlight>)
         } else {
           await apiCreateSpotlight(formData as Partial<Spotlight>)
         }
@@ -214,7 +214,7 @@ export default function HomeContentPage() {
         }
       } else if (dialogType === "landmark") {
         if (editingItem) {
-          await apiUpdateFeaturedLandmark((editingItem as FeaturedLandmark).landmarkId, formData as Partial<FeaturedLandmark>)
+          await apiUpdateFeaturedLandmark((editingItem as FeaturedContent).featuredId, formData as Partial<FeaturedLandmark>)
         } else {
           await apiCreateFeaturedLandmark(formData as Partial<FeaturedLandmark>)
         }
@@ -278,7 +278,7 @@ export default function HomeContentPage() {
       const swapIndex = direction === "up" ? index - 1 : index + 1
       if (swapIndex < 0 || swapIndex >= newLandmarks.length) return
       [newLandmarks[index], newLandmarks[swapIndex]] = [newLandmarks[swapIndex], newLandmarks[index]]
-      const order = newLandmarks.map(l => l.landmarkId)
+      const order = newLandmarks.map(l => l.featuredId)
       try {
         await apiReorderFeaturedLandmarks(order)
         loadAllContent()
@@ -492,7 +492,7 @@ export default function HomeContentPage() {
                     </Card>
                   ) : (
                     landmarks.map((land, index) => (
-                      <Card key={land.landmarkId} className={`transition-opacity ${!land.isActive ? "opacity-60" : ""}`}>
+                      <Card key={land.featuredId} className={`transition-opacity ${!land.isActive ? "opacity-60" : ""}`}>
                         <CardContent className="flex items-center gap-4 p-4">
                           <div className="flex flex-col gap-1">
                             <Button
@@ -536,7 +536,7 @@ export default function HomeContentPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => toggleActive("landmark", land.landmarkId, land.isActive ?? true)}
+                              onClick={() => toggleActive("landmark", land.featuredId, land.isActive ?? true)}
                             >
                               {land.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                             </Button>
@@ -551,7 +551,7 @@ export default function HomeContentPage() {
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ type: "landmark", id: land.landmarkId })}
+                              onClick={() => setDeleteTarget({ type: "landmark", id: land.featuredId })}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -603,7 +603,7 @@ export default function HomeContentPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => toggleActive("spotlight", spot.spotlightId, spot.isActive ?? false)}
+                                onClick={() => toggleActive("spotlight", spot.featuredId, spot.isActive ?? false)}
                                 title={spot.isActive ? "Deactivate" : "Set as active"}
                               >
                                 {spot.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -619,7 +619,7 @@ export default function HomeContentPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.spotlightId })}
+                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.featuredId })}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

@@ -220,6 +220,7 @@ export default function InquirePage() {
         email,
         contactNumber: contactNumber || undefined,
         inquiryType: purposeToType[purpose] || "general_contact",
+        purpose: purpose || undefined,
         dateOfVisit,
         numberOfPax: paxValue || undefined,
         message: (formData.get("message") as string) || "",
@@ -464,18 +465,21 @@ export default function InquirePage() {
                           <p className="text-[11px] text-muted-foreground">Maximum of 20 people per inquiry</p>
                         </div>
 
-                        {/* Inquiry Category */}
+                        {/* Purpose of Visit */}
                         <div className="space-y-1.5">
                           <Label className="text-sm font-semibold text-foreground">
-                            Inquiry Category <span className="text-destructive">*</span>
+                            Purpose of Visit <span className="text-destructive">*</span>
                           </Label>
                           <Select value={purpose} onValueChange={setPurpose} required>
                             <SelectTrigger className="w-full rounded-xl">
-                              <SelectValue placeholder="Select category" />
+                              <SelectValue placeholder="Select purpose" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="student">Student</SelectItem>
-                              <SelectItem value="tourist">Tourist</SelectItem>
+                              <SelectItem value="leisure">Leisure</SelectItem>
+                              <SelectItem value="pilgrimage">Pilgrimage</SelectItem>
+                              <SelectItem value="educational">Educational</SelectItem>
+                              <SelectItem value="event">Event</SelectItem>
+                              <SelectItem value="official">Official Business</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

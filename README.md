@@ -23,9 +23,12 @@ A full-stack web application for the Municipality of Bocaue, Bulacan, Philippine
 │   └── lib/           # API client (api.ts), utilities, data, mappers
 │
 ├── backend/my-php-backend/
-│   ├── api/           # REST endpoints (auth, posts, inquiries, etc.)
+│   ├── index.php      # Central router (single entry point for all API requests)
+│   ├── .htaccess      # Apache mod_rewrite → index.php
+│   ├── routes/        # Route handlers (auth, posts, inquiries, media, etc.)
+│   ├── api/           # Legacy endpoints (fallback only)
 │   ├── config/        # Database connection
-│   ├── core/          # Response helpers, security
+│   ├── core/          # Response helpers (CORS, JSON), security
 │   ├── database/      # SQL schema & seed
 │   ├── models/        # PHP data models (Post, Inquiry, Settings, etc.)
 │   └── uploads/       # User-uploaded media (images, videos)
@@ -62,6 +65,77 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 ---
 
 ## Changelog
+
+### March 6, 2026 — Inquiry Form Fix & Admin Key Prop Fix
+
+#### 1. Inquiry Form: "Inquiry Category" → "Purpose of Visit"
+
+Updated the tourist-facing inquiry form (`/inquire`) to better reflect its purpose:
+
+| Before | After |
+|--------|-------|
+| Label: "Inquiry Category" | Label: **"Purpose of Visit"** |
+| Options: Student, Tourist | Options: **Leisure, Pilgrimage, Educational, Event, Official Business** |
+| Placeholder: "Select category" | Placeholder: **"Select purpose"** |
+
+The `purpose` field is now sent directly in the API payload alongside `inquiryType`. Backend already accepted both fields.
+
+#### 2. Admin Home Content — Key Prop & Deprecated ID Fix
+
+Fixed React "Each child in a list should have a unique key prop" warning in the admin Home Content page (`/admin/home-content`). The root cause was using deprecated type fields (`landmarkId`, `spotlightId`) that returned `undefined` from the API — the unified `featured_content` table uses `featuredId`.
+
+**8 replacements applied:**
+
+| Location | Before | After |
+|----------|--------|-------|
+| Landmark card key | `key={land.landmarkId}` | `key={land.featuredId}` |
+| Landmark toggle/delete | `land.landmarkId` | `land.featuredId` |
+| Spotlight toggle/delete | `spot.spotlightId` | `spot.featuredId` |
+| handleSave casts | `(editingItem as Spotlight).spotlightId` | `(editingItem as FeaturedContent).featuredId` |
+| handleSave casts | `(editingItem as FeaturedLandmark).landmarkId` | `(editingItem as FeaturedContent).featuredId` |
+| Reorder mapping | `l.landmarkId` | `l.featuredId` |
+
+---
+
+### March 5, 2026 — Full REST API Rewrite (Central Router)
+
+Replaced all legacy `api/{resource}/{action}.php` endpoints with a **single-entry-point central router** (`index.php`) that dispatches to 10 resource handler files.
+
+#### Architecture
+
+```
+Browser → GET /api/posts?type=news
+       → index.php (central router)
+       → routes/posts.php → handle_posts($method, $id, $sub)
+       → MySQL query → JSON response
+```
+
+- **`index.php`** — Parses URI segments, loads `routes/{resource}.php`, calls `handle_{resource}()`. Handles CORS once. Falls back to legacy `api/` files for unrecognized routes.
+- **`.htaccess`** — Apache mod_rewrite sends all non-file requests to `index.php`.
+- **CLI-server support** — Detects `php -S` built-in server SAPI to skip basePath stripping.
+
+#### Route Handlers (`backend/my-php-backend/routes/`)
+
+| File | Endpoints |
+|------|-----------|
+| `auth.php` | POST `/api/auth/login` |
+| `posts.php` | GET/POST/PUT/DELETE `/api/posts/{id}` with query filters (status, label, type, limit, featured, category) |
+| `inquiries.php` | GET/POST/PUT/DELETE `/api/inquiries/{id}`, POST `/api/inquiries/{id}/reply` |
+| `media.php` | GET/POST/DELETE `/api/media` |
+| `settings.php` | GET/PUT `/api/settings` |
+| `activity.php` | GET/POST `/api/activity` |
+| `analytics.php` | GET `/api/analytics/pageviews`, `/visits`, `/top-destinations`; POST `/log-view` |
+| `destinations.php` | GET/POST `/api/destinations` |
+| `heroes.php` | GET/PUT `/api/heroes/{slug}` |
+| `home.php` | 6 sub-resources: `hero`, `hero-settings`, `spotlight`, `landmarks`, `milestones`, `culinary` |
+
+#### Frontend Migration
+
+All 61 endpoint URLs in `frontend/lib/api.ts` migrated from legacy `.php` paths to clean REST URLs. No `.php` references remain in the frontend.
+
+**Important:** Backend must be started with the router: `php -S localhost:8000 index.php` (not just `php -S localhost:8000`).
+
+---
 
 ### March 2, 2026 — Click Analytics (page_views) & Inquiry Form Validation
 
