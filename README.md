@@ -66,9 +66,56 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 
 ## Changelog
 
-### March 6, 2026 — Inquiry Form Fix & Admin Key Prop Fix
+### March 6, 2026 — Schema Reset, Nav Cleanup & Bug Fixes
 
-#### 1. Inquiry Form: "Inquiry Category" → "Purpose of Visit"
+#### 1. Database Schema Reset (schema.sql v2)
+
+Dropped and recreated `mhacto_db` from scratch using the updated `schema.sql`. All 11 tables were created with the correct structure and seed data applied.
+
+| Verified | Details |
+|----------|---------|
+| 11 tables | `users`, `config`, `category`, `content`, `content_fields`, `content_images`, `featured_content`, `inquiries`, `activity_logs`, `milestone`, `page_views` |
+| Admin user | `admin / mhacto.municipalityofbocaue@gmail.com` seeded |
+| 22 categories/labels | Full category hierarchy seeded |
+| 22 config rows | 8 general settings + 14 hero settings (4 title/highlight pairs) |
+
+**Issue fixed:** The previous database had a stale `'in_progress'` value in the `inquiries.status` ENUM that was already removed from the schema. The fresh run cleaned that up — the correct ENUM is `'unread','assigned','archived','spam','trash'`.
+
+#### 2. Bug Fix — `routes/inquiries.php` Missing `assigned` Status & `assigned_to` Field
+
+The `PUT /api/inquiries/{id}` route's `_inquiries_update()` had two gaps versus both the schema and the legacy `api/inquiries/update.php`:
+
+| Issue | Fix |
+|-------|-----|
+| `'assigned'` status was not in the allowed list | Added `'assigned'` to the `$allowed` array |
+| `assigned_to` field was never passed through | Added `assigned_to` to the payload |
+
+This means admins can now properly assign inquiries to tourist guides via the REST route.
+
+#### 3. "Arts & Livelihood" Removed — Replaced with "Local Businesses"
+
+**Navbar change** (`components/layout/navbar.tsx`):
+
+| Before | After |
+|--------|-------|
+| "Arts & Livelihood" nested dropdown under Community (with "Local Business" child) | Flat **"Local Businesses"** link directly under Community → `/community/local-business` |
+
+**Files deleted:**
+- `app/(site)/arts-livelihood/page.tsx`
+- `app/(site)/arts-livelihood/local-business/page.tsx`
+- `app/(site)/arts-livelihood/crafts-artisans/page.tsx`
+
+**File created:**
+- `app/(site)/community/local-business/page.tsx` — same Local Business content moved under Community, `fallbackLabel` updated from "Arts & Livelihood" → "Community"
+
+**Search index updated** (`lib/search-index.ts`):
+- Removed `page-arts-livelihood` page entry
+- Updated `page-local-business` href: `/arts-livelihood/local-business` → `/community/local-business`
+- Updated all business search item hrefs to `/community/local-business`
+
+---
+
+#### 4. Inquiry Form: "Inquiry Category" → "Purpose of Visit"
 
 Updated the tourist-facing inquiry form (`/inquire`) to better reflect its purpose:
 
@@ -80,7 +127,7 @@ Updated the tourist-facing inquiry form (`/inquire`) to better reflect its purpo
 
 The `purpose` field is now sent directly in the API payload alongside `inquiryType`. Backend already accepted both fields.
 
-#### 2. Admin Home Content — Key Prop & Deprecated ID Fix
+#### 5. Admin Home Content — Key Prop & Deprecated ID Fix
 
 Fixed React "Each child in a list should have a unique key prop" warning in the admin Home Content page (`/admin/home-content`). The root cause was using deprecated type fields (`landmarkId`, `spotlightId`) that returned `undefined` from the API — the unified `featured_content` table uses `featuredId`.
 
@@ -334,7 +381,7 @@ Added "Want a custom tour?" CTA block linking to `/inquire`.
 | Crafts & Artisan | `/culture/crafts-artisan` | ✅ Complete |
 | People Wonders | `/culture/people-wonders` | ✅ Complete |
 | Tourism Wonders | `/places/tourism-wonders` | ✅ Complete |
-| Local Business | `/arts-livelihood/local-business` | ✅ Complete |
+| Local Businesses | `/community/local-business` | ✅ Complete |
 | Hospitals | `/community/hospitals` | ✅ Complete |
 | Schools | `/community/schools` | ✅ Complete |
 | Inquire | `/inquire` | ✅ Complete |
@@ -429,7 +476,7 @@ Renamed vague/abbreviated identifiers to be descriptive and intent-revealing acr
 - `app/(site)/events/page.tsx`
 - `app/(site)/places/page.tsx`
 - `app/(site)/places/[id]/place-details-client.tsx`
-- `app/(site)/arts-livelihood/page.tsx`
+- `app/(site)/community/local-business/page.tsx`
 - `app/(site)/travel-tours/page.tsx`
 - `app/(site)/culture/page.tsx`
 - `app/(site)/culture/practices-traditions/page.tsx`
