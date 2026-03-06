@@ -1,127 +1,120 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, UtensilsCrossed } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Landmark, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { asset } from "@/lib/utils"
-import { apiFetchCulinaryItems, type CulinaryItem } from "@/lib/api"
+import {
+  notablePersons,
+  personCategoryLabels,
+  type NotablePerson,
+} from "@/lib/data/history-data"
 
-// No hardcoded fallback — culinary items come from backend
+const categoryBadge: Record<NotablePerson["category"], string> = {
+  "national-hero": "bg-red-100 text-red-800 border-red-200",
+  arts:            "bg-purple-100 text-purple-800 border-purple-200",
+  religion:        "bg-blue-100 text-blue-800 border-blue-200",
+  government:      "bg-amber-100 text-amber-800 border-amber-200",
+  education:       "bg-sky-100 text-sky-800 border-sky-200",
+  sports:          "bg-green-100 text-green-800 border-green-200",
+}
 
-/** Maximum culinary cards shown on the homepage */
-const MAX_CULINARY_DISPLAY = 4
+/**
+ * Two featured notable figures — auto-selected.
+ * Change these indices to pick different ones.
+ */
+const FEATURED_FIGURES: NotablePerson[] = [
+  notablePersons[0], // Gen. Proceso Into
+  notablePersons[1], // Jose Corazon de Jesus
+].filter(Boolean)
 
 export function CulinarySection() {
-  const [allDelicacies, setAllDelicacies] = useState<CulinaryItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Sends GET /api/home/culinary.php → PHP runs SQL SELECT on content (label='local-cuisine') → returns JSON
-  useEffect(() => {
-    apiFetchCulinaryItems()
-      .then((items) => {
-        if (items && items.length > 0) {
-          setAllDelicacies(items)
-        }
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [])
-
-  // Limit to MAX_CULINARY_DISPLAY items for the homepage preview
-  const displayedDelicacies = allDelicacies.slice(0, MAX_CULINARY_DISPLAY)
-
-  // Don't render if no content loaded yet after API call
-  if (!isLoading && displayedDelicacies.length === 0) return null
+  if (FEATURED_FIGURES.length === 0) return null
 
   return (
     <section
-      id="cuisine"
+      id="notable-figures"
       className="relative z-20 bg-muted/40 py-16 sm:py-24 lg:py-32"
     >
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* Heading */}
         <div className="mb-10 sm:mb-14 text-center reveal-on-scroll">
           <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
-            <UtensilsCrossed className="h-4 w-4" />
-            Taste of Bocaue
+            <Landmark className="h-4 w-4" />
+            History of Bocaue
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            Featured Culinary Delicacies
+            Notable Figures
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
-            From legendary crispy chicharon to generations-old kakanin, Bocaue's flavours
-            tell a story of culture, craft, and community.
+            Meet the remarkable individuals who shaped Bocaue&apos;s identity — from revolutionary heroes to literary icons.
           </p>
         </div>
 
-        {/* Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {displayedDelicacies.map((item, cardIndex) => {
-            const imageUrl = item.image 
-              ? (item.image.startsWith('/images') ? asset(item.image) : item.image)
-              : asset("/images/places/local-delicacies.jpg")
-            
+        {/* Cards — 2 items */}
+        <div className="grid gap-6 sm:grid-cols-2 items-start">
+          {FEATURED_FIGURES.map((person, idx) => {
+            const imageUrl = person.image ?? asset("/images/placeholder-user.jpg")
+
             return (
-              <div
-                key={item.itemId}
-                className={`group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(cardIndex + 1) * 100}`}
+              <Link
+                key={person.id}
+                href="/history/notable-persons"
+                className={`group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(idx + 1) * 100}`}
               >
                 {/* Image */}
                 <div className="relative h-52 w-full overflow-hidden">
                   <Image
                     src={imageUrl}
-                    alt={item.title}
+                    alt={person.name}
                     fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 100vw, 50vw"
                     loading="lazy"
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                   <div className="absolute top-3 left-3">
                     <Badge
-                      variant="secondary"
-                      className="bg-primary/90 text-primary-foreground border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm"
+                      variant="outline"
+                      className={`text-[10px] border backdrop-blur-sm ${categoryBadge[person.category]}`}
                     >
-                      {item.tag}
+                      {personCategoryLabels[person.category]}
                     </Badge>
+                  </div>
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <p className="text-base font-black text-white leading-snug drop-shadow-md">
+                      {person.name}
+                    </p>
+                    <p className="text-xs text-white/80 mt-0.5">{person.title}</p>
                   </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">
-                    {item.description}
+                  <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                    {person.description}
                   </p>
-                  <Link
-                    href="/culture/local-cuisine"
-                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary"
-                  >
-                    Explore Cuisine
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    Learn More
                     <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                  </Link>
+                  </span>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
 
-        {/* CTA - Show only if there are items */}
-        {allDelicacies.length > 0 && (
-          <div className="mt-10 text-center reveal-on-scroll delay-300">
-            <Button asChild variant="outline" size="lg" className="rounded-full gap-2">
-              <Link href="/culture/local-cuisine">
-                Discover All Delicacies
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
+        {/* CTA */}
+        <div className="mt-10 text-center reveal-on-scroll delay-300">
+          <Link
+            href="/history/notable-persons"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+          >
+            View All Notable Figures
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     </section>
   )
