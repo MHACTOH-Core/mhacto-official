@@ -38,6 +38,11 @@ const restaurantTypeBadge: Record<Restaurant["type"], string> = {
   bakery: "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300",
 }
 
+const priceLabel: Record<string, string> = {
+  "\u20b1": "Budget-friendly",
+  "\u20b1\u20b1": "Mid-range",
+  "\u20b1\u20b1\u20b1": "Premium",
+}
 
 // ── type helpers ────────────────────────────────────────────────────
 const typeLabels: Record<CuisineItem["type"], string> = {
@@ -78,7 +83,6 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
       {/* Image */}
       <GalleryImage
         src={item.image}
-        gallery={item.gallery}
         alt={item.name}
         className={`relative overflow-hidden ${featured ? "h-72 sm:h-80" : "h-52"}`}
         imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -142,6 +146,13 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
             <p className="text-sm text-foreground leading-relaxed">{item.story}</p>
           </div>
         )}
+
+        <Link
+          href={`/culture/local-cuisine/${item.id}`}
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+        >
+          View full story <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
       </CardContent>
     </Card>
   )
@@ -274,7 +285,6 @@ export default function LocalCuisinePage() {
                             {/* Cinematic image */}
                             <GalleryImage
                               src={item.image}
-                              gallery={item.gallery}
                               alt={item.name}
                               outerClassName="shrink-0"
                               className="relative h-56 sm:h-72 md:h-80 overflow-hidden"
@@ -401,7 +411,7 @@ export default function LocalCuisinePage() {
           {filtered.length === 0 ? (
             <p className="text-muted-foreground text-center py-16">No dishes in this category.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {(activeType === "all" ? rest : filtered).map((item) => (
                 <CuisineCard key={item.id} item={item} />
               ))}
@@ -423,82 +433,132 @@ export default function LocalCuisinePage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start mt-8">
-            {restaurantList.map((place) => (
-              <div
+          <div className="space-y-8 mt-8">
+            {restaurantList.map((place, idx) => (
+              <Card
                 key={place.id}
-                className="group rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300 flex flex-col"
+                className="relative overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 group"
               >
-                {/* Image */}
-                <GalleryImage
-                  src={place.image ?? "/images/places/Food.jpg"}
-                  alt={place.name}
-                  className="relative h-44 overflow-hidden"
-                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={`text-xs border backdrop-blur-sm ${restaurantTypeBadge[place.type]}`}
+                <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
+                  {idx % 2 === 0 && (
+                    <GalleryImage
+                      src={place.image ?? "/images/places/Food.jpg"}
+                      alt={place.name}
+                      outerClassName="h-full"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                      imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, 40vw"
                     >
-                      {restaurantTypeLabel[place.type]}
-                    </Badge>
-                  </div>
-                  {place.isOpen && (
-                    <div className="absolute top-3 right-3">
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
-                        Open
-                      </span>
-                    </div>
-                  )}
-                </GalleryImage>
-
-                {/* Content */}
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="text-base font-black text-card-foreground group-hover:text-primary transition-colors leading-snug mb-1">
-                    {place.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">
-                    {place.description}
-                  </p>
-
-                  {/* Specialties */}
-                  <div className="mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                      <Star className="h-3 w-3 text-amber-500" /> Specialties
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {place.specialties.slice(0, 3).map((s) => (
-                        <span key={s} className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-foreground border border-border">
-                          {s}
-                        </span>
-                      ))}
-                      {place.specialties.length > 3 && (
-                        <span className="text-[11px] bg-muted rounded-full px-2 py-0.5 text-muted-foreground border border-border">
-                          +{place.specialties.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Location & Hours */}
-                  <div className="border-t border-border pt-3 space-y-1.5">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-foreground">{place.location}</p>
-                    </div>
-                    {place.hours && (
-                      <div className="flex items-start gap-2">
-                        <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-foreground">{place.hours}</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        <Badge variant="outline" className={`text-xs border backdrop-blur-sm ${restaurantTypeBadge[place.type]}`}>
+                          {restaurantTypeLabel[place.type]}
+                        </Badge>
+                        {place.priceRange && (
+                          <span className="text-[11px] font-bold text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                            {place.priceRange}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {place.isOpen && (
+                        <div className="absolute top-3 right-3">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
+                            Open
+                          </span>
+                        </div>
+                      )}
+                    </GalleryImage>
+                  )}
+
+                  <CardContent className="p-6 sm:p-8 flex flex-col justify-between h-full">
+                    <div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" className={`text-xs border ${restaurantTypeBadge[place.type]}`}>
+                          {restaurantTypeLabel[place.type]}
+                        </Badge>
+                        {place.priceRange && (
+                          <Badge variant="outline" className="text-xs">
+                            {place.priceRange} · {priceLabel[place.priceRange]}
+                          </Badge>
+                        )}
+                        {place.isOpen && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                            Open
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2 group-hover:text-primary transition-colors">
+                        {place.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">
+                        {place.description}
+                      </p>
+                      <div className="mb-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                          <Star className="h-3 w-3 text-amber-500" /> Specialties
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {place.specialties.slice(0, 4).map((s) => (
+                            <span key={s} className="text-[11px] bg-muted rounded-full px-2.5 py-0.5 text-foreground border border-border">
+                              {s}
+                            </span>
+                          ))}
+                          {place.specialties.length > 4 && (
+                            <span className="text-[11px] bg-muted rounded-full px-2.5 py-0.5 text-muted-foreground border border-border">
+                              +{place.specialties.length - 4} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-start gap-2 text-xs text-foreground">
+                          <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                          {place.location}
+                        </div>
+                        {place.hours && (
+                          <div className="flex items-start gap-2 text-xs text-foreground">
+                            <Clock className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            {place.hours}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+
+                  {idx % 2 !== 0 && (
+                    <GalleryImage
+                      src={place.image ?? "/images/places/Food.jpg"}
+                      alt={place.name}
+                      outerClassName="h-full order-first md:order-last"
+                      className="relative flex-1 overflow-hidden min-h-[260px]"
+                      imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, 40vw"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <Badge variant="outline" className={`text-xs border backdrop-blur-sm ${restaurantTypeBadge[place.type]}`}>
+                          {restaurantTypeLabel[place.type]}
+                        </Badge>
+                        {place.priceRange && (
+                          <span className="text-[11px] font-bold text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                            {place.priceRange}
+                          </span>
+                        )}
+                      </div>
+                      {place.isOpen && (
+                        <div className="absolute top-3 left-3">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
+                            Open
+                          </span>
+                        </div>
+                      )}
+                    </GalleryImage>
+                  )}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -539,7 +599,7 @@ export default function LocalCuisinePage() {
       <section className="py-10 bg-primary/5 border-t border-primary/10">
         <div className="mx-auto max-w-7xl px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
-            <h3 className="text-lg font-black text-foreground">Ready to taste Bocaue?</h3>
+            <h3 className="text-lg font-black text-foreground">Ready to taste the Wonders of Bocaue?</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Visit the Bocaue Public Market, MacArthur Highway stalls, or the churchyard bazaar during fiesta season.
             </p>

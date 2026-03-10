@@ -37,6 +37,7 @@ import {
   Search,
   ArrowLeft,
   MailOpen,
+  UserCheck,
   Mail,
   Clock,
   Trash2,
@@ -52,20 +53,18 @@ import {
   RotateCcw,
   Send,
   X,
-  UserCheck,
-  UserX,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { apiReplyInquiry } from "@/lib/api"
 
-type MailboxTab = "all" | "unread" | "read" | "assigned" | "archived" | "spam" | "trash"
+type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all",         label: "All Mail",    icon: Inbox },
   { key: "unread",      label: "Unread",      icon: Mail },
-  { key: "read",        label: "Read",        icon: MailOpen },
+  { key: "in_progress", label: "In Progress", icon: Loader2 },
   { key: "assigned",    label: "Assigned",    icon: UserCheck },
   { key: "archived",    label: "Archived",    icon: Archive },
   { key: "spam",        label: "Spam",        icon: ShieldAlert },
@@ -81,11 +80,13 @@ export default function InquiriesPage() {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
+  // Assign dialog
+  const [assignTarget, setAssignTarget] = useState<Inquiry | null>(null)
+  const [assignGuideName, setAssignGuideName] = useState("")
   // Reply composer
   const [replyText, setReplyText] = useState("")
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [showReplyBox, setShowReplyBox] = useState(false)
-  const [isAssigning, setIsAssigning] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -103,8 +104,8 @@ export default function InquiriesPage() {
       case "unread":
         list = inquiries.filter((i) => i.status === "unread")
         break
-      case "read":
-        list = inquiries.filter((i) => i.status === "read")
+      case "in_progress":
+        list = inquiries.filter((i) => i.status === "in_progress")
         break
       case "assigned":
         list = inquiries.filter((i) => i.status === "assigned")
@@ -138,7 +139,7 @@ export default function InquiriesPage() {
   const tabCounts: Record<MailboxTab, number> = {
     all:         inquiries.filter((i) => i.status !== "spam" && i.status !== "trash").length,
     unread:      inquiries.filter((i) => i.status === "unread").length,
-    read:        inquiries.filter((i) => i.status === "read").length,
+    in_progress: inquiries.filter((i) => i.status === "in_progress").length,
     assigned:    inquiries.filter((i) => i.status === "assigned").length,
     archived:    inquiries.filter((i) => i.status === "archived").length,
     spam:        inquiries.filter((i) => i.status === "spam").length,
@@ -147,15 +148,14 @@ export default function InquiriesPage() {
 
   const unreadCount = tabCounts.unread
 
-  // Open inquiry — reset reply composer and auto-mark as read
+  // Open inquiry — mark as in_progress if unread; reset reply composer
   const openInquiry = (inq: Inquiry) => {
     setShowReplyBox(false)
     setReplyText("")
-    // Auto-mark unread → read when clicking
     if (inq.status === "unread") {
-      updateInquiry(inq.id, { status: "read" })
-      const updated = { ...inq, status: "read" as const }
+      const updated = { ...inq, status: "in_progress" as InquiryStatus }
       setSelectedInquiry(updated)
+      updateInquiry(inq.id, { status: "in_progress" })
     } else {
       setSelectedInquiry(inq)
     }
@@ -197,6 +197,11 @@ export default function InquiriesPage() {
 
   const bulkArchive = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "archived" }))
+    setSelectedIds(new Set())
+  }
+
+  const bulkAssign = () => {
+    selectedIds.forEach((id) => updateInquiry(id, { status: "assigned" }))
     setSelectedIds(new Set())
   }
 
@@ -272,6 +277,16 @@ export default function InquiriesPage() {
     handleStatusChange(inq, "unread")
   }
 
+  const confirmAssign = () => {
+    if (!assignTarget) return
+    updateInquiry(assignTarget.id, { status: "assigned" })
+    if (selectedInquiry?.id === assignTarget.id) {
+      setSelectedInquiry({ ...assignTarget, status: "assigned" })
+    }
+    setAssignTarget(null)
+    setAssignGuideName("")
+  }
+
   const handleSendReply = async (openEmail: boolean) => {
     if (!selectedInquiry || !replyText.trim()) return
     setIsSendingReply(true)
@@ -298,47 +313,16 @@ export default function InquiriesPage() {
     }
   }
 
-  // ── Assign Tourist Guide ───────────────────────────────────────
-
-  const handleAssignTouristGuide = async (inq: Inquiry) => {
-    setIsAssigning(true)
-    try {
-      // Just update status — the provider handles both optimistic UI + API call
-      updateInquiry(inq.id, { status: "assigned" })
-      if (selectedInquiry?.id === inq.id) {
-        setSelectedInquiry({ ...inq, status: "assigned" })
-      }
-    } catch (err) {
-      console.error("Assign tourist guide error:", err)
-    } finally {
-      setIsAssigning(false)
-    }
-  }
-
-  const handleUnassignTouristGuide = async (inq: Inquiry) => {
-    setIsAssigning(true)
-    try {
-      updateInquiry(inq.id, { status: "read" })
-      if (selectedInquiry?.id === inq.id) {
-        setSelectedInquiry({ ...inq, status: "read", assignedTo: null })
-      }
-    } catch (err) {
-      console.error("Unassign tourist guide error:", err)
-    } finally {
-      setIsAssigning(false)
-    }
-  }
-
   // ── Empty‑state messages ───────────────────────────────────────
 
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
-    all:         { icon: Inbox,       title: "No inquiries yet",          desc: "New inquiries will appear here." },
-    unread:      { icon: Mail,        title: "All caught up!",            desc: "No unread inquiries." },
-    read:        { icon: MailOpen,    title: "No read inquiries",         desc: "Inquiries you've opened will appear here." },
-    assigned:    { icon: UserCheck,   title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide will show here." },
-    archived:    { icon: Archive,     title: "Archive is empty",          desc: "Archived inquiries will show here." },
+    all:         { icon: Inbox,      title: "No inquiries yet",          desc: "New inquiries will appear here." },
+    unread:      { icon: Mail,       title: "All caught up!",            desc: "No unread inquiries." },
+    in_progress: { icon: Loader2,    title: "Nothing in progress",       desc: "Inquiries being worked on appear here." },
+    assigned:    { icon: UserCheck,  title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide appear here." },
+    archived:    { icon: Archive,    title: "Archive is empty",          desc: "Archived inquiries will show here." },
     spam:        { icon: ShieldAlert, title: "No spam",                  desc: "Inquiries marked as spam appear here." },
-    trash:       { icon: Trash2,      title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
+    trash:       { icon: Trash2,     title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
   }
 
   return (
@@ -422,6 +406,9 @@ export default function InquiriesPage() {
                 <span className="text-xs font-medium text-muted-foreground">
                   {selectedIds.size} selected
                 </span>
+                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkAssign}>
+                  <UserCheck className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Assign</span>
+                </Button>
                 <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkArchive}>
                   <Archive className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Archive</span>
                 </Button>
@@ -610,41 +597,17 @@ export default function InquiriesPage() {
                   {/* Action buttons */}
                   <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 
-                    {/* Assign / Unassign Tourist Guide */}
-                    {selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
-                      selectedInquiry.status !== "assigned" ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950"
-                              disabled={isAssigning}
-                              onClick={() => handleAssignTouristGuide(selectedInquiry)}
-                            >
-                              {isAssigning ? <Loader2 className="h-3 sm:h-3.5 w-3 sm:w-3.5 animate-spin" /> : <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />}
-                              <span className="hidden sm:inline">Assign Guide</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Assign a tourist guide to this inquiry</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-950"
-                              disabled={isAssigning}
-                              onClick={() => handleUnassignTouristGuide(selectedInquiry)}
-                            >
-                              {isAssigning ? <Loader2 className="h-3 sm:h-3.5 w-3 sm:w-3.5 animate-spin" /> : <UserX className="h-3 sm:h-3.5 w-3 sm:w-3.5" />}
-                              <span className="hidden sm:inline">Unassign</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Remove tourist guide assignment</TooltipContent>
-                        </Tooltip>
-                      )
+                    {/* Assign button — not shown when in trash/spam */}
+                    {selectedInquiry.status !== "assigned" && selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName("") }}>
+                            <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                            <span className="hidden sm:inline">Assign</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Assign to a tourist guide</TooltipContent>
+                      </Tooltip>
                     )}
 
                     {/* Restore (only in trash) */}
@@ -769,33 +732,6 @@ export default function InquiriesPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Assigned to Tourist Guide banner */}
-                  {selectedInquiry.status === "assigned" && (
-                    <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-950/40">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50 shrink-0">
-                        <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                          Tourist Guide Assigned
-                        </p>
-                        <p className="text-xs text-green-600 dark:text-green-400">
-                          This inquiry has been assigned to a tourist guide for handling.
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="shrink-0 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
-                        disabled={isAssigning}
-                        onClick={() => handleUnassignTouristGuide(selectedInquiry)}
-                      >
-                        {isAssigning ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <UserX className="h-3.5 w-3.5 mr-1" />}
-                        Unassign
-                      </Button>
-                    </div>
-                  )}
-
                   {/* Visit info — real columns */}
                   {(selectedInquiry.dateOfVisit || selectedInquiry.numberOfPax != null) && (
                     <Card className="border-dashed">
@@ -867,6 +803,21 @@ export default function InquiriesPage() {
                       </p>
                     </CardContent>
                   </Card>
+
+                  {/* Assigned guide info */}
+                  {selectedInquiry.status === "assigned" && selectedInquiry.assignedTo && (
+                    <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                      <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
+                          <UserCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Assigned to Tourist Guide</p>
+                          <p className="text-sm font-semibold text-card-foreground">{selectedInquiry.assignedTo}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Existing reply thread */}
                   {selectedInquiry.replyText && (
@@ -956,6 +907,27 @@ export default function InquiriesPage() {
               </>
             )}
           </div>
+
+          {/* ─── Assign Dialog ────────────────────────────────── */}
+          <AlertDialog open={!!assignTarget} onOpenChange={() => { setAssignTarget(null); setAssignGuideName("") }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Mark the inquiry from &quot;{assignTarget?.name}&quot; as assigned to a tourist guide?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmAssign}
+                  className="bg-primary text-primary-foreground"
+                >
+                  Assign
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* ─── Delete Confirm ───────────────────────────────── */}
           <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

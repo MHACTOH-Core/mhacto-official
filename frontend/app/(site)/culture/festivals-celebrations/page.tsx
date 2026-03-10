@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Sparkles, Calendar, Star } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -100,6 +101,15 @@ export default function FestivalsCelebrationsPage() {
                           </li>
                         ))}
                       </ul>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-border">
+                      <Link
+                        href={`/culture/festivals-celebrations/${festival.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Read full article →
+                      </Link>
                     </div>
                   </CardContent>
                   {idx % 2 !== 0 && (

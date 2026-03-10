@@ -234,7 +234,7 @@ export default function TourismWondersPage() {
           {filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-16">No wonders found in this category.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((place) => (
                 <PlaceCard key={place.id} place={place} />
               ))}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { Map, Clock } from "lucide-react"
+import { Map, Clock, Users } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -103,6 +103,13 @@ export default function TravelToursPage() {
                       <div className="flex items-center gap-1.5 text-foreground">
                         <Clock className="h-4 w-4 text-primary" />
                         {pkg.duration}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-foreground">
+                        <Users className="h-4 w-4 text-primary" />
+                        {pkg.groupSize}
+                      </div>
+                      <div className="flex items-center gap-1.5 font-bold text-primary">
+                        {pkg.price}
                       </div>
                     </div>
 

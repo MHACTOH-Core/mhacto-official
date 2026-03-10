@@ -94,6 +94,8 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
     duration: post.hours ?? "Full Day",
     type,
     difficulty: "easy",
+    groupSize: "2–30 persons",
+    price: "Contact for pricing",
     description: post.body ?? "",
     itinerary: [],
     includes: post.highlights ?? [],
@@ -392,6 +394,8 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     : cat.includes("eatery") ? "eatery"
     : "restaurant"
 
+  const price = (post.priceRange ?? "") as Restaurant["priceRange"]
+
   return {
     id: post.id,
     name: post.title,
@@ -400,6 +404,7 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     specialties: parseList(post.story),
     location: post.location ?? "",
     hours: post.hours ?? "",
+    priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
     image: resolveImage(post, "/images/places/Food.jpg"),
     isOpen: post.isFeatured ?? true,
   }

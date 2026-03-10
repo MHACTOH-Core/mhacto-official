@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
+import Link from "next/link"
 import {
   Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
 } from "lucide-react"
@@ -136,6 +137,15 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
             </ul>
           </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-border">
+          <Link
+            href={`/culture/crafts-artisan/${artisan.id}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+          >
+            View full profile →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )

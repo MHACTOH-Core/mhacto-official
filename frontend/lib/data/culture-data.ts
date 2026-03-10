@@ -640,6 +640,7 @@ export interface Restaurant {
   specialties: string[]
   location: string
   hours?: string
+  priceRange?: "₱" | "₱₱" | "₱₱₱"
   image?: string
   isOpen?: boolean
 }
@@ -654,6 +655,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Kare-Kare with Bagoong", "Sinigang na Tilapia", "Pinakbet Bulacan", "Steamed Rice Cakes"],
     location: "Rizal Street, Bocaue Town Center",
     hours: "6:00 AM – 3:00 PM daily",
+    priceRange: "₱",
     image: asset("/images/places/Food.jpg"),
     isOpen: true,
   },
@@ -666,6 +668,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Binagoongang Bagnet", "Chicken Pastel Bulacan-style", "Heritage Pancit Bihon", "Ube Halaya Dessert Platter"],
     location: "Near St. Martin of Tours Church, Bocaue",
     hours: "10:00 AM – 9:00 PM (Tue–Sun)",
+    priceRange: "₱₱",
     image: asset("/images/places/oldtownbocaue.jpg"),
     isOpen: true,
   },
@@ -678,6 +681,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Grilled Liempo", "Chicken Inasal", "Inihaw na Isda", "Atchara & Sawsawan"],
     location: "MacArthur Highway, Bocaue",
     hours: "10:00 AM – 10:00 PM daily",
+    priceRange: "₱",
     image: asset("/images/places/Food.jpg"),
     isOpen: true,
   },
@@ -690,6 +694,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Kapeng Barako", "Puto Seko Latte", "Bibingka Cheesecake", "Palitaw Waffles"],
     location: "Bocaue Town Plaza, Bocaue",
     hours: "7:00 AM – 8:00 PM daily",
+    priceRange: "₱₱",
     image: asset("/images/places/Food.jpg"),
     isOpen: true,
   },
@@ -702,6 +707,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Puto Seko (original recipe)", "Puto Cheese", "Pan de Sal Bulacan", "Traditional Kakanin"],
     location: "Rizal Street, Bocaue Town Center",
     hours: "5:00 AM – 6:00 PM daily",
+    priceRange: "₱",
     image: asset("/images/places/Food.jpg"),
     isOpen: true,
   },
@@ -714,6 +720,7 @@ export const restaurants: Restaurant[] = [
     specialties: ["Lechon Bulacan (pre-order)", "Seafood Kare-Kare", "Festival Boodle Fight Set", "Halo-Halo Specials"],
     location: "Brgy. Batia, MacArthur Highway, Bocaue",
     hours: "10:00 AM – 10:00 PM daily",
+    priceRange: "₱₱",
     image: asset("/images/places/river-festival.jpg"),
     isOpen: true,
   },

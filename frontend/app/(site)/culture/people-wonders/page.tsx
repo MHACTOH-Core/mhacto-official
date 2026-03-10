@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { asset } from "@/lib/utils"
 import {
   Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
@@ -144,6 +145,15 @@ function PersonCard({ person }: { person: PeopleWonder }) {
             </ul>
           </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-border">
+          <Link
+            href={`/culture/people-wonders/${person.id}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+          >
+            View full profile →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )
@@ -245,7 +255,7 @@ export default function PeopleWondersPage() {
               <p className="text-sm mt-1">Check back soon as we continue to document Bocaue&apos;s remarkable people.</p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filtered.map((person) => (
                 <PersonCard key={person.id} person={person} />
               ))}

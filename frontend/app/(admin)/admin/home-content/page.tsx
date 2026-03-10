@@ -113,15 +113,10 @@ export default function HomeContentPage() {
   // Initialize hero form data when heroSettings loads
   useEffect(() => {
     if (heroSettings) {
-      // Ensure we always have exactly 4 title/highlight slots
-      const existingTitles = heroSettings.titles ?? []
-      const paddedTitles = Array.from({ length: 4 }, (_, i) => ({
-        title: existingTitles[i]?.title ?? "",
-        highlight: existingTitles[i]?.highlight ?? "",
-      }))
       setHeroFormData({
         subtitle: heroSettings.subtitle ?? "",
-        titles: paddedTitles,
+        title: heroSettings.title ?? "",
+        highlight: heroSettings.highlight ?? "",
         description: heroSettings.description ?? "",
         videoUrl: heroSettings.videoUrl ?? "",
         fallbackImage: heroSettings.fallbackImage ?? "",
@@ -131,7 +126,7 @@ export default function HomeContentPage() {
     }
   }, [heroSettings])
 
-  // Fetches ALL admin home-page content in parallel (4 HTTP requests at once):
+  // Fetches ALL admin home-page content in parallel:
   //   1. GET /api/home/hero-settings.php          → PHP: SELECT from site_settings
   //   2. GET /api/home/spotlight.php?all=1         → PHP: SELECT from featured_content WHERE section='spotlight'
   //   3. GET /api/home/milestones.php?all=1        → PHP: SELECT from milestone
@@ -152,6 +147,7 @@ export default function HomeContentPage() {
       
       // Filter CMS posts by type/category
       const events = allPosts.filter((p: CMSPost) => p.postType === "event" || p.label === "events" || p.label === "festivals")
+      
       setCmsEvents(events)
     } catch (err) {
       setError("Failed to load content. Make sure the backend is running.")
@@ -190,7 +186,7 @@ export default function HomeContentPage() {
     try {
       if (dialogType === "spotlight") {
         if (editingItem) {
-          await apiUpdateSpotlight((editingItem as FeaturedContent).featuredId, formData as Partial<Spotlight>)
+          await apiUpdateSpotlight((editingItem as Spotlight).spotlightId, formData as Partial<Spotlight>)
         } else {
           await apiCreateSpotlight(formData as Partial<Spotlight>)
         }
@@ -280,7 +276,7 @@ export default function HomeContentPage() {
                 Home Page Content
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage hero slides, featured spotlight, and heritage milestones.
+                Manage hero settings, featured spotlight, and heritage milestones.
               </p>
             </div>
           </div>
@@ -302,7 +298,7 @@ export default function HomeContentPage() {
             </div>
           ) : (
             <Tabs defaultValue="hero" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:w-auto lg:inline-grid">
                 <TabsTrigger value="hero" className="gap-2">
                   <Video className="h-4 w-4" />
                   <span className="hidden sm:inline">Hero</span>
@@ -317,13 +313,13 @@ export default function HomeContentPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Hero Settings Tab (Multi-slide hero with video background) */}
+              {/* Hero Settings Tab (Single hero with video background) */}
               <TabsContent value="hero" className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold">Hero Section Settings</h2>
                     <p className="text-sm text-muted-foreground">
-                      Configure the hero section with up to 4 rotating title slides. All slides share the same video, subtitle, description, and CTA.
+                      Configure the main hero section with video background. Only one hero is displayed.
                     </p>
                   </div>
                 </div>
@@ -332,71 +328,39 @@ export default function HomeContentPage() {
                   <CardHeader>
                     <CardTitle className="text-base">Hero Content</CardTitle>
                     <CardDescription>
-                      The hero auto-cycles through up to 4 title/highlight pairs on the home page.
+                      This content is displayed on the home page hero section with video background.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="heroSubtitle">Subtitle</Label>
+                        <Input
+                          id="heroSubtitle"
+                          value={heroFormData.subtitle ?? ""}
+                          onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
+                          placeholder="Bocaue, Bulacan"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="heroHighlight">Highlight Text (optional)</Label>
+                        <Input
+                          id="heroHighlight"
+                          value={heroFormData.highlight ?? ""}
+                          onChange={(e) => setHeroFormData({ ...heroFormData, highlight: e.target.value })}
+                          placeholder="Town Wonders"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="heroSubtitle">Subtitle</Label>
+                      <Label htmlFor="heroTitle">Main Title</Label>
                       <Input
-                        id="heroSubtitle"
-                        value={heroFormData.subtitle ?? ""}
-                        onChange={(e) => setHeroFormData({ ...heroFormData, subtitle: e.target.value })}
-                        placeholder="Bocaue, Bulacan"
+                        id="heroTitle"
+                        value={heroFormData.title ?? ""}
+                        onChange={(e) => setHeroFormData({ ...heroFormData, title: e.target.value })}
+                        placeholder="Explore The River"
                       />
-                      <p className="text-xs text-muted-foreground">Shared across all slides (appears above the title)</p>
                     </div>
-
-                    {/* 4 Title/Highlight Slots */}
-                    <div className="space-y-3">
-                      <Label>Hero Slides (up to 4)</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Each slide has a main title and an optional highlighted word. Leave a slot empty to skip it.
-                      </p>
-                      {(heroFormData.titles ?? [{title:"",highlight:""},{title:"",highlight:""},{title:"",highlight:""},{title:"",highlight:""}]).map((pair, idx) => (
-                        <Card key={idx} className={`border ${pair.title ? "border-primary/30 bg-primary/5" : "border-dashed"}`}>
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge variant={pair.title ? "default" : "outline"} className="text-xs">
-                                Slide {idx + 1}
-                              </Badge>
-                              {!pair.title && (
-                                <span className="text-xs text-muted-foreground">(empty — will be skipped)</span>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="space-y-1">
-                                <Label htmlFor={`heroTitle${idx}`} className="text-xs">Main Title</Label>
-                                <Input
-                                  id={`heroTitle${idx}`}
-                                  value={pair.title}
-                                  onChange={(e) => {
-                                    const newTitles = [...(heroFormData.titles ?? [])]
-                                    newTitles[idx] = { ...newTitles[idx], title: e.target.value }
-                                    setHeroFormData({ ...heroFormData, titles: newTitles })
-                                  }}
-                                  placeholder={idx === 0 ? "Explore The River" : `Slide ${idx + 1} title...`}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label htmlFor={`heroHighlight${idx}`} className="text-xs">Highlight Text</Label>
-                                <Input
-                                  id={`heroHighlight${idx}`}
-                                  value={pair.highlight}
-                                  onChange={(e) => {
-                                    const newTitles = [...(heroFormData.titles ?? [])]
-                                    newTitles[idx] = { ...newTitles[idx], highlight: e.target.value }
-                                    setHeroFormData({ ...heroFormData, titles: newTitles })
-                                  }}
-                                  placeholder={idx === 0 ? "Town Wonders" : "Highlighted word..."}
-                                />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="heroDescription">Description</Label>
                       <Textarea
@@ -406,7 +370,6 @@ export default function HomeContentPage() {
                         placeholder="Where rich heritage meets vibrant culture..."
                         rows={3}
                       />
-                      <p className="text-xs text-muted-foreground">Shared across all slides</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -500,7 +463,7 @@ export default function HomeContentPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => toggleActive("spotlight", spot.featuredId, spot.isActive ?? false)}
+                                onClick={() => toggleActive("spotlight", spot.spotlightId, spot.isActive ?? false)}
                                 title={spot.isActive ? "Deactivate" : "Set as active"}
                               >
                                 {spot.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -516,7 +479,7 @@ export default function HomeContentPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.featuredId })}
+                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.spotlightId })}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -832,7 +795,6 @@ export default function HomeContentPage() {
                 </div>
               </>
             )}
-
           </div>
 
           <DialogFooter>
