@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { GalleryImage } from "@/components/ui/gallery-image"
 import { CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
@@ -103,6 +104,15 @@ export default function PracticesTraditionsPage() {
                     <div className="border-t border-border pt-3">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Cultural Significance</p>
                       <p className="text-sm text-foreground leading-relaxed">{practice.significance}</p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <Link
+                        href={`/culture/practices-traditions/${practice.id}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Read full detail →
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

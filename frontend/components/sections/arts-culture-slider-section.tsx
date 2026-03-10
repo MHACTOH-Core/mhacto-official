@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ChevronLeft, ChevronRight, ArrowRight,
+  ArrowRight,
   UtensilsCrossed, Calendar, Sparkles, Hammer, Crown,
 } from "lucide-react"
 import { asset } from "@/lib/utils"
@@ -192,23 +192,11 @@ export function ArtsCultureSliderSection() {
           </p>
         </div>
 
-        {/* Slider + outside arrows */}
-        <div className="flex items-center gap-5">
-
-        {/* Prev arrow */}
-        <button
-          onClick={prev}
-          aria-label="Previous"
-          className="shrink-0 flex h-14 w-14 items-center justify-center rounded-full border-2 shadow-lg text-white transition-all duration-200 hover:scale-105"
-          style={{ backgroundColor: "#229DBE", borderColor: "#1a7d97" }}
-        >
-          <ChevronLeft className="h-7 w-7" />
-        </button>
-
         {/* Slider */}
+        <div className="flex items-center">
         <div
-          className="relative flex-1 min-w-0 overflow-hidden rounded-2xl"
-          style={{ aspectRatio: "16 / 8", boxShadow: "0 32px 80px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)" }}
+          className="relative w-full overflow-hidden rounded-2xl aspect-[3/2] sm:aspect-[16/9] md:aspect-[16/8]"
+          style={{ boxShadow: "0 32px 80px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)" }}
         >
           {/* Background images — crossfade */}
           {slides.map((s, i) => (
@@ -233,7 +221,7 @@ export function ArtsCultureSliderSection() {
           <div className="absolute inset-0 z-20 bg-gradient-to-r from-black/70 via-black/20 to-transparent pointer-events-none" />
 
           {/* Slide counter — top right */}
-          <div className="absolute top-6 right-7 z-30 flex items-center gap-2">
+          <div className="hidden sm:flex absolute top-6 right-7 z-30 items-center gap-2">
             <span className="font-mono text-3xl font-black text-white/90 leading-none tabular-nums drop-shadow-lg">
               {String(activeIndex + 1).padStart(2, "0")}
             </span>
@@ -245,30 +233,9 @@ export function ArtsCultureSliderSection() {
             </div>
           </div>
 
-          {/* Category tabs — top left */}
-          <div className="absolute top-6 left-7 z-30 flex items-center gap-2 flex-wrap">
-            {slides.map((s, i) => {
-              const TabIcon = s.Icon
-              return (
-                <button
-                  key={s.categoryLabel}
-                  onClick={() => goTo(i)}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all duration-300 ${
-                    i === activeIndex
-                      ? "bg-white text-gray-900 shadow-[0_4px_20px_rgba(255,255,255,0.3)]"
-                      : "bg-white/10 text-white/60 hover:bg-white/18 hover:text-white backdrop-blur-sm border border-white/15"
-                  }`}
-                >
-                  <TabIcon className="h-3 w-3" />
-                  {s.categoryLabel}
-                </button>
-              )
-            })}
-          </div>
-
           {/* Main content — bottom left */}
           <div
-            className={`absolute bottom-0 left-0 z-30 px-8 pb-10 sm:px-12 sm:pb-12 max-w-[60%] transition-all duration-500 ${
+            className={`absolute bottom-0 left-0 z-30 px-4 pb-12 sm:px-8 sm:pb-10 lg:px-12 lg:pb-12 max-w-[90%] sm:max-w-[70%] lg:max-w-[60%] transition-all duration-500 ${
               fading ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
             }`}
           >
@@ -281,7 +248,7 @@ export function ArtsCultureSliderSection() {
             </div>
 
             {/* Title */}
-            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-[1.1] tracking-tight mb-4 drop-shadow-2xl">
+            <h3 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white leading-[1.1] tracking-tight mb-2 sm:mb-4 drop-shadow-2xl">
               {slide.title}
             </h3>
 
@@ -289,14 +256,14 @@ export function ArtsCultureSliderSection() {
             <div className="h-px w-16 bg-white/25 mb-4" />
 
             {/* Description */}
-            <p className="text-sm sm:text-base text-white/75 leading-relaxed mb-6 line-clamp-2 max-w-lg">
+            <p className="text-xs sm:text-sm md:text-base text-white/75 leading-relaxed mb-3 sm:mb-6 line-clamp-2 max-w-lg">
               {slide.description}
             </p>
 
             {/* CTA */}
             <Link
               href={slide.href}
-              className="inline-flex items-center gap-2.5 rounded-full bg-white text-gray-900 px-6 py-2.5 text-sm font-bold shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:bg-blue-600 hover:text-white transition-all duration-300 hover:gap-4 hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)]"
+              className="inline-flex items-center gap-2 rounded-full bg-white text-gray-900 px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-bold shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:bg-blue-600 hover:text-white transition-all duration-300 hover:gap-4 hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)]"
             >
               {slide.ctaLabel}
               <ArrowRight className="h-4 w-4" />
@@ -329,16 +296,6 @@ export function ArtsCultureSliderSection() {
             </div>
           </div>
         </div>
-
-        {/* Next arrow */}
-        <button
-          onClick={next}
-          aria-label="Next"
-          className="shrink-0 flex h-14 w-14 items-center justify-center rounded-full border-2 shadow-lg text-white transition-all duration-200 hover:scale-105"
-          style={{ backgroundColor: "#229DBE", borderColor: "#1a7d97" }}
-        >
-          <ChevronRight className="h-7 w-7" />
-        </button>
 
         </div>{/* end flex row */}
 

@@ -467,14 +467,16 @@ export default function InquirePage() {
                         {/* Inquiry Category */}
                         <div className="space-y-1.5">
                           <Label className="text-sm font-semibold text-foreground">
-                            Inquiry Category <span className="text-destructive">*</span>
+                            Purpose of visit <span className="text-destructive">*</span>
                           </Label>
                           <Select value={purpose} onValueChange={setPurpose} required>
                             <SelectTrigger className="w-full rounded-xl">
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="student">Student</SelectItem>
+                              <SelectItem value="student">Educational</SelectItem>
+                              <SelectItem value="tourist">Business</SelectItem>
+                              <SelectItem value="student">Research</SelectItem>
                               <SelectItem value="tourist">Tourist</SelectItem>
                             </SelectContent>
                           </Select>

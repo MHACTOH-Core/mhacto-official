@@ -434,38 +434,6 @@ export function apiDeleteSpotlight(id: number) {
   return apiFetch<{ message: string }>(`/api/home/spotlight.php?id=${id}`, { method: "DELETE" })
 }
 
-// ─── Featured Landmarks (featured_content where section='landmark') ─
-
-export function apiFetchFeaturedLandmarks() {
-  return apiFetch<FeaturedContent[]>("/api/home/landmarks.php")
-}
-
-export function apiFetchAllFeaturedLandmarks() {
-  return apiFetch<(FeaturedContent & FeaturedLandmark)[]>("/api/home/landmarks.php?all=1")
-}
-
-export function apiCreateFeaturedLandmark(data: { contentId?: string; sortOrder?: number; isActive?: boolean }) {
-  return apiFetch<{ message: string; featuredId: number }>("/api/home/landmarks.php", {
-    method: "POST", body: JSON.stringify(data),
-  })
-}
-
-export function apiUpdateFeaturedLandmark(id: number, data: { contentId?: string; sortOrder?: number; isActive?: boolean }) {
-  return apiFetch<{ message: string }>(`/api/home/landmarks.php?id=${id}`, {
-    method: "PUT", body: JSON.stringify(data),
-  })
-}
-
-export function apiDeleteFeaturedLandmark(id: number) {
-  return apiFetch<{ message: string }>(`/api/home/landmarks.php?id=${id}`, { method: "DELETE" })
-}
-
-export function apiReorderFeaturedLandmarks(order: number[]) {
-  return apiFetch<{ message: string }>("/api/home/landmarks.php", {
-    method: "PATCH", body: JSON.stringify({ order }),
-  })
-}
-
 // ─── Milestones ───────────────────────────────────────────────────
 
 export function apiFetchMilestones() {
@@ -626,7 +594,7 @@ export function apiFetchHeroSlides() {
 
 /** @deprecated Culinary items auto-fetched from CMS label 'local-cuisine' */
 export function apiFetchCulinaryItems() {
-  return apiFetch<CulinaryItem[]>("/api/home/culinary.php")
+  return apiFetchByLabel("local-cuisine") as Promise<CulinaryItem[]>
 }
 
 // Legacy admin CRUD stubs — kept for backward compat with admin page.
@@ -639,7 +607,7 @@ export function apiFetchAllHeroSlides() {
 }
 /** @deprecated */
 export function apiFetchAllCulinaryItems() {
-  return apiFetch<CulinaryItem[]>("/api/home/culinary.php?all=1")
+  return apiFetchByLabel("local-cuisine") as Promise<CulinaryItem[]>
 }
 /** @deprecated Hero is now a single video section in site_settings */
 export function apiCreateHeroSlide(data: Partial<HeroSlide>) {
@@ -657,19 +625,15 @@ export function apiUpdateHeroSlide(id: number, data: Partial<HeroSlide>) {
 export function apiDeleteHeroSlide(id: number) {
   return apiFetch<{ message: string }>(`/api/home/hero.php?id=${id}`, { method: "DELETE" })
 }
-/** @deprecated Culinary items auto-pulled from CMS */
-export function apiCreateCulinaryItem(data: Partial<CulinaryItem>) {
-  return apiFetch<{ message: string; itemId: number }>("/api/home/culinary.php", {
-    method: "POST", body: JSON.stringify(data),
-  })
+/** @deprecated Culinary items managed via CMS posts */
+export function apiCreateCulinaryItem(_data: Partial<CulinaryItem>) {
+  throw new Error("Culinary items are now managed via CMS posts")
 }
 /** @deprecated */
-export function apiUpdateCulinaryItem(id: number, data: Partial<CulinaryItem>) {
-  return apiFetch<{ message: string }>(`/api/home/culinary.php?id=${id}`, {
-    method: "PUT", body: JSON.stringify(data),
-  })
+export function apiUpdateCulinaryItem(_id: number, _data: Partial<CulinaryItem>) {
+  throw new Error("Culinary items are now managed via CMS posts")
 }
 /** @deprecated */
-export function apiDeleteCulinaryItem(id: number) {
-  return apiFetch<{ message: string }>(`/api/home/culinary.php?id=${id}`, { method: "DELETE" })
+export function apiDeleteCulinaryItem(_id: number) {
+  throw new Error("Culinary items are now managed via CMS posts")
 }
