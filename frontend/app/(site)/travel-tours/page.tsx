@@ -8,7 +8,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { tourPackages as fallbackPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { type TourPackage } from "@/lib/data/destinations-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToTourPackage } from "@/lib/cms-mappers"
 
@@ -38,9 +38,8 @@ const difficultyColor: Record<TourPackage["difficulty"], string> = {
 }
 
 export default function TravelToursPage() {
-  const [tourPackages, setTourPackages] = useState<TourPackage[]>(fallbackPackages)
+  const [tourPackages, setTourPackages] = useState<TourPackage[]>([])
 
-  // Sends GET /api/posts/read.php?label=travel-tours&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
   useEffect(() => {
     apiFetchByLabel("travel-tours")
       .then((posts) => { if (posts?.length) setTourPackages(posts.map(cmsToTourPackage)) })
@@ -80,7 +79,7 @@ export default function TravelToursPage() {
                 <div className="grid gap-0 md:grid-cols-[1fr_2fr]">
                   <GalleryImage
                     src={pkg.image}
-                    gallery={pkg.gallery}
+          
                     alt={pkg.name}
                     outerClassName="h-full"
                     className="relative flex-1 overflow-hidden min-h-[280px]"
@@ -97,6 +96,7 @@ export default function TravelToursPage() {
                   </GalleryImage>
                   <CardContent className="p-6 sm:p-8">
                     <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">{pkg.name}</h3>
+                    {pkg.author && <p className="text-xs text-muted-foreground/70 mb-2">By {pkg.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">{pkg.description}</p>
 
                     <div className="flex flex-wrap gap-4 mb-5 text-sm">
@@ -104,18 +104,26 @@ export default function TravelToursPage() {
                         <Clock className="h-4 w-4 text-primary" />
                         {pkg.duration}
                       </div>
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <Users className="h-4 w-4 text-primary" />
-                        {pkg.groupSize}
-                      </div>
-                      <div className="flex items-center gap-1.5 font-bold text-primary">
-                        {pkg.price}
-                      </div>
+                      {pkg.bookingContact && (
+                        <div className="flex items-center gap-1.5 text-foreground">
+                          <Users className="h-4 w-4 text-primary" />
+                          {pkg.bookingContact}
+                        </div>
+                      )}
                     </div>
 
-                    <p className="text-xs text-primary/70 font-medium mt-auto">
-                      Contact the MHACTO office to book this tour →
-                    </p>
+                    {pkg.includes.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Includes</p>
+                        <ul className="space-y-1">
+                          {pkg.includes.slice(0, 4).map((item) => (
+                            <li key={item} className="text-sm text-foreground flex items-start gap-2">
+                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div className="border-t border-border pt-4 mt-4">
                       <Link
                         href="/inquire"

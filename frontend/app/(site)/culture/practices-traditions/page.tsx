@@ -7,7 +7,7 @@ import { CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { culturalPractices as fallbackPractices, type CulturalPractice } from "@/lib/data/culture-data"
+import { type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -34,9 +34,8 @@ const statusConfig: Record<CulturalPractice["status"], { label: string; icon: ty
 }
 
 export default function PracticesTraditionsPage() {
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
 
-  // Sends GET /api/posts/read.php?label=cultural-practices&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("cultural-practices")
       .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
@@ -100,6 +99,7 @@ export default function PracticesTraditionsPage() {
                       </div>
                     </div>
                     <h3 className="text-lg font-black text-foreground mb-2">{practice.name}</h3>
+                    {practice.author && <p className="text-xs text-muted-foreground/70 mb-1">By {practice.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">{practice.description}</p>
                     <div className="border-t border-border pt-3">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Cultural Significance</p>

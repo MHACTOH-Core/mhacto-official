@@ -110,7 +110,7 @@ export function FeaturedSpotlight() {
             size="lg"
             className="rounded-full border-white/40 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white/60 hover:text-white"
           >
-            <Link href="/contact">Learn More</Link>
+            <Link href="/culture/festivals-celebrations">Learn More</Link>
           </Button>
         </div>
 

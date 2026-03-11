@@ -44,6 +44,7 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
     isProtected: post.isFeatured ?? false,
     protectionLevel: post.isFeatured ? "Heritage Site" : undefined,
+    author: post.author ?? undefined,
   }
 }
 
@@ -63,6 +64,7 @@ export function cmsToMuseum(post: CMSPost): Museum {
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    author: post.author ?? undefined,
   }
 }
 
@@ -78,6 +80,7 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
+    author: post.author ?? undefined,
   }
 }
 
@@ -94,14 +97,13 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
     duration: post.hours ?? "Full Day",
     type,
     difficulty: "easy",
-    groupSize: "2–30 persons",
-    price: "Contact for pricing",
     description: post.body ?? "",
     itinerary: [],
     includes: post.highlights ?? [],
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
     bookingContact: post.contact ?? "MHACTO Office",
+    author: post.author ?? undefined,
   }
 }
 
@@ -124,6 +126,7 @@ export function cmsToCuisineItem(post: CMSPost): CuisineItem {
     where: post.location ? [post.location] : [],
     bestTime: post.hours ?? undefined,
     isFeatured: post.isFeatured ?? false,
+    author: post.author ?? undefined,
   }
 }
 
@@ -142,6 +145,7 @@ export function cmsToFestival(post: CMSPost): Festival {
     story: post.story ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/river-festival.jpg"),
+    author: post.author ?? undefined,
   }
 }
 
@@ -160,6 +164,7 @@ export function cmsToCulturalPractice(post: CMSPost): CulturalPractice {
     significance: post.story ?? "",
     status: "active",
     image: resolveImage(post, "/images/places/Arts.jpg"),
+    author: post.author ?? undefined,
   }
 }
 
@@ -174,6 +179,7 @@ export function cmsToArtisan(post: CMSPost): Artisan {
     awards: [],
     location: post.location ?? "",
     image: resolveImage(post, "/images/places/Arts.jpg"),
+    author: post.author ?? undefined,
   }
 }
 
@@ -196,6 +202,7 @@ export function cmsToPeopleWonder(post: CMSPost): PeopleWonder {
     awards: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Arts.jpg"),
     isAlive: true,
+    author: post.author ?? undefined,
   }
 }
 
@@ -230,6 +237,7 @@ export function cmsToTimelineEvent(post: CMSPost): TimelineEvent {
     details: post.story ?? "",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
     significance: "notable",
+    author: post.author ?? undefined,
   }
 }
 
@@ -251,6 +259,8 @@ export function cmsToNotablePerson(post: CMSPost): NotablePerson {
     description: post.body ?? "",
     legacy: post.story ?? "",
     image: resolveImage(post, "/images/places/Arts.jpg"),
+    featured: post.isFeatured ?? false,
+    author: post.author ?? undefined,
   }
 }
 
@@ -388,7 +398,7 @@ export function filterPrivateSchools(posts: CMSPost[]): CMSPost[] {
 export function cmsToRestaurant(post: CMSPost): Restaurant {
   const cat = (post.category ?? "").toLowerCase()
   const type: Restaurant["type"] =
-    cat.includes("cafe") || cat.includes("coffee") ? "cafe"
+    cat.includes("caf") || cat.includes("coffee") ? "cafe"
     : cat.includes("bakery") ? "bakery"
     : cat.includes("carinderia") ? "carinderia"
     : cat.includes("eatery") ? "eatery"
@@ -407,5 +417,6 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
     image: resolveImage(post, "/images/places/Food.jpg"),
     isOpen: post.isFeatured ?? true,
+    author: post.author ?? undefined,
   }
 }

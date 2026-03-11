@@ -7,7 +7,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { festivals as fallbackFestivals, type Festival } from "@/lib/data/culture-data"
+import { type Festival } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToFestival } from "@/lib/cms-mappers"
 
@@ -25,9 +25,8 @@ const typeLabels: Record<Festival["type"], string> = {
 }
 
 export default function FestivalsCelebrationsPage() {
-  const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
+  const [festivals, setFestivals] = useState<Festival[]>([])
 
-  // Sends GET /api/posts/read.php?label=festivals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("festivals")
       .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
@@ -84,6 +83,7 @@ export default function FestivalsCelebrationsPage() {
                       </span>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{festival.name}</h3>
+                    {festival.author && <p className="text-xs text-muted-foreground/70 mb-2">By {festival.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">{festival.description}</p>
                     <div className="mb-5">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Story &amp; Background</p>

@@ -76,6 +76,7 @@ import {
   Calendar,
   FolderOpen,
   Star,
+  User,
 } from "lucide-react"
 import { MediaPicker } from "@/components/ui/media-picker"
 import { apiUploadMedia } from "@/lib/api"
@@ -99,6 +100,7 @@ type FormData = {
   highlights: string
   newsDate: string
   isFeatured: boolean
+  author: string
 }
 
 const EMPTY_FORM: FormData = {
@@ -118,6 +120,7 @@ const EMPTY_FORM: FormData = {
   highlights: "",
   newsDate: new Date().toISOString().slice(0, 10),
   isFeatured: false,
+  author: "",
 }
 
 const UNKNOWN_LABEL = { label: "Other", color: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300" }
@@ -126,8 +129,6 @@ const PLACE_CATEGORIES = [
   "Heritage Site",
   "Religious Site",
   "Museum",
-  "Nature & Parks",
-  "Landmark",
   "Festival Grounds",
   "Food & Dining",
   "Arts & Culture",
@@ -143,8 +144,9 @@ const LABEL_PLACE_TYPES: Record<string, string[]> = {
   "cultural-practices": ["Arts & Culture", "Heritage Site"],
   "crafts-artisan": ["Arts & Culture"],
   "people-wonders": [],
-  "destinations": ["Heritage Site", "Religious Site", "Museum", "Nature & Parks", "Landmark", "Arena & Events Venue"],
-  "travel-tours": ["Nature & Parks", "Landmark", "Heritage Site"],
+  "restaurants": ["Restaurant", "Eatery", "Café", "Carinderia", "Bakery"],
+  "destinations": ["Heritage Site", "Museum", "Religious Site"],
+  "travel-tours": ["Heritage Tour", "Food Trail", "Festival Package", "Nature Tour", "Custom"],
 }
 
 export default function CMSPage() {
@@ -230,6 +232,7 @@ export default function CMSPage() {
       highlights: post.highlights?.join("\n") ?? "",
       newsDate: post.newsDate ?? "",
       isFeatured: post.isFeatured ?? false,
+      author: post.author ?? "",
     })
     setImageUrlInput("")
     setShowTypeChooser(false)
@@ -248,6 +251,7 @@ export default function CMSPage() {
       status: form.status,
       image: form.images,
       isFeatured: form.isFeatured,
+      author: form.author || undefined,
     }
 
     if (form.postType === "place" || form.postType === "event") {
@@ -478,6 +482,7 @@ export default function CMSPage() {
                     </p>
                   )}
                   <p className="mt-2 text-xs text-muted-foreground">
+                    {post.author && (<span className="font-medium">By {post.author} · </span>)}
                     {format(parseISO(post.createdAt), "MMM d, yyyy")}
                     {post.updatedAt !== post.createdAt && (
                       <span> · Edited {format(parseISO(post.updatedAt), "MMM d, yyyy")}</span>
@@ -607,6 +612,15 @@ export default function CMSPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Enter post title..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Author</Label>
+                <Input
+                  value={form.author}
+                  onChange={(e) => setForm({ ...form, author: e.target.value })}
+                  placeholder="e.g. MHACTO Admin, Juan Dela Cruz"
                 />
               </div>
 
@@ -891,7 +905,7 @@ export default function CMSPage() {
               {(form.postType === "place" || form.postType === "event") && (
                 <>
                   <Separator />
-                  <p className="text-sm font-medium text-muted-foreground">Place Details (optional)</p>
+                  <p className="text-sm font-medium text-muted-foreground">{form.label === "travel-tours" ? "Tour Details (optional)" : "Place Details (optional)"}</p>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -907,23 +921,23 @@ export default function CMSPage() {
 
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Hours
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Duration" : "Hours"}
                       </Label>
                       <Input
                         value={form.hours}
                         onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                        placeholder="e.g. Daily: 6:00 AM – 8:00 PM"
+                        placeholder={form.label === "travel-tours" ? "e.g. Full Day (8 hours)" : "e.g. Daily: 6:00 AM – 8:00 PM"}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> Contact
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Booking Contact" : "Contact"}
                       </Label>
                       <Input
                         value={form.contact}
                         onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                        placeholder="e.g. (044) 123-4567"
+                        placeholder={form.label === "travel-tours" ? "e.g. MHACTO Office" : "e.g. (044) 123-4567"}
                       />
                     </div>
 
@@ -941,7 +955,7 @@ export default function CMSPage() {
 
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : "Place Type"}
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : "Place Type"}
                     </Label>
                     {(() => {
                       const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
@@ -982,12 +996,12 @@ export default function CMSPage() {
 
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> Story
+                      <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Itinerary" : "Story"}
                     </Label>
                     <Textarea
                       value={form.story}
                       onChange={(e) => setForm({ ...form, story: e.target.value })}
-                      placeholder="Write the story behind this place..."
+                      placeholder={form.label === "travel-tours" ? "Describe the tour itinerary..." : "Write the story behind this place..."}
                       rows={4}
                       className="resize-y"
                     />
@@ -995,13 +1009,13 @@ export default function CMSPage() {
 
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5">
-                      <List className="h-3.5 w-3.5 text-muted-foreground" /> Highlights
+                      <List className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Includes" : "Highlights"}
                       <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
                     </Label>
                     <Textarea
                       value={form.highlights}
                       onChange={(e) => setForm({ ...form, highlights: e.target.value })}
-                      placeholder={"Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities"}
+                      placeholder={form.label === "travel-tours" ? "Licensed MHACTO guide\nEntrance fees\nWelcome snack" : "Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities"}
                       rows={4}
                       className="resize-y"
                     />
@@ -1040,9 +1054,15 @@ export default function CMSPage() {
                   <DialogTitle className="text-xl">
                     {previewPost.title}
                   </DialogTitle>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(previewPost.createdAt), "MMMM d, yyyy · h:mm a")}
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {previewPost.author && (
+                      <span className="flex items-center gap-1 font-medium">
+                        <User className="h-3 w-3" /> {previewPost.author}
+                      </span>
+                    )}
+                    {previewPost.author && <span>·</span>}
+                    <span>{format(parseISO(previewPost.createdAt), "MMMM d, yyyy · h:mm a")}</span>
+                  </div>
                 </DialogHeader>
                 {previewPost.image.length > 0 && (
                   <div className="relative overflow-hidden rounded-lg">

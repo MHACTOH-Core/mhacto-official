@@ -10,7 +10,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { peopleWonders as fallbackPeople, type PeopleWonder } from "@/lib/data/culture-data"
+import { type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -108,6 +108,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
+        {person.author && <p className="text-xs text-muted-foreground/70 mb-2">By {person.author}</p>}
         {/* Achievement headline */}
         <div className="flex items-start gap-2 mb-3">
           <Trophy className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -161,10 +162,9 @@ function PersonCard({ person }: { person: PeopleWonder }) {
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default function PeopleWondersPage() {
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
-  // Sends GET /api/posts/read.php?label=people-wonders&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("people-wonders")
       .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })

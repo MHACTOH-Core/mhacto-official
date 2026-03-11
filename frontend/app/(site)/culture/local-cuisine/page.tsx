@@ -17,7 +17,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine as fallbackCuisine, restaurants as fallbackRestaurants, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
+import { type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
 
@@ -114,6 +114,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           {item.tagalogName && item.tagalogName !== item.name && (
             <p className="text-xs text-muted-foreground italic">{item.tagalogName}</p>
           )}
+          {item.author && <p className="text-xs text-muted-foreground/70 mt-0.5">By {item.author}</p>}
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-4">{item.description}</p>
@@ -160,8 +161,8 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
-  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(fallbackRestaurants)
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>([])
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
@@ -196,7 +197,6 @@ export default function LocalCuisinePage() {
     setTimeout(() => setIsPlaying(true), 10000)
   }, [])
 
-  // Sends GET /api/posts/read.php?label=local-cuisine&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
@@ -492,6 +492,7 @@ export default function LocalCuisinePage() {
                       <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2 group-hover:text-primary transition-colors">
                         {place.name}
                       </h3>
+                      {place.author && <p className="text-xs text-muted-foreground/70 mb-2">By {place.author}</p>}
                       <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">
                         {place.description}
                       </p>

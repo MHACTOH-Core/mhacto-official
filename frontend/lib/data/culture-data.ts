@@ -13,6 +13,7 @@ export interface CuisineItem {
   where: string[]
   bestTime?: string
   isFeatured?: boolean
+  author?: string
 }
 
 export const localCuisine: CuisineItem[] = [
@@ -120,6 +121,7 @@ export interface Festival {
   story: string
   image: string
   gallery?: string[]
+  author?: string
 }
 
 export const festivals: Festival[] = [
@@ -253,6 +255,7 @@ export interface CulturalPractice {
   status: "active" | "endangered" | "revived"
   image?: string
   gallery?: string[]
+  author?: string
 }
 
 export const culturalPractices: CulturalPractice[] = [
@@ -423,6 +426,7 @@ export interface PeopleWonder {
   social?: string
   isAlive: true
   gallery?: string[]
+  author?: string
 }
 
 export const peopleWonders: PeopleWonder[] = [
@@ -556,6 +560,7 @@ export interface Artisan {
   location: string
   image?: string
   gallery?: string[]
+  author?: string
 }
 
 export const artisans: Artisan[] = [
@@ -643,6 +648,7 @@ export interface Restaurant {
   priceRange?: "₱" | "₱₱" | "₱₱₱"
   image?: string
   isOpen?: boolean
+  author?: string
 }
 
 export const restaurants: Restaurant[] = [

@@ -9,6 +9,7 @@ export interface TimelineEvent {
   details: string
   image?: string
   significance: "major" | "notable" | "cultural"
+  author?: string
 }
 
 export const timelineEvents: TimelineEvent[] = [
@@ -149,6 +150,8 @@ export interface NotablePerson {
   description: string
   legacy: string
   image?: string
+  featured?: boolean
+  author?: string
 }
 
 export const notablePersons: NotablePerson[] = [
@@ -158,6 +161,7 @@ export const notablePersons: NotablePerson[] = [
     title: "Revolutionary Leader & War Veteran",
     years: "1862–1931",
     category: "national-hero",
+    featured: true,
     description:
       "A Bocaueño general who played a decisive role in the Philippine Revolution against Spain and the subsequent Philippine-American War, leading guerrilla operations across Bulacan.",
     legacy:
@@ -169,6 +173,7 @@ export const notablePersons: NotablePerson[] = [
     title: "National Poet — 'Huseng Batute'",
     years: "1896–1932",
     category: "arts",
+    featured: true,
     description:
       "One of the most celebrated Filipino poets of the 20th century, born in Bocaue, whose Tagalog verse elevated balagtasan (poetic debate) to a national art form.",
     legacy:

@@ -9,7 +9,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { notablePersons as fallbackPersons, personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
+import { personCategoryLabels, type NotablePerson } from "@/lib/data/history-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToNotablePerson } from "@/lib/cms-mappers"
 
@@ -23,9 +23,8 @@ const categoryColors: Record<NotablePerson["category"], string> = {
 }
 
 export default function NotablePersonsPage() {
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
+  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
 
-  // Sends GET /api/posts/read.php?label=notable-figures&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("notable-figures")
       .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
@@ -109,6 +108,7 @@ export default function NotablePersonsPage() {
                     <span className="text-xs text-muted-foreground">{person.years}</span>
                   </div>
                   <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
+                  {person.author && <p className="text-xs text-muted-foreground/70 mb-1">By {person.author}</p>}
                   <p className="text-sm font-semibold text-primary mb-3">{person.title}</p>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">{person.description}</p>
                   <div className="border-t border-border pt-3">

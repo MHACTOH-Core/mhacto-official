@@ -19,6 +19,7 @@ export type ContentLabel =
   | "cultural-practices"
   | "crafts-artisan"
   | "people-wonders"
+  | "restaurants"
   | "destinations"
   | "travel-tours"
   | "news"
@@ -49,11 +50,13 @@ export interface CMSPost {
   newsDate?: string
   // Featured flag — per-label featured assignment
   isFeatured?: boolean
+  // Author display name
+  author?: string
   createdAt: string // ISO
   updatedAt: string // ISO
 }
 
-export type InquiryStatus = "unread" | "read" | "assigned" | "archived" | "spam" | "trash"
+export type InquiryStatus = "unread" | "read" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
 export type InquiryType = "general_contact" | "tour_booking" | "partnership"
 
@@ -150,6 +153,7 @@ export const contentLabels: Record<ContentLabel, { label: string; color: string;
   "cultural-practices": { label: "Cultural Practices", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300", category: "arts-culture" },
   "crafts-artisan": { label: "Crafts & Artisan", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", category: "arts-culture" },
   "people-wonders": { label: "People Wonders", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", category: "arts-culture" },
+  "restaurants": { label: "Restaurants & Eateries", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "arts-culture" },
   // Tourist Destinations
   "destinations": { label: "Destinations", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", category: "tourist-destinations" },
   "travel-tours": { label: "Travel & Tours", color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", category: "tourist-destinations" },
@@ -186,6 +190,7 @@ export function getEventsLabel(): [ContentLabel, { label: string; color: string;
 export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: string }> = {
   unread:      { label: "Unread",      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
   read:        { label: "Read",        color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" },
+  in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
   assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   archived:    { label: "Archived",    color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
   spam:        { label: "Spam",        color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },

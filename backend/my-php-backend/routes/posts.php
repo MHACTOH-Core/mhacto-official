@@ -169,6 +169,7 @@ function _posts_mapFrontendToDb(array $data): array
     if (isset($data['isFeatured']))  $db['is_featured']    = $data['isFeatured'] ? 1 : 0;
     if (isset($data['newsDate']))    $db['news_date']      = $data['newsDate'];
     if (isset($data['category']))    $db['place_category'] = $data['category'];
+    if (isset($data['author']))      $db['author']         = $data['author'];
 
     if (isset($data['image']) && is_array($data['image']))   $db['images'] = $data['image'];
     if (isset($data['images']) && is_array($data['images'])) $db['images'] = $data['images'];
@@ -180,7 +181,7 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 {
     $mapped = [];
 
-    $simple = ['title', 'status', 'location', 'hours', 'contact', 'established', 'story'];
+    $simple = ['title', 'status', 'location', 'hours', 'contact', 'established', 'story', 'author'];
     foreach ($simple as $key) {
         if (isset($data[$key])) $mapped[$key] = $data[$key];
     }

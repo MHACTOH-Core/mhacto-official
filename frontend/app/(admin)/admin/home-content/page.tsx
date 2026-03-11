@@ -96,6 +96,10 @@ export default function HomeContentPage() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ type: ContentType; id: number } | null>(null)
 
+  // Save confirmation
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+  const [pendingSave, setPendingSave] = useState<(() => Promise<void>) | null>(null)
+
   // Form state
   const [formData, setFormData] = useState<Record<string, unknown>>({})
 
@@ -262,6 +266,19 @@ export default function HomeContentPage() {
     }
   }
 
+  const confirmSave = (saveFn: () => Promise<void>) => {
+    setPendingSave(() => saveFn)
+    setSaveConfirmOpen(true)
+  }
+
+  const executePendingSave = async () => {
+    setSaveConfirmOpen(false)
+    if (pendingSave) {
+      await pendingSave()
+      setPendingSave(null)
+    }
+  }
+
   if (!isLoggedIn) return null
 
   return (
@@ -414,7 +431,7 @@ export default function HomeContentPage() {
                       </div>
                     </div>
                     <div className="flex justify-end pt-4">
-                      <Button onClick={handleSaveHeroSettings} className="gap-2">
+                      <Button onClick={() => confirmSave(handleSaveHeroSettings)} className="gap-2">
                         <Save className="h-4 w-4" />
                         Save Hero Settings
                       </Button>
@@ -822,6 +839,23 @@ export default function HomeContentPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Save Confirmation */}
+      <AlertDialog open={saveConfirmOpen} onOpenChange={setSaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to save?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the content on the live site. Please make sure all changes are correct.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executePendingSave}>
+              Save Changes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

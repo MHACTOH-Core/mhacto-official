@@ -71,8 +71,26 @@ if (($segments[0] ?? '') !== 'api') {
 }
 
 $resource  = $segments[1] ?? '';
-$param1    = $segments[2] ?? null;  // could be id or sub-resource
-$param2    = $segments[3] ?? null;  // could be sub-id
+$rawParam1 = $segments[2] ?? null;  // original URL segment (may be "read.php")
+$rawParam2 = $segments[3] ?? null;
+
+// Legacy .php action names (e.g. "read.php", "update.php") in the URL
+// are stripped to their base name so route handlers receive clean values.
+// Generic CRUD actions (read/create/update/delete) are nulled out entirely
+// so handlers fall back to HTTP method + query-string parameters instead.
+$crudActions = ['read', 'create', 'update', 'delete'];
+
+$param1 = $rawParam1;
+if ($param1 !== null && str_ends_with($param1, '.php')) {
+    $base = substr($param1, 0, -4);
+    $param1 = in_array($base, $crudActions, true) ? null : $base;
+}
+
+$param2 = $rawParam2;
+if ($param2 !== null && str_ends_with($param2, '.php')) {
+    $base = substr($param2, 0, -4);
+    $param2 = in_array($base, $crudActions, true) ? null : $base;
+}
 
 // ── Route table ────────────────────────────────────────────────────
 $routeFile = __DIR__ . "/routes/{$resource}.php";
@@ -91,8 +109,12 @@ if ($resource && file_exists($routeFile)) {
 // ── Fallback: try the old file-per-action structure ─────────────
 // This keeps backward compatibility while migrating.
 // e.g. /api/posts/read → api/posts/read.php
-if ($resource && $param1 && !is_numeric($param1)) {
-    $legacyFile = __DIR__ . "/api/{$resource}/{$param1}.php";
+if ($resource && $rawParam1 && !is_numeric($rawParam1)) {
+    $legacyFile = __DIR__ . "/api/{$resource}/{$rawParam1}";
+    // Append .php if not already present
+    if (!str_ends_with($legacyFile, '.php')) {
+        $legacyFile .= '.php';
+    }
     if (file_exists($legacyFile)) {
         require $legacyFile;
         exit();

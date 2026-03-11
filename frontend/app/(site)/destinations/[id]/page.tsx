@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -11,23 +11,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  heritageSites, museums, religiousSites,
   type HeritageSite, type Museum, type ReligiousSite,
 } from "@/lib/data/destinations-data"
+import { type CMSPost } from "@/lib/data/admin-data"
+import { apiFetchPostById } from "@/lib/api"
+import { cmsToHeritageSite, cmsToMuseum, cmsToReligiousSite } from "@/lib/cms-mappers"
 
 // ─── Unified lookup ────────────────────────────────────────────────────────
 type DestType = { kind: "heritage"; data: HeritageSite }
               | { kind: "museum";   data: Museum }
               | { kind: "religious"; data: ReligiousSite }
 
-function findDestination(id: string): DestType | null {
-  const h = heritageSites.find((s) => s.id === id)
-  if (h) return { kind: "heritage", data: h }
-  const m = museums.find((s) => s.id === id)
-  if (m) return { kind: "museum", data: m }
-  const r = religiousSites.find((s) => s.id === id)
-  if (r) return { kind: "religious", data: r }
-  return null
+function postToDestType(post: CMSPost): DestType {
+  const cat = (post.category ?? "").toLowerCase()
+  if (cat.includes("museum"))    return { kind: "museum",   data: cmsToMuseum(post) }
+  if (cat.includes("religious")) return { kind: "religious", data: cmsToReligiousSite(post) }
+  return { kind: "heritage", data: cmsToHeritageSite(post) }
 }
 
 function sectionLabel(kind: string) {
@@ -45,10 +44,34 @@ function sectionIcon(kind: string) {
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function DestinationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const found = findDestination(id)
-  if (!found) notFound()
+  const [dest, setDest] = useState<DestType | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState<string>("")
 
-  const { kind, data } = found
+  useEffect(() => {
+    apiFetchPostById(id)
+      .then((post) => {
+        if (post) {
+          const d = postToDestType(post)
+          setDest(d)
+          setSelectedImage(d.data.image)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </main>
+    )
+  }
+
+  if (!dest) notFound()
+
+  const { kind, data } = dest
 
   // ── Normalise fields across all three types ──
   const name        = data.name
@@ -73,9 +96,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
   const detailsLabel = collections ? "Collections" : "Highlights"
   const gallery   = "gallery" in data ? (data as { gallery?: string[] }).gallery : undefined
   const thumbs    = gallery && gallery.length > 1 ? gallery : null
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [selectedImage, setSelectedImage] = useState(image)
 
   return (
     <main className="min-h-screen bg-background">

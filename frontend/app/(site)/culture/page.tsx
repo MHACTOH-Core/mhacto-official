@@ -8,7 +8,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { localCuisine as fallbackCuisine, festivals as fallbackFestivals, culturalPractices as fallbackPractices, artisans as fallbackArtisans, peopleWonders as fallbackPeople, type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
+import { type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -43,21 +43,20 @@ const navSections = [
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(fallbackCuisine)
-  const [festivals, setFestivals] = useState<Festival[]>(fallbackFestivals)
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(fallbackPractices)
-  const [artisansList, setArtisansList] = useState<Artisan[]>(fallbackArtisans)
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(fallbackPeople)
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+  const [festivals, setFestivals] = useState<Festival[]>([])
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
+  const [artisansList, setArtisansList] = useState<Artisan[]>([])
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
 
-  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT with label JOIN → returns JSON
   useEffect(() => {
-    apiFetchByLabel("local-cuisine")     // → PHP: SELECT * ... WHERE label_key='local-cuisine' AND status='published'
+    apiFetchByLabel("local-cuisine")
       .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
       .catch(() => {})
-    apiFetchByLabel("festivals")         // → PHP: SELECT * ... WHERE label_key='festivals' AND status='published'
+    apiFetchByLabel("festivals")
       .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
       .catch(() => {})
-    apiFetchByLabel("cultural-practices") // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
+    apiFetchByLabel("cultural-practices")
       .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
       .catch(() => {})
     apiFetchByLabel("crafts-artisan")
@@ -146,6 +145,7 @@ export default function CulturePage() {
                 </GalleryImage>
                 <CardContent className="p-5 flex flex-col flex-1">
                   <h3 className="text-lg font-black text-foreground mb-0.5">{item.name}</h3>
+                  {item.author && <p className="text-xs text-muted-foreground/70 mb-1">By {item.author}</p>}
                   {item.tagalogName && item.tagalogName !== item.name && <p className="text-xs text-muted-foreground italic mb-2">{item.tagalogName}</p>}
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{item.description}</p>
                   <div className="border-t border-border pt-3 space-y-1.5">
@@ -202,6 +202,7 @@ export default function CulturePage() {
                       <span className="text-xs font-semibold text-primary">{fest.date}</span>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black text-foreground mb-3">{fest.name}</h3>
+                    {fest.author && <p className="text-xs text-muted-foreground/70 mb-2">By {fest.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{fest.description}</p>
                     <p className="text-xs text-primary/70 font-medium mt-3">Click card for full details →</p>
                   </CardContent>
@@ -268,6 +269,7 @@ export default function CulturePage() {
                       </span>
                     </div>
                     <h3 className="text-lg font-black text-foreground mb-2">{practice.name}</h3>
+                    {practice.author && <p className="text-xs text-muted-foreground/70 mb-1">By {practice.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{practice.description}</p>
                     <p className="text-xs text-primary/70 font-medium">Click card for full details →</p>
                   </CardContent>
@@ -320,6 +322,7 @@ export default function CulturePage() {
                     <Badge variant="outline" className="text-xs whitespace-nowrap">{artisan.experience}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{artisan.description}</p>
+                  {artisan.author && <p className="text-xs text-muted-foreground/70 mb-2">By {artisan.author}</p>}
                   <div className="border-t border-border pt-3 space-y-1.5">
                     <div className="flex items-start gap-2 text-xs"><MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{artisan.location}</div>
                     <div className="flex flex-wrap gap-1">
@@ -372,6 +375,7 @@ export default function CulturePage() {
                 <CardContent className="p-5 flex flex-col flex-1">
                   <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
                   <p className="text-xs text-primary font-semibold mb-2">{person.title}</p>
+                  {person.author && <p className="text-xs text-muted-foreground/70 mb-1">By {person.author}</p>}
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{person.achievement}</p>
                 </CardContent>
               </Card>

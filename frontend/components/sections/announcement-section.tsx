@@ -49,7 +49,7 @@ export function AnnouncementSection() {
                 <Link href="/inquire">Submit an Inquiry</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-full w-full sm:w-auto">
-                <Link href="/contact">Contact Us</Link>
+                <Link href="/inquire">Contact Us</Link>
               </Button>
             </div>
           </div>

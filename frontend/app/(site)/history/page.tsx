@@ -7,7 +7,7 @@ import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield 
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { timelineEvents as fallbackTimeline, notablePersons as fallbackPersons, personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
+import { personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToTimelineEvent, cmsToNotablePerson } from "@/lib/cms-mappers"
 
@@ -40,15 +40,14 @@ const navSections = [
 export default function HistoryPage() {
   const [activeSection, setActiveSection] = useState("timeline")
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackTimeline)
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>(fallbackPersons)
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
+  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
 
-  // Each sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
-    apiFetchByLabel("timeline-of-events")  // → PHP: SELECT * ... WHERE label_key='timeline-of-events'
+    apiFetchByLabel("timeline-of-events")
       .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
       .catch(() => {})
-    apiFetchByLabel("notable-figures")     // → PHP: SELECT * ... WHERE label_key='notable-figures'
+    apiFetchByLabel("notable-figures")
       .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
       .catch(() => {})
   }, [])
@@ -130,6 +129,7 @@ export default function HistoryPage() {
                         {event.significance === "major" && <Badge className="text-xs bg-red-500 text-white border-0"><Shield className="h-2.5 w-2.5 mr-1" /> Major Event</Badge>}
                       </div>
                       <h3 className="text-base font-black text-foreground mb-1">{event.title}</h3>
+                      {event.author && <p className="text-xs text-muted-foreground/70 mb-1">By {event.author}</p>}
                       <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
                       {event.image && (
                         <div className="relative h-40 rounded-lg overflow-hidden mb-3">
@@ -176,6 +176,13 @@ export default function HistoryPage() {
                         {personCategoryLabels[person.category]}
                       </Badge>
                     </div>
+                    {person.featured && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm">
+                          <Star className="h-2.5 w-2.5 mr-1" /> Featured
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 )}
                 <CardContent className="p-5 flex flex-col flex-1">
@@ -186,7 +193,8 @@ export default function HistoryPage() {
                   )}
                   <div className="mb-1 text-xs text-muted-foreground">{person.years}</div>
                   <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
-                  <p className="text-xs text-primary font-semibold mb-3">{person.title}</p>
+                  <p className="text-xs text-primary font-semibold mb-1">{person.title}</p>
+                  {person.author && <p className="text-xs text-muted-foreground/70 mb-2">By {person.author}</p>}
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{person.description}</p>
                   <div className="border-t border-border pt-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Legacy</p>

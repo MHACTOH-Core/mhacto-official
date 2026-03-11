@@ -256,7 +256,7 @@ export default function CategoryPageClient({
                   Close
                 </Button>
                 <Button asChild className="flex-1 text-xs sm:text-sm h-9 sm:h-10">
-                  <Link href="/contact?subject=inquiry">Learn More</Link>
+                  <Link href="/inquire">Learn More</Link>
                 </Button>
               </div>
             </CardContent>

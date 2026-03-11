@@ -253,6 +253,8 @@ class HomeContent
 
         return [
             'subtitle'      => $map['hero_subtitle'] ?? '',
+            'title'         => $titles[0]['title'] ?? '',
+            'highlight'     => $titles[0]['highlight'] ?? '',
             'titles'        => $titles,
             'description'   => $map['hero_description'] ?? '',
             'videoUrl'      => $map['hero_video_url'] ?? '',
@@ -289,27 +291,24 @@ class HomeContent
             }
         }
 
-        // Save up to 4 title/highlight pairs
-        if (isset($data['titles']) && is_array($data['titles'])) {
-            for ($i = 0; $i < 4; $i++) {
-                $title = $data['titles'][$i]['title'] ?? '';
-                $highlight = $data['titles'][$i]['highlight'] ?? '';
-                foreach ([
-                    "hero_title_" . ($i + 1)     => $title,
-                    "hero_highlight_" . ($i + 1) => $highlight,
-                ] as $configKey => $value) {
-                    $jsonValue = json_encode($value);
-                    $stmt = $this->conn->prepare("
-                        INSERT INTO config (config_group, config_key, config_value, data_type)
-                        VALUES ('hero', :k, :v, 'string')
-                        ON DUPLICATE KEY UPDATE config_value = :v2
-                    ");
-                    $stmt->execute([
-                        ':k'  => $configKey,
-                        ':v'  => $jsonValue,
-                        ':v2' => $jsonValue,
-                    ]);
-                }
+        // Save title/highlight — accept flat fields from admin form
+        if (isset($data['title']) || isset($data['highlight'])) {
+            $pairs = [
+                'hero_title_1'     => $data['title'] ?? '',
+                'hero_highlight_1' => $data['highlight'] ?? '',
+            ];
+            foreach ($pairs as $configKey => $value) {
+                $jsonValue = json_encode($value);
+                $stmt = $this->conn->prepare("
+                    INSERT INTO config (config_group, config_key, config_value, data_type)
+                    VALUES ('hero', :k, :v, 'string')
+                    ON DUPLICATE KEY UPDATE config_value = :v2
+                ");
+                $stmt->execute([
+                    ':k'  => $configKey,
+                    ':v'  => $jsonValue,
+                    ':v2' => $jsonValue,
+                ]);
             }
         }
 

@@ -9,7 +9,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { heritageSites, museums, religiousSites } from "@/lib/data/destinations-data"
+import { type HeritageSite, type Museum, type ReligiousSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite, cmsToMuseum, cmsToReligiousSite } from "@/lib/cms-mappers"
+import { type CMSPost } from "@/lib/data/admin-data"
 
 const museumTypeLabels: Record<string, string> = {
   history: "History & Heritage", art: "Art & Culture",
@@ -38,8 +41,25 @@ type MapDestination = {
 }
 
 export default function DestinationsPage() {
+  const [heritageSites, setHeritageSites] = useState<HeritageSite[]>([])
+  const [museums, setMuseums] = useState<Museum[]>([])
+  const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>([])
   const [activeSection, setActiveSection] = useState("heritage-sites")
   const [mapDest, setMapDest] = useState<MapDestination | null>(null)
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts: CMSPost[]) => {
+        if (!posts?.length) return
+        const heritage = posts.filter(p => (p.category ?? "").toLowerCase().includes("heritage"))
+        const museum = posts.filter(p => (p.category ?? "").toLowerCase().includes("museum"))
+        const religious = posts.filter(p => (p.category ?? "").toLowerCase().includes("religious"))
+        if (heritage.length) setHeritageSites(heritage.map(cmsToHeritageSite))
+        if (museum.length) setMuseums(museum.map(cmsToMuseum))
+        if (religious.length) setReligiousSites(religious.map(cmsToReligiousSite))
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,7 +113,7 @@ export default function DestinationsPage() {
       </div>
 
       {/* ── Heritage Sites ── */}
-      <section id="heritage-sites" className="py-12` sm:py-16 lg:py-20 border-b border-border">
+      <section id="heritage-sites" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Landmark className="h-5 w-5 text-primary" /></div>

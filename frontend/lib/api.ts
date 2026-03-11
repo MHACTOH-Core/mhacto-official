@@ -280,7 +280,7 @@ export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
   if (!hasNonReplyField) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
 
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
-    method: "POST",
+    method: "PUT",
     body: JSON.stringify(payload),
   })
 }

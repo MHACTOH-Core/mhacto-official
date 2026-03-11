@@ -8,7 +8,7 @@ import { Compass, MapPin, Clock, Ticket, ChevronDown, ChevronUp, Star, ExternalL
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { attractions as fallbackAttractions, categoryLabels, type Place, type PlaceCategory } from "@/lib/data/places-data"
+import { categoryLabels, type Place, type PlaceCategory } from "@/lib/data/places-data"
 import { apiFetchByLabel } from "@/lib/api"
 
 // Category color config
@@ -127,7 +127,7 @@ function PlaceCard({ place }: { place: Place }) {
 }
 
 export default function TourismWondersPage() {
-  const [places, setPlaces] = useState<Place[]>(fallbackAttractions)
+  const [places, setPlaces] = useState<Place[]>([])
   const [activeFilter, setActiveFilter] = useState<PlaceCategory | "all">("all")
 
   // Fetch from CMS — falls back to static data if API is unavailable

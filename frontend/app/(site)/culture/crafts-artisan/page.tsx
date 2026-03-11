@@ -10,7 +10,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { artisans as fallbackArtisans, culturalPractices as fallbackPractices, type Artisan } from "@/lib/data/culture-data"
+import { type Artisan, type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -79,6 +79,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">
+        {artisan.author && <p className="text-xs text-muted-foreground/70 mb-2">By {artisan.author}</p>}
         {/* Description */}
         <div
           className={`text-sm text-muted-foreground leading-relaxed overflow-hidden transition-all duration-300 ${
@@ -153,10 +154,9 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 
 // ── Page ──────────────────────────────────────────────────────────────
 export default function CraftsArtisanPage() {
-  const [artisanList, setArtisanList] = useState(fallbackArtisans)
-  const [practiceList, setPracticeList] = useState(fallbackPractices)
+  const [artisanList, setArtisanList] = useState<Artisan[]>([])
+  const [practiceList, setPracticeList] = useState<CulturalPractice[]>([])
 
-  // Each call sends GET /api/posts/read.php?label={label}&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
       .then((posts) => { if (posts?.length) setArtisanList(posts.map(cmsToArtisan)) })
@@ -167,7 +167,8 @@ export default function CraftsArtisanPage() {
   }, [])
 
   // The featured artisan is the first one (longest experience / most decorated)
-  const [featured, ...rest] = artisanList
+  const featured = artisanList[0] ?? null
+  const rest = artisanList.slice(1)
 
   // Craft-related cultural practices for the spotlight strip
   const craftPractices = practiceList.filter(
@@ -245,9 +246,11 @@ export default function CraftsArtisanPage() {
           </div>
 
           {/* Featured card – wider */}
+          {featured && (
           <div className="max-w-2xl">
             <ArtisanCard artisan={featured} featured />
           </div>
+          )}
         </div>
       </section>
 

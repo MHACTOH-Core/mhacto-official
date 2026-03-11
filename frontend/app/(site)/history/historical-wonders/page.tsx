@@ -8,9 +8,10 @@ import { Landmark, MapPin, Clock, Shield, Star, ChevronDown, ChevronUp, BookOpen
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { heritageSites as fallbackHeritage, type HeritageSite } from "@/lib/data/destinations-data"
+import { type HeritageSite } from "@/lib/data/destinations-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToHeritageSite } from "@/lib/cms-mappers"
+import { type CMSPost } from "@/lib/data/admin-data"
 
 const categoryConfig: Record<HeritageSite["category"], { label: string; color: string }> = {
   church:      { label: "Church",        color: "bg-amber-100 text-amber-800 border-amber-200" },
@@ -86,6 +87,7 @@ function HeritageCard({ site }: { site: HeritageSite }) {
       )}
 
       <CardContent className="p-5 flex flex-col flex-1">
+        {site.author && <p className="text-xs text-muted-foreground/70 mb-2">By {site.author}</p>}
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{site.description}</p>
 
         <div className="border-t border-border pt-3 space-y-1.5 mb-4">
@@ -148,13 +150,15 @@ function HeritageCard({ site }: { site: HeritageSite }) {
 }
 
 export default function HistoricalWondersPage() {
-  const [sites, setSites] = useState<HeritageSite[]>(fallbackHeritage)
+  const [sites, setSites] = useState<HeritageSite[]>([])
   const [activeFilter, setActiveFilter] = useState<HeritageSite["category"] | "all">("all")
 
-  // Sends GET /api/posts/read.php?label=heritage-sites&status=published → PHP SQL SELECT → returns JSON
   useEffect(() => {
-    apiFetchByLabel("heritage-sites")
-      .then((posts) => { if (posts?.length) setSites(posts.map(cmsToHeritageSite)) })
+    apiFetchByLabel("destinations")
+      .then((posts: CMSPost[]) => {
+        const heritage = posts?.filter(p => (p.category ?? "").toLowerCase().includes("heritage"))
+        if (heritage?.length) setSites(heritage.map(cmsToHeritageSite))
+      })
       .catch(() => {})
   }, [])
 

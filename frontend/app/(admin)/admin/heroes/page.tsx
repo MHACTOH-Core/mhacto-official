@@ -18,6 +18,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -165,6 +175,9 @@ export default function HeroesAdminPage() {
   // Preview dialog
   const [previewing, setPreviewing] = useState<PageHeroData | null>(null)
 
+  // Save confirmation
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+
   // Form state (for edit dialog)
   const [formImageUrl, setFormImageUrl] = useState("")
   const [formIconName, setFormIconName] = useState("")
@@ -205,7 +218,7 @@ export default function HeroesAdminPage() {
     setSaveSuccess(false)
   }
 
-  async function handleSave() {
+  async function doSave() {
     if (!editing) return
     setSaving(true)
     setSaveSuccess(false)
@@ -232,6 +245,10 @@ export default function HeroesAdminPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleSave() {
+    setSaveConfirmOpen(true)
   }
 
   if (!isLoggedIn) return null
@@ -551,6 +568,24 @@ export default function HeroesAdminPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Save Confirmation */}
+      <AlertDialog open={saveConfirmOpen} onOpenChange={setSaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to save?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the page hero on the live site. Please make sure all changes are correct.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={doSave}>
+              Save Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
