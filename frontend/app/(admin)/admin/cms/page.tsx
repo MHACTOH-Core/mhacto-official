@@ -167,6 +167,9 @@ export default function CMSPage() {
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<CMSPost | null>(null)
 
+  // Save confirm
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+
   // Preview
   const [previewPost, setPreviewPost] = useState<CMSPost | null>(null)
   const [previewImgIdx, setPreviewImgIdx] = useState(0)
@@ -241,6 +244,11 @@ export default function CMSPage() {
 
   const handleSave = () => {
     if (!form.title.trim() || !form.body.trim()) return
+    setSaveConfirmOpen(true)
+  }
+
+  const executeSave = () => {
+    setSaveConfirmOpen(false)
 
     const payload: Record<string, unknown> = {
       title: form.title,
@@ -936,8 +944,12 @@ export default function CMSPage() {
                       </Label>
                       <Input
                         value={form.contact}
-                        onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                        placeholder={form.label === "travel-tours" ? "e.g. MHACTO Office" : "e.g. (044) 123-4567"}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
+                          setForm({ ...form, contact: val })
+                        }}
+                        type="tel"
+                        placeholder={form.label === "travel-tours" ? "e.g. (044) 123-4567" : "e.g. (044) 123-4567"}
                       />
                     </div>
 
@@ -1202,6 +1214,24 @@ export default function CMSPage() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* ── Save Confirm ── */}
+        <AlertDialog open={saveConfirmOpen} onOpenChange={setSaveConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to save?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will {editingPost ? "update" : "create"} the content on the site. Please make sure all details are correct.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSave}>
+                {editingPost ? "Save Changes" : "Create Post"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

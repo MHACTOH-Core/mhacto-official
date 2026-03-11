@@ -818,7 +818,7 @@ export default function HomeContentPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={() => confirmSave(handleSave)} className="gap-2">
               <Save className="h-4 w-4" />
               {editingItem ? "Save Changes" : "Create"}
             </Button>

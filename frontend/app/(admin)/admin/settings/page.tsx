@@ -159,10 +159,13 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Contact Phone</Label>
                   <Input
+                    type="tel"
                     value={form.contactPhone}
-                    onChange={(e) =>
-                      setForm({ ...form, contactPhone: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
+                      setForm({ ...form, contactPhone: val })
+                    }}
+                    placeholder="e.g. (044) 123-4567"
                   />
                 </div>
               </div>
