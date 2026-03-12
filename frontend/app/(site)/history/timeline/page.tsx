@@ -1,13 +1,17 @@
-"use client"
+﻿"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { asset } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Clock, BookOpen, Star, ChevronDown, ChevronUp } from "lucide-react"
+import { ArrowLeft, BookOpen, Clock, Star, ChevronDown, ChevronUp } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { timelineEvents, type TimelineEvent } from "@/lib/data/history-data"
+import { timelineEvents as fallbackEvents, type TimelineEvent } from "@/lib/data/history-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTimelineEvent } from "@/lib/cms-mappers"
 
 const significanceBadge: Record<TimelineEvent["significance"], { label: string; className: string }> = {
   major: { label: "Major Event", className: "bg-primary/10 text-primary border-primary/20" },
@@ -16,7 +20,15 @@ const significanceBadge: Record<TimelineEvent["significance"], { label: string; 
 }
 
 export default function TimelinePage() {
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  // Sends GET /api/posts/read.php?label=timeline-of-events&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("timeline-of-events")
+      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
+      .catch(() => {})
+  }, [])
 
   const toggle = (year: string) =>
     setExpandedId((prev) => (prev === year ? null : year))
@@ -24,37 +36,16 @@ export default function TimelinePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to home</span>
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">History</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">
-              Timeline of Events
-            </h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              From pre-colonial settlements to modern milestones — a chronological journey through the rich history
-              of Bocaue, Bulacan.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="timeline"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Clock"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="History"
+        fallbackTitle="Historical Roadmap of Bocaue"
+        fallbackDescription="Trace Bocaue's journey from pre-colonial river settlements to a world-record-holding modern municipality — a living roadmap through over 1,000 years of heritage."
+        showBackButton
+      />
 
       {/* Intro */}
       <section className="py-10 sm:py-14 bg-gradient-to-b from-muted/40 to-background border-b border-border">
@@ -85,8 +76,8 @@ export default function TimelinePage() {
               <Clock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Chronological History</h2>
-              <p className="text-muted-foreground">Click any event to read the full story</p>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Historical Roadmap</h2>
+              <p className="text-muted-foreground">Click any milestone to read the full story</p>
             </div>
           </div>
 

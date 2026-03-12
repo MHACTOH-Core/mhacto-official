@@ -9,8 +9,11 @@ export interface CuisineItem {
   description: string
   story: string
   image: string
+  gallery?: string[]
   where: string[]
   bestTime?: string
+  isFeatured?: boolean
+  author?: string
 }
 
 export const localCuisine: CuisineItem[] = [
@@ -24,6 +27,12 @@ export const localCuisine: CuisineItem[] = [
     story:
       "Puto Seko is perhaps the snack most associated with Bocaue. Unlike the steamed puto found elsewhere in the Philippines, the Bocaue variety is oven-baked, yielding a dry, melt-in-your-mouth texture. Made from rice flour, butter, eggs, and sugar, each batch requires careful hand-mixing so the dough doesn't become too dense. Families have been baking puto seko for generations, and several home-based bakeries in the town proper sell hundreds of pieces daily — especially in the weeks leading up to the Pagoda Festival when demand spikes dramatically.",
     image: asset("/images/places/Food.jpg"),
+    gallery: [
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     where: ["Bocaue Town Center", "Local bakeries along Rizal Street"],
     bestTime: "Year-round; peak season around the Pagoda Festival in August",
   },
@@ -36,6 +45,12 @@ export const localCuisine: CuisineItem[] = [
     story:
       "Taho vendors have been a fixture of Bocaue's early mornings for over a hundred years. Balancing aluminum canisters on their shoulders, they call out 'Tahooo!' through the predawn streets, drawing residents out for a warm cup before school or work. Bocaue's taho is distinguished by its particularly smooth silken tofu, sourced from a small local producer who uses traditional recipes passed down from Chinese settlers. The arnibal syrup is cooked longer for a richer molasses-like depth compared to the Manila version.",
     image: asset("/images/places/Food.jpg"),
+    gallery: [
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     where: ["Morning street vendors throughout Bocaue", "Public market"],
     bestTime: "Early mornings (5:00 AM – 8:00 AM)",
   },
@@ -48,6 +63,12 @@ export const localCuisine: CuisineItem[] = [
     story:
       "Every December, the churchyard of St. Martin of Tours transforms at 3 AM into a fragrant outdoor food market. Vendors set up clay pots over charcoal fires to bake bibingka — a coconut-milk rice cake topped with itlog na maalat (salted duck egg) and grated coconut. Beside them, bamboo tubes are packed with black glutinous rice and steamed over boiling water to produce puto bumbong, served with muscovado sugar and coconut. These December rituals are as much about community as they are about food.",
     image: asset("/images/places/local-delicacies.jpg"),
+    gallery: [
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
     where: ["St. Martin of Tours Church yard", "Bocaue Public Market"],
     bestTime: "December (Simbang Gabi season)",
   },
@@ -60,6 +81,12 @@ export const localCuisine: CuisineItem[] = [
     story:
       "Bocaue shares Bulacan's centuries-old lechon tradition. At every significant celebration — weddings, birthdays, the fiesta of St. Martin of Tours, and the Pagoda Festival — whole pigs are slow-roasted over hardwood coals for up to six hours. The Bulacan style uses liberal amounts of lemongrass (tanglad), bay leaves, and garlic stuffed inside the cavity, which infuses the juices and creates an intensely aromatic, crackling-crisp skin. Local lechon masters (manghahanda) are hired weeks in advance for major celebrations.",
     image: asset("/images/places/Food.jpg"),
+    gallery: [
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
     where: ["Catering families & lechon stalls near the town plaza", "Bocaue Public Market"],
     bestTime: "Fiesta season (November) and Pagoda Festival (August)",
   },
@@ -72,6 +99,12 @@ export const localCuisine: CuisineItem[] = [
     story:
       "Every weekend, Bocaue's public market fills with colorful banana-leaf-wrapped kakanin prepared by home cooks who have mastered these traditional recipes. Suman — glutinous rice cooked in coconut milk and wrapped in banana leaves — is the most popular, served with ripe mango or tsokolate. Sapin-sapin features layered glutinous rice tinted in purple, white, and yellow. Biko is a sticky-sweet coconut rice cake topped with latik (caramelized coconut cream). These sweets remain deeply embedded in Bocaue's festive and everyday food culture.",
     image: asset("/images/places/local-delicacies.jpg"),
+    gallery: [
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     where: ["Bocaue Public Market", "Weekend markets along the town plaza"],
     bestTime: "Weekends; especially during fiestas and holidays",
   },
@@ -87,6 +120,8 @@ export interface Festival {
   highlights: string[]
   story: string
   image: string
+  gallery?: string[]
+  author?: string
 }
 
 export const festivals: Festival[] = [
@@ -107,6 +142,12 @@ export const festivals: Festival[] = [
       "Solemn mass at St. Martin of Tours Church",
     ],
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "fiesta-san-martin",
@@ -125,6 +166,12 @@ export const festivals: Festival[] = [
       "Traditional kakanin and local food fair",
     ],
     image: asset("/images/places/Church.jpg"),
+    gallery: [
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "simbang-gabi",
@@ -142,6 +189,12 @@ export const festivals: Festival[] = [
       "Community caroling and parol displays",
     ],
     image: asset("/images/places/Church.jpg"),
+    gallery: [
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
   },
   {
     id: "independence-day",
@@ -160,6 +213,12 @@ export const festivals: Festival[] = [
       "Oratorical and essay competitions for students",
     ],
     image: asset("/images/places/Arts.jpg"),
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
   },
   {
     id: "new-year-fireworks",
@@ -177,6 +236,12 @@ export const festivals: Festival[] = [
       "Countdown events at the town plaza",
     ],
     image: asset("/images/places/fireworks.jpg"),
+    gallery: [
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
 ]
 
@@ -189,6 +254,8 @@ export interface CulturalPractice {
   significance: string
   status: "active" | "endangered" | "revived"
   image?: string
+  gallery?: string[]
+  author?: string
 }
 
 export const culturalPractices: CulturalPractice[] = [
@@ -202,6 +269,12 @@ export const culturalPractices: CulturalPractice[] = [
       "Recognized by the National Commission for Culture and the Arts as a national cultural tradition, the pagoda procession is a living expression of Bocaue's syncretic Catholic faith and its deep connection to the river that has nourished it for centuries. The tradition unites thousands of participants across all barangays in a single act of communal celebration.",
     status: "active",
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "balagtasan",
@@ -213,6 +286,12 @@ export const culturalPractices: CulturalPractice[] = [
       "Bocaue's claim as the hometown of Jose Corazon de Jesus ('Huseng Batute'), the greatest balagtasan champion of the 20th century, gives the town a special stake in preserving this oral literary tradition. MHACTO organizes annual balagtasan competitions in schools to pass the art to the next generation.",
     status: "revived",
     image: asset("/images/places/Arts.jpg"),
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
   },
   {
     id: "pandan-weaving",
@@ -224,6 +303,12 @@ export const culturalPractices: CulturalPractice[] = [
       "Pandan weaving is both a livelihood and an art form in Bocaue. Elderly weavers produce intricate geometric patterns that encode family traditions and local symbols. The MHACTO office has documented several master weavers and supports an apprenticeship program to transfer these skills to young community members.",
     status: "endangered",
     image: asset("/images/places/Arts.jpg"),
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "pagmamahal-sa-namatay",
@@ -255,6 +340,12 @@ export const culturalPractices: CulturalPractice[] = [
       "Bocaue's designation as the Fireworks Capital of the Philippines is built on this inherited craft. While modern safety regulations have formalized what was once a cottage industry, several families in Bocaue still produce fireworks by hand using techniques passed down from grandparents. MHACTO supports responsible preservation of this tradition through safety-compliant craftsmen's cooperatives.",
     status: "active",
     image: asset("/images/places/fireworks.jpg"),
+    gallery: [
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
 ]
 
@@ -321,6 +412,142 @@ export const localBusinesses: LocalBusiness[] = [
   },
 ]
 
+// ── People Wonders ──────────────────────────────────────────────────
+export interface PeopleWonder {
+  id: string
+  name: string
+  category: "pageant" | "arts" | "sports" | "civic" | "entertainment" | "academics"
+  title: string
+  achievement: string
+  description: string
+  year?: string
+  awards?: string[]
+  image?: string
+  social?: string
+  isAlive: true
+  gallery?: string[]
+  author?: string
+}
+
+export const peopleWonders: PeopleWonder[] = [
+  {
+    id: "maria-reyes-pageant",
+    name: "Maria Cristina Reyes",
+    category: "pageant",
+    title: "Miss Bocaue 2023 · Binibining Bulacan Top 5",
+    achievement: "Crowned Miss Bocaue 2023 and placed in the Top 5 of Binibining Bulacan, representing the municipality with grace and advocacy for heritage preservation.",
+    description:
+      "Maria Cristina grew up in Barangay Sta. Ana and developed a passion for cultural arts and community service. During her reign, she launched the 'Bocaue Proud' campaign, visiting public schools to promote awareness of the town's rich history and the Pagoda Festival tradition. Her platform centered on empowering young women through arts and livelihood training.",
+    year: "2023",
+    awards: ["Miss Bocaue 2023", "Binibining Bulacan Top 5", "Best in Cultural Attire – Binibining Bulacan 2023"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "jestoni-santos-athlete",
+    name: "Jestoni Santos",
+    category: "sports",
+    title: "National Age-Group Swimming Champion",
+    achievement: "Multiple gold medalist in regional and national age-group swimming competitions, representing Bulacan Province and carrying Bocaue's name to national meets.",
+    description:
+      "Jestoni began training at the Bocaue municipal pool at the age of 7. By 14, he had already claimed three gold medals in the Palarong Pambansa for the 100m and 200m freestyle events. Scouts from the Philippine Swimming League have identified him as a future national team prospect. He attributes his discipline to the support of Bocaue's community coaches and his family in Wakas.",
+    year: "2022–present",
+    awards: ["Palarong Pambansa Gold – 100m Freestyle 2023", "Palarong Pambansa Gold – 200m Freestyle 2023", "Bulacan Best Athlete in Aquatics 2022"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "ana-dela-cruz-artist",
+    name: "Ana Corazon Dela Cruz",
+    category: "arts",
+    title: "Visual Artist · National Youth Art Awardee",
+    achievement: "Recipient of the National Commission for Culture and the Arts (NCCA) Young Artists Grant 2024, known for large-scale paintings documenting Bocaue's river culture.",
+    description:
+      "Ana's signature series 'Ilog ng Pagasa' — a collection of 12 oil-on-canvas paintings depicting life along the Bocaue River — was exhibited at the Cultural Center of the Philippines and later toured provincial galleries across Bulacan. She cites the Pagoda Festival as her greatest creative inspiration, describing the river procession as 'a living painting that I try to freeze on canvas.' She teaches youth mural workshops at the MHACTO gallery every summer.",
+    year: "2024",
+    awards: ["NCCA Young Artists Grant 2024", "CCP Visual Arts Finalist 2023", "Bulacan Arts Festival Best in Painting 2022"],
+    image: asset("/images/places/Arts.jpg"),
+    isAlive: true,
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
+  },
+  {
+    id: "carlo-bautista-musician",
+    name: "Carlo Miguel Bautista",
+    category: "entertainment",
+    title: "Singer-Songwriter · OPM Regional Awardee",
+    achievement: "Award-winning OPM singer-songwriter whose debut album 'Sawa sa Tubig' draws from Bocaue's river narratives and folk music traditions, earning acclaim on streaming platforms.",
+    description:
+      "Carlo started singing at St. Martin of Tours Parish choir at age nine. His original compositions blend contemporary OPM with kundiman melodies and the rhythms of Bocaue's festival music. His debut EP, released independently in 2023, accumulated over 500,000 streams. The title track 'Sawa sa Tubig' is an ode to the Bocaue River and has been used as the background score for the LGU's tourism video campaigns.",
+    year: "2023",
+    awards: ["Himig Handog Finalist 2023", "Bulacan Music Award – Best New Artist 2023", "MHACTO Cultural Ambassador 2024"],
+    image: asset("/images/places/Arts.jpg"),
+    isAlive: true,
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/fireworks.jpg"),
+    ],
+  },
+  {
+    id: "dr-patricia-lim-civic",
+    name: "Dr. Patricia Lim-Gonzales",
+    category: "civic",
+    title: "Community Physician · Gawad Kalinga Health Hero 2023",
+    achievement: "Bocaue-born physician who founded the 'Libreng Konsulta' free community clinic serving over 3,000 underprivileged residents annually, recognized by Gawad Kalinga as a 2023 Health Hero.",
+    description:
+      "After completing her medical degree at UP Manila, Dr. Patricia returned to Bocaue and established a free weekend clinic in Barangay Turo, initially operating from her family's garage. Today, the clinic has grown into a proper medical facility with volunteer doctors and nurses from Manila. She has also spearheaded annual medical missions during the Pagoda Festival, providing free check-ups, medicines, and dental services to festival-goers and residents.",
+    year: "2023",
+    awards: ["Gawad Kalinga Health Hero 2023", "Bulacan Provincial Government Outstanding Citizen 2022", "UP Manila Distinguished Alumna 2024"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "lea-santos-pageant-2",
+    name: "Lea Mikaela Santos",
+    category: "pageant",
+    title: "Mutya ng Bulacan 2022 · Miss Tourism Bulacan",
+    achievement: "Crowned Mutya ng Bulacan 2022 and Miss Tourism Bulacan, championing Bocaue's cultural heritage and the Pagoda Festival on provincial and national tourism stages.",
+    description:
+      "A native of Barangay Batia, Lea used her titles to promote Bocaue as a cultural and eco-tourism destination. She represented Bulacan in national pageants and served as face of the provincial tourism department's 'Visit Bulacan' campaign. Off the stage, she volunteers at heritage education programs and has been instrumental in fundraising for the restoration of old colonial-era structures in the town proper.",
+    year: "2022",
+    awards: ["Mutya ng Bulacan 2022", "Miss Tourism Bulacan 2022", "Best in Talent – Mutya ng Bulacan 2022"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "ryan-ocampo-academics",
+    name: "Ryan Paolo Ocampo",
+    category: "academics",
+    title: "UP Diliman Summa Cum Laude · Bar Topnotcher 2024",
+    achievement: "Graduated Summa Cum Laude from UP Diliman College of Law and ranked in the Top 10 of the 2024 Philippine Bar Examinations, the highest academic achievement from Bocaue in recent memory.",
+    description:
+      "Ryan is the son of a tricycle driver from Barangay Lolomboy who earned a scholarship to UP Diliman, where he distinguished himself in legal studies. His bar examination performance — achieved while working part-time as a legal aid volunteer — has made him a symbol of meritocracy and the power of public education in Bocaue. He has pledged to return to his community to provide free legal counsel to indigent residents through the MHACTO's community legal desk.",
+    year: "2024",
+    awards: ["UP Diliman Summa Cum Laude 2024", "2024 Philippine Bar Top 10", "UP Law Dean's Medal of Excellence"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+  {
+    id: "sofia-garcia-dancer",
+    name: "Sofia Anne Garcia",
+    category: "arts",
+    title: "Ballet & Folk Dance Champion · Bayanihan Youth Ensemble",
+    achievement: "Principal dancer of the Bayanihan Youth Ensemble who has performed at international folk dance competitions in Asia and Europe, representing Philippine culture on the world stage.",
+    description:
+      "Sofia trained at the Bocaue School of Arts and has been performing Philippine folk dances since age six. Her technical precision and storytelling through movement brought her to the Bayanihan Youth Ensemble, where she has been a principal dancer since 2021. She has performed in South Korea, Japan, Germany, and Spain, always returning to Bocaue to teach free dance workshops for children in the community, ensuring the next generation of folk dancers continues the tradition.",
+    year: "2021–present",
+    awards: ["Bayanihan Youth Ensemble Principal Dancer 2021", "Best Performer – ASEAN Folk Dance Festival 2023", "MHACTO Arts Excellence Award 2024"],
+    image: asset("/images/placeholder-user.jpg"),
+    isAlive: true,
+  },
+]
+
 // ── Crafts & Artisans ────────────────────────────────────────────────
 export interface Artisan {
   id: string
@@ -332,6 +559,8 @@ export interface Artisan {
   awards?: string[]
   location: string
   image?: string
+  gallery?: string[]
+  author?: string
 }
 
 export const artisans: Artisan[] = [
@@ -346,6 +575,12 @@ export const artisans: Artisan[] = [
     awards: ["National Museum Featured Artisan 2019", "MHACTO Heritage Bearer 2022"],
     location: "Sta. Ana, Bocaue",
     image: asset("/images/places/Arts.jpg"),
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
   },
   {
     id: "roman-woodcarver",
@@ -357,6 +592,12 @@ export const artisans: Artisan[] = [
     products: ["Santo Niño carvings", "San Martin de Tours images", "Decorative relief panels"],
     location: "Bocaue Town Center",
     image: asset("/images/places/Arts.jpg"),
+    gallery: [
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "perla-clay-pots",
@@ -368,6 +609,12 @@ export const artisans: Artisan[] = [
     products: ["Palayok cooking pots", "Clay water jugs (banga)", "Decorative vases"],
     location: "Wakas, Bocaue",
     image: asset("/images/places/oldtownbocaue.jpg"),
+    gallery: [
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/river-festival.jpg"),
+    ],
   },
   {
     id: "pyro-artist",
@@ -380,5 +627,107 @@ export const artisans: Artisan[] = [
     awards: ["BOCAUE FESTIVAL Best Display 2022", "Central Luzon Pyrotechnics Champion 2023"],
     location: "Bocaue Pyrotechnics Zone",
     image: asset("/images/places/fireworks.jpg"),
+    gallery: [
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
+  },
+]
+
+// ── Restaurants & Eateries ───────────────────────────────────────────
+export interface Restaurant {
+  id: string
+  name: string
+  type: "restaurant" | "eatery" | "cafe" | "carinderia" | "bakery"
+  description: string
+  specialties: string[]
+  location: string
+  hours?: string
+  priceRange?: "₱" | "₱₱" | "₱₱₱"
+  image?: string
+  isOpen?: boolean
+  author?: string
+}
+
+export const restaurants: Restaurant[] = [
+  {
+    id: "aling-nenas-lutuan",
+    name: "Aling Nena's Lutuan",
+    type: "carinderia",
+    description:
+      "A beloved neighborhood carinderia operating since the 1970s, serving hearty Bulacan-style home cooking. Famous for its slow-cooked kare-kare and fresh-grilled tilapia straight from the Bocaue River.",
+    specialties: ["Kare-Kare with Bagoong", "Sinigang na Tilapia", "Pinakbet Bulacan", "Steamed Rice Cakes"],
+    location: "Rizal Street, Bocaue Town Center",
+    hours: "6:00 AM – 3:00 PM daily",
+    priceRange: "₱",
+    image: asset("/images/places/Food.jpg"),
+    isOpen: true,
+  },
+  {
+    id: "bocaue-heritage-kitchen",
+    name: "Bocaue Heritage Kitchen",
+    type: "restaurant",
+    description:
+      "A sit-down restaurant in a restored ancestral house near St. Martin of Tours Church, serving curated heritage recipes of Bulacan. The menu features dishes documented by the MHACTO cultural team.",
+    specialties: ["Binagoongang Bagnet", "Chicken Pastel Bulacan-style", "Heritage Pancit Bihon", "Ube Halaya Dessert Platter"],
+    location: "Near St. Martin of Tours Church, Bocaue",
+    hours: "10:00 AM – 9:00 PM (Tue–Sun)",
+    priceRange: "₱₱",
+    image: asset("/images/places/oldtownbocaue.jpg"),
+    isOpen: true,
+  },
+  {
+    id: "mang-rudy-ihawan",
+    name: "Mang Rudy's Ihawan",
+    type: "eatery",
+    description:
+      "An open-air grill house that has been a fixture along MacArthur Highway for decades. Known for its charcoal-grilled liempo (pork belly) and freshly marinated chicken inasal served with garlic rice.",
+    specialties: ["Grilled Liempo", "Chicken Inasal", "Inihaw na Isda", "Atchara & Sawsawan"],
+    location: "MacArthur Highway, Bocaue",
+    hours: "10:00 AM – 10:00 PM daily",
+    priceRange: "₱",
+    image: asset("/images/places/Food.jpg"),
+    isOpen: true,
+  },
+  {
+    id: "plaza-cafe-bocaue",
+    name: "Plaza Café Bocaue",
+    type: "cafe",
+    description:
+      "A cozy café overlooking the town plaza, blending local coffee with Bocaue-inspired pastries. A favorite among locals for afternoon merienda, featuring Kapeng Barako and kakanin-inspired desserts.",
+    specialties: ["Kapeng Barako", "Puto Seko Latte", "Bibingka Cheesecake", "Palitaw Waffles"],
+    location: "Bocaue Town Plaza, Bocaue",
+    hours: "7:00 AM – 8:00 PM daily",
+    priceRange: "₱₱",
+    image: asset("/images/places/Food.jpg"),
+    isOpen: true,
+  },
+  {
+    id: "dela-cruz-bakery",
+    name: "Dela Cruz Heritage Bakery",
+    type: "bakery",
+    description:
+      "The oldest family bakery in Bocaue, producing the town's iconic Puto Seko since 1952. Four generations of the Dela Cruz family have kept the original recipe alive, supplying local sari-sari stores and shipping nationwide.",
+    specialties: ["Puto Seko (original recipe)", "Puto Cheese", "Pan de Sal Bulacan", "Traditional Kakanin"],
+    location: "Rizal Street, Bocaue Town Center",
+    hours: "5:00 AM – 6:00 PM daily",
+    priceRange: "₱",
+    image: asset("/images/places/Food.jpg"),
+    isOpen: true,
+  },
+  {
+    id: "fiesta-sa-bocaue-resto",
+    name: "Fiesta sa Bocaue",
+    type: "restaurant",
+    description:
+      "A festive family restaurant themed around the Bocaue River Festival, with décor featuring pagoda replicas and river motifs. The menu celebrates the flavors enjoyed during the annual Pagoda celebration.",
+    specialties: ["Lechon Bulacan (pre-order)", "Seafood Kare-Kare", "Festival Boodle Fight Set", "Halo-Halo Specials"],
+    location: "Brgy. Batia, MacArthur Highway, Bocaue",
+    hours: "10:00 AM – 10:00 PM daily",
+    priceRange: "₱₱",
+    image: asset("/images/places/river-festival.jpg"),
+    isOpen: true,
   },
 ]

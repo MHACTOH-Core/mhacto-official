@@ -1,3 +1,401 @@
+// ── Unified All-Schools Directory ────────────────────────────────────
+export interface SchoolEntry {
+  id: string
+  name: string
+  ownership: "public" | "private"
+  level: "elementary" | "junior-high" | "senior-high" | "college" | "technical-vocational" | "integrated"
+  barangay: string
+  description: string
+  logo?: string           // path under /public
+  programs: string[]
+  enrollment?: string
+  yearEstablished?: string
+  contact?: string
+  website?: string
+}
+
+export const allSchools: SchoolEntry[] = [
+  // ── Public Elementary Schools ────────────────────────────────────
+  {
+    id: "bambang-es",
+    name: "Bambang Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Bambang",
+    description:
+      "A DepEd-accredited public elementary school serving the barangay of Bambang, implementing the K–6 curriculum with Mother Tongue-Based Multilingual Education and school-based feeding programs.",
+    programs: ["K–6 Complete Elementary Curriculum", "MTB-MLE Program", "Gulayan sa Paaralan"],
+  },
+  {
+    id: "batia-es",
+    name: "Batia Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Batia",
+    description:
+      "Serving the community of Batia, this public elementary school delivers the full DepEd K–6 curriculum alongside sports development and nutrition programs for its pupils.",
+    programs: ["K–6 Complete Elementary Curriculum", "School Sports Program", "Nutrition & Health Program"],
+  },
+  {
+    id: "binang-es",
+    name: "Biñang Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Biñang",
+    description:
+      "A barangay-level public elementary school in Biñang offering the national K–6 curriculum and participating in Division-level academic and cultural competitions.",
+    programs: ["K–6 Complete Elementary Curriculum", "Reading Literacy Program", "Cultural Arts Integration"],
+  },
+  {
+    id: "bunducan-es",
+    name: "Bunducan Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Bunducan",
+    description:
+      "Public elementary school in Bunducan implementing the DepEd K–6 curriculum, with active parent-teacher community associations supporting the school's programs and infrastructure.",
+    programs: ["K–6 Complete Elementary Curriculum", "PTCA-Supported Programs", "Brigada Eskwela"],
+  },
+  {
+    id: "bunlo-es",
+    name: "Bunlo Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Bunlo",
+    description:
+      "Serving the residents of Bunlo, this school delivers foundational education under the DepEd K–6 framework with emphasis on numeracy, literacy, and community-based learning.",
+    programs: ["K–6 Complete Elementary Curriculum", "Numeracy Intervention", "Community-Based Learning"],
+  },
+  {
+    id: "bocaue-central",
+    name: "Cong. E. R. Cruz Memorial Central School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Poblacion",
+    description:
+      "Also known as Bocaue Central School, this is one of the oldest and most prominent public elementary schools in the municipality, named in honor of Congressman E. R. Cruz. It serves the central barangays and is recognized for consistent academic performance at the division level.",
+    programs: ["K–6 Complete Elementary Curriculum", "Special Science Class", "School Sports Program", "Arts & Music Integration"],
+  },
+  {
+    id: "duhat-es",
+    name: "Duhat Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Duhat",
+    description:
+      "A public elementary school in Barangay Duhat offering the full DepEd K–6 curriculum. Active in tree-planting and environmental education programs in partnership with the local barangay.",
+    programs: ["K–6 Complete Elementary Curriculum", "Environmental Education Program", "Gulayan sa Paaralan"],
+  },
+  {
+    id: "lolomboy-es",
+    name: "Lolomboy Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Lolomboy",
+    description:
+      "Serving one of Bocaue's most populated barangays, Lolomboy Elementary implements DepEd's K–6 curriculum with additional focus on Science and Technology integration and active participation in Division competitions.",
+    programs: ["K–6 Complete Elementary Curriculum", "Science Club", "Brigada Eskwela Program"],
+  },
+  {
+    id: "taal-es",
+    name: "Taal Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Taal",
+    description:
+      "Public elementary school in Barangay Taal implementing the DepEd K–6 framework. Known for its active student organizations and community-oriented projects coordinated with the barangay council.",
+    programs: ["K–6 Complete Elementary Curriculum", "Student Government Program", "Community Outreach Activities"],
+  },
+  {
+    id: "tambubong-es",
+    name: "Tambubong Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Tambubong",
+    description:
+      "A community-rooted public elementary school in Tambubong, providing quality foundational education and participating in DepEd's feeding program and early literacy initiatives.",
+    programs: ["K–6 Complete Elementary Curriculum", "Early Literacy Program", "School Feeding Program"],
+  },
+  {
+    id: "turo-es",
+    name: "Turo Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Turo",
+    description:
+      "One of the barangay-level elementary schools serving the outer communities of Bocaue. Implements the Gulayan sa Paaralan (school garden) program as part of food and nutrition education.",
+    programs: ["K–6 Complete Elementary", "Gulayan sa Paaralan (School Garden)", "MTB-MLE Program"],
+  },
+  {
+    id: "bolakan-es",
+    name: "Bolakan Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Bolakan",
+    description:
+      "Public elementary school serving the Bolakan community under the DepEd K–6 curriculum. Recognized for its active participation in cultural programs and sports tournaments at the district level.",
+    programs: ["K–6 Complete Elementary Curriculum", "Cultural Arts Program", "District Sports Competitions"],
+  },
+  {
+    id: "northville-v-es",
+    name: "Northville V Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Lolomboy",
+    description:
+      "A public elementary school established to serve the growing residential community of Northville V. Implements the full DepEd K–6 curriculum with strong parent-teacher community involvement.",
+    programs: ["K–6 Complete Elementary Curriculum", "PTCA Programs", "Reading Intervention"],
+  },
+  {
+    id: "bocaue-hills-es",
+    name: "Bocaue Hills Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Batia",
+    description:
+      "Serving the Bocaue Hills subdivision community, this public elementary school provides accessible quality education under the DepEd K–6 curriculum to pupils from the surrounding residential areas.",
+    programs: ["K–6 Complete Elementary Curriculum", "Numeracy & Literacy Program", "Brigada Eskwela"],
+  },
+  {
+    id: "sta-martha-es",
+    name: "St. Martha Elementary School",
+    ownership: "public",
+    level: "elementary",
+    barangay: "Wakas",
+    description:
+      "A public elementary school named after St. Martha, delivering the DepEd K–6 curriculum to pupils from Wakas and neighboring barangays, with emphasis on values formation and academic excellence.",
+    programs: ["K–6 Complete Elementary Curriculum", "Values Formation Program", "School-Based Reading Program"],
+  },
+
+  // ── Public Secondary Schools ─────────────────────────────────────
+  {
+    id: "batia-hs",
+    name: "Batia High School",
+    ownership: "public",
+    level: "junior-high",
+    barangay: "Batia",
+    description:
+      "A public secondary school in Barangay Batia offering the complete Junior High School curriculum under DepEd. Known for its competitive sports teams and active Supreme Student Government.",
+    programs: ["Junior High School Complete Curriculum (Gr. 7–10)", "School Sports Program", "SSG Leadership Program"],
+  },
+  {
+    id: "lolomboy-nhs",
+    name: "Lolomboy National High School",
+    ownership: "public",
+    level: "junior-high",
+    barangay: "Lolomboy",
+    description:
+      "A DepEd national high school serving the students of Lolomboy and surrounding barangays, with a full Junior High School curriculum and strong involvement in Division-level academic and extracurricular competitions.",
+    programs: ["Junior High School Complete Curriculum (Gr. 7–10)", "Academic Bowl Teams", "Community Immersion Program"],
+  },
+  {
+    id: "taal-hs",
+    name: "Taal High School",
+    ownership: "public",
+    level: "junior-high",
+    barangay: "Taal",
+    description:
+      "Public secondary school in Barangay Taal delivering the DepEd Junior High School curriculum. Engages students in values formation, academic achievement, and service-learning activities.",
+    programs: ["Junior High School Complete Curriculum (Gr. 7–10)", "Reading Literacy Program", "Service-Learning Projects"],
+  },
+  {
+    id: "bambang-nhs",
+    name: "Iluminada Mendoza-Roxas Memorial High School",
+    ownership: "public",
+    level: "junior-high",
+    barangay: "Bambang",
+    description:
+      "Officially named the Iluminada Mendoza-Roxas Memorial High School and locally known as Bambang National High School, this public secondary school serves the students of Bambang and nearby areas with the full DepEd Junior High School curriculum.",
+    programs: ["Junior High School Complete Curriculum (Gr. 7–10)", "Technology & Livelihood Education", "Journalism & Student Publication"],
+  },
+
+  // ── Private Elementary & Secondary Schools ───────────────────────
+  {
+    id: "academia-sta-cruz",
+    name: "Academia de Sta. Cruz",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Catholic school in Bocaue offering quality basic education from Grade School through High School, guided by Christian values and a holistic approach to student development.",
+    programs: ["Grade School Curriculum (K–6)", "Junior High School (Gr. 7–10)", "Senior High School"],
+  },
+  {
+    id: "bocaue-adventist-es",
+    name: "Bocaue Adventist Elementary School",
+    ownership: "private",
+    level: "elementary",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Seventh-day Adventist school providing faith-integrated elementary education. Emphasizes character development, spiritual growth, and academic excellence in a nurturing Christian environment.",
+    programs: ["K–6 Elementary Curriculum", "Christian Values Formation", "Health & Wellness Education"],
+  },
+  {
+    id: "corinthian-school",
+    name: "Corinthian School",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private school in Bocaue offering a comprehensive basic education program from Grade School to High School, committed to developing well-rounded students grounded in academic excellence and good values.",
+    programs: ["Grade School Curriculum", "Junior High School", "Senior High School"],
+  },
+  {
+    id: "divine-world-learning",
+    name: "Divine World Learning School",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private learning institution in Bocaue providing integrated basic education anchored in Christian principles, nurturing students academically, morally, and spiritually from the early grades through high school.",
+    programs: ["Grade School Curriculum", "Junior High School", "Faith-Based Values Program"],
+  },
+  {
+    id: "friends-of-jesus",
+    name: "Friends of Jesus Christian School",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A Christian school in Bocaue integrating Biblical principles with a quality academic curriculum, fostering a Christ-centered learning environment for students from kindergarten through high school.",
+    programs: ["Kindergarten & Grade School", "Junior High School", "Christian Living & Values Education"],
+  },
+  {
+    id: "integrated-school-montessori",
+    name: "Integrated School of Montessori",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private school in Bocaue applying the Montessori educational philosophy alongside the standard DepEd curriculum, promoting child-centered, hands-on learning that develops independence and critical thinking from the early years.",
+    programs: ["Montessori Kindergarten & Preschool", "Grade School Curriculum", "Junior High School"],
+  },
+  {
+    id: "nehemiah-standard-academy",
+    name: "Nehemiah Standard Academy",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Christian school in Bocaue offering basic education animated by Biblical standards and committed to developing students of character, integrity, and academic competence.",
+    programs: ["Grade School Curriculum", "Junior High School", "Christian Character Formation Program"],
+  },
+  {
+    id: "our-lady-of-fatima-academy",
+    name: "Our Lady of Fatima Academy",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A Catholic private school in Bocaue bearing the patronage of Our Lady of Fatima, providing integrated basic education from Grade School through High School with emphasis on faith, service, and academic excellence.",
+    programs: ["Grade School Curriculum (K–6)", "Junior High School (Gr. 7–10)", "Senior High School", "Religious & Values Education"],
+  },
+  {
+    id: "st-francis-lyceum",
+    name: "St. Francis Lyceum",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private school in Bocaue named after St. Francis of Assisi, offering a complete basic education program that integrates Franciscan values of simplicity, humility, and care for creation with a strong academic curriculum.",
+    programs: ["Grade School Curriculum", "Junior High School", "Senior High School", "Values Formation & Social Responsibility"],
+  },
+  {
+    id: "st-john-academy-bayanihan",
+    name: "St. John Academy of Bayanihan",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bayanihan",
+    description:
+      "Located in the Bayanihan community of Bocaue, St. John Academy provides accessible private basic education grounded in Christian values, serving families in Bayanihan and surrounding neighborhoods.",
+    programs: ["Grade School Curriculum", "Junior High School", "Character Development Program"],
+  },
+  {
+    id: "jilcf-sintang-paaralan",
+    name: "JILCF Sintang Paaralan",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A school under the Jesus Is Lord Church Foundation, Sintang Paaralan delivers faith-based basic education integrating the DepEd curriculum with Christian formation and community values.",
+    programs: ["Grade School Curriculum", "Junior High School", "Christian Living & Formation"],
+  },
+  {
+    id: "sto-nino-academy",
+    name: "Sto. Niño Academy",
+    ownership: "private",
+    level: "integrated",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Catholic school under the patronage of the Holy Child Jesus (Sto. Niño), offering basic education from Grade School through High School anchored in devotion, service, and academic rigor.",
+    programs: ["Grade School Curriculum (K–6)", "Junior High School", "Religious Formation Program"],
+  },
+
+  // ── Higher Education / Colleges ──────────────────────────────────
+  {
+    id: "bulacan-polytechnic-college",
+    name: "Bulacan Polytechnic College",
+    ownership: "public",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "A government-run polytechnic college in Bocaue offering technical and professional degree programs aligned with industry needs. Provides affordable higher education to students from Bocaue and neighboring municipalities.",
+    programs: ["BS Industrial Technology", "Bachelor of Technical-Vocational Teacher Education", "BS Business Administration", "Associate in Computer Technology"],
+  },
+  {
+    id: "dr-yangas",
+    name: "Dr. Yanga's Colleges, Inc.",
+    ownership: "private",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "One of the premier private educational institutions in Bocaue and the surrounding Bulacan municipalities. Dr. Yanga's Colleges has been producing competent graduates across business, education, and health sciences since its founding.",
+    logo: "/images/logos/schools/dr-yangas.png",
+    programs: ["BS Business Administration", "BS Accountancy", "Bachelor of Elementary Education", "Bachelor of Secondary Education", "BS Nursing", "BS Criminology"],
+    yearEstablished: "1946",
+  },
+  {
+    id: "jilcf-inc",
+    name: "Jesus Is Lord Colleges Foundation, Inc.",
+    ownership: "private",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Christian higher education institution under the Jesus Is Lord Church Foundation, offering collegiate programs guided by Biblical principles and a commitment to producing graduates of integrity and professional competence.",
+    programs: ["BS Business Administration", "Bachelor of Elementary Education", "BS Information Technology", "Christian Ministry Program"],
+  },
+  {
+    id: "mt-carmel-college",
+    name: "Mt. Carmel College",
+    ownership: "private",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private Catholic college in Bocaue operated under the patronage of Our Lady of Mt. Carmel, offering higher education programs anchored in Carmelite spirituality and dedicated to excellence in academic formation.",
+    programs: ["BS Nursing", "BS Midwifery", "Bachelor of Elementary Education", "BS Business Administration"],
+  },
+  {
+    id: "st-paul-college",
+    name: "St. Paul College",
+    ownership: "private",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "A private college in Bocaue offering collegiate programs informed by the Pauline tradition of learning, service, and evangelization, preparing graduates for professional and civic roles in the community.",
+    programs: ["BS Business Administration", "BS Accountancy", "Bachelor in Elementary Education", "BS Computer Science"],
+  },
+  {
+    id: "colegio-de-san-martin",
+    name: "Colegio de San Martin",
+    ownership: "private",
+    level: "college",
+    barangay: "Bocaue Town Center",
+    description:
+      "Named after the municipality's patron saint, St. Martin of Tours, Colegio de San Martin is a private college in Bocaue offering higher education programs that blend rigorous academics with the values of charity, humility, and service.",
+    programs: ["BS Business Administration", "Bachelor of Elementary Education", "BS Criminology", "Associate Programs"],
+  },
+]
+
 // ── Educational Institutions: Colleges ──────────────────────────────
 export interface College {
   id: string
@@ -255,7 +653,6 @@ export interface MunicipalEvent {
   description: string
   highlights: string[]
   ticketed: boolean
-  price?: string
   organizer: string
   image?: string
 }

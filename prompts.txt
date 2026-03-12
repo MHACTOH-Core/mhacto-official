@@ -1,0 +1,21 @@
+1. change the local cuisine to culinary wonders and limit the featured food to 3 only
+
+2. add see more in the culinary wonders put it at the bottom
+
+3. change the background color of the see more button to the blue that this website use, add more see more not just in the culinary wonders but the whole in page of arts & culture
+
+4. For the local cuisine, add restaurants in bocaue and eatery
+
+5. change the footer color to white with huge drop shadow to make it noticable
+
+6. do all of the following and do not touch the backend and database:
+   - Historical Roadmap — make it a separate dynamic page
+   - Featured People Wonders on home page
+   - Featured Restaurants on home page
+   - People Wonders — separate dynamic page
+   - Tourism Wonders — separate dynamic page
+   - Historical Wonders — separate dynamic page
+   - Tour inquiry form: Full Name / Email / Inquiry Category [Student or Tourist] / Number of People (Pax) / Estimated Tour Dates / Inquiry Details (up to 4000 Characters)
+   - Culinary Wonders — separate dynamic page
+
+7. do the todos and do not touch the backend and database

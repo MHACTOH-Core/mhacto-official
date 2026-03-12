@@ -1,11 +1,16 @@
-"use client"
+﻿"use client"
 
-import Image from "next/image"
+import { useState, useEffect } from "react"
+import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { ArrowLeft, Map, Clock, Users, Star, Phone, Mail, CheckCircle } from "lucide-react"
+import { Map, Clock, Users } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { tourPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { GalleryImage } from "@/components/ui/gallery-image"
+import { type TourPackage } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTourPackage } from "@/lib/cms-mappers"
 
 const typeBadge: Record<TourPackage["type"], string> = {
   heritage: "bg-amber-100 text-amber-800 border-amber-200",
@@ -33,34 +38,27 @@ const difficultyColor: Record<TourPackage["difficulty"], string> = {
 }
 
 export default function TravelToursPage() {
+  const [tourPackages, setTourPackages] = useState<TourPackage[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("travel-tours")
+      .then((posts) => { if (posts?.length) setTourPackages(posts.map(cmsToTourPackage)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.50), rgba(0,0,0,0.40)), url(/images/places/river-festival.jpg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Map className="h-8 w-8 text-cyan-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-cyan-300">Tourism</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">Travel &amp; Tours</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              Curated tour packages by MHACTO Bocaue — guided experiences through history, culture, cuisine, and festival.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="travel-tours"
+        fallbackImage="/images/places/river-festival.jpg"
+        fallbackIcon="Map"
+        fallbackAccentColor="cyan-300"
+        fallbackLabel="Tourism"
+        fallbackTitle="Travel & Tours"
+        fallbackDescription="Curated tour packages by MHACTO Bocaue — guided experiences through history, culture, cuisine, and festival."
+        showBackButton
+      />
 
       {/* Content */}
       <section className="py-12 sm:py-16 lg:py-20">
@@ -79,8 +77,13 @@ export default function TravelToursPage() {
             {tourPackages.map((pkg) => (
               <Card key={pkg.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
                 <div className="grid gap-0 md:grid-cols-[1fr_2fr]">
-                  <div className="relative min-h-[280px] overflow-hidden">
-                    <Image src={pkg.image} alt={pkg.name} fill className="object-cover" />
+                  <GalleryImage
+                    src={pkg.image}
+          
+                    alt={pkg.name}
+                    outerClassName="h-full"
+                    className="relative flex-1 overflow-hidden min-h-[280px]"
+                  >
                     <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-transparent to-black/20" />
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                       <Badge variant="outline" className={`text-xs ${typeBadge[pkg.type]}`}>
@@ -90,9 +93,10 @@ export default function TravelToursPage() {
                         {difficultyLabel[pkg.difficulty]}
                       </Badge>
                     </div>
-                  </div>
+                  </GalleryImage>
                   <CardContent className="p-6 sm:p-8">
                     <h3 className="text-xl sm:text-2xl font-black text-foreground mb-2">{pkg.name}</h3>
+                    {pkg.author && <p className="text-xs text-muted-foreground/70 mb-2">By {pkg.author}</p>}
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">{pkg.description}</p>
 
                     <div className="flex flex-wrap gap-4 mb-5 text-sm">
@@ -100,60 +104,33 @@ export default function TravelToursPage() {
                         <Clock className="h-4 w-4 text-primary" />
                         {pkg.duration}
                       </div>
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <Users className="h-4 w-4 text-primary" />
-                        {pkg.groupSize}
-                      </div>
-                      <div className="flex items-center gap-1.5 font-bold text-primary">
-                        {pkg.price}
-                      </div>
+                      {pkg.bookingContact && (
+                        <div className="flex items-center gap-1.5 text-foreground">
+                          <Users className="h-4 w-4 text-primary" />
+                          {pkg.bookingContact}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Itinerary */}
-                    <div className="mb-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Itinerary</p>
-                      <div className="space-y-2">
-                        {pkg.itinerary.map((item) => (
-                          <div key={item.time} className="flex items-start gap-3">
-                            <span className="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 rounded px-1.5 py-0.5 mt-0.5">
-                              {item.time}
-                            </span>
-                            <span className="text-sm text-foreground">{item.activity}</span>
-                          </div>
-                        ))}
+                    {pkg.includes.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Includes</p>
+                        <ul className="space-y-1">
+                          {pkg.includes.slice(0, 4).map((item) => (
+                            <li key={item} className="text-sm text-foreground flex items-start gap-2">
+                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />{item}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-
-                    {/* Includes */}
-                    <div className="mb-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> Included
-                      </p>
-                      <ul className="space-y-1">
-                        {pkg.includes.map((inc) => (
-                          <li key={inc} className="text-sm text-foreground flex items-start gap-2">
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500 mt-0.5 flex-shrink-0" />
-                            {inc}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Booking */}
-                    <div className="border-t border-border pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Booking &amp; Inquiries</p>
-                      <div className="flex flex-wrap gap-3">
-                        <span className="flex items-center gap-1.5 text-xs text-foreground">
-                          <Phone className="h-3.5 w-3.5 text-primary" />
-                          {pkg.bookingContact.split("|")[0].trim()}
-                        </span>
-                        {pkg.bookingContact.includes("|") && (
-                          <span className="flex items-center gap-1.5 text-xs text-foreground">
-                            <Mail className="h-3.5 w-3.5 text-primary" />
-                            {pkg.bookingContact.split("|")[1].trim()}
-                          </span>
-                        )}
-                      </div>
+                    )}
+                    <div className="border-t border-border pt-4 mt-4">
+                      <Link
+                        href="/inquire"
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Book This Tour
+                      </Link>
                     </div>
                   </CardContent>
                 </div>

@@ -14,6 +14,16 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Save, User, Globe, Bell, Shield } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -21,6 +31,7 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState(settings)
   const [saved, setSaved] = useState(false)
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -33,6 +44,11 @@ export default function SettingsPage() {
   if (!isLoggedIn) return null
 
   const handleSave = () => {
+    setSaveConfirmOpen(true)
+  }
+
+  const executeSave = () => {
+    setSaveConfirmOpen(false)
     updateSettings(form)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
@@ -143,10 +159,13 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Contact Phone</Label>
                   <Input
+                    type="tel"
                     value={form.contactPhone}
-                    onChange={(e) =>
-                      setForm({ ...form, contactPhone: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
+                      setForm({ ...form, contactPhone: val })
+                    }}
+                    placeholder="e.g. (044) 123-4567"
                   />
                 </div>
               </div>
@@ -248,6 +267,24 @@ export default function SettingsPage() {
           </Card>
         </div>
       </main>
+
+      {/* Save Confirmation */}
+      <AlertDialog open={saveConfirmOpen} onOpenChange={setSaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to save?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the site settings. Please make sure all changes are correct.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeSave}>
+              Save Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

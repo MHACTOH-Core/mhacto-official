@@ -1,10 +1,14 @@
-"use client"
+﻿"use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { hospitals, type Hospital } from "@/lib/data/community-data"
+import { hospitals as fallbackHospitals, type Hospital } from "@/lib/data/community-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHospital } from "@/lib/cms-mappers"
 
 const typeBadge: Record<Hospital["type"], string> = {
   government: "bg-blue-100 text-blue-800 border-blue-200",
@@ -20,34 +24,32 @@ const typeLabels: Record<Hospital["type"], string> = {
 }
 
 export default function HospitalsPage() {
+  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+
+  // Sends GET /api/posts/read.php?label=hospitals&status=published → PHP runs SQL SELECT → returns JSON
+  useEffect(() => {
+    apiFetchByLabel("hospitals")
+      .then((posts) => {
+        if (posts && posts.length > 0) {
+          setHospitals(posts.map(cmsToHospital))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[280px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-20">
-          <Link href="/" className="inline-flex items-center gap-2 w-fit mb-8 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white transition-all">
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <Activity className="h-8 w-8 text-red-400" />
-              <span className="text-sm font-bold uppercase tracking-widest text-red-300">Community</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-2xl">Hospitals &amp; Health</h1>
-            <p className="text-lg text-white/90 drop-shadow-lg max-w-2xl">
-              Health facilities and medical services available to residents and visitors of Bocaue, Bulacan.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="hospitals"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="Activity"
+        fallbackAccentColor="red-300"
+        fallbackLabel="Community"
+        fallbackTitle="Hospitals &amp; Health"
+        fallbackDescription="Health facilities and medical services available to residents and visitors of Bocaue, Bulacan."
+        showBackButton
+      />
 
       {/* Emergency banner */}
       <div className="bg-red-600 text-white py-3">
@@ -72,7 +74,7 @@ export default function HospitalsPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 items-start">
             {hospitals.map((hospital) => (
               <Card key={hospital.id} className={`border-border hover:shadow-lg transition-all duration-300 flex flex-col ${hospital.emergency ? "hover:border-red-300" : "hover:border-primary/30"}`}>
                 <CardContent className="p-6 flex flex-col flex-1">

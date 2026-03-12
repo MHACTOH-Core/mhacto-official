@@ -2,6 +2,11 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   darkMode: ['class'],
+  safelist: [
+    // Dynamic accent colors used by PageHero component + admin heroes page
+    { pattern: /text-(amber|cyan|blue|green|purple|rose|orange|red|pink)-300/ },
+    { pattern: /bg-(amber|cyan|blue|green|purple|rose|orange|red|pink)-300/ },
+  ],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',

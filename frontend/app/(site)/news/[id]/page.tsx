@@ -1,39 +1,22 @@
-import type { Metadata } from "next"
-import { newsArticles, categoryLabels } from "@/lib/data/news-data"
 import NewsDetailClient from "./news-detail-client"
 
-export function generateStaticParams() {
-  return newsArticles.map((article) => ({
-    id: article.id,
-  }))
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}): Promise<Metadata> {
-  const { id } = await params
-  const article = newsArticles.find((a) => a.id === id)
-  if (!article) {
-    return { title: "Article Not Found" }
-  }
-  return {
-    title: article.title,
-    description: article.summary,
-    openGraph: {
-      title: `${article.title} | MHACTO Bocaue`,
-      description: article.summary,
-      type: "article",
-      publishedTime: article.date,
-      authors: [article.author],
-      images: article.image ? [{ url: article.image }] : undefined,
-    },
+/**
+ * Fetch all published news IDs so `output: 'export'` can pre-render them.
+ * Falls back to an empty array when the backend is unreachable (e.g. CI).
+ */
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${API_BASE}/api/posts/read.php?type=news`)
+    const data: { id: string }[] = await res.json()
+    return data.map((a) => ({ id: String(a.id) }))
+  } catch {
+    return []
   }
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const article = newsArticles.find((a) => a.id === id)
-  return <NewsDetailClient article={article} />
+  return <NewsDetailClient id={id} />
 }

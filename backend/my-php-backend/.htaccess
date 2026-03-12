@@ -1,5 +1,12 @@
-# .htaccess - Clean URLs (remove .php extension)
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([a-zA-Z0-9_/]+)$ $1.php [L]
+
+# ── Let existing files through (uploads, vendor, etc.) ──
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# ── Let existing directories through ──
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ── Route everything else to the central router ──
+RewriteRule ^(.*)$ index.php [QSA,L]

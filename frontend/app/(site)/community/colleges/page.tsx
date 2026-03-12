@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
+import { asset } from "@/lib/utils"
 import { ArrowLeft, GraduationCap, BookOpen, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,7 +25,7 @@ export default function CollegesPage() {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[280px] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/Arts.jpg)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/Arts.jpg')})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -60,7 +61,7 @@ export default function CollegesPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {colleges.map((college) => (
               <Card key={college.id} className="border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <CardContent className="p-6 flex flex-col flex-1">

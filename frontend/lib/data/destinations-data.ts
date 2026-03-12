@@ -12,6 +12,7 @@ export interface HeritageSite {
   hours: string
   highlights: string[]
   image: string
+  gallery?: string[]
   isProtected: boolean
   protectionLevel?: string
 }
@@ -36,6 +37,12 @@ export const heritageSites: HeritageSite[] = [
       "Site of the annual Pagoda Festival mass",
     ],
     image: asset("/images/places/Church.jpg"),
+    gallery: [
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     isProtected: true,
     protectionLevel: "National Cultural Treasure (proposed)",
   },
@@ -57,6 +64,12 @@ export const heritageSites: HeritageSite[] = [
       "Surrounded by heritage-era buildings",
     ],
     image: asset("/images/places/oldtownbocaue.jpg"),
+    gallery: [
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     isProtected: true,
     protectionLevel: "Municipal Heritage Site",
   },
@@ -77,6 +90,12 @@ export const heritageSites: HeritageSite[] = [
       "Photography landmark at sunset",
     ],
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     isProtected: false,
   },
   {
@@ -96,6 +115,12 @@ export const heritageSites: HeritageSite[] = [
       "Original municipal records dating to the Spanish period",
     ],
     image: asset("/images/places/oldtownbocaue.jpg"),
+    gallery: [
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     isProtected: true,
     protectionLevel: "Municipal Heritage Site",
   },
@@ -113,6 +138,7 @@ export interface Museum {
   admission: string
   contact?: string
   image: string
+  gallery?: string[]
 }
 
 export const museums: Museum[] = [
@@ -135,6 +161,12 @@ export const museums: Museum[] = [
     admission: "Free (donations welcome)",
     contact: "MHACTO Office, Bocaue Municipal Hall",
     image: asset("/images/places/oldtownbocaue.jpg"),
+    gallery: [
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+      asset("/images/places/river-festival.jpg"),
+    ],
   },
   {
     id: "pagoda-festival-museum",
@@ -153,6 +185,12 @@ export const museums: Museum[] = [
     hours: "Tuesday–Sunday: 9:00 AM – 5:00 PM",
     admission: "₱30 per person; students free with ID",
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
   },
   {
     id: "philippine-arena-visitor-center",
@@ -172,6 +210,12 @@ export const museums: Museum[] = [
     admission: "₱100 per person; guided tours available",
     contact: "Philippine Arena Administration Office",
     image: asset("/images/places/philippine-arena.jpg"),
+    gallery: [
+      asset("/images/places/philippine-arena.jpg"),
+      asset("/images/places/Arena.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
   },
 ]
 
@@ -187,6 +231,7 @@ export interface ReligiousSite {
   hours: string
   highlights: string[]
   image: string
+  gallery?: string[]
 }
 
 export const religiousSites: ReligiousSite[] = [
@@ -209,6 +254,12 @@ export const religiousSites: ReligiousSite[] = [
       "Spiritual anchor of the annual Pagoda Festival",
     ],
     image: asset("/images/places/Church.jpg"),
+    gallery: [
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+    ],
   },
   {
     id: "iglesia-ni-cristo-central-arena",
@@ -227,6 +278,12 @@ export const religiousSites: ReligiousSite[] = [
       "Center of the INC centennial celebrations of 2014",
     ],
     image: asset("/images/places/philippine-arena.jpg"),
+    gallery: [
+      asset("/images/places/philippine-arena.jpg"),
+      asset("/images/places/Arena.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
   {
     id: "holy-cross-shrine",
@@ -246,6 +303,12 @@ export const religiousSites: ReligiousSite[] = [
       "Small chapel with votive offerings from devotees",
     ],
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
   },
 ]
 
@@ -256,13 +319,12 @@ export interface TourPackage {
   duration: string
   type: "heritage" | "food" | "festival" | "nature" | "custom"
   difficulty: "easy" | "moderate" | "active"
-  groupSize: string
-  price: string
   description: string
   itinerary: { time: string; activity: string }[]
   includes: string[]
   highlights: string[]
   image: string
+  gallery?: string[]
   bookingContact: string
 }
 
@@ -273,8 +335,6 @@ export const tourPackages: TourPackage[] = [
     duration: "Full Day (8 hours)",
     type: "heritage",
     difficulty: "easy",
-    groupSize: "2–30 persons",
-    price: "₱750 per person (minimum 10 pax)",
     description:
       "A guided walking and jeepney tour through Bocaue's heritage sites, including the St. Martin of Tours Church, the historic plaza, the MHACTO Heritage Gallery, and the Bocaue River waterfront.",
     itinerary: [
@@ -300,6 +360,12 @@ export const tourPackages: TourPackage[] = [
       "Live artisan workshop visit",
     ],
     image: asset("/images/places/Church.jpg"),
+    gallery: [
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/church-bocaue.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/river-festival.jpg"),
+    ],
     bookingContact: "MHACTO Office: (044) 123-4567 | mhacto.bocaue@email.com",
   },
   {
@@ -308,8 +374,6 @@ export const tourPackages: TourPackage[] = [
     duration: "2 Days / 1 Night (August festival weekend)",
     type: "festival",
     difficulty: "active",
-    groupSize: "4–20 persons",
-    price: "₱2,500 per person (includes accommodation)",
     description:
       "An all-inclusive festival experience package for the annual Bocaue Pagoda Festival — including riverside viewing area access, the solemn mass, street fair access, and a post-festival heritage tour.",
     itinerary: [
@@ -336,6 +400,12 @@ export const tourPackages: TourPackage[] = [
       "Overnight in Bocaue with local hosts",
     ],
     image: asset("/images/places/river-festival.jpg"),
+    gallery: [
+      asset("/images/places/river-festival.jpg"),
+      asset("/images/places/Church.jpg"),
+      asset("/images/places/fireworks.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+    ],
     bookingContact: "MHACTO Office: (044) 123-4567 | Book at least 3 weeks in advance",
   },
   {
@@ -344,8 +414,6 @@ export const tourPackages: TourPackage[] = [
     duration: "Half Day (4 hours)",
     type: "food",
     difficulty: "easy",
-    groupSize: "4–15 persons",
-    price: "₱450 per person",
     description:
       "A guided food tour through the edible heritage of Bocaue — visiting the public market, local bakeries, kakanin stalls, and a live cooking demonstration of traditional dishes.",
     itinerary: [
@@ -368,6 +436,12 @@ export const tourPackages: TourPackage[] = [
       "Community kitchen experience",
     ],
     image: asset("/images/places/Food.jpg"),
+    gallery: [
+      asset("/images/places/Food.jpg"),
+      asset("/images/places/local-delicacies.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Arts.jpg"),
+    ],
     bookingContact: "MHACTO Office: (044) 123-4567",
   },
   {
@@ -376,8 +450,6 @@ export const tourPackages: TourPackage[] = [
     duration: "Half Day (3 hours)",
     type: "heritage",
     difficulty: "easy",
-    groupSize: "2–50 persons",
-    price: "₱500 per person (arena entrance included)",
     description:
       "A guided tour of the Philippine Arena — the world's largest indoor arena — including the Visitor Center, architectural highlights, and the Ciudad de Victoria grounds.",
     itinerary: [
@@ -399,6 +471,12 @@ export const tourPackages: TourPackage[] = [
       "Comprehensive visitor exhibits",
     ],
     image: asset("/images/places/philippine-arena.jpg"),
+    gallery: [
+      asset("/images/places/philippine-arena.jpg"),
+      asset("/images/places/Arena.jpg"),
+      asset("/images/places/oldtownbocaue.jpg"),
+      asset("/images/places/Church.jpg"),
+    ],
     bookingContact: "MHACTO Office: (044) 123-4567 | Philippine Arena: (044) 234-5678",
   },
 ]

@@ -142,7 +142,7 @@ export default function CategoryPageClient({
               </p>
             </div>
 
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {places.map((place, index) => (
                 <button
                   key={place.id}
@@ -256,7 +256,7 @@ export default function CategoryPageClient({
                   Close
                 </Button>
                 <Button asChild className="flex-1 text-xs sm:text-sm h-9 sm:h-10">
-                  <Link href="/contact?subject=inquiry">Learn More</Link>
+                  <Link href="/inquire">Learn More</Link>
                 </Button>
               </div>
             </CardContent>

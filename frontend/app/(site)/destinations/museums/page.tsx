@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
+import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, BookOpen, Clock, MapPin, Ticket } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +28,7 @@ export default function MuseumsPage() {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/oldtownbocaue.jpg')})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -63,10 +64,10 @@ export default function MuseumsPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {museums.map((museum) => (
               <Card key={museum.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-36 overflow-hidden">
                   <Image src={museum.image} alt={museum.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">

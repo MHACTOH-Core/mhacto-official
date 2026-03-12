@@ -1,6 +1,7 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
+import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Church, Clock, MapPin, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +15,7 @@ export default function ReligiousSitesPage() {
       <section
         className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/Church.jpg)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(${asset('/images/places/Church.jpg')})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

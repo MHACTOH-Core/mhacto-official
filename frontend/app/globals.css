@@ -104,6 +104,9 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
   }
+  p {
+    font-family: 'Barbara', system-ui, sans-serif;
+  }
   /* Offset hash-scroll targets below the fixed navbar */
   [id] {
     scroll-margin-top: 6rem;

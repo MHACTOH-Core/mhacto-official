@@ -1,11 +1,15 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
+import { asset } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
+import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { timelineEvents, notablePersons, personCategoryLabels } from "@/lib/data/history-data"
+import { personCategoryLabels, type TimelineEvent, type NotablePerson } from "@/lib/data/history-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToTimelineEvent, cmsToNotablePerson } from "@/lib/cms-mappers"
 
 const eraColor: Record<string, string> = {
   "Pre-Colonial Period": "bg-amber-500",
@@ -36,6 +40,17 @@ const navSections = [
 export default function HistoryPage() {
   const [activeSection, setActiveSection] = useState("timeline")
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
+  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("timeline-of-events")
+      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
+      .catch(() => {})
+    apiFetchByLabel("notable-figures")
+      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,43 +72,36 @@ export default function HistoryPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <section
-        className="relative mt-12 sm:mt-8 md:mt-12 lg:mt-20 min-h-[300px] sm:min-h-[380px] overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)), url(/images/places/oldtownbocaue.jpg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8 flex flex-col justify-center py-12 sm:py-16 md:py-24">
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-8 w-8 text-amber-300" />
-              <span className="text-sm font-bold uppercase tracking-widest text-amber-300">Bocaue Wonders</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-2xl leading-tight">History of Bocaue</h1>
-            <p className="text-lg sm:text-xl text-white/90 drop-shadow-lg leading-relaxed max-w-2xl">
-              A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        pageSlug="history"
+        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackIcon="BookOpen"
+        fallbackAccentColor="amber-300"
+        fallbackLabel="Bocaue Wonders"
+        fallbackTitle="History of Bocaue"
+        fallbackDescription="A town shaped by faith, revolution, and culture — walk through the centuries that defined Bocaue, Bulacan."
+      />
 
-      {/* Sticky in-page nav */}
-      <div className="sticky top-[57px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto py-1">
-            {navSections.map((s) => (
-              <button key={s.id} onClick={() => scrollTo(s.id)}
-                className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  activeSection === s.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}>
-                {s.label}
-              </button>
-            ))}
+            {/* Sticky nav */}
+        <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            <div className="flex gap-1 overflow-x-auto py-1">
+              {navSections.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => scrollTo(s.id)}
+                  className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                    activeSection === s.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* ── Timeline ── */}
       <section id="timeline" className="py-12 sm:py-16 lg:py-20 border-b border-border">
@@ -121,6 +129,7 @@ export default function HistoryPage() {
                         {event.significance === "major" && <Badge className="text-xs bg-red-500 text-white border-0"><Shield className="h-2.5 w-2.5 mr-1" /> Major Event</Badge>}
                       </div>
                       <h3 className="text-base font-black text-foreground mb-1">{event.title}</h3>
+                      {event.author && <p className="text-xs text-muted-foreground/70 mb-1">By {event.author}</p>}
                       <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
                       {event.image && (
                         <div className="relative h-40 rounded-lg overflow-hidden mb-3">
@@ -155,11 +164,11 @@ export default function HistoryPage() {
               <p className="text-muted-foreground">Remarkable people who shaped Bocaue&apos;s identity</p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {notablePersons.map((person) => (
               <Card key={person.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {person.image && (
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative h-36 overflow-hidden">
                     <Image src={person.image} alt={person.name} fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-4">
@@ -167,6 +176,13 @@ export default function HistoryPage() {
                         {personCategoryLabels[person.category]}
                       </Badge>
                     </div>
+                    {person.featured && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm">
+                          <Star className="h-2.5 w-2.5 mr-1" /> Featured
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 )}
                 <CardContent className="p-5 flex flex-col flex-1">
@@ -177,7 +193,8 @@ export default function HistoryPage() {
                   )}
                   <div className="mb-1 text-xs text-muted-foreground">{person.years}</div>
                   <h3 className="text-lg font-black text-foreground mb-0.5">{person.name}</h3>
-                  <p className="text-xs text-primary font-semibold mb-3">{person.title}</p>
+                  <p className="text-xs text-primary font-semibold mb-1">{person.title}</p>
+                  {person.author && <p className="text-xs text-muted-foreground/70 mb-2">By {person.author}</p>}
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">{person.description}</p>
                   <div className="border-t border-border pt-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Legacy</p>

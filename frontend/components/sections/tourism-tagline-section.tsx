@@ -55,7 +55,7 @@ export function TourismTaglineSection() {
             </p>
             <h2 className="mt-3 text-balance text-3xl font-extrabold leading-tight text-foreground sm:text-4xl md:text-5xl reveal-on-scroll font-heading">
               Discover the{" "}
-              <span className="text-primary">Heritage, Arts, Culture</span>
+              <span className="text-primary">History, Arts, Culture</span>
               <br className="hidden sm:block" /> &amp; Tourism of{" "}
               <span className="text-primary">Bocaue, Bulacan</span>
             </h2>
@@ -67,7 +67,7 @@ export function TourismTaglineSection() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start reveal-on-scroll">
               <Button asChild size="lg" className="rounded-full gap-2">
-                <Link href="/places">
+                <Link href="/destinations">
                   Explore Bocaue
                   <ArrowRight className="h-4 w-4" />
                 </Link>

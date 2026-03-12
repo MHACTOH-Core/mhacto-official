@@ -2,22 +2,15 @@ import dynamic from "next/dynamic"
 import { HeroSection } from "@/components/sections/hero-section"
 import { TourismTaglineSection } from "@/components/sections/tourism-tagline-section"
 import { FeaturedSpotlight } from "@/components/sections/featured-spotlight"
+import { ArtsCultureSliderSection } from "@/components/sections/arts-culture-slider-section"
 
 // Lazy-load below-the-fold sections to reduce initial bundle size
-const AttractionsSection = dynamic(
-  () => import("@/components/sections/attractions-section").then((m) => m.AttractionsSection),
-  { loading: () => <SectionSkeleton /> }
-)
-const CulinarySection = dynamic(
-  () => import("@/components/sections/culinary-section").then((m) => m.CulinarySection),
+const HumanWondersSection = dynamic(
+  () => import("@/components/sections/human-wonders-section").then((m) => m.HumanWondersSection),
   { loading: () => <SectionSkeleton /> }
 )
 const HistoryArtSection = dynamic(
   () => import("@/components/sections/history-art-section").then((m) => m.HistoryArtSection),
-  { loading: () => <SectionSkeleton /> }
-)
-const PlacesCarousel = dynamic(
-  () => import("@/components/sections/places-carousel").then((m) => m.PlacesCarousel),
   { loading: () => <SectionSkeleton /> }
 )
 const NewsSection = dynamic(
@@ -52,24 +45,21 @@ export default function Home() {
       {/* 2. MHACTO Bocaue Tourism Tagline & Stats */}
       <TourismTaglineSection />
 
-      {/* 3. Featured Tourism Wonders */}
-      <AttractionsSection />
-
-      {/* 4. Featured Spotlight — Pagoda Festival 2026 */}
+      {/* 3. Featured Spotlight — Pagoda Festival 2026 */}
       <section className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
         <FeaturedSpotlight />
       </section>
 
-      {/* 5. Featured Culinary Delicacies */}
-      <CulinarySection />
+      {/* 4. Arts & Culture Slider */}
+      <ArtsCultureSliderSection />
 
-      {/* 6. Places Carousel */}
-      <PlacesCarousel />
+      {/* 5. Featured People Wonders */}
+      <HumanWondersSection />
 
-      {/* 7. History & Art */}
+      {/* 9. History & Art */}
       <HistoryArtSection />
 
-      {/* 8. News */}
+      {/* 10. News */}
       <NewsSection />
     </main>
   )
