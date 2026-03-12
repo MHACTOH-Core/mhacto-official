@@ -69,7 +69,8 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   const cfg = categoryConfig[person.category]
 
   return (
-    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
+    <a href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       {/* Photo */}
       <GalleryImage
         src={person.image ?? asset("/images/placeholder-user.jpg")}
@@ -120,7 +121,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
           {person.description}
         </div>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v) }}
           className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
@@ -146,17 +147,9 @@ function PersonCard({ person }: { person: PeopleWonder }) {
             </ul>
           </div>
         )}
-
-        <div className="mt-4 pt-4 border-t border-border">
-          <Link
-            href={`/culture/people-wonders/${person.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            View full profile →
-          </Link>
-        </div>
       </CardContent>
     </Card>
+    </a>
   )
 }
 

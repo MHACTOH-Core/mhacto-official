@@ -76,7 +76,8 @@ export default function PracticesTraditionsPage() {
               const status = statusConfig[practice.status]
               const StatusIcon = status.icon
               return (
-                <Card key={practice.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+                <a key={practice.id} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                   {practice.image && (
                     <GalleryImage
                       src={practice.image}
@@ -107,15 +108,15 @@ export default function PracticesTraditionsPage() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-border">
-                      <Link
-                        href={`/culture/practices-traditions/${practice.id}`}
+                      <span
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
                       >
                         Read full detail →
-                      </Link>
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
+                </a>
               )
             })}
           </div>

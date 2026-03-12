@@ -130,7 +130,8 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {localCuisine.slice(0, 3).map((item) => (
-              <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+              <a key={item.id} href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
                   gallery={item.gallery}
@@ -154,6 +155,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
+              </a>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -180,7 +182,8 @@ export default function CulturePage() {
           </div>
           <div className="space-y-8">
             {festivals.map((fest, idx) => (
-              <Card key={fest.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+              <a key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <GalleryImage
@@ -222,6 +225,7 @@ export default function CulturePage() {
                   )}
                 </div>
               </Card>
+              </a>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -250,7 +254,8 @@ export default function CulturePage() {
             {culturalPractices.map((practice) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
-                <Card key={practice.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                <a key={practice.id} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                   {practice.image && (
                     <GalleryImage
                       src={practice.image}
@@ -274,6 +279,7 @@ export default function CulturePage() {
                     <p className="text-xs text-primary/70 font-medium">Click card for full details →</p>
                   </CardContent>
                 </Card>
+                </a>
               )
             })}
           </div>
@@ -301,7 +307,8 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {artisansList.map((artisan) => (
-              <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+              <a key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
                     src={artisan.image}
@@ -331,6 +338,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
+              </a>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -356,8 +364,9 @@ export default function CulturePage() {
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {peopleWonders.map((person) => (
-              <Card key={person.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+            {peopleWonders.slice(0, 3).map((person) => (
+              <a key={person.id} href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {person.image && (
                   <GalleryImage
                     src={person.image}
@@ -379,6 +388,7 @@ export default function CulturePage() {
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{person.achievement}</p>
                 </CardContent>
               </Card>
+              </a>
             ))}
           </div>
           <div className="mt-8 text-center">

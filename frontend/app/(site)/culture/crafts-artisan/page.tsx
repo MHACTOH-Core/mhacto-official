@@ -30,8 +30,9 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
+    <a href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
-      className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
+      className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured
           ? "hover:shadow-2xl hover:border-amber-400/50 shadow-lg ring-1 ring-amber-200/50"
           : "hover:shadow-lg hover:border-primary/30"
@@ -89,7 +90,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
           {artisan.description}
         </div>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v) }}
           className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
@@ -138,17 +139,9 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
             </ul>
           </div>
         )}
-
-        <div className="mt-4 pt-4 border-t border-border">
-          <Link
-            href={`/culture/crafts-artisan/${artisan.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            View full profile →
-          </Link>
-        </div>
       </CardContent>
     </Card>
+    </a>
   )
 }
 

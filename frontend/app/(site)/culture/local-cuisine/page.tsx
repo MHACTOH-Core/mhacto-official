@@ -73,6 +73,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
   const [storyOpen, setStoryOpen] = useState(false)
 
   return (
+    <a href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured
@@ -135,7 +136,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
         {/* Expandable story */}
         <button
-          onClick={() => setStoryOpen((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStoryOpen((v) => !v) }}
           className="mt-auto flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <span className="uppercase tracking-wider">The Story</span>
@@ -147,15 +148,9 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
             <p className="text-sm text-foreground leading-relaxed">{item.story}</p>
           </div>
         )}
-
-        <Link
-          href={`/culture/local-cuisine/${item.id}`}
-          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-        >
-          View full story <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
       </CardContent>
     </Card>
+    </a>
   )
 }
 

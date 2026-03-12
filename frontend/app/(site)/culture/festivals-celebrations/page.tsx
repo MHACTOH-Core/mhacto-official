@@ -61,7 +61,8 @@ export default function FestivalsCelebrationsPage() {
 
           <div className="space-y-10">
             {festivals.map((festival, idx) => (
-              <Card key={festival.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+              <a key={festival.id} href={`/culture/festivals-celebrations/${festival.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <GalleryImage
@@ -104,12 +105,11 @@ export default function FestivalsCelebrationsPage() {
                     </div>
 
                     <div className="mt-5 pt-4 border-t border-border">
-                      <Link
-                        href={`/culture/festivals-celebrations/${festival.id}`}
+                      <span
                         className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                       >
                         Read full article →
-                      </Link>
+                      </span>
                     </div>
                   </CardContent>
                   {idx % 2 !== 0 && (
@@ -123,6 +123,7 @@ export default function FestivalsCelebrationsPage() {
                   )}
                 </div>
               </Card>
+              </a>
             ))}
           </div>
         </div>
