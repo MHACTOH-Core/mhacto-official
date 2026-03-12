@@ -10,7 +10,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { type PeopleWonder } from "@/lib/data/culture-data"
+import { peopleWonders as staticPeopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -69,7 +69,8 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   const cfg = categoryConfig[person.category]
 
   return (
-    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
+    <Link href={`/culture/people-wonders/${person.id}`} className="block">
+    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       {/* Photo */}
       <GalleryImage
         src={person.image ?? asset("/images/placeholder-user.jpg")}
@@ -120,7 +121,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
           {person.description}
         </div>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v) }}
           className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
@@ -147,22 +148,15 @@ function PersonCard({ person }: { person: PeopleWonder }) {
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-border">
-          <Link
-            href={`/culture/people-wonders/${person.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            View full profile →
-          </Link>
-        </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default function PeopleWondersPage() {
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(staticPeopleWonders)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
+import { localCuisine as staticCuisine, festivals as staticFestivals, culturalPractices as staticPractices, artisans as staticArtisans, peopleWonders as staticPeopleWonders, type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -43,11 +43,11 @@ const navSections = [
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
-  const [festivals, setFestivals] = useState<Festival[]>([])
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
-  const [artisansList, setArtisansList] = useState<Artisan[]>([])
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(staticCuisine)
+  const [festivals, setFestivals] = useState<Festival[]>(staticFestivals)
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(staticPractices)
+  const [artisansList, setArtisansList] = useState<Artisan[]>(staticArtisans)
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(staticPeopleWonders)
 
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
@@ -130,7 +130,8 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {localCuisine.slice(0, 3).map((item) => (
-              <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+              <Link key={item.id} href={`/culture/local-cuisine/${item.id}`} className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
                   gallery={item.gallery}
@@ -154,6 +155,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -180,7 +182,8 @@ export default function CulturePage() {
           </div>
           <div className="space-y-8">
             {festivals.map((fest, idx) => (
-              <Card key={fest.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+              <Link key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} className="block">
+              <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <GalleryImage
@@ -222,6 +225,7 @@ export default function CulturePage() {
                   )}
                 </div>
               </Card>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -250,7 +254,8 @@ export default function CulturePage() {
             {culturalPractices.map((practice) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
-                <Card key={practice.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} className="block">
+                <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                   {practice.image && (
                     <GalleryImage
                       src={practice.image}
@@ -274,6 +279,7 @@ export default function CulturePage() {
                     <p className="text-xs text-primary/70 font-medium">Click card for full details →</p>
                   </CardContent>
                 </Card>
+                </Link>
               )
             })}
           </div>
@@ -301,7 +307,8 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {artisansList.map((artisan) => (
-              <Card key={artisan.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+              <Link key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
                     src={artisan.image}
@@ -331,6 +338,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -356,8 +364,9 @@ export default function CulturePage() {
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {peopleWonders.map((person) => (
-              <Card key={person.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+            {peopleWonders.slice(0, 3).map((person) => (
+              <Link key={person.id} href={`/culture/people-wonders/${person.id}`} className="block">
+              <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {person.image && (
                   <GalleryImage
                     src={person.image}
@@ -379,6 +388,7 @@ export default function CulturePage() {
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{person.achievement}</p>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -393,43 +403,6 @@ export default function CulturePage() {
         </div>
       </section>
 
-      {/* ── Dive Deeper ── */}
-      <section className="py-12 bg-muted/30 border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Explore Culture</h2>
-              <p className="text-muted-foreground">Discover all aspects of Bocaue&apos;s rich cultural heritage</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {subPages.map((page) => {
-              const Icon = page.icon
-              return (
-                <Link
-                  key={page.href}
-                  href={page.href}
-                  className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-lg transition-all duration-200"
-                >
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${page.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-black text-foreground group-hover:text-primary transition-colors leading-snug">{page.label}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{page.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    Explore <ChevronRight className="h-3 w-3" />
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </section>
     </main>
   )
 }

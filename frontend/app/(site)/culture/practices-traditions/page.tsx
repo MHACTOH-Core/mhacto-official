@@ -7,7 +7,7 @@ import { CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { type CulturalPractice } from "@/lib/data/culture-data"
+import { culturalPractices as staticPractices, type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -34,7 +34,7 @@ const statusConfig: Record<CulturalPractice["status"], { label: string; icon: ty
 }
 
 export default function PracticesTraditionsPage() {
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(staticPractices)
 
   useEffect(() => {
     apiFetchByLabel("cultural-practices")
@@ -76,7 +76,8 @@ export default function PracticesTraditionsPage() {
               const status = statusConfig[practice.status]
               const StatusIcon = status.icon
               return (
-                <Card key={practice.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} className="block">
+                <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                   {practice.image && (
                     <GalleryImage
                       src={practice.image}
@@ -107,15 +108,15 @@ export default function PracticesTraditionsPage() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-border">
-                      <Link
-                        href={`/culture/practices-traditions/${practice.id}`}
+                      <span
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
                       >
                         Read full detail →
-                      </Link>
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               )
             })}
           </div>

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { asset } from "@/lib/utils"
 import Link from "next/link"
+import { asset } from "@/lib/utils"
 import {
   Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
 } from "lucide-react"
@@ -10,7 +10,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { type Artisan, type CulturalPractice } from "@/lib/data/culture-data"
+import { artisans as staticArtisans, culturalPractices as staticPractices, type Artisan, type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -30,8 +30,9 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
+    <Link href={`/culture/crafts-artisan/${artisan.id}`} className="block">
     <Card
-      className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
+      className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured
           ? "hover:shadow-2xl hover:border-amber-400/50 shadow-lg ring-1 ring-amber-200/50"
           : "hover:shadow-lg hover:border-primary/30"
@@ -89,7 +90,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
           {artisan.description}
         </div>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v) }}
           className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
@@ -139,23 +140,16 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-border">
-          <Link
-            href={`/culture/crafts-artisan/${artisan.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            View full profile →
-          </Link>
-        </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
 
 // ── Page ──────────────────────────────────────────────────────────────
 export default function CraftsArtisanPage() {
-  const [artisanList, setArtisanList] = useState<Artisan[]>([])
-  const [practiceList, setPracticeList] = useState<CulturalPractice[]>([])
+  const [artisanList, setArtisanList] = useState<Artisan[]>(staticArtisans)
+  const [practiceList, setPracticeList] = useState<CulturalPractice[]>(staticPractices.filter(p => p.category === "crafts"))
 
   useEffect(() => {
     apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'

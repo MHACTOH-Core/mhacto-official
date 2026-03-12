@@ -190,6 +190,15 @@ class PageHero
             'title'        => 'Hospitals & Health',
             'description'  => 'Health facilities and medical services available to residents and visitors of Bocaue, Bulacan.',
         ],
+        'barangays' => [
+            'displayName'  => 'Barangays of Bocaue',
+            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'iconName'     => 'Landmark',
+            'accentColor'  => 'emerald-300',
+            'label'        => 'Community',
+            'title'        => 'Barangays of Bocaue',
+            'description'  => 'Explore the 14 barangays that make up the Municipality of Bocaue, Bulacan — each with its own identity, leadership, and community character.',
+        ],
     ];
 
     private const HERO_FIELDS = ['imageUrl', 'iconName', 'accentColor', 'label', 'title', 'description'];

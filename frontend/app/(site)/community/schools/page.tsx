@@ -2,8 +2,8 @@
 
 import Image from "next/image"
 import { asset } from "@/lib/utils"
-import { useState, useMemo, useEffect } from "react"
-import { School, ArrowUpDown, BookOpen, Users } from "lucide-react"
+import { useState, useMemo, useEffect, useRef } from "react"
+import { School, ArrowUpDown, BookOpen, Users, Search, X } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -93,6 +93,9 @@ export default function SchoolsPage() {
   const [schools, setSchools] = useState<SchoolEntry[]>(allSchools)
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
+  const [search, setSearch] = useState("")
+  const [searchFocused, setSearchFocused] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   // Sends GET /api/posts/read.php?label=schools&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
@@ -105,11 +108,31 @@ export default function SchoolsPage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   const displayedSchools = useMemo(() => {
     let list = [...schools]
 
     if (filter === "public") list = list.filter((s) => s.ownership === "public")
     if (filter === "private") list = list.filter((s) => s.ownership === "private")
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.barangay.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q)
+      )
+    }
 
     list.sort((a, b) => {
       switch (sort) {
@@ -126,13 +149,22 @@ export default function SchoolsPage() {
     })
 
     return list
-  }, [filter, sort])
+  }, [filter, sort, search])
 
   const counts = useMemo(() => ({
     all: schools.length,
     public: schools.filter((s) => s.ownership === "public").length,
     private: schools.filter((s) => s.ownership === "private").length,
   }), [schools])
+
+  const searchSuggestions = useMemo(() => {
+    if (!search.trim()) return []
+    const q = search.toLowerCase()
+    return schools
+      .filter((s) => s.name.toLowerCase().includes(q))
+      .map((s) => s.name)
+      .slice(0, 5)
+  }, [search, schools])
 
   return (
     <main className="min-h-screen bg-background">
@@ -153,7 +185,7 @@ export default function SchoolsPage() {
       <section className="mx-auto max-w-7xl px-6 pt-10 pb-4 lg:px-16">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Filter tabs */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             {(["all", "public", "private"] as FilterKey[]).map((key) => (
               <button
                 key={key}
@@ -170,6 +202,43 @@ export default function SchoolsPage() {
                 </span>
               </button>
             ))}
+
+            {/* Search bar */}
+            <div ref={searchRef} className="relative ml-2 w-full sm:w-60">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  placeholder="Search school..."
+                  className="w-full rounded-full border border-border bg-muted/50 py-1.5 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              {searchFocused && search.length > 0 && searchSuggestions.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-background shadow-lg overflow-hidden">
+                  {searchSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      onMouseDown={() => { setSearch(s); setSearchFocused(false) }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span>{s}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sort dropdown */}
@@ -205,7 +274,7 @@ export default function SchoolsPage() {
           {displayedSchools.map((school) => (
             <div
               key={school.id}
-              className="group flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 overflow-hidden"
+              className="flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden"
             >
               {/* accent bar — blue for public, violet for private */}
               <div
@@ -241,7 +310,7 @@ export default function SchoolsPage() {
                 </div>
 
                 {/* Name & barangay */}
-                <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors leading-snug mb-0.5">
+                <h3 className="text-base font-black text-foreground leading-snug mb-0.5">
                   {school.name}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">

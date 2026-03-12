@@ -25,7 +25,7 @@ interface NavItem {
 const navLinks: NavItem[] = [
   { label: "Home", href: "/", isHash: false },
   {
-    label: "Bocaue Wonders",
+    label: "Bocaue River Town Wonders",
     href: "/bocaue-wonders",
     isHash: false,
     children: [
@@ -65,6 +65,7 @@ const navLinks: NavItem[] = [
     children: [
       { label: "Schools", href: "/community/schools", isHash: false },
       { label: "Hospitals", href: "/community/hospitals", isHash: false },
+      { label: "Barangays", href: "/community/barangays", isHash: false },
       { label: "Local Businesses", href: "/community/local-business", isHash: false },
     ],
   },

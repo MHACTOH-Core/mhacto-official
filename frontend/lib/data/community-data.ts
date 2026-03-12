@@ -768,3 +768,158 @@ export const municipalEvents: MunicipalEvent[] = [
     organizer: "Bocaue LGU",
   },
 ]
+
+// ── Barangays ────────────────────────────────────────────────────────
+export interface Barangay {
+  id: string
+  name: string
+  captain: string
+  address: string
+  contact?: string
+  population?: string
+  description: string
+  image?: string
+}
+
+export const barangays: Barangay[] = [
+  {
+    id: "bambang",
+    name: "Bambang",
+    captain: "Hon. Ricardo S. Santos",
+    address: "Barangay Hall, Bambang, Bocaue, Bulacan",
+    contact: "(044) 123-4001",
+    population: "~8,500",
+    description:
+      "One of Bocaue's agricultural barangays, Bambang is known for its rice fields, community cooperatives, and the annual Araw ng Bambang celebration.",
+  },
+  {
+    id: "batia",
+    name: "Batia",
+    captain: "Hon. Elena M. Reyes",
+    address: "Barangay Hall, Batia, Bocaue, Bulacan",
+    contact: "(044) 123-4002",
+    population: "~6,200",
+    description:
+      "A quiet residential barangay with growing commercial activity along its main road, Batia is home to several private schools and small cottage industries.",
+  },
+  {
+    id: "binang",
+    name: "Biñang",
+    captain: "Hon. Fernando C. Dela Cruz",
+    address: "Barangay Hall, Biñang 1st & 2nd, Bocaue, Bulacan",
+    contact: "(044) 123-4003",
+    population: "~5,800",
+    description:
+      "Divided into Biñang 1st and 2nd, this barangay preserves a strong sense of tradition with active participation in the Pagoda Festival and parish activities.",
+  },
+  {
+    id: "bunlo",
+    name: "Bunlo",
+    captain: "Hon. Jose P. Garcia",
+    address: "Barangay Hall, Bunlo, Bocaue, Bulacan",
+    contact: "(044) 123-4004",
+    population: "~7,100",
+    description:
+      "A riverside barangay along the Bocaue River, Bunlo has deep connections to the Pagoda Festival and is known for its fishing heritage and boat-building traditions.",
+  },
+  {
+    id: "sulucan",
+    name: "Sulucan",
+    captain: "Hon. Maria L. Bautista",
+    address: "Barangay Hall, Sulucan, Bocaue, Bulacan",
+    contact: "(044) 123-4005",
+    population: "~5,400",
+    description:
+      "A predominantly residential barangay, Sulucan is recognized for its well-organized community programs and active Sangguniang Kabataan.",
+  },
+  {
+    id: "taal",
+    name: "Taal",
+    captain: "Hon. Roberto A. Lim",
+    address: "Barangay Hall, Taal, Bocaue, Bulacan",
+    contact: "(044) 123-4006",
+    population: "~9,300",
+    description:
+      "One of the larger barangays in Bocaue, Taal straddles the national highway and hosts numerous commercial establishments, schools, and residential subdivisions.",
+  },
+  {
+    id: "wakas",
+    name: "Wakas",
+    captain: "Hon. Angelina T. Navarro",
+    address: "Barangay Hall, Wakas, Bocaue, Bulacan",
+    contact: "(044) 123-4007",
+    population: "~11,000",
+    description:
+      "Bocaue's most densely populated barangay, Wakas is a vibrant commercial and residential hub with a bustling market area and proximity to the NLEX interchange.",
+  },
+  {
+    id: "lolomboy",
+    name: "Lolomboy",
+    captain: "Hon. Carlos V. Mendoza",
+    address: "Barangay Hall, Lolomboy, Bocaue, Bulacan",
+    contact: "(044) 123-4008",
+    population: "~15,000",
+    description:
+      "The most populous barangay in Bocaue, Lolomboy features large residential subdivisions, SM City Bocaue, and serves as the municipality's major urban growth center.",
+  },
+  {
+    id: "tambubong",
+    name: "Tambubong",
+    captain: "Hon. Patricia G. Ocampo",
+    address: "Barangay Hall, Tambubong, Bocaue, Bulacan",
+    contact: "(044) 123-4009",
+    population: "~4,800",
+    description:
+      "A historically agricultural barangay, Tambubong is transitioning into a mixed residential-commercial area while maintaining strong cultural ties to Bocaue's farming heritage.",
+  },
+  {
+    id: "turo",
+    name: "Turo",
+    captain: "Hon. Daniel R. Cruz",
+    address: "Barangay Hall, Turo, Bocaue, Bulacan",
+    contact: "(044) 123-4010",
+    population: "~6,000",
+    description:
+      "Located near the municipal center, Turo is known for its accessibility and service-oriented community, with a health center that serves as a model BHC in the municipality.",
+  },
+  {
+    id: "bunducan",
+    name: "Bunducan",
+    captain: "Hon. Marites S. Aquino",
+    address: "Barangay Hall, Bunducan, Bocaue, Bulacan",
+    contact: "(044) 123-4011",
+    population: "~4,500",
+    description:
+      "A peaceful barangay with a strong sense of community, Bunducan is noted for its annual barangay fiesta, cooperative-driven livelihood projects, and active senior citizens' association.",
+  },
+  {
+    id: "poblacion",
+    name: "Poblacion",
+    captain: "Hon. Rafael M. Gonzales",
+    address: "Barangay Hall, Poblacion, Bocaue, Bulacan",
+    contact: "(044) 123-4012",
+    population: "~7,500",
+    description:
+      "The town center of Bocaue, Poblacion is home to the Municipal Hall, St. Martin of Tours Church, the public market, and the historic town plaza — the civic and cultural heart of the municipality.",
+  },
+  {
+    id: "duhat",
+    name: "Duhat",
+    captain: "Hon. Lorena V. Santos",
+    address: "Barangay Hall, Duhat, Bocaue, Bulacan",
+    contact: "(044) 123-4013",
+    population: "~5,000",
+    description:
+      "Named after the native Java plum tree, Duhat is a close-knit barangay with active youth programs, a dedicated sports court, and growing residential areas along its periphery.",
+  },
+  {
+    id: "bolakan",
+    name: "Bolakan",
+    captain: "Hon. Antonio F. Villanueva",
+    address: "Barangay Hall, Bolakan, Bocaue, Bulacan",
+    contact: "(044) 123-4014",
+    population: "~3,200",
+    description:
+      "One of Bocaue's smaller barangays, Bolakan maintains a tight-knit rural character with community-based livelihood programs and active participation in inter-barangay sports leagues.",
+  },
+]

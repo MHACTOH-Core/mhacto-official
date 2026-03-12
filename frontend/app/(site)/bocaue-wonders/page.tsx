@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { asset } from "@/lib/utils"
 import {
-  Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp,
+  Users, Trophy, Crown, Palette, GraduationCap, Heart, Mic2, Dumbbell, Star, Award, ChevronDown, ChevronUp, ChevronRight,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { type PeopleWonder } from "@/lib/data/culture-data"
+import { peopleWonders as staticPeopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -67,7 +68,8 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   const cfg = categoryConfig[person.category]
 
   return (
-    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col">
+    <Link href={`/culture/people-wonders/${person.id}`} className="block">
+    <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       <div className="relative h-56 overflow-hidden bg-muted">
         <Image
           src={person.image ?? asset("/images/placeholder-user.jpg")}
@@ -106,7 +108,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
           {person.description}
         </div>
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v) }}
           className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
@@ -132,11 +134,12 @@ function PersonCard({ person }: { person: PeopleWonder }) {
         )}
       </CardContent>
     </Card>
+    </Link>
   )
 }
 
 export default function BocaueWondersPage() {
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(staticPeopleWonders)
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
   useEffect(() => {
@@ -226,10 +229,22 @@ export default function BocaueWondersPage() {
               <p className="text-sm mt-1">Check back soon as we continue to document Bocaue&apos;s remarkable people.</p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((person) => (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.slice(0, 3).map((person) => (
                 <PersonCard key={person.id} person={person} />
               ))}
+            </div>
+          )}
+
+          {filtered.length > 3 && (
+            <div className="mt-8 text-center">
+              <Link
+                href="/culture/people-wonders"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                See All People Wonders
+                <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
           )}
         </div>

@@ -17,7 +17,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
+import { localCuisine as staticCuisine, restaurants as staticRestaurants, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
 
@@ -73,6 +73,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
   const [storyOpen, setStoryOpen] = useState(false)
 
   return (
+    <Link href={`/culture/local-cuisine/${item.id}`} className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured
@@ -135,7 +136,7 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
         {/* Expandable story */}
         <button
-          onClick={() => setStoryOpen((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStoryOpen((v) => !v) }}
           className="mt-auto flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <span className="uppercase tracking-wider">The Story</span>
@@ -148,21 +149,16 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           </div>
         )}
 
-        <Link
-          href={`/culture/local-cuisine/${item.id}`}
-          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-        >
-          View full story <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
       </CardContent>
     </Card>
+    </Link>
   )
 }
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
-  const [restaurantList, setRestaurantList] = useState<Restaurant[]>([])
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(staticCuisine)
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(staticRestaurants)
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
