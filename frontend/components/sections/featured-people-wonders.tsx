@@ -6,7 +6,7 @@ import Image from "next/image"
 import { ArrowRight, Star, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { peopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
+import type { PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -29,7 +29,7 @@ const categoryLabel: Record<PeopleWonder["category"], string> = {
 }
 
 export function FeaturedPeopleWonders() {
-  const [persons, setPersons] = useState<PeopleWonder[]>(peopleWonders.slice(0, MAX_FEATURED))
+  const [persons, setPersons] = useState<PeopleWonder[]>([])
 
   useEffect(() => {
     apiFetchFeaturedByLabel("people-wonders", MAX_FEATURED)

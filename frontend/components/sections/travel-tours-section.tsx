@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Compass, ArrowRight, Clock, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { tourPackages as staticTourPackages, type TourPackage } from "@/lib/data/destinations-data"
+import type { TourPackage } from "@/lib/data/destinations-data"
 import { apiFetchFeaturedByLabel, apiFetchByLabel } from "@/lib/api"
 import { cmsToTourPackage } from "@/lib/cms-mappers"
 
@@ -25,7 +25,7 @@ export function TravelToursSection() {
   const [tours, setTours] = useState<TourPackage[]>([])
 
   useEffect(() => {
-    // First try featured travel-tours; fallback to all travel-tours; then static data
+    // First try featured travel-tours; fallback to all travel-tours
     apiFetchFeaturedByLabel("travel-tours", 4)
       .then((posts) => {
         if (posts?.length) {
@@ -35,15 +35,11 @@ export function TravelToursSection() {
           return apiFetchByLabel("travel-tours", 4).then((allPosts) => {
             if (allPosts?.length) {
               setTours(allPosts.map(cmsToTourPackage))
-            } else {
-              setTours(staticTourPackages.slice(0, 2))
             }
           })
         }
       })
-      .catch(() => {
-        setTours(staticTourPackages.slice(0, 2))
-      })
+      .catch(() => {})
   }, [])
 
   if (tours.length === 0) return null

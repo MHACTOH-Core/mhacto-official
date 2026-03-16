@@ -11,7 +11,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { timelineEvents as fallbackTimeline, timelineEras, type TimelineEvent } from "@/lib/data/history-data"
+import { timelineEras, type TimelineEvent } from "@/lib/data/history-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToTimelineEvent } from "@/lib/cms-mappers"
 import { asset } from "@/lib/utils"
@@ -141,7 +141,7 @@ function TimelineCard({ event, index }: { event: TimelineEvent; index: number })
 const allEras = ["all", ...timelineEras.map(e => e.label)]
 
 export default function HistoricalRoadmapPage() {
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackTimeline)
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
   const [activeEra, setActiveEra] = useState<EraFilter>("all")
 
   useEffect(() => {

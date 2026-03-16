@@ -6,7 +6,7 @@ import { Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "luci
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { hospitals as fallbackHospitals, type Hospital } from "@/lib/data/community-data"
+import { type Hospital } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToHospital } from "@/lib/cms-mappers"
 
@@ -24,7 +24,7 @@ const typeLabels: Record<Hospital["type"], string> = {
 }
 
 export default function HospitalsPage() {
-  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
 
   // Sends GET /api/posts/read.php?label=hospitals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {

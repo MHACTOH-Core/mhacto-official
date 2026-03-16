@@ -6,7 +6,7 @@ import Link from "next/link"
 import { UtensilsCrossed, ArrowRight, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localCuisine, type CuisineItem } from "@/lib/data/culture-data"
+import type { CuisineItem } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToCuisineItem } from "@/lib/cms-mappers"
 
@@ -27,7 +27,7 @@ const typeLabel: Record<CuisineItem["type"], string> = {
 }
 
 export function CulinarySection() {
-  const [items, setItems] = useState<CuisineItem[]>(localCuisine.slice(0, MAX_FEATURED))
+  const [items, setItems] = useState<CuisineItem[]>([])
 
   useEffect(() => {
     apiFetchFeaturedByLabel("local-cuisine", MAX_FEATURED)

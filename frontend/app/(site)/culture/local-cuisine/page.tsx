@@ -17,7 +17,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { localCuisine as staticCuisine, restaurants as staticRestaurants, type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
+import { type CuisineItem, type Restaurant } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToRestaurant } from "@/lib/cms-mappers"
 
@@ -140,8 +140,8 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function LocalCuisinePage() {
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(staticCuisine)
-  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(staticRestaurants)
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>([])
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()

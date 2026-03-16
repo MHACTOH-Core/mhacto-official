@@ -8,7 +8,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { localCuisine as staticCuisine, festivals as staticFestivals, culturalPractices as staticPractices, artisans as staticArtisans, peopleWonders as staticPeopleWonders, type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
+import { type CuisineItem, type Festival, type CulturalPractice, type Artisan, type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -43,11 +43,11 @@ const navSections = [
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>(staticCuisine)
-  const [festivals, setFestivals] = useState<Festival[]>(staticFestivals)
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(staticPractices)
-  const [artisansList, setArtisansList] = useState<Artisan[]>(staticArtisans)
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(staticPeopleWonders)
+  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+  const [festivals, setFestivals] = useState<Festival[]>([])
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
+  const [artisansList, setArtisansList] = useState<Artisan[]>([])
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
 
   useEffect(() => {
     apiFetchByLabel("local-cuisine")

@@ -9,7 +9,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { timelineEvents as fallbackEvents, type TimelineEvent } from "@/lib/data/history-data"
+import { type TimelineEvent } from "@/lib/data/history-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToTimelineEvent } from "@/lib/cms-mappers"
 
@@ -20,7 +20,7 @@ const significanceBadge: Record<TimelineEvent["significance"], { label: string; 
 }
 
 export default function TimelinePage() {
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(fallbackEvents)
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   // Sends GET /api/posts/read.php?label=timeline-of-events&status=published → PHP runs SQL SELECT → returns JSON

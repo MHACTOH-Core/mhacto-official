@@ -193,7 +193,7 @@ export default function HomeContentPage() {
     try {
       if (dialogType === "spotlight") {
         if (editingItem) {
-          await apiUpdateSpotlight((editingItem as Spotlight).spotlightId, formData as Partial<Spotlight>)
+          await apiUpdateSpotlight((editingItem as FeaturedContent).featuredId, formData as Partial<Spotlight>)
         } else {
           await apiCreateSpotlight(formData as Partial<Spotlight>)
         }
@@ -496,7 +496,7 @@ export default function HomeContentPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => toggleActive("spotlight", spot.spotlightId, spot.isActive ?? false)}
+                                onClick={() => toggleActive("spotlight", spot.featuredId, spot.isActive ?? false)}
                                 title={spot.isActive ? "Deactivate" : "Set as active"}
                               >
                                 {spot.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -512,7 +512,7 @@ export default function HomeContentPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.spotlightId })}
+                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.featuredId })}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

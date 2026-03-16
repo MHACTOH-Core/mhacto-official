@@ -7,7 +7,7 @@ import { CheckCircle, AlertTriangle, RefreshCw } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { culturalPractices as staticPractices, type CulturalPractice } from "@/lib/data/culture-data"
+import { type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -34,7 +34,7 @@ const statusConfig: Record<CulturalPractice["status"], { label: string; icon: ty
 }
 
 export default function PracticesTraditionsPage() {
-  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>(staticPractices)
+  const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
 
   useEffect(() => {
     apiFetchByLabel("cultural-practices")

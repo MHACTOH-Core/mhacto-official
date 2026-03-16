@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Scroll, ArrowRight, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { culturalPractices, type CulturalPractice } from "@/lib/data/culture-data"
+import type { CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 import { asset } from "@/lib/utils"
@@ -26,9 +26,7 @@ const statusLabel: Record<CulturalPractice["status"], string> = {
 }
 
 export function CulturalPracticesSection() {
-  const [items, setItems] = useState<CulturalPractice[]>(
-    culturalPractices.filter((p) => p.image).slice(0, MAX_FEATURED),
-  )
+  const [items, setItems] = useState<CulturalPractice[]>([])
 
   useEffect(() => {
     apiFetchFeaturedByLabel("cultural-practices", MAX_FEATURED)

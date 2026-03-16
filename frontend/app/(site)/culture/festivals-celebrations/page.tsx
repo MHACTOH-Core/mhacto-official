@@ -7,7 +7,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { festivals as staticFestivals, type Festival } from "@/lib/data/culture-data"
+import { type Festival } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToFestival } from "@/lib/cms-mappers"
 
@@ -25,7 +25,7 @@ const typeLabels: Record<Festival["type"], string> = {
 }
 
 export default function FestivalsCelebrationsPage() {
-  const [festivals, setFestivals] = useState<Festival[]>(staticFestivals)
+  const [festivals, setFestivals] = useState<Festival[]>([])
 
   useEffect(() => {
     apiFetchByLabel("festivals")

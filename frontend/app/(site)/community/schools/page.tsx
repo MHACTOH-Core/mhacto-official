@@ -14,7 +14,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { allSchools, type SchoolEntry } from "@/lib/data/community-data"
+import { type SchoolEntry } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToSchoolEntry } from "@/lib/cms-mappers"
 
@@ -90,7 +90,7 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function SchoolsPage() {
-  const [schools, setSchools] = useState<SchoolEntry[]>(allSchools)
+  const [schools, setSchools] = useState<SchoolEntry[]>([])
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
   const [search, setSearch] = useState("")

@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from "react"
 import { Landmark, MapPin, Phone, Users, Search, X } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
-import { barangays as staticBarangays, type Barangay } from "@/lib/data/community-data"
+import { type Barangay } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 
 // ── Logo / initials fallback ────────────────────────────────────────
@@ -107,7 +107,7 @@ function SearchBar({
 
 // ── Main page ────────────────────────────────────────────────────────
 export default function BarangaysPage() {
-  const [barangayList, setBarangayList] = useState<Barangay[]>(staticBarangays)
+  const [barangayList, setBarangayList] = useState<Barangay[]>([])
   const [search, setSearch] = useState("")
 
   useEffect(() => {
