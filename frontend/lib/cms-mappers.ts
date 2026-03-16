@@ -14,7 +14,7 @@ import { asset } from "@/lib/utils"
 import type { HeritageSite, Museum, ReligiousSite, TourPackage } from "@/lib/data/destinations-data"
 import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness, Restaurant } from "@/lib/data/culture-data"
 import type { TimelineEvent, NotablePerson } from "@/lib/data/history-data"
-import type { SchoolEntry, College, PublicSchool, Hospital } from "@/lib/data/community-data"
+import type { SchoolEntry, College, PublicSchool, Hospital, Barangay } from "@/lib/data/community-data"
 
 // ─── Image helper ─────────────────────────────────────────────────
 
@@ -427,6 +427,21 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
     image: resolveImage(post, "/images/places/Food.jpg"),
     isOpen: post.isFeatured ?? true,
+    author: post.author ?? undefined,
+  }
+}
+
+// ─── Barangay mapper ──────────────────────────────────────────────
+
+export function cmsToBarangay(post: CMSPost): Barangay {
+  return {
+    id: post.id,
+    name: post.title,
+    description: post.body ?? "",
+    location: post.location ?? "",
+    population: post.established ?? undefined,
+    image: post.image?.[0] || undefined,
+    isFeatured: post.isFeatured ?? false,
     author: post.author ?? undefined,
   }
 }

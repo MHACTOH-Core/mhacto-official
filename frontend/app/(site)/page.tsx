@@ -66,8 +66,10 @@ export default function Home() {
       <TourismTaglineSection />
 
       {/* 3. Featured Spotlight */}
-      <section className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
-        <FeaturedSpotlight />
+      <section className="py-8 lg:py-12">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          <FeaturedSpotlight />
+        </div>
       </section>
 
       {/* 4. Arts & Culture Slider */}

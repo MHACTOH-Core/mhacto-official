@@ -20,7 +20,7 @@ export function TourismTaglineSection() {
         <div className="flex flex-col items-center gap-8 text-center lg:flex-row lg:gap-16 lg:text-left">
 
           {/* Logos row */}
-          <div className="flex shrink-0 items-center gap-6 lg:flex-col lg:gap-4">
+          <div className="flex shrink-0 items-center gap-6 lg:flex-col lg:gap-4 reveal-on-scroll reveal-left">
             <div className="flex flex-col items-center gap-1">
               <Image
                 src={asset("/images/logos/MHACTO_LOGO.png")}
@@ -85,7 +85,7 @@ export function TourismTaglineSection() {
         </div>
 
         {/* Stats strip */}
-        <div className="mt-14 grid grid-cols-2 gap-6 border-t border-border pt-10 sm:grid-cols-4 reveal-on-scroll">
+        <div className="mt-14 grid grid-cols-2 gap-6 border-t border-border pt-10 sm:grid-cols-4 reveal-on-scroll reveal-scale">
           {[
             { value: "235+", label: "Years of Pagoda Festival" },
             { value: "55,000", label: "Arena Seating Capacity" },

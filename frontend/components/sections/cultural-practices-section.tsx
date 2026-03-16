@@ -44,7 +44,7 @@ export function CulturalPracticesSection() {
     <section className="py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header */}
-        <div className="mb-10 sm:mb-14 text-center">
+        <div className="mb-10 sm:mb-14 text-center reveal-on-scroll">
           <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
             <Scroll className="h-4 w-4" />
             Living Heritage
@@ -59,10 +59,10 @@ export function CulturalPracticesSection() {
 
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
+          {items.map((item, idx) => (
+            <Link key={item.id} href={`/culture/practices-traditions/${item.id}`} className={`block reveal-on-scroll reveal-delay-${idx + 1}`}>
             <Card
-              key={item.id}
-              className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col"
+              className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer h-full"
             >
               <div className="relative h-48 overflow-hidden">
                 <Image
@@ -96,10 +96,11 @@ export function CulturalPracticesSection() {
                 )}
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
         {/* CTA */}
-        <div className="mt-10 text-center">
+        <div className="mt-10 text-center reveal-on-scroll">
           <Link
             href="/culture/practices-traditions"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"

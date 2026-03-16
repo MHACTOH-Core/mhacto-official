@@ -252,14 +252,17 @@ export default function HomeContentPage() {
       const newMilestones = [...milestones]
       const swapIndex = direction === "up" ? index - 1 : index + 1
       if (swapIndex < 0 || swapIndex >= newMilestones.length) return
-      [newMilestones[index], newMilestones[swapIndex]] = [newMilestones[swapIndex], newMilestones[index]]
+      ;[newMilestones[index], newMilestones[swapIndex]] = [newMilestones[swapIndex], newMilestones[index]]
+      // Optimistic update — apply locally first so there is no full page reload/redirect
+      setMilestones(newMilestones)
       const order = newMilestones.map(m => m.milestoneId)
       try {
         await apiReorderMilestones(order)
-        loadAllContent()
         toast({ title: "Order updated", description: "Milestones have been reordered." })
       } catch (err) {
         console.error("Reorder failed:", err)
+        // Revert on failure
+        setMilestones(milestones)
         toast({ title: "Reorder failed", description: "Failed to reorder milestones.", variant: "destructive" })
       }
     }
@@ -306,7 +309,7 @@ export default function HomeContentPage() {
                 Home Page Content
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage hero settings, featured spotlight, and heritage milestones.
+                Manage hero settings, featured spotlight, and heritage milestones. Other sections (Culinary, Culture, Crafts, People, News) pull featured content from CMS posts.
               </p>
             </div>
           </div>
