@@ -54,9 +54,14 @@ export default function DestinationsPage() {
         const heritage = posts.filter(p => (p.category ?? "").toLowerCase().includes("heritage"))
         const museum = posts.filter(p => (p.category ?? "").toLowerCase().includes("museum"))
         const religious = posts.filter(p => (p.category ?? "").toLowerCase().includes("religious"))
-        if (heritage.length) setHeritageSites(heritage.map(cmsToHeritageSite))
-        if (museum.length) setMuseums(museum.map(cmsToMuseum))
-        if (religious.length) setReligiousSites(religious.map(cmsToReligiousSite))
+        // Fallback: if no sub-category matches, show all posts as heritage sites
+        if (!heritage.length && !museum.length && !religious.length) {
+          setHeritageSites(posts.map(cmsToHeritageSite))
+        } else {
+          if (heritage.length) setHeritageSites(heritage.map(cmsToHeritageSite))
+          if (museum.length) setMuseums(museum.map(cmsToMuseum))
+          if (religious.length) setReligiousSites(religious.map(cmsToReligiousSite))
+        }
       })
       .catch(() => {})
   }, [])
