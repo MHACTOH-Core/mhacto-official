@@ -94,20 +94,7 @@ export function HeroSection() {
     [scrollProgress],
   )
 
-  /** Advance to the next slide, wrapping around to the first */
-  const advanceToNextSlide = useCallback(() => {
-    if (heroSlides.length === 0) return
-    setActiveSlideIndex((currentIndex) => {
-      setPreviousSlideIndex(currentIndex)
-      return (currentIndex + 1) % heroSlides.length
-    })
-  }, [heroSlides.length])
-
-  // Auto-advance slides on a timer
-  useEffect(() => {
-    const autoAdvanceTimer = setInterval(advanceToNextSlide, SLIDE_AUTO_ADVANCE_INTERVAL_MS)
-    return () => clearInterval(autoAdvanceTimer)
-  }, [advanceToNextSlide])
+  // Auto-advance is disabled — single topic hero
 
   // Clear the previous-slide reference after the crossfade animation completes
   useEffect(() => {

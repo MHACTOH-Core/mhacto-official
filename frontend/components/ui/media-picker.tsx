@@ -51,6 +51,10 @@ interface MediaPickerProps {
   title?: string
   /** Current value (for highlighting the already-selected file) */
   currentValue?: string
+  /** Optional category for organizing uploads into subfolders */
+  uploadCategory?: string
+  /** Optional label for organizing uploads into subfolders */
+  uploadLabel?: string
 }
 
 function formatFileSize(bytes: number): string {
@@ -66,6 +70,8 @@ export function MediaPicker({
   accept = "all",
   title = "Select Media",
   currentValue,
+  uploadCategory,
+  uploadLabel,
 }: MediaPickerProps) {
   const [tab, setTab] = useState<"existing" | "upload" | "url">("existing")
   const [loading, setLoading] = useState(false)
@@ -113,7 +119,7 @@ export function MediaPicker({
     try {
       const filesArr = Array.from(fileList)
       const uploadType = accept === "video" ? "video" : "image"
-      const result = await apiUploadMedia(filesArr, uploadType)
+      const result = await apiUploadMedia(filesArr, uploadType, { category: uploadCategory, label: uploadLabel })
 
       if (result.errors.length > 0) {
         setError(result.errors.join("; "))

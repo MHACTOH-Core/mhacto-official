@@ -59,7 +59,7 @@ const actionColors: Record<ActivityAction, string> = {
 
 export default function ActivityLogPage() {
   const router = useRouter()
-  const { isLoggedIn, activityLog } = useAdmin()
+  const { isLoggedIn, activityLog, currentUser } = useAdmin()
   const [search, setSearch] = useState("")
   const [filterAction, setFilterAction] = useState<ActivityAction | "all">("all")
 
@@ -69,7 +69,12 @@ export default function ActivityLogPage() {
 
   if (!isLoggedIn) return null
 
-  const filtered = activityLog.filter((entry) => {
+  // Role-based filtering: content_manager and admin see only their own logs
+  const roleFiltered = currentUser?.role === "super_admin"
+    ? activityLog
+    : activityLog.filter((entry) => entry.user === (currentUser?.email ?? ""))
+
+  const filtered = roleFiltered.filter((entry) => {
     if (filterAction !== "all" && entry.action !== filterAction) return false
     if (
       search &&

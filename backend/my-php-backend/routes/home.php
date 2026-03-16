@@ -9,6 +9,7 @@
  *   /api/home/landmarks       GET / POST / PUT / DELETE / PATCH
  *   /api/home/milestones      GET / POST / PUT / PATCH / DELETE
  *   /api/home/culinary        GET            — auto-pulled from CMS
+ *   /api/home/featured        GET            — all featured content grouped by section
  */
 
 function handle_home(string $method, ?string $sub, ?string $subId): void
@@ -37,6 +38,9 @@ function handle_home(string $method, ?string $sub, ?string $subId): void
                 break;
             case 'culinary':
                 _home_culinary($method, $db);
+                break;
+            case 'featured':
+                _home_featured($method, $db);
                 break;
             default:
                 Response::error('Unknown home sub-resource.', 404);
@@ -299,4 +303,97 @@ function _home_culinary(string $method, PDO $db): void
     ], $rows);
 
     Response::json($items);
+}
+
+// ── /api/home/featured ──────────────────────────────────────────────
+//
+// Returns all published posts marked as is_featured='1', grouped by section.
+//
+// GET /api/home/featured              — full grouped response
+// GET /api/home/featured?section=news — single section only
+// GET /api/home/featured?limit=4      — limit per group (default: no limit)
+
+function _home_featured(string $method, PDO $db): void
+{
+    if ($method !== 'GET') {
+        Response::error('Method not allowed.', 405);
+    }
+
+    require_once __DIR__ . '/../models/Post.php';
+    $post = new Post($db);
+
+    $section = $_GET['section'] ?? null;
+    $limit   = isset($_GET['limit']) ? (int) $_GET['limit'] : null;
+
+    // Label groups for arts & culture section
+    $artsCultureLabels = [
+        'localCuisine'      => 'local-cuisine',
+        'festivals'         => 'festivals',
+        'culturalPractices' => 'cultural-practices',
+        'craftsArtisan'     => 'crafts-artisan',
+        'peopleWonders'     => 'people-wonders',
+    ];
+
+    // If a specific section is requested, return just that
+    if ($section) {
+        switch ($section) {
+            case 'arts-culture':
+                $result = [];
+                foreach ($artsCultureLabels as $key => $label) {
+                    $result[$key] = $post->readFeaturedByLabel($label, $limit);
+                }
+                Response::json($result);
+                break;
+
+            case 'people-wonders':
+                Response::json($post->readFeaturedByLabel('people-wonders', $limit));
+                break;
+
+            case 'notable-figures':
+                Response::json($post->readFeaturedByLabel('notable-figures', $limit));
+                break;
+
+            case 'news':
+                Response::json($post->readFeaturedByCategory('news', $limit));
+                break;
+
+            case 'events':
+                Response::json($post->readFeaturedByCategory('events', $limit));
+                break;
+
+            case 'destinations':
+                Response::json($post->readFeaturedByLabel('destinations', $limit));
+                break;
+
+            case 'tourist-attractions':
+                Response::json($post->readFeaturedByLabel('tourist-attractions', $limit));
+                break;
+
+            case 'community':
+                Response::json($post->readFeaturedByCategory('community', $limit));
+                break;
+
+            default:
+                // Try as a label key
+                Response::json($post->readFeaturedByLabel($section, $limit));
+        }
+        return;
+    }
+
+    // Full grouped response — everything the home page needs
+    $result = [
+        'artsCulture' => [],
+        'notableFigures' => $post->readFeaturedByLabel('notable-figures', $limit),
+        'destinations'   => $post->readFeaturedByLabel('destinations', $limit),
+        'touristAttractions' => $post->readFeaturedByLabel('tourist-attractions', $limit),
+        'news'           => $post->readFeaturedByCategory('news', $limit),
+        'events'         => $post->readFeaturedByCategory('events', $limit),
+        'community'      => $post->readFeaturedByCategory('community', $limit),
+    ];
+
+    foreach ($artsCultureLabels as $key => $label) {
+        $result['artsCulture'][$key] = $post->readFeaturedByLabel($label, $limit);
+    }
+
+    Response::json($result);
 }

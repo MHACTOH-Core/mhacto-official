@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { asset, resolveMediaUrl } from "@/lib/utils"
+import { resolveMediaUrl } from "@/lib/utils"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
 
 // Local display-ready type for news cards (mapped from API shape)
@@ -89,16 +88,17 @@ export function NewsSection() {
   if (!isLoading && featuredArticles.length === 0) return null
 
   return (
-    <section id="news" className="relative z-20 bg-background pt-16 pb-14 sm:pt-24 sm:pb-16 lg:pt-36 lg:pb-28">
+    <section id="news" className="py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="mb-8 sm:mb-12 text-center reveal-on-scroll">
-          <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-            Featured Highlights
+        <div className="mb-10 sm:mb-14 text-center">
+          <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
+            <Calendar className="h-4 w-4" />
+            Latest Updates
           </span>
-          <h2 className="mt-2 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
+          <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
             Featured News &amp; Stories
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
             Stay up to date with the latest happenings, achievements, and
             developments in the Municipality of Bocaue.
           </p>
@@ -122,12 +122,6 @@ export function NewsSection() {
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-red-500/90 text-white border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm"
-                      >
-                        Featured
-                      </Badge>
                       <Badge
                         variant="secondary"
                         className="bg-black/60 text-white border-0 text-[10px] uppercase tracking-wider backdrop-blur-sm"
@@ -166,13 +160,14 @@ export function NewsSection() {
 
         {/* View All button - always show if there are articles */}
         {featuredArticles.length > 0 && (
-          <div className="mt-10 text-center reveal-on-scroll delay-300">
-            <Button asChild variant="outline" size="lg" className="rounded-full gap-2">
-              <Link href="/news">
-                View All News
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="mt-10 text-center">
+            <Link
+              href="/news"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              See All News
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         )}
       </div>

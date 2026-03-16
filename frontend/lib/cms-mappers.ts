@@ -30,7 +30,6 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
   return {
     id: post.id,
     name: post.title,
-    established: post.established ?? "",
     category: (post.category?.toLowerCase().includes("church") ? "church"
       : post.category?.toLowerCase().includes("monument") ? "monument"
       : post.category?.toLowerCase().includes("bridge") ? "bridge"
@@ -38,10 +37,11 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
       : "streetscape") as HeritageSite["category"],
     description: post.body?.substring(0, 300) ?? "",
     story: post.story ?? "",
-    location: post.location ?? "",
-    hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
+    location: post.location ?? "",
+    hours: post.hours ?? "",
     isProtected: post.isFeatured ?? false,
     protectionLevel: post.isFeatured ? "Heritage Site" : undefined,
     author: post.author ?? undefined,
@@ -60,10 +60,11 @@ export function cmsToMuseum(post: CMSPost): Museum {
     type,
     description: post.body ?? "",
     collections: post.highlights ?? [],
-    location: post.location ?? "",
-    hours: post.hours ?? "",
-    admission: post.contact ?? "Contact for details",
+      location: post["location"] ?? "",
+      hours: post["hours"] ?? "",
+      admission: post["contact"] ?? "Contact for details",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
@@ -73,13 +74,11 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     id: post.id,
     name: post.title,
     denomination: post.category ?? "Roman Catholic",
-    established: post.established ?? "",
     description: post.body?.substring(0, 300) ?? "",
     significance: post.story ?? "",
-    location: post.location ?? "",
-    hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
@@ -94,7 +93,7 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
   return {
     id: post.id,
     name: post.title,
-    duration: post.hours ?? "Full Day",
+      duration: post["hours"] ?? "Full Day",
     type,
     difficulty: "easy",
     description: post.body ?? "",
@@ -102,7 +101,7 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
     includes: post.highlights ?? [],
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
-    bookingContact: post.contact ?? "MHACTO Office",
+      bookingContact: post["contact"] ?? "MHACTO Office",
     author: post.author ?? undefined,
   }
 }
@@ -139,7 +138,7 @@ export function cmsToFestival(post: CMSPost): Festival {
   return {
     id: post.id,
     name: post.title,
-    date: post.established ?? "",
+    date: post["established"] ?? "",
     type,
     description: post.body ?? "",
     story: post.story ?? "",
@@ -173,7 +172,7 @@ export function cmsToArtisan(post: CMSPost): Artisan {
     id: post.id,
     name: post.title,
     craft: post.category ?? "",
-    experience: post.established ?? "",
+    experience: post["established"] ?? "",
     description: post.body ?? "",
     products: post.highlights ?? [],
     awards: [],

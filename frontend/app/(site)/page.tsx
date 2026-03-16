@@ -5,12 +5,28 @@ import { FeaturedSpotlight } from "@/components/sections/featured-spotlight"
 import { ArtsCultureSliderSection } from "@/components/sections/arts-culture-slider-section"
 
 // Lazy-load below-the-fold sections to reduce initial bundle size
-const HumanWondersSection = dynamic(
-  () => import("@/components/sections/human-wonders-section").then((m) => m.HumanWondersSection),
+const DestinationsCarouselSection = dynamic(
+  () => import("@/components/sections/destinations-carousel-section").then((m) => m.DestinationsCarouselSection),
+  { loading: () => <SectionSkeleton /> }
+)
+const CulinarySection = dynamic(
+  () => import("@/components/sections/culinary-section").then((m) => m.CulinarySection),
+  { loading: () => <SectionSkeleton /> }
+)
+const CulturalPracticesSection = dynamic(
+  () => import("@/components/sections/cultural-practices-section").then((m) => m.CulturalPracticesSection),
   { loading: () => <SectionSkeleton /> }
 )
 const HistoryArtSection = dynamic(
   () => import("@/components/sections/history-art-section").then((m) => m.HistoryArtSection),
+  { loading: () => <SectionSkeleton /> }
+)
+const FeaturedPeopleWonders = dynamic(
+  () => import("@/components/sections/featured-people-wonders").then((m) => m.FeaturedPeopleWonders),
+  { loading: () => <SectionSkeleton /> }
+)
+const CraftsSection = dynamic(
+  () => import("@/components/sections/crafts-section").then((m) => m.CraftsSection),
   { loading: () => <SectionSkeleton /> }
 )
 const NewsSection = dynamic(
@@ -39,13 +55,13 @@ function SectionSkeleton() {
 export default function Home() {
   return (
     <main>
-      {/* 1. Hero — Pagoda Festival as frontrunner */}
+      {/* 1. Hero — single topic, no auto-shuffle */}
       <HeroSection />
 
-      {/* 2. MHACTO Bocaue Tourism Tagline & Stats */}
+      {/* 2. Tourism Tagline & Stats */}
       <TourismTaglineSection />
 
-      {/* 3. Featured Spotlight — Pagoda Festival 2026 */}
+      {/* 3. Featured Spotlight */}
       <section className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
         <FeaturedSpotlight />
       </section>
@@ -53,13 +69,25 @@ export default function Home() {
       {/* 4. Arts & Culture Slider */}
       <ArtsCultureSliderSection />
 
-      {/* 5. Featured People Wonders */}
-      <HumanWondersSection />
+      {/* 5. Tourist Wonders Carousel (destinations) */}
+      <DestinationsCarouselSection />
 
-      {/* 9. History & Art */}
+      {/* 6. Culinary Wonders */}
+      <CulinarySection />
+
+      {/* 7. Cultural Practices */}
+      <CulturalPracticesSection />
+
+      {/* 8. History Milestones */}
       <HistoryArtSection />
 
-      {/* 10. News */}
+      {/* 9. People Wonders */}
+      <FeaturedPeopleWonders />
+
+      {/* 10. Crafts & Artisan */}
+      <CraftsSection />
+
+      {/* 11. Featured News & Stories */}
       <NewsSection />
     </main>
   )

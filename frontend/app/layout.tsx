@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google'
 
 import './globals.css'
 import { RevealObserverWrapper } from '@/components/reveal-observer-wrapper'
+import { Toaster } from '@/components/ui/toaster'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className={`${poppins.variable} font-sans antialiased overflow-x-hidden`}>
         <RevealObserverWrapper />
         {children}
+        <Toaster />
       </body>
     </html>
   )

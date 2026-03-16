@@ -75,7 +75,7 @@ export default function TravelToursPage() {
 
           <div className="space-y-10">
             {tourPackages.map((pkg) => (
-              <Card key={pkg.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+              <Card key={pkg.id} className="overflow-hidden border-border transition-all duration-300">
                 <div className="grid gap-0 md:grid-cols-[1fr_2fr]">
                   <GalleryImage
                     src={pkg.image}

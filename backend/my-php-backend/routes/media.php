@@ -71,6 +71,10 @@ function _media_upload(): void
     $imageDir   = $uploadsDir . '/images';
     $videoDir   = $uploadsDir . '/videos';
 
+    // Optional subfolder organization: ?category=places&label=heritage
+    $category = isset($_GET['category']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['category']) : '';
+    $label    = isset($_GET['label'])    ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['label'])    : '';
+
     if (!is_dir($imageDir)) mkdir($imageDir, 0755, true);
     if (!is_dir($videoDir)) mkdir($videoDir, 0755, true);
 
@@ -110,8 +114,18 @@ function _media_upload(): void
         $baseName  = pathinfo($file['name'], PATHINFO_FILENAME);
         $safeName  = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName));
         $unique    = time() . '_' . $safeName . '.' . strtolower($ext);
-        $targetDir = $isVideo ? $videoDir : $imageDir;
-        $urlPrefix = $isVideo ? '/uploads/videos' : '/uploads/images';
+        $baseDir   = $isVideo ? $videoDir : $imageDir;
+        $baseUrl   = $isVideo ? '/uploads/videos' : '/uploads/images';
+
+        // Build subfolder path from category/label
+        $subPath = '';
+        if ($category) $subPath .= '/' . $category;
+        if ($label)    $subPath .= '/' . $label;
+
+        $targetDir = $baseDir . $subPath;
+        $urlPrefix = $baseUrl . $subPath;
+
+        if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
 
         if (move_uploaded_file($file['tmp_name'], $targetDir . '/' . $unique)) {
             $uploaded[] = [

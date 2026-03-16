@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
@@ -13,7 +13,11 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { Save, User, Globe, Bell, Shield } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X } from "lucide-react"
+import { ROLE_LABELS } from "@/lib/data/admin-data"
+import { apiUploadMedia } from "@/lib/api"
+import { ProfilePictureCropDialog } from "@/components/ui/profile-picture-crop"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,14 +28,47 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { isLoggedIn, settings, updateSettings, adminEmail } = useAdmin()
+  const { isLoggedIn, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword } = useAdmin()
+
+  const { toast } = useToast()
+
+  const isSuperAdmin = currentUser?.role === "super_admin"
 
   const [form, setForm] = useState(settings)
   const [saved, setSaved] = useState(false)
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+
+  // Profile editing state
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState("")
+  const [nameSaving, setNameSaving] = useState(false)
+
+  // Password change state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [oldPassword, setOldPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showOldPw, setShowOldPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [pwError, setPwError] = useState("")
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwSuccess, setPwSuccess] = useState(false)
+
+  // Profile picture state
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingPicture, setUploadingPicture] = useState(false)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [cropDialogOpen, setCropDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
@@ -51,10 +88,89 @@ export default function SettingsPage() {
     setSaveConfirmOpen(false)
     updateSettings(form)
     setSaved(true)
+    toast({ title: "Settings saved", description: "Website settings have been updated." })
     setTimeout(() => setSaved(false), 2500)
   }
 
   const hasChanges = JSON.stringify(form) !== JSON.stringify(settings)
+
+  // Profile name edit
+  const startEditName = () => {
+    setNameValue(currentUser?.fullName || "")
+    setEditingName(true)
+  }
+  const saveName = async () => {
+    if (!nameValue.trim()) return
+    setNameSaving(true)
+    await updateProfile({ full_name: nameValue.trim() })
+    setNameSaving(false)
+    setEditingName(false)
+    toast({ title: "Profile updated", description: "Your name has been updated." })
+  }
+
+  // Profile picture: open file picker → show crop dialog
+  const handlePictureSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSrc(reader.result as string)
+      setCropDialogOpen(true)
+    }
+    reader.readAsDataURL(file)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  // After cropping, upload the cropped blob
+  const handleCroppedUpload = async (blob: Blob) => {
+    setCropDialogOpen(false)
+    setCropSrc(null)
+    setUploadingPicture(true)
+    try {
+      const file = new File([blob], "profile.jpg", { type: "image/jpeg" })
+      const result = await apiUploadMedia([file], "image", { category: "profiles" })
+      if (result.uploaded?.length) {
+        await updateProfile({ profile_picture: result.uploaded[0] })
+        toast({ title: "Profile picture updated", description: "Your profile picture has been changed." })
+      }
+    } catch (err) {
+      console.error("Picture upload error:", err)
+      toast({ title: "Upload failed", description: "Failed to upload profile picture.", variant: "destructive" })
+    }
+    setUploadingPicture(false)
+  }
+
+  // Password change
+  const openPasswordDialog = () => {
+    setOldPassword("")
+    setNewPassword("")
+    setConfirmPassword("")
+    setPwError("")
+    setPwSuccess(false)
+    setShowOldPw(false)
+    setShowNewPw(false)
+    setPasswordDialogOpen(true)
+  }
+  const submitPasswordChange = async () => {
+    setPwError("")
+    if (newPassword.length < 6) { setPwError("New password must be at least 6 characters."); return }
+    if (newPassword !== confirmPassword) { setPwError("New passwords do not match."); return }
+    setPwSaving(true)
+    const result = await changePassword(oldPassword, newPassword)
+    setPwSaving(false)
+    if (result === true) {
+      setPwSuccess(true)
+      toast({ title: "Password changed", description: "Your password has been updated successfully." })
+      setTimeout(() => setPasswordDialogOpen(false), 1500)
+    } else {
+      setPwError(result)
+      toast({ title: "Password change failed", description: result, variant: "destructive" })
+    }
+  }
+
+  const profilePicSrc = currentUser?.profilePicture
+    ? (currentUser.profilePicture.startsWith("http") ? currentUser.profilePicture : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${currentUser.profilePicture}`)
+    : null
 
   return (
     <div className="flex h-screen bg-background">
@@ -85,33 +201,122 @@ export default function SettingsPage() {
                   <User className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Admin Profile</CardTitle>
+                  <CardTitle className="text-base">My Profile</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Account information
+                    Manage your account information
                   </p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Image
-                    src={asset("/images/logos/MHACTO_LOGO.png")}
-                    alt="Admin"
-                    width={48}
-                    height={48}
-                    className="rounded-full object-contain"
+            <CardContent className="space-y-6">
+              {/* Avatar + Upload */}
+              <div className="flex items-center gap-5">
+                <div className="relative group">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 overflow-hidden border-2 border-border">
+                    {profilePicSrc ? (
+                      <Image
+                        src={profilePicSrc}
+                        alt="Profile"
+                        width={80}
+                        height={80}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src={asset("/images/logos/MHACTO_LOGO.png")}
+                        alt="Admin"
+                        width={56}
+                        height={56}
+                        className="rounded-full object-contain"
+                      />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPicture}
+                    className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                    title="Change profile picture"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePictureSelect}
                   />
                 </div>
-                <div>
-                  <p className="font-semibold text-card-foreground">MHACTO Admin</p>
-                  <p className="text-sm text-muted-foreground">{adminEmail}</p>
+                <div className="flex-1 min-w-0">
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        className="h-9 max-w-[260px]"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditingName(false) }}
+                      />
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={saveName} disabled={nameSaving}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setEditingName(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-card-foreground truncate">{currentUser?.fullName || "MHACTO Admin"}</p>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={startEditName} title="Edit name">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground truncate">{adminEmail}</p>
+                  {currentUser && (
+                    <p className="text-xs text-muted-foreground mt-0.5">Role: {ROLE_LABELS[currentUser.role]}</p>
+                  )}
                 </div>
+              </div>
+
+              {uploadingPicture && (
+                <p className="text-xs text-muted-foreground animate-pulse">Uploading picture...</p>
+              )}
+
+              {/* Crop dialog */}
+              {cropSrc && (
+                <ProfilePictureCropDialog
+                  open={cropDialogOpen}
+                  onOpenChange={(open) => { setCropDialogOpen(open); if (!open) setCropSrc(null) }}
+                  imageSrc={cropSrc}
+                  onCropComplete={handleCroppedUpload}
+                />
+              )}
+
+              <Separator />
+
+              {/* Change Password */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                    <KeyRound className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-card-foreground">Password</p>
+                    <p className="text-xs text-muted-foreground">Change your account password</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={openPasswordDialog}>
+                  Change Password
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Site Settings */}
+          {/* Site Settings — super_admin only */}
+          {isSuperAdmin && (
+          <>
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -179,7 +384,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Notifications */}
+          {/* Notifications — super_admin only */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -231,7 +436,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Maintenance */}
+          {/* Maintenance — super_admin only */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -265,6 +470,8 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+          </>
+          )}
         </div>
       </main>
 
@@ -285,6 +492,74 @@ export default function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {pwSuccess ? (
+              <div className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-700 dark:text-green-300">
+                <Check className="h-4 w-4" />
+                Password changed successfully!
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showOldPw ? "text" : "password"}
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="Enter current password"
+                    />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowOldPw(!showOldPw)}>
+                      {showOldPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>New Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPw ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                    />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowNewPw(!showNewPw)}>
+                      {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirm New Password</Label>
+                  <Input
+                    type={showNewPw ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                  />
+                </div>
+                {pwError && (
+                  <p className="text-sm text-destructive">{pwError}</p>
+                )}
+              </>
+            )}
+          </div>
+          {!pwSuccess && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>Cancel</Button>
+              <Button onClick={submitPasswordChange} disabled={pwSaving || !oldPassword || !newPassword || !confirmPassword}>
+                {pwSaving ? "Saving..." : "Change Password"}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

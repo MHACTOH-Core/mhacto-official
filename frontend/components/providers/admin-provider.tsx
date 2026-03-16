@@ -16,6 +16,8 @@ import {
   type PageView,
   type DailyVisit,
   type ActivityAction,
+  type AdminUser,
+  type UserRole,
   MOCK_PAGE_VIEWS,
   MOCK_DAILY_VISITS,
   DEFAULT_SETTINGS,
@@ -34,6 +36,13 @@ import {
   apiUpdateSettings,
   apiFetchActivityLog,
   apiLogActivity,
+  apiFetchUsers,
+  apiCreateUser,
+  apiUpdateUser,
+  apiArchiveUser,
+  apiRestoreUser,
+  apiChangePassword,
+  apiUpdateProfile,
 } from "@/lib/api"
 
 // ─── Context shape ─────────────────────────────────────────────────
@@ -41,9 +50,10 @@ import {
 interface AdminContextValue {
   // Auth
   isLoggedIn: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<true | string>
   logout: () => void
   adminEmail: string
+  currentUser: { id: number; username: string; fullName: string; email: string; role: UserRole; profilePicture?: string | null } | null
 
   // Analytics
   pageViews: PageView[]
@@ -69,6 +79,16 @@ interface AdminContextValue {
   // Activity log
   activityLog: ActivityLogEntry[]
   logActivity: (action: ActivityAction, description: string) => void
+
+  // Account management
+  users: AdminUser[]
+  createUser: (data: { fullName: string; email: string; password: string; role: string }) => Promise<boolean>
+  updateUser: (id: number, data: Record<string, unknown>) => Promise<boolean>
+  archiveUser: (id: number) => Promise<boolean>
+  restoreUser: (id: number) => Promise<boolean>
+  refreshUsers: () => Promise<void>
+  updateProfile: (data: { full_name?: string; profile_picture?: string | null }) => Promise<boolean>
+  changePassword: (oldPassword: string, newPassword: string) => Promise<string | true>
 
   // Loading / refresh
   loading: boolean
@@ -111,10 +131,12 @@ function saveJsonToStorage<T>(key: string, value: T) {
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [adminEmail, setAdminEmail] = useState("")
+  const [currentUser, setCurrentUser] = useState<AdminContextValue["currentUser"]>(null)
   const [posts, setPosts] = useState<CMSPost[]>([])
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([])
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS)
+  const [users, setUsers] = useState<AdminUser[]>([])
   const [pageViews] = useState<PageView[]>(MOCK_PAGE_VIEWS)
   const [dailyVisits] = useState<DailyVisit[]>(MOCK_DAILY_VISITS)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -133,11 +155,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const fetchAllBackendData = useCallback(async () => {
     setIsLoadingBackendData(true)
     try {
-      const [postsResult, inquiriesResult, settingsResult, activityResult] = await Promise.allSettled([
+      const [postsResult, inquiriesResult, settingsResult, activityResult, usersResult] = await Promise.allSettled([
         apiFetchPosts(),
         apiFetchInquiries(),
         apiFetchSettings(),
         apiFetchActivityLog(),
+        apiFetchUsers(true),
       ])
       if (postsResult.status === "fulfilled") {
         setPosts(postsResult.value)
@@ -154,6 +177,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (activityResult.status === "fulfilled") {
         setActivityLog(activityResult.value)
         saveJsonToStorage("admin_activity", activityResult.value)
+      }
+      if (usersResult.status === "fulfilled") {
+        setUsers(usersResult.value)
       }
     } catch (err) {
       console.error("Failed to load from backend:", err)
@@ -190,6 +216,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setSettings(loadJsonFromStorage("admin_settings", DEFAULT_SETTINGS))
     setIsLoggedIn(loadJsonFromStorage("admin_logged_in", false))
     setAdminEmail(loadJsonFromStorage("admin_email", ""))
+    setCurrentUser(loadJsonFromStorage("admin_current_user", null))
     setIsHydrated(true)
   }, [])
 
@@ -200,25 +227,37 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [isHydrated, isLoggedIn, fetchAllBackendData])
 
   // ── Auth ──
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<true | string> => {
     try {
       const loginResponse = await apiLogin(email, password)
+      const userObj = {
+        id: loginResponse.user.id,
+        username: loginResponse.user.username,
+        fullName: loginResponse.user.fullName || loginResponse.user.username,
+        email: loginResponse.user.email,
+        role: (loginResponse.user.role || "admin") as UserRole,
+        profilePicture: loginResponse.user.profilePicture ?? null,
+      }
       setIsLoggedIn(true)
       setAdminEmail(loginResponse.user.email)
+      setCurrentUser(userObj)
       saveJsonToStorage("admin_logged_in", true)
       saveJsonToStorage("admin_email", loginResponse.user.email)
+      saveJsonToStorage("admin_current_user", userObj)
       return true
     } catch (error) {
       console.error("Login failed:", error instanceof Error ? error.message : error)
-      return false
+      return error instanceof Error ? error.message : "Login failed. Please try again."
     }
   }, [])
 
   const logout = useCallback(() => {
     setIsLoggedIn(false)
     setAdminEmail("")
+    setCurrentUser(null)
     saveJsonToStorage("admin_logged_in", false)
     saveJsonToStorage("admin_email", "")
+    saveJsonToStorage("admin_current_user", null)
   }, [])
 
   // ── Activity log helper ──
@@ -367,6 +406,112 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
 
+  // ── Account management ──
+  const refreshUsersFn = useCallback(async () => {
+    try {
+      const freshUsers = await apiFetchUsers(true)
+      setUsers(freshUsers)
+    } catch (err) {
+      console.error("refreshUsers failed:", err)
+    }
+  }, [])
+
+  const createUserFn = useCallback(
+    async (data: { fullName: string; email: string; password: string; role: string }): Promise<boolean> => {
+      try {
+        await apiCreateUser(data)
+        await refreshUsersFn()
+        logActivityFn("update_settings", `Created user account for ${data.email}`)
+        return true
+      } catch (err) {
+        console.error("createUser error:", err)
+        return false
+      }
+    },
+    [refreshUsersFn, logActivityFn],
+  )
+
+  const updateUserFn = useCallback(
+    async (id: number, data: Record<string, unknown>): Promise<boolean> => {
+      try {
+        await apiUpdateUser(id, data)
+        await refreshUsersFn()
+        logActivityFn("update_settings", `Updated user account #${id}`)
+        return true
+      } catch (err) {
+        console.error("updateUser error:", err)
+        return false
+      }
+    },
+    [refreshUsersFn, logActivityFn],
+  )
+
+  const archiveUserFn = useCallback(
+    async (id: number): Promise<boolean> => {
+      try {
+        await apiArchiveUser(id)
+        await refreshUsersFn()
+        logActivityFn("update_settings", `Archived user account #${id}`)
+        return true
+      } catch (err) {
+        console.error("archiveUser error:", err)
+        return false
+      }
+    },
+    [refreshUsersFn, logActivityFn],
+  )
+
+  const restoreUserFn = useCallback(
+    async (id: number): Promise<boolean> => {
+      try {
+        await apiRestoreUser(id)
+        await refreshUsersFn()
+        logActivityFn("update_settings", `Restored user account #${id}`)
+        return true
+      } catch (err) {
+        console.error("restoreUser error:", err)
+        return false
+      }
+    },
+    [refreshUsersFn, logActivityFn],
+  )
+
+  const updateProfileFn = useCallback(
+    async (data: { full_name?: string; profile_picture?: string | null }): Promise<boolean> => {
+      if (!currentUser) return false
+      try {
+        const res = await apiUpdateProfile(currentUser.id, data)
+        const updated = {
+          ...currentUser,
+          fullName: data.full_name ?? currentUser.fullName,
+          profilePicture: data.profile_picture !== undefined ? data.profile_picture : currentUser.profilePicture,
+        }
+        setCurrentUser(updated)
+        saveJsonToStorage("admin_current_user", updated)
+        logActivityFn("update_settings", "Updated profile")
+        return true
+      } catch (err) {
+        console.error("updateProfile error:", err)
+        return false
+      }
+    },
+    [currentUser, logActivityFn],
+  )
+
+  const changePasswordFn = useCallback(
+    async (oldPassword: string, newPassword: string): Promise<string | true> => {
+      if (!currentUser) return "Not logged in."
+      try {
+        await apiChangePassword(currentUser.id, oldPassword, newPassword)
+        logActivityFn("update_settings", "Changed password")
+        return true
+      } catch (err) {
+        return err instanceof Error ? err.message : "Failed to change password."
+      }
+    },
+    [currentUser, logActivityFn],
+  )
+
   return (
     <AdminContext.Provider
       value={{
@@ -374,6 +519,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         adminEmail,
+        currentUser,
         pageViews,
         dailyVisits,
         totalViews,
@@ -389,6 +535,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         updateSettings: updateSettingsFn,
         activityLog,
         logActivity: logActivityFn,
+        users,
+        createUser: createUserFn,
+        updateUser: updateUserFn,
+        archiveUser: archiveUserFn,
+        restoreUser: restoreUserFn,
+        refreshUsers: refreshUsersFn,
+        updateProfile: updateProfileFn,
+        changePassword: changePasswordFn,
         loading: isLoadingBackendData,
         refreshPosts,
         refreshInquiries,

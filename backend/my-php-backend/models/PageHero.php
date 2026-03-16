@@ -190,6 +190,15 @@ class PageHero
             'title'        => 'Hospitals & Health',
             'description'  => 'Health facilities and medical services available to residents and visitors of Bocaue, Bulacan.',
         ],
+        'pagoda' => [
+            'displayName'  => 'Pagoda Festival',
+            'imageUrl'     => '/images/places/river-festival.jpg',
+            'iconName'     => 'Sparkles',
+            'accentColor'  => 'amber-300',
+            'label'        => 'Bocaue Wonders',
+            'title'        => 'The Pagoda Festival',
+            'description'  => 'A centuries-old river procession honoring the Holy Cross of Wawa — Bocaue\'s most iconic cultural tradition.',
+        ],
         'barangays' => [
             'displayName'  => 'Barangays of Bocaue',
             'imageUrl'     => '/images/places/oldtownbocaue.jpg',

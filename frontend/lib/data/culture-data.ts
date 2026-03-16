@@ -416,7 +416,7 @@ export const localBusinesses: LocalBusiness[] = [
 export interface PeopleWonder {
   id: string
   name: string
-  category: "pageant" | "arts" | "sports" | "civic" | "entertainment" | "academics"
+  category: "pageant" | "arts" | "sports" | "entertainment" | "academics"
   title: string
   achievement: string
   description: string

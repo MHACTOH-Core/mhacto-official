@@ -8,7 +8,7 @@ import {
   UtensilsCrossed, Calendar, Sparkles, Hammer, Crown,
 } from "lucide-react"
 import { asset } from "@/lib/utils"
-import { apiFetchByLabel } from "@/lib/api"
+import { apiFetchFeaturedByLabel } from "@/lib/api"
 import {
   cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice,
   cmsToArtisan, cmsToPeopleWonder,
@@ -129,7 +129,7 @@ export function ArtsCultureSliderSection() {
     ]
 
     fetches.forEach(([label, mapper], idx) => {
-      apiFetchByLabel(label, 1)
+      apiFetchFeaturedByLabel(label, 1)
         .then((posts) => {
           if (posts?.length) {
             const patch = mapper(posts as unknown[])

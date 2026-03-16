@@ -52,10 +52,10 @@ export default function LocalBusinessPage() {
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 items-start">
             {localBusinesses.map((biz) => (
-              <Card key={biz.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+              <Card key={biz.id} className="group overflow-hidden border-border transition-all duration-300">
                 {biz.image && (
                   <div className="relative h-36 overflow-hidden">
-                    <Image src={biz.image} alt={biz.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <Image src={biz.image} alt={biz.name} fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute bottom-3 left-4">
                       <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>

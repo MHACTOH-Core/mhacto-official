@@ -130,7 +130,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {localCuisine.slice(0, 3).map((item) => (
-              <Link key={item.id} href={`/culture/local-cuisine/${item.id}`} className="block">
+              <Link key={item.id} href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
@@ -182,7 +182,7 @@ export default function CulturePage() {
           </div>
           <div className="space-y-8">
             {festivals.map((fest, idx) => (
-              <Link key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} className="block">
+              <Link key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
@@ -254,7 +254,7 @@ export default function CulturePage() {
             {culturalPractices.map((practice) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
-                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} className="block">
+                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                   {practice.image && (
                     <GalleryImage
@@ -307,7 +307,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {artisansList.map((artisan) => (
-              <Link key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} className="block">
+              <Link key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
@@ -365,7 +365,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {peopleWonders.slice(0, 3).map((person) => (
-              <Link key={person.id} href={`/culture/people-wonders/${person.id}`} className="block">
+              <Link key={person.id} href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {person.image && (
                   <GalleryImage
