@@ -5,7 +5,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { MapPin, ArrowRight } from "lucide-react"
 
-import { heritageSites, type HeritageSite } from "@/lib/data/destinations-data"
+import { type HeritageSite } from "@/lib/data/destinations-data"
+import { apiFetchFeaturedByLabel, apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite } from "@/lib/cms-mappers"
 import {
   Carousel,
   CarouselContent,
@@ -21,20 +23,20 @@ const AUTOPLAY_INTERVAL_MS = 5000
 /** How long auto-play pauses after user interaction */
 const AUTOPLAY_RESUME_DELAY_MS = 10000
 
-/**
- * Two featured destinations — auto-selected from heritage sites.
- * Change these indices to pick different ones.
- */
-const FEATURED_DESTINATIONS: HeritageSite[] = [
-  heritageSites[0], // St. Martin of Tours Parish Church
-  heritageSites[1], // Bocaue Town Plaza
-].filter(Boolean)
-
 export function PlacesCarousel() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
   const isAutoPlayActiveRef = useRef(true)
   const [activeSlideIndex, setActiveSlideIndex] = useState(0)
   const sectionHeadingRef = useRevealOnScroll<HTMLDivElement>()
+  const [destinations, setDestinations] = useState<HeritageSite[]>([])
+
+  // Fetch featured destinations from API
+  useEffect(() => {
+    apiFetchFeaturedByLabel("destinations", 2)
+      .catch(() => apiFetchByLabel("destinations", 2))
+      .then((posts) => { if (posts?.length) setDestinations(posts.slice(0, 2).map(cmsToHeritageSite)) })
+      .catch(() => {})
+  }, [])
 
   // Sync active slide index
   useEffect(() => {
@@ -62,7 +64,7 @@ export function PlacesCarousel() {
   const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
   const handleNext = () => { pauseAutoPlay(); carouselApi?.scrollNext() }
 
-  if (FEATURED_DESTINATIONS.length === 0) return null
+  if (destinations.length === 0) return null
 
   return (
     <section className="relative z-10 bg-background py-12 lg:py-16">
@@ -89,7 +91,7 @@ export function PlacesCarousel() {
             onTouchStart={pauseAutoPlay}
           >
             <CarouselContent className="items-center">
-              {FEATURED_DESTINATIONS.map((site, index) => {
+              {destinations.map((site, index) => {
                 const isActive = index === activeSlideIndex
                 return (
                   <CarouselItem key={site.id} className="basis-[85%] sm:basis-3/4 md:basis-3/5 lg:basis-1/2">
