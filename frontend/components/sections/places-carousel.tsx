@@ -96,7 +96,7 @@ export function PlacesCarousel() {
                     <div className="h-[280px] sm:h-[340px] md:h-[400px] flex items-center justify-center">
                       <Link
                         href="/destinations"
-                        className="relative w-full h-[280px] sm:h-[340px] md:h-[400px] overflow-hidden rounded-2xl border border-border shadow-sm transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] block"
+                        className="relative w-full h-[280px] sm:h-[340px] md:h-[400px] overflow-hidden rounded-2xl border border-border shadow-sm transition-all duration-500 ease-smooth block"
                         style={{
                           transform: isActive ? "scale(1)" : "scale(0.85)",
                           opacity: isActive ? 1 : 0.45,
@@ -115,7 +115,7 @@ export function PlacesCarousel() {
                             {site.name}
                           </h3>
                           <p
-                            className="mt-1.5 sm:mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+                            className="mt-1.5 sm:mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg transition-all duration-400 ease-smooth"
                             style={{
                               opacity: isActive ? 1 : 0,
                               transform: isActive ? "translateY(0)" : "translateY(8px)",

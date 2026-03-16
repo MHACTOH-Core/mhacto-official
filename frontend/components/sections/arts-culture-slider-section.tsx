@@ -210,7 +210,7 @@ export function ArtsCultureSliderSection() {
                 alt={s.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 1280px"
-                className="object-cover scale-[1.02] transition-transform duration-[8000ms] ease-out"
+                className="object-cover scale-[1.02] transition-transform duration-8000 ease-out"
                 priority={i === 0}
               />
             </div>

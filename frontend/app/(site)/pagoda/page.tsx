@@ -277,7 +277,7 @@ export default function PagodaPage() {
                   alt={subs[0]?.title || "Lorem Ipsum Dolor"}
                   fill
                   sizes="(max-width: 768px) 100vw, 550px"
-                  className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+                  className="object-cover transition-transform duration-1200 ease-out group-hover:scale-105"
                 />
                 {/* Cyan accent line at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ backgroundColor: CYAN }} />
@@ -356,7 +356,7 @@ export default function PagodaPage() {
                   alt={subs[1]?.title || "Sed Ut Perspiciatis"}
                   fill
                   sizes="(max-width: 768px) 100vw, 550px"
-                  className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+                  className="object-cover transition-transform duration-1200 ease-out group-hover:scale-105"
                 />
                 <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ backgroundColor: CYAN }} />
               </div>
@@ -420,7 +420,7 @@ export default function PagodaPage() {
                     alt={`Gallery ${i + 1}`}
                     fill
                     sizes="360px"
-                    className="object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+                    className="object-cover transition-transform duration-1500 ease-out group-hover:scale-110"
                   />
                   <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -452,7 +452,7 @@ export default function PagodaPage() {
                     alt={subs[2].title}
                     fill
                     sizes="(max-width: 768px) 100vw, 550px"
-                    className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+                    className="object-cover transition-transform duration-1200 ease-out group-hover:scale-105"
                   />
                   <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ backgroundColor: CYAN }} />
                 </div>

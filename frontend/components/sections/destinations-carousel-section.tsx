@@ -111,7 +111,7 @@ export function DestinationsCarouselSection() {
                     <div className="flex items-center justify-center py-2">
                       <Link
                         href={slide.href}
-                        className="relative block w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:border-primary/30 hover:shadow-xl"
+                        className="relative block w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-500 ease-smooth hover:border-primary/30 hover:shadow-xl"
                         style={{
                           transform: isActive ? "scale(1)" : "scale(0.88)",
                           opacity: isActive ? 1 : 0.45,
