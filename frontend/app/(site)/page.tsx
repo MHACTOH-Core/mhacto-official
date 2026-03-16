@@ -33,6 +33,10 @@ const NewsSection = dynamic(
   () => import("@/components/sections/news-section").then((m) => m.NewsSection),
   { loading: () => <SectionSkeleton /> }
 )
+const TravelToursSection = dynamic(
+  () => import("@/components/sections/travel-tours-section").then((m) => m.RestaurantsSection),
+  { loading: () => <SectionSkeleton /> }
+)
 
 function SectionSkeleton() {
   return (
@@ -71,6 +75,9 @@ export default function Home() {
 
       {/* 5. Tourist Wonders Carousel (destinations) */}
       <DestinationsCarouselSection />
+
+      {/* 5b. Travel & Tours */}
+      <TravelToursSection />
 
       {/* 6. Culinary Wonders */}
       <CulinarySection />

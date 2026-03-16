@@ -1,10 +1,13 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Compass, ArrowRight, Clock, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { tourPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { tourPackages as staticTourPackages, type TourPackage } from "@/lib/data/destinations-data"
+import { apiFetchFeaturedByLabel, apiFetchByLabel } from "@/lib/api"
+import { cmsToTourPackage } from "@/lib/cms-mappers"
 
 const typeBadge: Record<TourPackage["type"], string> = {
   heritage: "bg-amber-100 text-amber-800 border-amber-200",
@@ -18,17 +21,32 @@ const typeLabel: Record<TourPackage["type"], string> = {
   heritage: "Heritage", food: "Food", festival: "Festival", nature: "Nature", custom: "Custom",
 }
 
-/**
- * Two featured tour packages — auto-selected.
- * Change these indices to pick different ones.
- */
-const FEATURED_TOURS: TourPackage[] = [
-  tourPackages[0], // Bocaue Heritage Day Tour
-  tourPackages[1], // Pagoda Festival Immersion
-].filter(Boolean)
-
 export function RestaurantsSection() {
-  if (FEATURED_TOURS.length === 0) return null
+  const [tours, setTours] = useState<TourPackage[]>([])
+
+  useEffect(() => {
+    // First try featured travel-tours; fallback to all travel-tours; then static data
+    apiFetchFeaturedByLabel("travel-tours", 4)
+      .then((posts) => {
+        if (posts?.length) {
+          setTours(posts.map(cmsToTourPackage))
+        } else {
+          // No featured items — fetch all travel-tours instead
+          return apiFetchByLabel("travel-tours", 4).then((allPosts) => {
+            if (allPosts?.length) {
+              setTours(allPosts.map(cmsToTourPackage))
+            } else {
+              setTours(staticTourPackages.slice(0, 2))
+            }
+          })
+        }
+      })
+      .catch(() => {
+        setTours(staticTourPackages.slice(0, 2))
+      })
+  }, [])
+
+  if (tours.length === 0) return null
 
   return (
     <section className="relative z-20 bg-muted/40 py-16 sm:py-24 lg:py-32">
@@ -47,12 +65,14 @@ export function RestaurantsSection() {
           </p>
         </div>
 
-        {/* Cards — 2 items */}
+        {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 items-start">
-          {FEATURED_TOURS.map((tour, idx) => (
+          {tours.map((tour, idx) => (
             <Link
               key={tour.id}
               href="/travel-tours"
+              target="_blank"
+              rel="noopener noreferrer"
               className={`group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(idx + 1) * 100}`}
             >
               {/* Image */}
@@ -89,10 +109,12 @@ export function RestaurantsSection() {
                     <Clock className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                     {tour.duration}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-foreground">
-                    <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                    {tour.highlights[0]}
-                  </div>
+                  {tour.highlights?.[0] && (
+                    <div className="flex items-center gap-2 text-xs text-foreground">
+                      <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                      {tour.highlights[0]}
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
@@ -103,6 +125,8 @@ export function RestaurantsSection() {
         <div className="mt-10 text-center reveal-on-scroll delay-300">
           <Link
             href="/travel-tours"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             See All Tour Packages
