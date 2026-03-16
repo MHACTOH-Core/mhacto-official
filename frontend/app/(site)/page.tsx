@@ -34,7 +34,7 @@ const NewsSection = dynamic(
   { loading: () => <SectionSkeleton /> }
 )
 const TravelToursSection = dynamic(
-  () => import("@/components/sections/travel-tours-section").then((m) => m.RestaurantsSection),
+  () => import("@/components/sections/travel-tours-section").then((m) => m.TravelToursSection),
   { loading: () => <SectionSkeleton /> }
 )
 

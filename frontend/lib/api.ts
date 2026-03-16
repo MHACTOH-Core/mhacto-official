@@ -560,26 +560,12 @@ export function apiFetchByLabel(label: string, limit?: number) {
   return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
 }
 
-/** Fetch published posts by category key (e.g. 'history', 'arts-culture', 'tourist-destinations') */
-export function apiFetchByCategory(category: string, limit?: number) {
-  const params = new URLSearchParams({ category, status: "published" })
-  if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
-}
-
 // ─── Featured posts by label / category (for navbar dropdowns) ────
 
 /** Fetch featured posts, optionally filtered by label key (e.g. 'local-cuisine', 'destinations') */
 export function apiFetchFeaturedByLabel(label?: string, limit?: number) {
   const params = new URLSearchParams({ featured: "1" })
   if (label) params.set("label", label)
-  if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
-}
-
-/** Fetch featured posts, filtered by category key (e.g. 'arts-culture', 'tourist-destinations') */
-export function apiFetchFeaturedByCategory(category: string, limit?: number) {
-  const params = new URLSearchParams({ featured: "1", category })
   if (limit) params.set("limit", String(limit))
   return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
 }

@@ -21,7 +21,7 @@ const typeLabel: Record<TourPackage["type"], string> = {
   heritage: "Heritage", food: "Food", festival: "Festival", nature: "Nature", custom: "Custom",
 }
 
-export function RestaurantsSection() {
+export function TravelToursSection() {
   const [tours, setTours] = useState<TourPackage[]>([])
 
   useEffect(() => {
