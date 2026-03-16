@@ -229,7 +229,7 @@ export default function EventsPage() {
               {events.map((event) => {
                 const dateStr = event.newsDate ?? event.createdAt
                 return (
-                  <Card key={event.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+                  <Card key={event.id} className="group overflow-hidden border-border transition-all duration-300 flex flex-col">
                     {/* Image */}
                     {event.image.length > 0 && (
                       <div className="relative h-48 overflow-hidden bg-muted">
@@ -239,7 +239,7 @@ export default function EventsPage() {
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
                           loading="lazy"
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                         {event.isFeatured && (
@@ -259,7 +259,7 @@ export default function EventsPage() {
                           {formatDate(dateStr)}
                         </div>
                       </div>
-                      <h3 className="text-lg font-black text-foreground mb-2 leading-snug group-hover:text-primary transition-colors">{event.title}</h3>
+                      <h3 className="text-lg font-black text-foreground mb-2 leading-snug">{event.title}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{event.body}</p>
                     </CardContent>
                   </Card>

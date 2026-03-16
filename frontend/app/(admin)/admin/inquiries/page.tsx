@@ -58,6 +58,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { apiReplyInquiry } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
@@ -74,6 +75,8 @@ const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{
 export default function InquiriesPage() {
   const router = useRouter()
   const { isLoggedIn, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry } = useAdmin()
+
+  const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<MailboxTab>("all")
   const [search, setSearch] = useState("")
@@ -170,6 +173,7 @@ export default function InquiriesPage() {
 
   const handleArchive = (inq: Inquiry) => {
     handleStatusChange(inq, "archived")
+    toast({ title: "Archived", description: `Inquiry from ${inq.name} has been archived.` })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
@@ -180,6 +184,7 @@ export default function InquiriesPage() {
   const confirmDelete = () => {
     if (deleteTarget) {
       permanentDeleteInquiry(deleteTarget.id)
+      toast({ title: "Deleted", description: `Inquiry from ${deleteTarget.name} has been permanently deleted.`, variant: "destructive" })
       if (selectedInquiry?.id === deleteTarget.id) setSelectedInquiry(null)
       setDeleteTarget(null)
     }
@@ -197,27 +202,32 @@ export default function InquiriesPage() {
 
   const bulkArchive = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "archived" }))
+    toast({ title: "Bulk archived", description: `${selectedIds.size} inquiries archived.` })
     setSelectedIds(new Set())
   }
 
   const bulkAssign = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "assigned" }))
+    toast({ title: "Bulk assigned", description: `${selectedIds.size} inquiries assigned.` })
     setSelectedIds(new Set())
   }
 
   const bulkSpam = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "spam" }))
+    toast({ title: "Marked as spam", description: `${selectedIds.size} inquiries marked as spam.` })
     setSelectedIds(new Set())
   }
 
   const bulkTrash = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "trash" }))
+    toast({ title: "Moved to trash", description: `${selectedIds.size} inquiries moved to trash.` })
     setSelectedIds(new Set())
   }
 
   const bulkDelete = () => {
     selectedIds.forEach((id) => permanentDeleteInquiry(id))
     if (selectedInquiry && selectedIds.has(selectedInquiry.id)) setSelectedInquiry(null)
+    toast({ title: "Permanently deleted", description: `${selectedIds.size} inquiries permanently deleted.`, variant: "destructive" })
     setSelectedIds(new Set())
   }
 
@@ -265,16 +275,19 @@ export default function InquiriesPage() {
 
   const handleMarkSpam = (inq: Inquiry) => {
     handleStatusChange(inq, "spam")
+    toast({ title: "Marked as spam", description: `Inquiry from ${inq.name} marked as spam.` })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
   const handleMoveToTrash = (inq: Inquiry) => {
     handleStatusChange(inq, "trash")
+    toast({ title: "Moved to trash", description: `Inquiry from ${inq.name} moved to trash.` })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
   const handleRestoreFromTrash = (inq: Inquiry) => {
     handleStatusChange(inq, "unread")
+    toast({ title: "Restored", description: `Inquiry from ${inq.name} has been restored.` })
   }
 
   const confirmAssign = () => {
@@ -283,6 +296,7 @@ export default function InquiriesPage() {
     if (selectedInquiry?.id === assignTarget.id) {
       setSelectedInquiry({ ...assignTarget, status: "assigned" })
     }
+    toast({ title: "Assigned", description: `Inquiry from ${assignTarget.name} has been assigned.` })
     setAssignTarget(null)
     setAssignGuideName("")
   }
@@ -297,6 +311,7 @@ export default function InquiriesPage() {
       setSelectedInquiry(updated)
       setReplyText("")
       setShowReplyBox(false)
+      toast({ title: "Reply sent", description: `Reply to ${selectedInquiry.name} has been saved.` })
       if (openEmail) {
         const subject = encodeURIComponent(
           `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
@@ -307,7 +322,7 @@ export default function InquiriesPage() {
         window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
       }
     } catch {
-      // reply saved optimistically
+      toast({ title: "Reply failed", description: "Failed to save reply. Please try again.", variant: "destructive" })
     } finally {
       setIsSendingReply(false)
     }

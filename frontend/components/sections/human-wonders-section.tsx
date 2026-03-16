@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Users, ArrowRight, Crown, Palette, Dumbbell, Heart, Mic2, GraduationCap } from "lucide-react"
+import { Users, ArrowRight, Crown, Palette, Dumbbell, Mic2, GraduationCap } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { asset } from "@/lib/utils"
 import { peopleWonders as fallbackPeople, type PeopleWonder } from "@/lib/data/culture-data"
@@ -14,7 +14,6 @@ const categoryConfig: Record<PeopleWonder["category"], { label: string; badge: s
   pageant:       { label: "Pageant",       badge: "bg-rose-100 text-rose-800 border-rose-200",   icon: <Crown className="h-3 w-3" /> },
   arts:          { label: "Arts",          badge: "bg-purple-100 text-purple-800 border-purple-200", icon: <Palette className="h-3 w-3" /> },
   sports:        { label: "Sports",        badge: "bg-green-100 text-green-800 border-green-200", icon: <Dumbbell className="h-3 w-3" /> },
-  civic:         { label: "Civic",         badge: "bg-blue-100 text-blue-800 border-blue-200",   icon: <Heart className="h-3 w-3" /> },
   entertainment: { label: "Entertainment", badge: "bg-amber-100 text-amber-800 border-amber-200",icon: <Mic2 className="h-3 w-3" /> },
   academics:     { label: "Academics",     badge: "bg-sky-100 text-sky-800 border-sky-200",      icon: <GraduationCap className="h-3 w-3" /> },
 }

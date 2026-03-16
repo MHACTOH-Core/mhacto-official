@@ -68,7 +68,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   const cfg = categoryConfig[person.category]
 
   return (
-    <Link href={`/culture/people-wonders/${person.id}`} className="block">
+    <Link href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       <div className="relative h-56 overflow-hidden bg-muted">
         <Image

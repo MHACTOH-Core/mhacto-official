@@ -34,7 +34,9 @@ try {
             'user' => [
                 'id'       => $userData['user_id'],
                 'username' => $userData['username'],
+                'fullName' => $userData['full_name'] ?? $userData['username'],
                 'email'    => $userData['email'],
+                'role'     => $userData['role'] ?? 'admin',
             ],
         ]);
     } else {

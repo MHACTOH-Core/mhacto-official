@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Menu, ChevronDown, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset } from "@/lib/utils"
+
 import {
   Sheet,
   SheetContent,
@@ -20,6 +21,21 @@ interface NavItem {
   href?: string
   isHash?: boolean
   children?: NavItem[]
+}
+
+/** Tri-color "Pagoda" text matching the MHACTO logo branding */
+function PagodaText({ className, size = "sm" }: { className?: string; size?: "sm" | "lg" }) {
+  const base = size === "lg" ? "text-lg" : "text-[13px]"
+  return (
+    <span className={`${base} font-bold tracking-wide ${className ?? ""}`}>
+      <span className="text-red-500">P</span>
+      <span className="text-red-500">A</span>
+      <span className="text-emerald-500">G</span>
+      <span className="text-emerald-500">O</span>
+      <span className="text-blue-500">D</span>
+      <span className="text-blue-500">A</span>
+    </span>
+  )
 }
 
 const navLinks: NavItem[] = [
@@ -81,6 +97,7 @@ const navLinks: NavItem[] = [
     ],
   },
   { label: "Inquiry", href: "/inquire", isHash: false },
+  { label: "Pagoda", href: "/pagoda", isHash: false },
 ]
 
 export function Navbar() {
@@ -194,7 +211,7 @@ export function Navbar() {
       >
         {/* Trigger button */}
         <button
-          className={`flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-all duration-150 hover:text-primary ${
+          className={`flex items-center gap-0.5 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[12px] lg:text-[13px] font-medium transition-all duration-150 hover:text-primary ${
             hasActiveChild(item) || activeDesktopDropdown === item.label
               ? "text-primary"
               : "text-foreground"
@@ -202,7 +219,7 @@ export function Navbar() {
         >
           {item.label}
           <ChevronDown
-            className={`mt-px h-3.5 w-3.5 transition-transform duration-200 ${
+            className={`mt-px h-3 w-3 lg:h-3.5 lg:w-3.5 transition-transform duration-200 ${
               activeDesktopDropdown === item.label ? "rotate-180" : ""
             }`}
           />
@@ -303,18 +320,34 @@ export function Navbar() {
 
   // Render desktop simple link
   const renderDesktopLink = (item: NavItem) => {
+    const isPagoda = item.label === "Pagoda"
     return (
       <Link
         key={item.label}
         href={getHref(item)}
         onClick={(e) => handleHashClick(e, item)}
-        className={`rounded-md px-2 py-1.5 text-[13px] font-medium transition-all duration-150 hover:text-primary ${
-          isActive(item)
-            ? "text-primary"
-            : "text-foreground"
+        className={`whitespace-nowrap rounded-md px-1.5 py-1.5 text-[12px] lg:text-[13px] font-medium transition-all duration-150 hover:opacity-80 ${
+          isPagoda
+            ? ""
+            : isActive(item)
+              ? "text-primary hover:text-primary"
+              : "text-foreground hover:text-primary"
         }`}
       >
-        {item.label}
+        {isPagoda ? <PagodaText /> : item.label}
+      </Link>
+    )
+  }
+
+  // Render desktop Pagoda link with special styling
+  const renderPagodaLink = (item: NavItem) => {
+    return (
+      <Link
+        key={item.label}
+        href={getHref(item)}
+        className="whitespace-nowrap rounded-full border border-border/50 bg-muted/30 px-2.5 py-1 text-[12px] lg:text-[13px] font-medium transition-all duration-150 hover:bg-muted/60 hover:border-primary/30 hover:shadow-sm"
+      >
+        <PagodaText />
       </Link>
     )
   }
@@ -322,49 +355,49 @@ export function Navbar() {
   return (
     <>
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-white/80 backdrop-blur-md shadow-sm">
-      <nav className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 lg:py-4 lg:px-8">
+      <nav className="mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-2.5 lg:py-3 lg:px-8">
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
             src={asset("/images/logos/MHACTO_LOGO.png")}
             alt="MHACTO Bocaue Logo"
-            width={180}
-            height={48}
-            className="h-9 sm:h-10 w-auto object-contain"
+            width={160}
+            height={42}
+            className="h-8 lg:h-9 w-auto object-contain"
             style={{ imageRendering: 'crisp-edges' }}
             priority
           />
         </Link>
 
-        {/* Center – Desktop nav links */}
-        <div className="hidden items-center gap-1 md:flex lg:gap-2">
+        {/* Center – Desktop nav links + search */}
+        <div className="hidden items-center gap-0.5 md:flex lg:gap-1 min-w-0 flex-1 justify-center">
           {navLinks.map((item) =>
-            item.children
-              ? renderDesktopDropdown(item)
-              : renderDesktopLink(item)
+            item.label === "Pagoda"
+              ? renderPagodaLink(item)
+              : item.children
+                ? renderDesktopDropdown(item)
+                : renderDesktopLink(item)
           )}
-        
 
-        {/* Desktop search button */}
-      
+          {/* Search button */}
           <button
             onClick={() => setIsSearchOverlayOpen(true)}
-            className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            className="hidden md:flex items-center justify-center ml-1 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             aria-label="Open search"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Right – Municipality of Bocaue logo + mobile menu */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="hidden md:flex shrink-0 items-center gap-2">
+        {/* Right – Bocaue logo + mobile menu */}
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/" className="hidden md:flex shrink-0 items-center gap-1.5">
             <Image
               src={asset("/images/logos/Municipality_of_bocaue.png")}
               alt="Municipality of Bocaue Logo"
-              width={56}
-              height={56}
-              className="h-11 w-11 sm:h-12 sm:w-12 object-contain"
+              width={52}
+              height={52}
+              className="h-10 w-10 lg:h-11 lg:w-11 object-contain"
               priority
             />
             <span className="hidden xl:block text-xs font-semibold leading-tight text-foreground">
@@ -510,15 +543,19 @@ export function Navbar() {
                     ) : (
                       <Link
                         href={getHref(item)}
-                        className={`text-lg font-medium transition-colors hover:text-primary ${
-                          isActive(item) ? "text-primary" : "text-foreground"
+                        className={`text-lg font-medium transition-colors ${
+                          item.label === "Pagoda"
+                            ? "hover:opacity-80"
+                            : isActive(item)
+                              ? "text-primary hover:text-primary"
+                              : "text-foreground hover:text-primary"
                         }`}
                         onClick={(e) => {
                           handleHashClick(e, item)
                           setIsMobileMenuOpen(false)
                         }}
                       >
-                        {item.label}
+                        {item.label === "Pagoda" ? <PagodaText size="lg" /> : item.label}
                       </Link>
                     )}
                   </div>

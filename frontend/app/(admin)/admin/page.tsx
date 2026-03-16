@@ -13,13 +13,13 @@ import { Label } from "@/components/ui/label"
 export default function AdminLoginPage() {
   const { login, isLoggedIn } = useAdmin()
   const router = useRouter()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // If already logged in, redirect
   useEffect(() => {
     if (isLoggedIn) router.push("/admin/dashboard")
   }, [isLoggedIn, router])
@@ -32,11 +32,11 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      const success = await login(email, password)
-      if (success) {
+      const result = await login(email, password)
+      if (result === true) {
         router.push("/admin/dashboard")
       } else {
-        setError("Invalid email or password.")
+        setError(result)
         setLoading(false)
       }
     } catch {
@@ -47,9 +47,8 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left side — Login form */}
+      {/* Left side */}
       <div className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-12 sm:px-12 lg:w-1/2 lg:px-16 xl:px-24">
-        {/* Background pattern */}
         <div className="pointer-events-none absolute inset-0 opacity-5 lg:w-1/2">
           <div
             className="absolute inset-0"
@@ -74,56 +73,36 @@ export default function AdminLoginPage() {
               />
             </div>
             <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
-            <p className="mt-1.5 text-sm text-slate-400">
-              Sign in to the MHACTO Admin Panel
-            </p>
+            <p className="mt-1.5 text-sm text-slate-400">Sign in to the MHACTO Admin Panel</p>
           </div>
 
-          {/* Form */}
+          {/* ── Login Form ── */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-slate-300">
-                Email Address
-              </Label>
+              <Label htmlFor="email" className="text-sm text-slate-300">Email Address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@mhacto.gov.ph"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  id="email" type="email" placeholder="admin@mhacto.gov.ph"
+                  value={email} onChange={(e) => setEmail(e.target.value)} required
                   className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-slate-300">
-                Password
-              </Label>
+              <Label htmlFor="password" className="text-sm text-slate-300">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
+                  id="password" type={showPassword ? "text" : "password"}
                   placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  value={password} onChange={(e) => setPassword(e.target.value)} required
                   className="border-white/10 bg-white/5 pl-10 pr-10 text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -134,18 +113,12 @@ export default function AdminLoginPage() {
               </p>
             )}
 
-            <Button
-              type="submit"
-              className="w-full rounded-lg font-semibold"
-              size="lg"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full rounded-lg font-semibold" size="lg" disabled={loading}>
               {loading ? "Signing in\u2026" : "Sign In"}
             </Button>
           </form>
 
-          {/* Hint */}
-          <div className="mt-6 rounded-lg bg-white/5 p-3">
+          <div className="mt-4 rounded-lg bg-white/5 p-3">
             <p className="text-center text-xs text-slate-500">
               Demo credentials:{" "}
               <span className="text-slate-400">admin@mhacto.gov.ph</span> /{" "}
