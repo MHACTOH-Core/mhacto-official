@@ -268,4 +268,85 @@ INSERT INTO page_views (content_id, visitor_session_id) VALUES
 (@place6, 'sess_wxy901'), (@place6, 'sess_zab234'), (@place6, 'sess_cde567');
 
 -- Done! 🎉
+
+-- ────────────────────────────────────────────────────────────────
+-- TOUR PACKAGES (post_type = 'place', label = travel-tours)
+-- category_id 3 = Tourist Destinations, label = travel-tours
+-- ────────────────────────────────────────────────────────────────
+
+INSERT INTO content (user_id, category_id, title, description, status, post_type, author) VALUES
+(1, 3, 'Bocaue Heritage Day Tour',
+ 'A guided walking and jeepney tour through Bocaue''s heritage sites, including the St. Martin of Tours Church, the historic plaza, the MHACTO Heritage Gallery, and the Bocaue River waterfront.',
+ 'published', 'place', 'MHACTO Office'),
+(1, 3, 'Pagoda Festival Immersion Package',
+ 'An all-inclusive festival experience package for the annual Bocaue Pagoda Festival — including riverside viewing area access, the solemn mass, street fair access, and a post-festival heritage tour.',
+ 'published', 'place', 'MHACTO Office'),
+(1, 3, 'Bocaue Food Heritage Trail',
+ 'A guided food tour through the edible heritage of Bocaue — visiting the public market, local bakeries, kakanin stalls, and a live cooking demonstration of traditional dishes.',
+ 'published', 'place', 'MHACTO Office'),
+(1, 3, 'Bocaue River & Nature Trek',
+ 'Explore the natural beauty surrounding Bocaue''s riverways. This half-day eco-tour follows the river downstream, passing through mangrove areas, fish pens, and riverside barangays with a licensed nature guide.',
+ 'published', 'place', 'MHACTO Office');
+
+SET @tour1 = (SELECT content_id FROM content WHERE title = 'Bocaue Heritage Day Tour' LIMIT 1);
+SET @tour2 = (SELECT content_id FROM content WHERE title = 'Pagoda Festival Immersion Package' LIMIT 1);
+SET @tour3 = (SELECT content_id FROM content WHERE title = 'Bocaue Food Heritage Trail' LIMIT 1);
+SET @tour4 = (SELECT content_id FROM content WHERE title = 'Bocaue River & Nature Trek' LIMIT 1);
+
+-- Tour meta fields
+INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+-- Tour 1: Heritage Day Tour
+(@tour1, 'label_key', 'travel-tours'),
+(@tour1, 'is_featured', '1'),
+(@tour1, 'hours', 'Full Day (8 hours)'),
+(@tour1, 'contact', 'MHACTO Office: (044) 123-4567 | mhacto.bocaue@email.com'),
+(@tour1, 'tour_type', 'heritage'),
+(@tour1, 'tour_difficulty', 'easy'),
+(@tour1, 'tour_includes', '["Licensed MHACTO heritage guide","Church and gallery entrance fees","Welcome snack (puto seko and native drinks)","Souvenir heritage map of Bocaue"]'),
+(@tour1, 'tour_highlights', '["400-year-old St. Martin of Tours Church","Access to the MHACTO Heritage Gallery","Bocaue River waterfront with pagoda route","Live artisan workshop visit"]'),
+(@tour1, 'tour_itinerary', '[{"time":"8:00 AM","activity":"Meet at Bocaue Municipal Hall; welcome briefing by MHACTO guide"},{"time":"8:30 AM","activity":"Guided tour of St. Martin of Tours Parish Church & Shrine of the Holy Cross"},{"time":"10:00 AM","activity":"Visit to MHACTO Heritage Gallery & Old Municipal Hall archive"},{"time":"11:30 AM","activity":"Bocaue Town Plaza walk & Jose Corazon de Jesus Monument"},{"time":"12:30 PM","activity":"Traditional lunch at a heritage-style restaurant (own expense)"},{"time":"2:00 PM","activity":"Bocaue River waterfront walk and pagoda procession route tour"},{"time":"3:30 PM","activity":"Visit to a local artisan workshop (weaving or woodcarving)"},{"time":"5:00 PM","activity":"Tour ends. Optional pasalubong shopping at local market stalls."}]'),
+
+-- Tour 2: Pagoda Festival Immersion
+(@tour2, 'label_key', 'travel-tours'),
+(@tour2, 'is_featured', '1'),
+(@tour2, 'hours', '2 Days / 1 Night (July festival weekend)'),
+(@tour2, 'contact', 'MHACTO Office: (044) 123-4567 | Book at least 3 weeks in advance'),
+(@tour2, 'tour_type', 'festival'),
+(@tour2, 'tour_difficulty', 'active'),
+(@tour2, 'tour_includes', '["1-night accommodation (twin sharing)","Reserved riverside viewing area pass","Festival lunch and welcome snack","Licensed MHACTO guide","Post-festival heritage tour"]'),
+(@tour2, 'tour_highlights', '["Front-row viewing for the Pagoda river procession","Solemn mass at the historic church","Full street fair and fireworks experience","Overnight in Bocaue with local hosts"]'),
+(@tour2, 'tour_itinerary', '[{"time":"Day 1, 4:00 PM","activity":"Arrive in Bocaue; check-in at partner accommodation; town orientation walk"},{"time":"Day 1, 6:00 PM","activity":"Bocaue River pre-festival program & street fair"},{"time":"Day 1, 8:00 PM","activity":"Fireworks display at the river; communal dinner"},{"time":"Day 2, 7:00 AM","activity":"Solemn high mass at St. Martin of Tours Church"},{"time":"Day 2, 9:00 AM","activity":"River procession viewing from reserved riverside area"},{"time":"Day 2, 12:00 PM","activity":"Festival lunch with local delicacies"},{"time":"Day 2, 2:00 PM","activity":"Post-festival heritage tour & artisan market"},{"time":"Day 2, 5:00 PM","activity":"Tour concludes; departure assistance"}]'),
+
+-- Tour 3: Food Heritage Trail
+(@tour3, 'label_key', 'travel-tours'),
+(@tour3, 'is_featured', '1'),
+(@tour3, 'hours', 'Half Day (4 hours)'),
+(@tour3, 'contact', 'MHACTO Office: (044) 123-4567 | mhacto.bocaue@email.com'),
+(@tour3, 'tour_type', 'food'),
+(@tour3, 'tour_difficulty', 'easy'),
+(@tour3, 'tour_includes', '["Food tastings at all stops","Live cooking demonstrations","Recipe cards and take-home puto seko pack","Licensed MHACTO food guide"]'),
+(@tour3, 'tour_highlights', '["Authentic puto seko straight from a family bakery","Bocaue Public Market food experience","Bulacan lechon live demonstration","Community kitchen experience"]'),
+(@tour3, 'tour_itinerary', '[{"time":"8:00 AM","activity":"Bocaue Public Market tasting walk: fresh kakanin and native delicacies"},{"time":"9:00 AM","activity":"Visit to a heritage bakery: puto seko live baking demonstration"},{"time":"10:00 AM","activity":"Church yard stalls: bibingka and traditional drinks"},{"time":"11:00 AM","activity":"Community kitchen: live cooking demonstration of Bulacan lechon preparation"},{"time":"12:00 PM","activity":"Communal lunch with local specialties; tour ends"}]'),
+
+-- Tour 4: River & Nature Trek
+(@tour4, 'label_key', 'travel-tours'),
+(@tour4, 'is_featured', '0'),
+(@tour4, 'hours', 'Half Day (5 hours)'),
+(@tour4, 'contact', 'MHACTO Office: (044) 123-4567 | mhacto.bocaue@email.com'),
+(@tour4, 'tour_type', 'nature'),
+(@tour4, 'tour_difficulty', 'moderate'),
+(@tour4, 'tour_includes', '["Licensed MHACTO nature guide","Bangka river ride","Light snack and water","Mangrove seedling planting activity"]'),
+(@tour4, 'tour_highlights', '["Scenic bangka ride along the Bocaue River","Mangrove conservation area visit","Traditional fish pen demonstration","Riverside barangay community interaction"]'),
+(@tour4, 'tour_itinerary', '[{"time":"6:30 AM","activity":"Meet at Bocaue River dock; safety briefing"},{"time":"7:00 AM","activity":"Bangka ride downstream: fish pens and river life"},{"time":"8:30 AM","activity":"Mangrove conservation area walk and seedling planting"},{"time":"10:00 AM","activity":"Visit riverside barangay; community interaction and light snack"},{"time":"11:30 AM","activity":"Return upstream and tour concludes at dock"}]');
+
+-- Tour images
+INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
+(@tour1, '/images/places/Church.jpg', 1, 0),
+(@tour1, '/images/places/oldtownbocaue.jpg', 0, 1),
+(@tour1, '/images/places/river-festival.jpg', 0, 2),
+(@tour2, '/images/places/river-festival.jpg', 1, 0),
+(@tour2, '/images/places/Church.jpg', 0, 1),
+(@tour3, '/images/places/Food.jpg', 1, 0),
+(@tour4, '/images/places/river-festival.jpg', 1, 0);
+
 SELECT 'Seed data inserted successfully!' AS result;

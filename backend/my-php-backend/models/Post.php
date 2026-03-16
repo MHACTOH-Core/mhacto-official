@@ -293,6 +293,7 @@ class Post
                 'label_id', 'label_key', 'is_featured',
                 'location', 'hours', 'visit_date', 'contact', 'established',
                 'place_category', 'story', 'news_date',
+                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
             ];
             $metaMap = [];
             foreach ($metaKeys as $mk) {
@@ -365,6 +366,7 @@ class Post
                 'label_id', 'label_key', 'is_featured',
                 'location', 'hours', 'visit_date', 'contact', 'established',
                 'place_category', 'story', 'news_date',
+                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
             ];
             foreach ($metaKeys as $mk) {
                 if (array_key_exists($mk, $data)) {
@@ -449,12 +451,24 @@ class Post
             'established'     => $meta['established'] ?? null,
             'category'        => $meta['place_category'] ?? null,
             'story'           => $meta['story'] ?? null,
-            'highlights'      => [],
+            'highlights'      => $this->parseJsonMeta($meta, 'tour_highlights'),
+            'includes'        => $this->parseJsonMeta($meta, 'tour_includes'),
+            'itinerary'       => $this->parseJsonMeta($meta, 'tour_itinerary'),
+            'tourType'        => $meta['tour_type'] ?? null,
+            'tourDifficulty'  => $meta['tour_difficulty'] ?? null,
             'newsDate'        => $meta['news_date'] ?? null,
             'author'          => $row['author'] ?? null,
             'createdAt'       => $row['created_at'],
             'updatedAt'       => $row['updated_at'],
         ];
+    }
+
+    /** Parse a JSON-encoded meta value into an array. */
+    private function parseJsonMeta(array $meta, string $key): array
+    {
+        if (empty($meta[$key])) return [];
+        $decoded = json_decode($meta[$key], true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function mapCategoryKey(?string $name): string

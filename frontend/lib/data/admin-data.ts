@@ -52,6 +52,11 @@ export interface CMSPost {
   category?: string
   story?: string
   highlights?: string[]
+  // Tour-specific fields (optional — from content_fields)
+  includes?: string[]
+  itinerary?: { time: string; activity: string }[]
+  tourType?: string
+  tourDifficulty?: string
   // News detail fields
   newsDate?: string
   // Featured flag — per-label featured assignment

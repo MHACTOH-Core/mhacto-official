@@ -84,24 +84,28 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
 }
 
 export function cmsToTourPackage(post: CMSPost): TourPackage {
-  const cat = (post.category ?? "").toLowerCase()
-  const type: TourPackage["type"] = cat.includes("food") ? "food"
-    : cat.includes("festival") ? "festival"
-    : cat.includes("nature") ? "nature"
-    : cat.includes("custom") ? "custom"
+  const tourType = (post.tourType ?? post.category ?? "").toLowerCase()
+  const type: TourPackage["type"] = tourType.includes("food") ? "food"
+    : tourType.includes("festival") ? "festival"
+    : tourType.includes("nature") ? "nature"
+    : tourType.includes("custom") ? "custom"
     : "heritage"
+  const diff = (post.tourDifficulty ?? "").toLowerCase()
+  const difficulty: TourPackage["difficulty"] = diff === "moderate" ? "moderate"
+    : diff === "active" ? "active"
+    : "easy"
   return {
     id: post.id,
     name: post.title,
-      duration: post["hours"] ?? "Full Day",
+    duration: post.hours ?? "Full Day",
     type,
-    difficulty: "easy",
+    difficulty,
     description: post.body ?? "",
-    itinerary: [],
-    includes: post.highlights ?? [],
+    itinerary: post.itinerary ?? [],
+    includes: post.includes ?? [],
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
-      bookingContact: post["contact"] ?? "MHACTO Office",
+    bookingContact: post.contact ?? "MHACTO Office",
     author: post.author ?? undefined,
   }
 }
