@@ -90,7 +90,7 @@ export function NewsSection() {
   return (
     <section id="news" className="py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="mb-10 sm:mb-14 text-center">
+        <div className="mb-10 sm:mb-14 text-center reveal-on-scroll">
           <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
             <Calendar className="h-4 w-4" />
             Latest Updates

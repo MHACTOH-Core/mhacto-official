@@ -5,7 +5,7 @@ import { asset } from "@/lib/utils"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground">
+    <footer className="border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground reveal-on-scroll">
       <div className="mx-auto max-w-7xl px-4 py-12 lg:px-8">
         <div className="grid gap-8 md:grid-cols-3">
           {/* Brand */}

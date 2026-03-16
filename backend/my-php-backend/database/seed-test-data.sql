@@ -274,19 +274,19 @@ INSERT INTO page_views (content_id, visitor_session_id) VALUES
 -- category_id 3 = Tourist Destinations, label = travel-tours
 -- ────────────────────────────────────────────────────────────────
 
-INSERT INTO content (user_id, category_id, title, description, status, post_type, author) VALUES
+INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 3, 'Bocaue Heritage Day Tour',
  'A guided walking and jeepney tour through Bocaue''s heritage sites, including the St. Martin of Tours Church, the historic plaza, the MHACTO Heritage Gallery, and the Bocaue River waterfront.',
- 'published', 'place', 'MHACTO Office'),
+ 'published', 'place'),
 (1, 3, 'Pagoda Festival Immersion Package',
  'An all-inclusive festival experience package for the annual Bocaue Pagoda Festival — including riverside viewing area access, the solemn mass, street fair access, and a post-festival heritage tour.',
- 'published', 'place', 'MHACTO Office'),
+ 'published', 'place'),
 (1, 3, 'Bocaue Food Heritage Trail',
  'A guided food tour through the edible heritage of Bocaue — visiting the public market, local bakeries, kakanin stalls, and a live cooking demonstration of traditional dishes.',
- 'published', 'place', 'MHACTO Office'),
+ 'published', 'place'),
 (1, 3, 'Bocaue River & Nature Trek',
  'Explore the natural beauty surrounding Bocaue''s riverways. This half-day eco-tour follows the river downstream, passing through mangrove areas, fish pens, and riverside barangays with a licensed nature guide.',
- 'published', 'place', 'MHACTO Office');
+ 'published', 'place');
 
 SET @tour1 = (SELECT content_id FROM content WHERE title = 'Bocaue Heritage Day Tour' LIMIT 1);
 SET @tour2 = (SELECT content_id FROM content WHERE title = 'Pagoda Festival Immersion Package' LIMIT 1);

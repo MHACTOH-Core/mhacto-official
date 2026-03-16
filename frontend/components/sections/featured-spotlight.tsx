@@ -35,7 +35,7 @@ export function FeaturedSpotlight() {
     : asset("/images/places/river-festival.jpg")
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-border shadow-xl reveal-on-scroll">
+    <div className="relative w-full overflow-hidden rounded-2xl border border-border shadow-xl reveal-on-scroll reveal-scale">
       {/* Background image */}
       {spotlightImageUrl && (
         <div className="absolute inset-0">
@@ -54,7 +54,7 @@ export function FeaturedSpotlight() {
       )}
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-end p-5 sm:p-8 md:p-12 min-h-[300px] sm:min-h-[380px] lg:min-h-[460px]">
+      <div className="relative z-10 flex flex-col justify-end p-5 sm:p-8 md:p-12 lg:p-16 min-h-[360px] sm:min-h-[440px] lg:min-h-[520px]">
         {/* Spotlight badge */}
         <div className="mb-4 animate-fade-in-up delay-200">
           <Badge
@@ -110,7 +110,7 @@ export function FeaturedSpotlight() {
             size="lg"
             className="rounded-full border-white/40 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white/60 hover:text-white"
           >
-            <Link href="/culture/festivals-celebrations">Learn More</Link>
+            <Link href="/pagoda">Learn More</Link>
           </Button>
         </div>
 

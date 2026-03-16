@@ -5,7 +5,7 @@ import { asset } from "@/lib/utils"
 import { useState, useMemo, useEffect } from "react"
 import {
   School, Activity, ArrowUpDown, BookOpen, Users,
-  Phone, MapPin, Clock, AlertTriangle, CheckCircle,
+  Phone, MapPin, Clock, AlertTriangle, CheckCircle, ChevronRight,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -18,9 +18,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent } from "@/components/ui/card"
-import { type SchoolEntry, type Hospital } from "@/lib/data/community-data"
+import { type SchoolEntry, type Hospital, type Barangay } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
-import { cmsToSchoolEntry, cmsToHospital } from "@/lib/cms-mappers"
+import { cmsToSchoolEntry, cmsToHospital, cmsToBarangay } from "@/lib/cms-mappers"
 
 //  School config 
 const levelLabel: Record<SchoolEntry["level"], string> = {
@@ -87,7 +87,7 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
 }
 
 //  Page 
-type Tab = "schools" | "hospitals"
+type Tab = "schools" | "hospitals" | "barangay"
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<Tab>("schools")
@@ -100,12 +100,18 @@ export default function CommunityPage() {
   // Hospitals state
   const [hospitals, setHospitals] = useState<Hospital[]>([])
 
+  // Barangay state
+  const [barangays, setBarangays] = useState<Barangay[]>([])
+
   useEffect(() => {
     apiFetchByLabel("schools")
       .then((posts) => { if (posts?.length) setSchools(posts.map(cmsToSchoolEntry)) })
       .catch(() => {})
     apiFetchByLabel("hospitals")
       .then((posts) => { if (posts?.length) setHospitals(posts.map(cmsToHospital)) })
+      .catch(() => {})
+    apiFetchByLabel("barangay")
+      .then((posts) => { if (posts?.length) setBarangays(posts.map(cmsToBarangay)) })
       .catch(() => {})
   }, [])
 
@@ -179,6 +185,20 @@ export default function CommunityPage() {
               Hospitals & Health
               <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === "hospitals" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                 {hospitals.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("barangay")}
+              className={`flex items-center gap-2 px-6 py-3.5 text-sm font-bold border-b-2 transition-all ${
+                activeTab === "barangay"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <MapPin className="h-4 w-4" />
+              Barangays
+              <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-black ${activeTab === "barangay" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                {barangays.length}
               </span>
             </button>
           </div>
@@ -359,6 +379,61 @@ export default function CommunityPage() {
             </div>
           </section>
         </>
+      )}
+
+      {/*  Barangay tab  */}
+      {activeTab === "barangay" && (
+        <section className="py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            <div className="flex items-center gap-3 mb-10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-foreground sm:text-3xl">Barangays of Bocaue</h2>
+                <p className="text-muted-foreground">Discover the vibrant communities that make up our municipality</p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {barangays.map((brgy) => (
+                <a
+                  key={brgy.id}
+                  href={`/community/barangay/${brgy.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer"
+                >
+                  <div className="p-5">
+                    <h3 className="text-lg font-black text-foreground group-hover:text-primary transition-colors mb-2">
+                      {brgy.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-4">
+                      {brgy.description}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
+                      {brgy.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-primary" />
+                          {brgy.location}
+                        </span>
+                      )}
+                      {brgy.population && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3 text-primary" />
+                          {brgy.population}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center text-sm font-semibold text-primary group-hover:gap-2 transition-all">
+                      Read more <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
     </main>
   )

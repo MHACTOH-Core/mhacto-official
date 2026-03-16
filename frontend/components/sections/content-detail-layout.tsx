@@ -164,7 +164,7 @@ export default function ContentDetailLayout({
           <div className="grid gap-10 lg:grid-cols-[2fr_3fr]">
 
             {/* ── LEFT: image + quick facts ─────────────────── */}
-            <div className="space-y-6">
+            <div className="space-y-6 reveal-on-scroll reveal-left">
 
               {/* Main image + thumbnails */}
               <div className="overflow-hidden rounded-2xl border border-border shadow-lg bg-muted">
@@ -218,7 +218,7 @@ export default function ContentDetailLayout({
             </div>
 
             {/* ── RIGHT: text content ──────────────────────── */}
-            <div className="space-y-8">
+            <div className="space-y-8 reveal-on-scroll reveal-right">
 
               {/* Badge row */}
               {badges && <div className="flex flex-wrap gap-2">{badges}</div>}

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronDown } from "lucide-react"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 import { apiFetchMilestones, type Milestone } from "@/lib/api"
 
 /** Milestone data shape used by the timeline UI */
@@ -15,41 +16,31 @@ interface TimelineMilestone {
 }
 
 function TimelineItem({ event, index }: { event: TimelineMilestone; index: number }) {
-  const [isDetailExpanded, setIsDetailExpanded] = useState(false)
   const isLeft = event.side === "left"
+  const href = event.milestoneId ? `/story/${event.milestoneId}` : "#"
 
   return (
     <div className="relative flex items-start gap-0 md:gap-8">
       {/* Left content (visible on md+ for left-side items) */}
       <div className={`hidden md:block md:w-1/2 ${isLeft ? "" : "md:order-last"}`}>
         <div className={`reveal-on-scroll ${isLeft ? "text-right pr-8" : "text-left pl-8"}`}>
-          <button
-            onClick={() => setIsDetailExpanded(!isDetailExpanded)}
-            className="w-full text-left group cursor-pointer"
-          >
+          <Link href={href} className="block group">
             <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/30 ${isLeft ? "text-right" : "text-left"}`}>
               <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
                 {event.year}
               </span>
-              <h3 className="text-lg font-bold text-foreground mb-2">
+              <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                 {event.title}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {event.description}
               </p>
-              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                {isDetailExpanded ? "Read less" : "Read more"}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${isDetailExpanded ? "rotate-180" : ""}`} />
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
+                Read full story
+                <ChevronRight className="h-3 w-3" />
               </span>
             </div>
-          </button>
-          <div className={`overflow-hidden transition-all duration-300 ${isDetailExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-            <div className={`mt-2 rounded-lg bg-muted/50 border border-border p-5 ${isLeft ? "text-right" : "text-left"}`}>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {event.detail}
-              </p>
-            </div>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -67,33 +58,23 @@ function TimelineItem({ event, index }: { event: TimelineMilestone; index: numbe
       {/* Mobile content (visible below md) */}
       <div className="md:hidden pl-12 pb-2 w-full">
         <div className="reveal-on-scroll">
-          <button
-            onClick={() => setIsDetailExpanded(!isDetailExpanded)}
-            className="w-full text-left group cursor-pointer"
-          >
+          <Link href={href} className="block group">
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/30">
               <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
                 {event.year}
               </span>
-              <h3 className="text-base font-bold text-foreground mb-1">
+              <h3 className="text-base font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                 {event.title}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {event.description}
               </p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                {isDetailExpanded ? "Read less" : "Read more"}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${isDetailExpanded ? "rotate-180" : ""}`} />
+              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
+                Read full story
+                <ChevronRight className="h-3 w-3" />
               </span>
             </div>
-          </button>
-          <div className={`overflow-hidden transition-all duration-300 ${isDetailExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-            <div className="mt-2 rounded-lg bg-muted/50 border border-border p-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {event.detail}
-              </p>
-            </div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
@@ -129,7 +110,7 @@ export function HistoryArtSection() {
   if (!isLoading && timelineMilestones.length === 0) return null
 
   return (
-    <section className="relative bg-background py-20 lg:py-28 overflow-hidden">
+    <section id="story-of-bocaue" className="relative bg-background py-20 lg:py-28 overflow-hidden">
       <div className="mx-auto max-w-5xl px-4 lg:px-8">
         {/* Header */}
         <div className="mb-16 text-center reveal-on-scroll">
@@ -153,7 +134,7 @@ export function HistoryArtSection() {
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-primary/60 to-transparent md:-translate-x-px" />
 
           <div className="space-y-12 md:space-y-16">
-            {timelineMilestones.map((milestone, milestoneIndex) => (
+            {timelineMilestones.slice(0, 3).map((milestone, milestoneIndex) => (
               <TimelineItem key={milestone.year} event={milestone} index={milestoneIndex} />
             ))}
           </div>
@@ -162,6 +143,17 @@ export function HistoryArtSection() {
           <div className="absolute left-4 md:left-1/2 bottom-0 md:-translate-x-1/2 -translate-x-1/2">
             <div className="h-3 w-3 rounded-full bg-primary/40 ring-4 ring-background" />
           </div>
+        </div>
+
+        {/* See Full Story CTA */}
+        <div className="mt-12 text-center reveal-on-scroll">
+          <Link
+            href="/history"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-105"
+          >
+            See Full Story
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
