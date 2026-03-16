@@ -9,6 +9,7 @@ export type ContentCategory =
   | "tourist-destinations"
   | "news"
   | "events"
+  | "community"
 
 // Labels — sub-items under each navbar category
 export type ContentLabel =
@@ -24,6 +25,11 @@ export type ContentLabel =
   | "travel-tours"
   | "news"
   | "events"
+  | "schools"
+  | "hospitals"
+  | "barangay"
+  | "local-business"
+  | "pagoda"
 
 export type ContentStatus = "draft" | "published" | "archived"
 
@@ -38,7 +44,7 @@ export interface CMSPost {
   postType: PostType
   status: ContentStatus
   image: string[]
-  // Place detail fields
+  // Place detail fields (optional — only for place/event post types)
   location?: string
   hours?: string
   contact?: string
@@ -46,6 +52,11 @@ export interface CMSPost {
   category?: string
   story?: string
   highlights?: string[]
+  // Tour-specific fields (optional — from content_fields)
+  includes?: string[]
+  itinerary?: { time: string; activity: string }[]
+  tourType?: string
+  tourDifficulty?: string
   // News detail fields
   newsDate?: string
   // Featured flag — per-label featured assignment
@@ -89,6 +100,25 @@ export type ActivityAction =
   | "reply_inquiry"
   | "archive_inquiry"
   | "update_settings"
+
+export type UserRole = "super_admin" | "admin" | "content_manager"
+export type UserStatus = "active" | "archived"
+
+export interface AdminUser {
+  user_id: number
+  username: string
+  full_name: string | null
+  email: string
+  role: UserRole
+  status: UserStatus
+  created_at: string
+}
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  super_admin: "Super Admin",
+  admin: "Admin",
+  content_manager: "Content Manager",
+}
 
 export interface ActivityLogEntry {
   id: string
@@ -139,6 +169,7 @@ export const contentCategories: Record<ContentCategory, { label: string; color: 
   "tourist-destinations": { label: "Tourist Destinations", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
   "events": { label: "Events", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  "community": { label: "Community", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300" },
 }
 
 // ─── Label helpers (sub-items grouped by category) ─────────────────
@@ -161,6 +192,13 @@ export const contentLabels: Record<ContentLabel, { label: string; color: string;
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300", category: "news" },
   // Events (standalone)
   "events": { label: "Events", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300", category: "events" },
+  // Community
+  "schools": { label: "Schools", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", category: "community" },
+  "hospitals": { label: "Hospitals", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300", category: "community" },
+  "barangay": { label: "Barangay", color: "bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300", category: "community" },
+  "local-business": { label: "Local Business", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "community" },
+  // Pagoda Festival
+  "pagoda": { label: "Pagoda Festival", color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300", category: "arts-culture" },
 }
 
 /** Get labels for a specific category */

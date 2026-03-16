@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import {
-  Utensils, Clock, MapPin, ChevronDown,
-  ChevronUp, ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee, Store, Star,
+  Utensils, Clock, MapPin,
+  ChevronLeft, ChevronRight, Flame, Leaf, UtensilsCrossed, Coffee, Store, Star,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -70,10 +70,8 @@ type TypeFilter = CuisineItem["type"] | "all"
 
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
-  const [storyOpen, setStoryOpen] = useState(false)
-
   return (
-    <a href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured
@@ -134,23 +132,9 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
           )}
         </div>
 
-        {/* Expandable story */}
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setStoryOpen((v) => !v) }}
-          className="mt-auto flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-        >
-          <span className="uppercase tracking-wider">The Story</span>
-          {storyOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </button>
-
-        {storyOpen && (
-          <div className="mt-3 rounded-xl bg-muted/40 p-4 border border-border">
-            <p className="text-sm text-foreground leading-relaxed">{item.story}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
-    </a>
+    </Link>
   )
 }
 
@@ -555,37 +539,6 @@ export default function LocalCuisinePage() {
                   )}
                 </div>
               </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Seasonal food calendar ── */}
-      <section className="border-t border-border bg-muted/30 py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <Clock className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-black text-foreground">Seasonal Food Guide</h2>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { season: "Summer (Mar–May)",    icon: "☀️", dishes: ["Taho (dawn vendors)", "Bibingka pockets", "Cold halo-halo"] },
-              { season: "Pagoda Season (Aug)", icon: "🚣", dishes: ["Puto Seko (fiesta)", "Lechon Bulacan", "Street food fair"] },
-              { season: "Fiesta (November)",   icon: "🎉", dishes: ["Lechon Bulacan", "Kakanin spread", "Traditional nilaga"] },
-              { season: "Christmas (Dec)",      icon: "🎄", dishes: ["Bibingka", "Puto Bumbong", "Simbang Gabi bazaar"] },
-            ].map((s) => (
-              <div key={s.season} className="rounded-2xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-md transition-all">
-                <div className="text-3xl mb-3">{s.icon}</div>
-                <p className="text-sm font-black text-foreground mb-3">{s.season}</p>
-                <ul className="space-y-1.5">
-                  {s.dishes.map((d) => (
-                    <li key={d} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             ))}
           </div>
         </div>

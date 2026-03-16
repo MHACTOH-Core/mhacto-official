@@ -26,8 +26,11 @@
 CREATE TABLE users (
   user_id       INT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(100) DEFAULT NULL,
+  full_name     VARCHAR(200) DEFAULT NULL      COMMENT 'Display name',
   email         VARCHAR(255) NOT NULL,
   password_hash VARCHAR(100) DEFAULT NULL,
+  role          ENUM('super_admin','admin','content_manager') DEFAULT 'admin',
+  status        ENUM('active','archived') DEFAULT 'active',
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -228,8 +231,8 @@ CREATE TABLE page_views (
 -- ========================================================================
 
 -- Default admin user (password: admin123)
-INSERT INTO users (username, email, password_hash) VALUES
-('admin', 'mhacto.municipalityofbocaue@gmail.com', '$2y$12$bAccO9YaDEfSb0HO/TT5aeEZY3ehXExHqrYUPcxugQffxk5U7BmLG');
+INSERT INTO users (username, full_name, email, password_hash, role, status) VALUES
+('admin', 'MHACTO Super Admin', 'mhacto.municipalityofbocaue@gmail.com', '$2y$12$bAccO9YaDEfSb0HO/TT5aeEZY3ehXExHqrYUPcxugQffxk5U7BmLG', 'super_admin', 'active');
 
 -- Categories (broad groups)
 INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES

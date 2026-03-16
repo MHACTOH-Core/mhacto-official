@@ -71,12 +71,15 @@ import {
   type FeaturedContent,
 } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
+import { useToast } from "@/hooks/use-toast"
 
 type ContentType = "spotlight" | "milestone"
 
 export default function HomeContentPage() {
   const router = useRouter()
   const { isLoggedIn } = useAdmin()
+
+  const { toast } = useToast()
 
   // Data state
   const [heroSettings, setHeroSettings] = useState<HeroSettings | null>(null)
@@ -203,9 +206,11 @@ export default function HomeContentPage() {
       }
       setDialogOpen(false)
       loadAllContent()
+      toast({ title: editingItem ? "Content updated" : "Content created", description: `${dialogType === "spotlight" ? "Spotlight" : "Milestone"} has been ${editingItem ? "updated" : "created"}.` })
     } catch (err) {
       console.error("Save failed:", err)
       setError("Failed to save. Please try again.")
+      toast({ title: "Save failed", description: "Failed to save. Please try again.", variant: "destructive" })
     }
   }
 
@@ -219,9 +224,11 @@ export default function HomeContentPage() {
       }
       setDeleteTarget(null)
       loadAllContent()
+      toast({ title: "Content deleted", description: `${deleteTarget.type === "spotlight" ? "Spotlight" : "Milestone"} has been deleted.` })
     } catch (err) {
       console.error("Delete failed:", err)
       setError("Failed to delete. Please try again.")
+      toast({ title: "Delete failed", description: "Failed to delete. Please try again.", variant: "destructive" })
     }
   }
 
@@ -233,8 +240,10 @@ export default function HomeContentPage() {
         await apiUpdateMilestone(id, { isActive: !currentState })
       }
       loadAllContent()
+      toast({ title: "Status toggled", description: `${type === "spotlight" ? "Spotlight" : "Milestone"} has been ${currentState ? "deactivated" : "activated"}.` })
     } catch (err) {
       console.error("Toggle failed:", err)
+      toast({ title: "Toggle failed", description: "Failed to toggle status.", variant: "destructive" })
     }
   }
 
@@ -248,8 +257,10 @@ export default function HomeContentPage() {
       try {
         await apiReorderMilestones(order)
         loadAllContent()
+        toast({ title: "Order updated", description: "Milestones have been reordered." })
       } catch (err) {
         console.error("Reorder failed:", err)
+        toast({ title: "Reorder failed", description: "Failed to reorder milestones.", variant: "destructive" })
       }
     }
   }
@@ -260,9 +271,11 @@ export default function HomeContentPage() {
       await apiUpdateHeroSettings(heroFormData)
       loadAllContent()
       setError(null)
+      toast({ title: "Hero settings saved", description: "Hero section settings have been updated." })
     } catch (err) {
       console.error("Save hero settings failed:", err)
       setError("Failed to save hero settings. Please try again.")
+      toast({ title: "Save failed", description: "Failed to save hero settings.", variant: "destructive" })
     }
   }
 

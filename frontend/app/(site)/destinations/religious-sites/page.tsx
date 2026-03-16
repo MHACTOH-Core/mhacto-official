@@ -1,14 +1,30 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Church, Clock, MapPin, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { religiousSites } from "@/lib/data/destinations-data"
+import { type ReligiousSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToReligiousSite } from "@/lib/cms-mappers"
+import { type CMSPost } from "@/lib/data/admin-data"
 
 export default function ReligiousSitesPage() {
+  const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts: CMSPost[]) => {
+        if (!posts?.length) return
+        const religious = posts.filter(p => (p.category ?? "").toLowerCase().includes("religious"))
+        if (religious.length) setReligiousSites(religious.map(cmsToReligiousSite))
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

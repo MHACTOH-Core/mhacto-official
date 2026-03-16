@@ -1,121 +1,116 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Landmark, ArrowRight } from "lucide-react"
+import { UtensilsCrossed, ArrowRight, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { asset } from "@/lib/utils"
-import {
-  notablePersons,
-  personCategoryLabels,
-  type NotablePerson,
-} from "@/lib/data/history-data"
+import { Card, CardContent } from "@/components/ui/card"
+import type { CuisineItem } from "@/lib/data/culture-data"
+import { apiFetchFeaturedByLabel } from "@/lib/api"
+import { cmsToCuisineItem } from "@/lib/cms-mappers"
 
-const categoryBadge: Record<NotablePerson["category"], string> = {
-  "national-hero": "bg-red-100 text-red-800 border-red-200",
-  arts:            "bg-purple-100 text-purple-800 border-purple-200",
-  religion:        "bg-blue-100 text-blue-800 border-blue-200",
-  government:      "bg-amber-100 text-amber-800 border-amber-200",
-  education:       "bg-sky-100 text-sky-800 border-sky-200",
-  sports:          "bg-green-100 text-green-800 border-green-200",
+const MAX_FEATURED = 3
+
+const typeColors: Record<CuisineItem["type"], string> = {
+  main:    "bg-orange-100 text-orange-700 border-orange-200",
+  snack:   "bg-amber-100 text-amber-700 border-amber-200",
+  dessert: "bg-pink-100 text-pink-700 border-pink-200",
+  drink:   "bg-sky-100 text-sky-700 border-sky-200",
 }
 
-/**
- * Two featured notable figures — auto-selected.
- * Change these indices to pick different ones.
- */
-const FEATURED_FIGURES: NotablePerson[] = [
-  notablePersons[0], // Gen. Proceso Into
-  notablePersons[1], // Jose Corazon de Jesus
-].filter(Boolean)
+const typeLabel: Record<CuisineItem["type"], string> = {
+  main:    "Main Dish",
+  snack:   "Snack",
+  dessert: "Dessert",
+  drink:   "Drink",
+}
 
 export function CulinarySection() {
-  if (FEATURED_FIGURES.length === 0) return null
+  const [items, setItems] = useState<CuisineItem[]>([])
+
+  useEffect(() => {
+    apiFetchFeaturedByLabel("local-cuisine", MAX_FEATURED)
+      .then((posts) => {
+        if (posts?.length) setItems(posts.slice(0, MAX_FEATURED).map(cmsToCuisineItem))
+      })
+      .catch(() => {})
+  }, [])
+
+  if (items.length === 0) return null
 
   return (
-    <section
-      id="notable-figures"
-      className="relative z-20 bg-muted/40 py-16 sm:py-24 lg:py-32"
-    >
+    <section className="py-16 sm:py-20 lg:py-24 bg-muted/20">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        {/* Heading */}
-        <div className="mb-10 sm:mb-14 text-center reveal-on-scroll">
+        {/* Header */}
+        <div className="mb-10 sm:mb-14 text-center">
           <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
-            <Landmark className="h-4 w-4" />
-            History of Bocaue
+            <UtensilsCrossed className="h-4 w-4" />
+            Local Cuisine
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            Notable Figures
+            Culinary Wonders
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
-            Meet the remarkable individuals who shaped Bocaue&apos;s identity — from revolutionary heroes to literary icons.
+            Signature flavors of Bocaue — from heritage recipes passed down for generations to beloved street food classics.
           </p>
         </div>
 
-        {/* Cards — 2 items */}
-        <div className="grid gap-6 sm:grid-cols-2 items-start">
-          {FEATURED_FIGURES.map((person, idx) => {
-            const imageUrl = person.image ?? asset("/images/placeholder-user.jpg")
-
-            return (
-              <Link
-                key={person.id}
-                href="/history/notable-persons"
-                className={`group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(idx + 1) * 100}`}
-              >
-                {/* Image */}
-                <div className="relative h-52 w-full overflow-hidden">
+        {/* Cards */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
+            <Card
+              key={item.id}
+              className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col"
+            >
+              {item.image && (
+                <div className="relative h-48 overflow-hidden">
                   <Image
-                    src={imageUrl}
-                    alt={person.name}
+                    src={item.image}
+                    alt={item.name}
                     fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                    loading="lazy"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                  <div className="absolute top-3 left-3">
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] border backdrop-blur-sm ${categoryBadge[person.category]}`}
-                    >
-                      {personCategoryLabels[person.category]}
-                    </Badge>
-                  </div>
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <p className="text-base font-black text-white leading-snug drop-shadow-md">
-                      {person.name}
-                    </p>
-                    <p className="text-xs text-white/80 mt-0.5">{person.title}</p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <Badge
+                    variant="outline"
+                    className={`absolute bottom-3 left-3 text-xs border ${typeColors[item.type]}`}
+                  >
+                    {typeLabel[item.type]}
+                  </Badge>
                 </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
-                    {person.description}
-                  </p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                    Learn More
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </Link>
-            )
-          })}
+              )}
+              <CardContent className="p-5 flex flex-col flex-1">
+                <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors leading-snug">
+                  {item.name}
+                </h3>
+                {item.tagalogName && item.tagalogName !== item.name && (
+                  <p className="text-xs text-primary font-semibold mt-0.5 mb-2 italic">{item.tagalogName}</p>
+                )}
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">
+                  {item.description}
+                </p>
+                {item.ingredients && item.ingredients.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 flex-wrap">
+                    <Star className="h-3 w-3 text-amber-400 flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground line-clamp-1">{item.ingredients.slice(0, 3).join(", ")}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
-
         {/* CTA */}
-        <div className="mt-10 text-center reveal-on-scroll delay-300">
+        <div className="mt-10 text-center">
           <Link
-            href="/history/notable-persons"
+            href="/culture/local-cuisine"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
-            View All Notable Figures
+            See All Cuisine
             <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
-      </div>
+        </div>      </div>
     </section>
   )
 }

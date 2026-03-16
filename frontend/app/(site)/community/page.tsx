@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent } from "@/components/ui/card"
-import { allSchools, hospitals as fallbackHospitals, type SchoolEntry, type Hospital } from "@/lib/data/community-data"
+import { type SchoolEntry, type Hospital } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToSchoolEntry, cmsToHospital } from "@/lib/cms-mappers"
 
@@ -93,12 +93,12 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<Tab>("schools")
 
   // Schools state
-  const [schools, setSchools] = useState<SchoolEntry[]>(allSchools)
+  const [schools, setSchools] = useState<SchoolEntry[]>([])
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
 
   // Hospitals state
-  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
 
   useEffect(() => {
     apiFetchByLabel("schools")
@@ -235,7 +235,7 @@ export default function CommunityPage() {
               {displayedSchools.map((school) => (
                 <div
                   key={school.id}
-                  className="group flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 overflow-hidden"
+                  className="flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden"
                 >
                   <div className={`h-1.5 w-full ${school.ownership === "public" ? "bg-gradient-to-r from-sky-400 to-blue-500" : "bg-gradient-to-r from-violet-400 to-purple-500"}`} />
                   <div className="flex flex-col flex-1 p-5">
@@ -250,7 +250,7 @@ export default function CommunityPage() {
                         </Badge>
                       </div>
                     </div>
-                    <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors leading-snug mb-0.5">{school.name}</h3>
+                    <h3 className="text-base font-black text-foreground leading-snug mb-0.5">{school.name}</h3>
                     <p className="text-xs text-muted-foreground mb-3">Barangay {school.barangay}</p>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">{school.description}</p>
                     <div className="space-y-2">
@@ -308,7 +308,7 @@ export default function CommunityPage() {
 
               <div className="grid gap-6 sm:grid-cols-2 items-start">
                 {hospitals.map((hospital) => (
-                  <Card key={hospital.id} className={`border-border hover:shadow-lg transition-all duration-300 flex flex-col ${hospital.emergency ? "hover:border-red-300" : "hover:border-primary/30"}`}>
+                  <Card key={hospital.id} className={`border-border flex flex-col`}>
                     <CardContent className="p-6 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">

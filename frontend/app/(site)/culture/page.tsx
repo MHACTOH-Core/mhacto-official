@@ -130,7 +130,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {localCuisine.slice(0, 3).map((item) => (
-              <a key={item.id} href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={item.id} href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
@@ -155,7 +155,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
-              </a>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -182,7 +182,7 @@ export default function CulturePage() {
           </div>
           <div className="space-y-8">
             {festivals.map((fest, idx) => (
-              <a key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={fest.id} href={`/culture/festivals-celebrations/${fest.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
@@ -225,7 +225,7 @@ export default function CulturePage() {
                   )}
                 </div>
               </Card>
-              </a>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -254,7 +254,7 @@ export default function CulturePage() {
             {culturalPractices.map((practice) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
-                <a key={practice.id} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                   {practice.image && (
                     <GalleryImage
@@ -279,7 +279,7 @@ export default function CulturePage() {
                     <p className="text-xs text-primary/70 font-medium">Click card for full details →</p>
                   </CardContent>
                 </Card>
-                </a>
+                </Link>
               )
             })}
           </div>
@@ -307,7 +307,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {artisansList.map((artisan) => (
-              <a key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={artisan.id} href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
@@ -338,7 +338,7 @@ export default function CulturePage() {
                   </div>
                 </CardContent>
               </Card>
-              </a>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -365,7 +365,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {peopleWonders.slice(0, 3).map((person) => (
-              <a key={person.id} href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={person.id} href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {person.image && (
                   <GalleryImage
@@ -388,7 +388,7 @@ export default function CulturePage() {
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1 line-clamp-3">{person.achievement}</p>
                 </CardContent>
               </Card>
-              </a>
+              </Link>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -403,43 +403,6 @@ export default function CulturePage() {
         </div>
       </section>
 
-      {/* ── Dive Deeper ── */}
-      <section className="py-12 bg-muted/30 border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Explore Culture</h2>
-              <p className="text-muted-foreground">Discover all aspects of Bocaue&apos;s rich cultural heritage</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {subPages.map((page) => {
-              const Icon = page.icon
-              return (
-                <Link
-                  key={page.href}
-                  href={page.href}
-                  className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-lg transition-all duration-200"
-                >
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${page.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-black text-foreground group-hover:text-primary transition-colors leading-snug">{page.label}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{page.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    Explore <ChevronRight className="h-3 w-3" />
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </section>
     </main>
   )
 }

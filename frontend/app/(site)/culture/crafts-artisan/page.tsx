@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { asset } from "@/lib/utils"
 import Link from "next/link"
+import { asset } from "@/lib/utils"
 import {
   Hammer, Star, Award, MapPin, Clock, ChevronDown, ChevronUp, Sparkles, ShoppingBag,
 } from "lucide-react"
@@ -30,7 +30,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <a href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured
@@ -139,9 +139,10 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
             </ul>
           </div>
         )}
+
       </CardContent>
     </Card>
-    </a>
+    </Link>
   )
 }
 

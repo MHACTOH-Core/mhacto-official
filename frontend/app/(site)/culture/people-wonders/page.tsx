@@ -69,7 +69,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
   const cfg = categoryConfig[person.category]
 
   return (
-    <a href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       {/* Photo */}
       <GalleryImage
@@ -147,9 +147,10 @@ function PersonCard({ person }: { person: PeopleWonder }) {
             </ul>
           </div>
         )}
+
       </CardContent>
     </Card>
-    </a>
+    </Link>
   )
 }
 

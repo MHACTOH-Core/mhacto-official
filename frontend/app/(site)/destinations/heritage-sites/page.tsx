@@ -1,14 +1,33 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, Landmark, Clock, MapPin, Star, Shield } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { heritageSites } from "@/lib/data/destinations-data"
+import { type HeritageSite } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite } from "@/lib/cms-mappers"
+import { type CMSPost } from "@/lib/data/admin-data"
 
 export default function HeritageSitesPage() {
+  const [heritageSites, setHeritageSites] = useState<HeritageSite[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts: CMSPost[]) => {
+        if (!posts?.length) return
+        const heritage = posts.filter(p => {
+          const cat = (p.category ?? "").toLowerCase()
+          return cat.includes("heritage") || cat === ""
+        })
+        setHeritageSites((heritage.length ? heritage : posts).map(cmsToHeritageSite))
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

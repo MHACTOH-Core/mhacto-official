@@ -1,0 +1,145 @@
+<?php
+/**
+ * Route: /api/users
+ *
+ * GET    /api/users                    — list all active users
+ * GET    /api/users?all=1              — list all users including archived
+ * GET    /api/users/{id}               — single user
+ * POST   /api/users                    — create new user
+ * PUT    /api/users/{id}               — update user
+ * PUT    /api/users/{id}/restore       — restore archived user
+ * PUT    /api/users/{id}/change-password — change password (old + new)
+ * DELETE /api/users/{id}               — archive (soft-delete) user
+ */
+
+function handle_users(string $method, ?string $param1, ?string $param2): void
+{
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../models/User.php';
+
+    try {
+        $db = (new Database())->getConnection();
+        $user = new User($db);
+
+        // Restore action: PUT /api/users/{id}/restore
+        if ($method === 'PUT' && $param2 === 'restore' && $param1 && is_numeric($param1)) {
+            $restored = $user->restore((int) $param1);
+            if ($restored) {
+                Response::json(['message' => 'User restored successfully.']);
+            } else {
+                Response::error('Failed to restore user.', 400);
+            }
+            return;
+        }
+
+        // Change password: PUT /api/users/{id}/change-password
+        if ($method === 'PUT' && $param2 === 'change-password' && $param1 && is_numeric($param1)) {
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (empty($data['oldPassword']) || empty($data['newPassword'])) {
+                Response::error('Current password and new password are required.', 400);
+            }
+            if (strlen($data['newPassword']) < 6) {
+                Response::error('New password must be at least 6 characters.', 400);
+            }
+            $result = $user->changePassword((int) $param1, $data['oldPassword'], $data['newPassword']);
+            if ($result === true) {
+                Response::json(['message' => 'Password changed successfully.']);
+            } else {
+                Response::error(is_string($result) ? $result : 'Failed to change password.', 400);
+            }
+            return;
+        }
+
+        switch ($method) {
+            case 'GET':
+                if ($param1 && is_numeric($param1)) {
+                    // Single user
+                    $result = $user->findById((int) $param1);
+                    if ($result) {
+                        Response::json($result);
+                    } else {
+                        Response::error('User not found.', 404);
+                    }
+                } else {
+                    // List users
+                    $includeArchived = !empty($_GET['all']);
+                    Response::json($user->listAll($includeArchived));
+                }
+                break;
+
+            case 'POST':
+                $data = Response::getJsonInput();
+
+                if (empty($data->email) || empty($data->password) || empty($data->fullName)) {
+                    Response::error('Full name, email, and password are required.', 400);
+                }
+
+                $role = $data->role ?? 'admin';
+                $result = $user->create($data->fullName, $data->email, $data->password, $role);
+
+                if ($result) {
+                    Response::json([
+                        'message' => 'User created successfully.',
+                        'user'    => $result,
+                    ], 201);
+                } else {
+                    Response::error('Failed to create user. Email may already exist.', 400);
+                }
+                break;
+
+            case 'PUT':
+                if (!$param1 || !is_numeric($param1)) {
+                    Response::error('User ID is required.', 400);
+                }
+
+                $id = (int) $param1;
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                if (!$data) {
+                    Response::error('No data provided.', 400);
+                }
+
+                // Protect main super_admin from role changes
+                if ($id === 1 && isset($data['role']) && $data['role'] !== 'super_admin') {
+                    Response::error('Cannot change the role of the main super admin.', 403);
+                }
+
+                $result = $user->update($id, $data);
+                if ($result) {
+                    Response::json([
+                        'message' => 'User updated successfully.',
+                        'user'    => $result,
+                    ]);
+                } else {
+                    Response::error('Failed to update user. Email may already exist.', 400);
+                }
+                break;
+
+            case 'DELETE':
+                if (!$param1 || !is_numeric($param1)) {
+                    Response::error('User ID is required.', 400);
+                }
+
+                $id = (int) $param1;
+
+                // Protect main super_admin
+                if ($id === 1) {
+                    Response::error('Cannot archive the main super admin account.', 403);
+                }
+
+                $result = $user->archive($id);
+                if ($result) {
+                    Response::json(['message' => 'User archived successfully.']);
+                } else {
+                    Response::error('Failed to archive user.', 400);
+                }
+                break;
+
+            default:
+                Response::error('Method not allowed.', 405);
+        }
+    } catch (Exception $e) {
+        error_log("users route error: " . $e->getMessage());
+        Response::error('Internal server error.', 500);
+    }
+}

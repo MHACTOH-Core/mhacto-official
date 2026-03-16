@@ -61,7 +61,7 @@ export default function FestivalsCelebrationsPage() {
 
           <div className="space-y-10">
             {festivals.map((festival, idx) => (
-              <a key={festival.id} href={`/culture/festivals-celebrations/${festival.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={festival.id} href={`/culture/festivals-celebrations/${festival.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
@@ -123,7 +123,7 @@ export default function FestivalsCelebrationsPage() {
                   )}
                 </div>
               </Card>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

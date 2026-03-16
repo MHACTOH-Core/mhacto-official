@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -163,6 +164,8 @@ export default function HeroesAdminPage() {
   const router = useRouter()
   const { isLoggedIn } = useAdmin()
 
+  const { toast } = useToast()
+
   const [heroes, setHeroes] = useState<PageHeroData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -236,12 +239,14 @@ export default function HeroesAdminPage() {
         prev.map((h) => (h.slug === editing.slug ? result.hero : h)),
       )
       setSaveSuccess(true)
+      toast({ title: "Hero updated", description: `"${formTitle}" page hero has been saved.` })
       setTimeout(() => {
         setEditing(null)
         setSaveSuccess(false)
       }, 1200)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save")
+      toast({ title: "Save failed", description: "Failed to save page hero.", variant: "destructive" })
     } finally {
       setSaving(false)
     }

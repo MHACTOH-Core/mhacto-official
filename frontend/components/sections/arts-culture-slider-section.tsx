@@ -8,14 +8,11 @@ import {
   UtensilsCrossed, Calendar, Sparkles, Hammer, Crown,
 } from "lucide-react"
 import { asset } from "@/lib/utils"
-import { apiFetchByLabel } from "@/lib/api"
+import { apiFetchFeaturedByLabel } from "@/lib/api"
 import {
   cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice,
   cmsToArtisan, cmsToPeopleWonder,
 } from "@/lib/cms-mappers"
-import {
-  localCuisine, festivals, culturalPractices, artisans, peopleWonders,
-} from "@/lib/data/culture-data"
 
 interface SlideData {
   id: string
@@ -32,14 +29,14 @@ interface SlideData {
 
 const SLIDE_DURATION = 6000 // 6 s slow auto-advance
 
-/** Build initial slides from static fallback data */
+/** Build initial slides with placeholder category info */
 function buildFallbackSlides(): SlideData[] {
   return [
     {
-      id: localCuisine[0]?.id ?? "cuisine",
-      title: localCuisine[0]?.name ?? "Local Cuisine",
-      description: localCuisine[0]?.description ?? "",
-      image: localCuisine[0]?.image ?? asset("/images/places/Food.jpg"),
+      id: "cuisine",
+      title: "Local Cuisine",
+      description: "Signature flavors of Bocaue — from heritage recipes to beloved street food classics.",
+      image: asset("/images/places/Food.jpg"),
       href: "/culture/local-cuisine",
       categoryLabel: "Local Cuisine",
       ctaLabel: "Explore Local Cuisine",
@@ -48,10 +45,10 @@ function buildFallbackSlides(): SlideData[] {
       dot: "bg-orange-400",
     },
     {
-      id: festivals[0]?.id ?? "festivals",
-      title: festivals[0]?.name ?? "Festivals",
-      description: festivals[0]?.description ?? "",
-      image: festivals[0]?.image ?? asset("/images/places/river-festival.jpg"),
+      id: "festivals",
+      title: "Festivals",
+      description: "Celebrate Bocaue's vibrant fiestas and cultural celebrations.",
+      image: asset("/images/places/river-festival.jpg"),
       href: "/culture/festivals-celebrations",
       categoryLabel: "Festivals",
       ctaLabel: "View Festivals",
@@ -60,10 +57,10 @@ function buildFallbackSlides(): SlideData[] {
       dot: "bg-purple-400",
     },
     {
-      id: culturalPractices[0]?.id ?? "practices",
-      title: culturalPractices[0]?.name ?? "Cultural Practices",
-      description: culturalPractices[0]?.description ?? "",
-      image: culturalPractices[0]?.image ?? asset("/images/places/Arts.jpg"),
+      id: "practices",
+      title: "Cultural Practices",
+      description: "Living traditions that define Bocaue's cultural identity.",
+      image: asset("/images/places/Arts.jpg"),
       href: "/culture/practices-traditions",
       categoryLabel: "Cultural Practices",
       ctaLabel: "Explore Practices",
@@ -72,10 +69,10 @@ function buildFallbackSlides(): SlideData[] {
       dot: "bg-teal-400",
     },
     {
-      id: artisans[0]?.id ?? "crafts",
-      title: artisans[0]?.name ?? "Crafts & Artisan",
-      description: artisans[0]?.description ?? "",
-      image: artisans[0]?.image ?? asset("/images/places/Arts.jpg"),
+      id: "crafts",
+      title: "Crafts & Artisan",
+      description: "Master craftspeople preserving traditional skills in Bocaue.",
+      image: asset("/images/places/Arts.jpg"),
       href: "/culture/crafts-artisan",
       categoryLabel: "Crafts & Artisan",
       ctaLabel: "Meet Our Artisans",
@@ -84,10 +81,10 @@ function buildFallbackSlides(): SlideData[] {
       dot: "bg-amber-400",
     },
     {
-      id: peopleWonders[0]?.id ?? "wonders",
-      title: peopleWonders[0]?.name ?? "People Wonders",
-      description: peopleWonders[0]?.description ?? "",
-      image: peopleWonders[0]?.image ?? asset("/images/places/Arts.jpg"),
+      id: "wonders",
+      title: "People Wonders",
+      description: "Remarkable Bocaueños who carry the town's spirit to the national stage.",
+      image: asset("/images/places/Arts.jpg"),
       href: "/culture/people-wonders",
       categoryLabel: "People Wonders",
       ctaLabel: "Meet Our Wonders",
@@ -129,7 +126,7 @@ export function ArtsCultureSliderSection() {
     ]
 
     fetches.forEach(([label, mapper], idx) => {
-      apiFetchByLabel(label, 1)
+      apiFetchFeaturedByLabel(label, 1)
         .then((posts) => {
           if (posts?.length) {
             const patch = mapper(posts as unknown[])
@@ -210,7 +207,7 @@ export function ArtsCultureSliderSection() {
                 alt={s.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 1280px"
-                className="object-cover scale-[1.02] transition-transform duration-[8000ms] ease-out"
+                className="object-cover scale-[1.02] transition-transform duration-8000 ease-out"
                 priority={i === 0}
               />
             </div>

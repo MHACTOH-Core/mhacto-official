@@ -208,3 +208,20 @@
 .animate-hero-text-in {
   animation: hero-text-in 0.6s ease-out both;
 }
+
+/* ── Ken Burns effect for Pagoda slider ── */
+@keyframes ken-burns-1 {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.15) translate(-2%, -1%); }
+}
+@keyframes ken-burns-2 {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.12) translate(2%, -2%); }
+}
+@keyframes ken-burns-3 {
+  0%   { transform: scale(1.05) translate(-1%, 1%); }
+  100% { transform: scale(1.18) translate(1%, -1%); }
+}
+.ken-burns-1 { animation: ken-burns-1 8s ease-in-out both; }
+.ken-burns-2 { animation: ken-burns-2 8s ease-in-out both; }
+.ken-burns-3 { animation: ken-burns-3 8s ease-in-out both; }

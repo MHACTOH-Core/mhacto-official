@@ -6,7 +6,7 @@ import { Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "luci
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { hospitals as fallbackHospitals, type Hospital } from "@/lib/data/community-data"
+import { type Hospital } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToHospital } from "@/lib/cms-mappers"
 
@@ -24,7 +24,7 @@ const typeLabels: Record<Hospital["type"], string> = {
 }
 
 export default function HospitalsPage() {
-  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
 
   // Sends GET /api/posts/read.php?label=hospitals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function HospitalsPage() {
 
           <div className="grid gap-6 sm:grid-cols-2 items-start">
             {hospitals.map((hospital) => (
-              <Card key={hospital.id} className={`border-border hover:shadow-lg transition-all duration-300 flex flex-col ${hospital.emergency ? "hover:border-red-300" : "hover:border-primary/30"}`}>
+              <Card key={hospital.id} className={`border-border flex flex-col`}>
                 <CardContent className="p-6 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">

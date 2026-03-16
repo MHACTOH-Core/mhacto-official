@@ -15,12 +15,9 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { useRevealOnScroll } from "@/hooks/use-reveal"
-import {
-  heritageSites,
-  tourPackages,
-  type HeritageSite,
-  type TourPackage,
-} from "@/lib/data/destinations-data"
+import { type HeritageSite, type TourPackage } from "@/lib/data/destinations-data"
+import { apiFetchFeaturedByLabel, apiFetchByLabel } from "@/lib/api"
+import { cmsToHeritageSite, cmsToTourPackage } from "@/lib/cms-mappers"
 
 const AUTOPLAY_MS = 4000
 const PAUSE_MS = 8000
@@ -29,21 +26,32 @@ type SlideItem =
   | { kind: "destination"; data: HeritageSite; href: "/destinations" }
   | { kind: "tour"; data: TourPackage; href: "/travel-tours" }
 
-// Pick first 2 destinations + first 2 tours → 4 slides
-const slides: SlideItem[] = [
-  ...heritageSites.slice(0, 2).map(
-    (d): SlideItem => ({ kind: "destination", data: d, href: "/destinations" }),
-  ),
-  ...tourPackages.slice(0, 2).map(
-    (t): SlideItem => ({ kind: "tour", data: t, href: "/travel-tours" }),
-  ),
-]
-
 export function DestinationsCarouselSection() {
   const [api, setApi] = useState<CarouselApi>()
   const autoRef = useRef(true)
   const [active, setActive] = useState(0)
+  const [slides, setSlides] = useState<SlideItem[]>([])
   const headingRef = useRevealOnScroll<HTMLDivElement>()
+
+  // Fetch destinations + tours from API
+  useEffect(() => {
+    async function load() {
+      try {
+        const [destPosts, tourPosts] = await Promise.all([
+          apiFetchFeaturedByLabel("destinations", 2).catch(() => apiFetchByLabel("destinations", 2)).catch(() => []),
+          apiFetchFeaturedByLabel("travel-tours", 2).catch(() => apiFetchByLabel("travel-tours", 2)).catch(() => []),
+        ])
+        const destSlides: SlideItem[] = (destPosts ?? []).slice(0, 2).map(
+          (p) => ({ kind: "destination", data: cmsToHeritageSite(p), href: "/destinations" as const }),
+        )
+        const tourSlides: SlideItem[] = (tourPosts ?? []).slice(0, 2).map(
+          (p) => ({ kind: "tour", data: cmsToTourPackage(p), href: "/travel-tours" as const }),
+        )
+        setSlides([...destSlides, ...tourSlides])
+      } catch { /* silently fail */ }
+    }
+    load()
+  }, [])
 
   useEffect(() => {
     if (!api) return
@@ -63,6 +71,8 @@ export function DestinationsCarouselSection() {
     autoRef.current = false
     setTimeout(() => { autoRef.current = true }, PAUSE_MS)
   }, [])
+
+  if (slides.length === 0) return null
 
   return (
     <section className="relative z-10 bg-background py-16 sm:py-24 lg:py-32 overflow-hidden">
@@ -111,7 +121,7 @@ export function DestinationsCarouselSection() {
                     <div className="flex items-center justify-center py-2">
                       <Link
                         href={slide.href}
-                        className="relative block w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:border-primary/30 hover:shadow-xl"
+                        className="relative block w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-500 ease-smooth hover:border-primary/30 hover:shadow-xl"
                         style={{
                           transform: isActive ? "scale(1)" : "scale(0.88)",
                           opacity: isActive ? 1 : 0.45,

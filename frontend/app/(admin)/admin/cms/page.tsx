@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 import { Switch } from "@/components/ui/switch"
 import {
   Plus,
@@ -77,6 +78,7 @@ import {
   FolderOpen,
   Star,
   User,
+  Users,
 } from "lucide-react"
 import { MediaPicker } from "@/components/ui/media-picker"
 import { apiUploadMedia } from "@/lib/api"
@@ -147,6 +149,72 @@ const LABEL_PLACE_TYPES: Record<string, string[]> = {
   "restaurants": ["Restaurant", "Eatery", "Café", "Carinderia", "Bakery"],
   "destinations": ["Heritage Site", "Museum", "Religious Site"],
   "travel-tours": ["Heritage Tour", "Food Trail", "Festival Package", "Nature Tour", "Custom"],
+  // Community
+  "schools": ["Elementary", "High School", "Senior High", "College"],
+  "hospitals": ["Hospital", "Health Center", "Clinic", "Birthing Center"],
+  "barangay": [],
+  "local-business": ["Retail", "Food & Beverage", "Services", "Manufacturing", "Agriculture"],
+}
+
+// Mapping: label → which detail fields to show in the form
+// Fields not listed are hidden for that label. All fields always remain optional.
+type DetailField = "location" | "hours" | "contact" | "established" | "category" | "story" | "highlights"
+const LABEL_VISIBLE_FIELDS: Record<string, DetailField[]> = {
+  "timeline-of-events": ["established", "story"],
+  "notable-figures":    ["story"],
+  "local-cuisine":      ["category", "story", "highlights"],
+  "festivals":          ["location", "established", "story", "highlights"],
+  "cultural-practices": ["story", "highlights"],
+  "crafts-artisan":     ["story", "highlights"],
+  "people-wonders":     ["story"],
+  "restaurants":        ["location", "hours", "contact", "category"],
+  "destinations":       ["location", "hours", "contact", "established", "category", "story", "highlights"],
+  "travel-tours":       ["contact", "category", "story", "highlights"],
+  "events":             ["location", "story", "highlights"],
+  // Community
+  "schools":             ["location", "contact", "established", "category", "story"],
+  "hospitals":           ["location", "hours", "contact", "category", "story"],
+  "barangay":            ["location", "contact", "established", "story"],
+  "local-business":      ["location", "hours", "contact", "category", "story"],
+}
+
+// Contextual field labels per label key
+const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { label: string; placeholder: string }>>> = {
+  "timeline-of-events": {
+    established: { label: "Era / Period", placeholder: "e.g. Pre-Colonial Period, Spanish Era, 1787" },
+    story: { label: "Historical Context", placeholder: "Write the historical context or background..." },
+  },
+  "notable-figures": {
+    story: { label: "Biography / Background", placeholder: "Write the person's biography or background story..." },
+  },
+  "local-cuisine": {
+    story: { label: "Origin / Background", placeholder: "Where does this dish come from?" },
+    highlights: { label: "Key Ingredients / Features", placeholder: "Main ingredient\nTraditional preparation\nBest paired with..." },
+  },
+  "festivals": {
+    established: { label: "Year Started", placeholder: "e.g. 1787" },
+    story: { label: "Festival Story", placeholder: "Write the story behind this festival..." },
+    highlights: { label: "Festival Highlights", placeholder: "Grand fluvial parade\nStreet dancing\nFireworks display" },
+  },
+  "travel-tours": {
+    contact: { label: "Booking Contact", placeholder: "e.g. (044) 123-4567" },
+    story: { label: "Itinerary", placeholder: "Describe the tour itinerary..." },
+    highlights: { label: "Includes", placeholder: "Licensed MHACTO guide\nEntrance fees\nWelcome snack" },
+  },
+  "schools": {
+    established: { label: "Year Founded", placeholder: "e.g. 1952" },
+    story: { label: "About / Description", placeholder: "Describe the school, programs offered, etc." },
+  },
+  "hospitals": {
+    story: { label: "About / Services", placeholder: "Describe the hospital or health center, services offered..." },
+  },
+  "barangay": {
+    established: { label: "Year Established", placeholder: "e.g. 1950" },
+    story: { label: "About", placeholder: "Describe the barangay, its history and community..." },
+  },
+  "local-business": {
+    story: { label: "About / Description", placeholder: "Describe the business, what it offers..." },
+  },
 }
 
 export default function CMSPage() {
@@ -173,6 +241,8 @@ export default function CMSPage() {
   // Preview
   const [previewPost, setPreviewPost] = useState<CMSPost | null>(null)
   const [previewImgIdx, setPreviewImgIdx] = useState(0)
+
+  const { toast } = useToast()
 
   // Image input mode
   const [imageInputMode, setImageInputMode] = useState<"url" | "upload" | "browse">("url")
@@ -204,9 +274,19 @@ export default function CMSPage() {
     setDialogOpen(true)
   }
 
-  const selectPostType = (type: PostType) => {
-    const defaultCategory: ContentCategory = type === "news" ? "news" : type === "event" ? "events" : "history"
-    const defaultLabel: ContentLabel = type === "news" ? "news" : type === "event" ? "events" : "timeline-of-events"
+  const selectPostType = (type: PostType, preset?: string) => {
+    let defaultCategory: ContentCategory
+    let defaultLabel: ContentLabel
+    if (preset === "community") {
+      defaultCategory = "community"
+      defaultLabel = "schools"
+    } else if (type === "news") {
+      defaultCategory = "news"
+      defaultLabel = "news"
+    } else {
+      defaultCategory = "history"
+      defaultLabel = "timeline-of-events"
+    }
     setForm({
       ...EMPTY_FORM,
       postType: type,
@@ -281,23 +361,28 @@ export default function CMSPage() {
 
     if (editingPost) {
       updatePost(editingPost.id, payload)
+      toast({ title: "Post updated", description: `"${form.title}" has been updated.` })
     } else {
       createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
+      toast({ title: "Post created", description: `"${form.title}" has been created.` })
     }
     setDialogOpen(false)
   }
 
   const handlePublish = (post: CMSPost) => {
     updatePost(post.id, { ...post, status: "published" })
+    toast({ title: "Post published", description: `"${post.title}" is now live.` })
   }
 
   const handleArchive = (post: CMSPost) => {
     updatePost(post.id, { ...post, status: "archived" })
+    toast({ title: "Post archived", description: `"${post.title}" has been archived.` })
   }
 
   const confirmDelete = () => {
     if (deleteTarget) {
       deletePost(deleteTarget.id)
+      toast({ title: "Post deleted", description: `"${deleteTarget.title}" has been deleted.`, variant: "destructive" })
       setDeleteTarget(null)
     }
   }
@@ -561,7 +646,7 @@ export default function CMSPage() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingPost ? "Edit Post" : showTypeChooser ? "What would you like to post?" : `New ${form.postType === "news" ? "News Article" : form.postType === "event" ? "Event" : "Place / Cultural Post"}`}
+                {editingPost ? "Edit Post" : showTypeChooser ? "What would you like to post?" : `New ${form.postType === "news" ? "News / Event" : form.contentCategory === "community" ? "Community Post" : "Cultural Post"}`}
               </DialogTitle>
             </DialogHeader>
 
@@ -576,7 +661,7 @@ export default function CMSPage() {
                     <Landmark className="h-7 w-7" />
                   </div>
                   <div className="text-center">
-                    <h3 className="font-semibold text-card-foreground">Place / Cultural</h3>
+                    <h3 className="font-semibold text-card-foreground">Cultural</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Tourist spots, heritage sites, arts & culture
                     </p>
@@ -590,23 +675,23 @@ export default function CMSPage() {
                     <Newspaper className="h-7 w-7" />
                   </div>
                   <div className="text-center">
-                    <h3 className="font-semibold text-card-foreground">News</h3>
+                    <h3 className="font-semibold text-card-foreground">News & Events</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      News articles, updates & announcements
+                      News articles, events, updates & announcements
                     </p>
                   </div>
                 </button>
                 <button
-                  onClick={() => selectPostType("event")}
+                  onClick={() => selectPostType("place", "community")}
                   className="group flex flex-col items-center gap-3 rounded-xl border-2 border-border p-8 transition-all hover:border-primary hover:bg-primary/5"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 transition-transform group-hover:scale-110">
-                    <Calendar className="h-7 w-7" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 transition-transform group-hover:scale-110">
+                    <Users className="h-7 w-7" />
                   </div>
                   <div className="text-center">
-                    <h3 className="font-semibold text-card-foreground">Event</h3>
+                    <h3 className="font-semibold text-card-foreground">Community</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Festivals, celebrations & upcoming events
+                      Schools, hospitals, barangay & local businesses
                     </p>
                   </div>
                 </button>
@@ -661,20 +746,42 @@ export default function CMSPage() {
                 {/* Category select — based on navbar structure */}
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  {form.postType === "news" ? (
-                    <Input value="News" readOnly className="bg-muted cursor-not-allowed" />
-                  ) : form.postType === "event" ? (
-                    <Input value="Events" readOnly className="bg-muted cursor-not-allowed" />
+                  {form.postType === "news" || form.postType === "event" ? (
+                    <Select
+                      value={form.contentCategory}
+                      onValueChange={(v) => {
+                        if (v === "events") {
+                          setForm({ ...form, contentCategory: "events", label: "events", postType: "event" })
+                        } else {
+                          setForm({ ...form, contentCategory: "news", label: "news", postType: "news" })
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="news">News</SelectItem>
+                        <SelectItem value="events">Events</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : form.contentCategory === "community" ? (
+                    <Input value="Community" readOnly className="bg-muted cursor-not-allowed" />
                   ) : (
                     <Select
                       value={form.contentCategory}
                       onValueChange={(v) => {
                         const cat = v as ContentCategory
-                        const firstLabel = getLabelsByCategory(cat)[0]
+                        const labelsForCat = getLabelsByCategory(cat)
+                        const firstLabelEntry = labelsForCat[0]
+                        const firstLabelKey = firstLabelEntry ? firstLabelEntry[0] : form.label
+                        const relevantTypes = LABEL_PLACE_TYPES[firstLabelKey] ?? PLACE_CATEGORIES
+                        const defaultPlaceCategory = relevantTypes.length === 1 ? relevantTypes[0] : "none"
                         setForm({
                           ...form,
                           contentCategory: cat,
-                          label: firstLabel ? firstLabel[0] : form.label,
+                          label: firstLabelKey,
+                          category: defaultPlaceCategory,
                         })
                       }}
                     >
@@ -683,7 +790,7 @@ export default function CMSPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(contentCategories)
-                          .filter(([key]) => key !== "news" && key !== "events")
+                          .filter(([key]) => key !== "news" && key !== "events" && key !== "community")
                           .map(([key, { label }]) => (
                             <SelectItem key={key} value={key}>
                               {label}
@@ -697,10 +804,8 @@ export default function CMSPage() {
                 {/* Label select — sub-items filtered by selected category */}
                 <div className="space-y-2">
                   <Label>Label</Label>
-                  {form.postType === "news" ? (
-                    <Input value="News" readOnly className="bg-muted cursor-not-allowed" />
-                  ) : form.postType === "event" ? (
-                    <Input value="Events" readOnly className="bg-muted cursor-not-allowed" />
+                  {form.postType === "news" || form.postType === "event" ? (
+                    <Input value={form.contentCategory === "events" ? "Events" : "News"} readOnly className="bg-muted cursor-not-allowed" />
                   ) : (
                     <Select
                       value={form.label}
@@ -708,7 +813,7 @@ export default function CMSPage() {
                         const newLabel = v as ContentLabel
                         // Auto-set Place Type based on label
                         const relevantTypes = LABEL_PLACE_TYPES[newLabel] ?? PLACE_CATEGORIES
-                        const autoCategory = relevantTypes.length === 1 ? relevantTypes[0] : form.category
+                        const autoCategory = relevantTypes.length === 1 ? relevantTypes[0] : "none"
                         setForm({ ...form, label: newLabel, category: autoCategory })
                       }}
                     >
@@ -795,15 +900,6 @@ export default function CMSPage() {
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
-                      variant={imageInputMode === "url" ? "default" : "outline"}
-                      size="sm"
-                      className="gap-1.5 h-8 text-xs"
-                      onClick={() => setImageInputMode("url")}
-                    >
-                      <Link2 className="h-3.5 w-3.5" /> URL
-                    </Button>
-                    <Button
-                      type="button"
                       variant={imageInputMode === "upload" ? "default" : "outline"}
                       size="sm"
                       className="gap-1.5 h-8 text-xs"
@@ -825,37 +921,7 @@ export default function CMSPage() {
                     </Button>
                   </div>
 
-                  {imageInputMode === "url" ? (
-                    <div className="flex gap-2">
-                      <Input
-                        value={imageUrlInput}
-                        onChange={(e) => setImageUrlInput(e.target.value)}
-                        placeholder="/image.jpg or https://..."
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault()
-                            if (imageUrlInput.trim()) {
-                              setForm({ ...form, images: [...form.images, imageUrlInput.trim()] })
-                              setImageUrlInput("")
-                            }
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-9"
-                        disabled={!imageUrlInput.trim()}
-                        onClick={() => {
-                          setForm({ ...form, images: [...form.images, imageUrlInput.trim()] })
-                          setImageUrlInput("")
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : imageInputMode === "upload" ? (
+                  {imageInputMode === "upload" ? (
                     <div>
                       <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-sm text-muted-foreground transition-colors ${isUploading ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary hover:text-primary"}`}>
                         <Upload className="h-5 w-5" />
@@ -871,16 +937,16 @@ export default function CMSPage() {
                             if (!files) return
                             setIsUploading(true)
                             try {
-                              const result = await apiUploadMedia(Array.from(files), "image")
+                              const result = await apiUploadMedia(Array.from(files), "image", { category: form.contentCategory, label: form.label })
                               if (result.uploaded.length > 0) {
                                 const newUrls = result.uploaded.map((u) => u.url)
                                 setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls] }))
                               }
                               if (result.errors.length > 0) {
-                                alert("Some files failed: " + result.errors.join("; "))
+                                toast({ title: "Upload warning", description: "Some files failed: " + result.errors.join("; "), variant: "destructive" })
                               }
                             } catch (err) {
-                              alert(err instanceof Error ? err.message : "Upload failed")
+                              toast({ title: "Upload failed", description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
                             } finally {
                               setIsUploading(false)
                               e.target.value = ""
@@ -905,135 +971,167 @@ export default function CMSPage() {
                     }}
                     accept="image"
                     title="Select Image from Library"
+                    uploadCategory={form.contentCategory}
+                    uploadLabel={form.label}
                   />
                 </div>
               </div>
 
-              {/* ── Place / Event Details Section ── */}
-              {(form.postType === "place" || form.postType === "event") && (
+              {/* ── Contextual Details Section ── */}
+              {(form.postType === "place" || form.postType === "event") && (() => {
+                const visibleFields = LABEL_VISIBLE_FIELDS[form.label] ?? ["location", "hours", "contact", "established", "category", "story", "highlights"]
+                if (visibleFields.length === 0) return null
+                const show = (f: DetailField) => visibleFields.includes(f)
+                const fieldLabel = (f: DetailField, fallback: string) =>
+                  LABEL_FIELD_LABELS[form.label]?.[f]?.label ?? fallback
+                const fieldPlaceholder = (f: DetailField, fallback: string) =>
+                  LABEL_FIELD_LABELS[form.label]?.[f]?.placeholder ?? fallback
+
+                const sectionTitle = form.label === "travel-tours" ? "Tour Details" : form.label === "timeline-of-events" ? "Timeline Details" : form.label === "notable-figures" ? "Person Details" : form.label === "local-cuisine" ? "Dish Details" : form.label === "restaurants" ? "Restaurant Details" : "Additional Details"
+
+                return (
                 <>
                   <Separator />
-                  <p className="text-sm font-medium text-muted-foreground">{form.label === "travel-tours" ? "Tour Details (optional)" : "Place Details (optional)"}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{sectionTitle}</p>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Location / Hours / Contact / Established — grid of visible fields */}
+                  {(show("location") || show("hours") || show("contact") || show("established")) && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {show("location") && (
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("location", "Location")}
+                          </Label>
+                          <Input
+                            value={form.location}
+                            onChange={(e) => setForm({ ...form, location: e.target.value })}
+                            placeholder={fieldPlaceholder("location", "e.g. Bocaue Town Center, Bulacan")}
+                          />
+                        </div>
+                      )}
+
+                      {show("hours") && (
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("hours", form.label === "travel-tours" ? "Duration" : "Hours")}
+                          </Label>
+                          <Input
+                            value={form.hours}
+                            onChange={(e) => setForm({ ...form, hours: e.target.value })}
+                            placeholder={fieldPlaceholder("hours", form.label === "travel-tours" ? "e.g. Full Day (8 hours)" : "e.g. Daily: 6:00 AM – 8:00 PM")}
+                          />
+                        </div>
+                      )}
+
+                      {show("contact") && (
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("contact", "Contact")}
+                          </Label>
+                          <Input
+                            value={form.contact}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
+                              setForm({ ...form, contact: val })
+                            }}
+                            type="tel"
+                            placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
+                          />
+                        </div>
+                      )}
+
+                      {show("established") && (
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("established", "Established")}
+                          </Label>
+                          <Input
+                            value={form.established}
+                            onChange={(e) => setForm({ ...form, established: e.target.value })}
+                            placeholder={fieldPlaceholder("established", "e.g. 1787")}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Place / Food / Tour Type */}
+                  {show("category") && (
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> Location
+                        <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : "Place Type"}
                       </Label>
-                      <Input
-                        value={form.location}
-                        onChange={(e) => setForm({ ...form, location: e.target.value })}
-                        placeholder="e.g. Bocaue Town Center, Bulacan"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Duration" : "Hours"}
-                      </Label>
-                      <Input
-                        value={form.hours}
-                        onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                        placeholder={form.label === "travel-tours" ? "e.g. Full Day (8 hours)" : "e.g. Daily: 6:00 AM – 8:00 PM"}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Booking Contact" : "Contact"}
-                      </Label>
-                      <Input
-                        value={form.contact}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
-                          setForm({ ...form, contact: val })
-                        }}
-                        type="tel"
-                        placeholder={form.label === "travel-tours" ? "e.g. (044) 123-4567" : "e.g. (044) 123-4567"}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> Established
-                      </Label>
-                      <Input
-                        value={form.established}
-                        onChange={(e) => setForm({ ...form, established: e.target.value })}
-                        placeholder="e.g. 1787"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : "Place Type"}
-                    </Label>
-                    {(() => {
-                      const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
-                      // If no relevant types for this label, show info
-                      if (relevantTypes.length === 0) {
+                      {(() => {
+                        const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
+                        if (relevantTypes.length === 0) {
+                          return (
+                            <p className="text-xs text-muted-foreground italic py-2">
+                              No type needed for this label.
+                            </p>
+                          )
+                        }
+                        if (relevantTypes.length === 1) {
+                          return (
+                            <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
+                          )
+                        }
                         return (
-                          <p className="text-xs text-muted-foreground italic py-2">
-                            No place type needed for this label.
-                          </p>
+                          <Select
+                            value={form.category}
+                            onValueChange={(v) => setForm({ ...form, category: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a type..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {relevantTypes.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )
-                      }
-                      // If exactly one type, auto-set and show read-only
-                      if (relevantTypes.length === 1) {
-                        return (
-                          <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
-                        )
-                      }
-                      return (
-                        <Select
-                          value={form.category}
-                          onValueChange={(v) => setForm({ ...form, category: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {relevantTypes.map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )
-                    })()}
-                  </div>
+                      })()}
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Itinerary" : "Story"}
-                    </Label>
-                    <Textarea
-                      value={form.story}
-                      onChange={(e) => setForm({ ...form, story: e.target.value })}
-                      placeholder={form.label === "travel-tours" ? "Describe the tour itinerary..." : "Write the story behind this place..."}
-                      rows={4}
-                      className="resize-y"
-                    />
-                  </div>
+                  {/* Story */}
+                  {show("story") && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("story", "Story")}
+                      </Label>
+                      <Textarea
+                        value={form.story}
+                        onChange={(e) => setForm({ ...form, story: e.target.value })}
+                        placeholder={fieldPlaceholder("story", "Write the story behind this place...")}
+                        rows={4}
+                        className="resize-y"
+                      />
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5">
-                      <List className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "travel-tours" ? "Includes" : "Highlights"}
-                      <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
-                    </Label>
-                    <Textarea
-                      value={form.highlights}
-                      onChange={(e) => setForm({ ...form, highlights: e.target.value })}
-                      placeholder={form.label === "travel-tours" ? "Licensed MHACTO guide\nEntrance fees\nWelcome snack" : "Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities"}
-                      rows={4}
-                      className="resize-y"
-                    />
-                  </div>
+                  {/* Highlights */}
+                  {show("highlights") && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5">
+                        <List className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("highlights", "Highlights")}
+                        <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
+                      </Label>
+                      <Textarea
+                        value={form.highlights}
+                        onChange={(e) => setForm({ ...form, highlights: e.target.value })}
+                        placeholder={fieldPlaceholder("highlights", "Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities")}
+                        rows={4}
+                        className="resize-y"
+                      />
+                    </div>
+                  )}
                 </>
-              )}
+                )
+              })()}
             </div>
 
             <DialogFooter>

@@ -1,0 +1,244 @@
+================================================================================
+  MHACTO OFFICIAL — IMPLEMENTATION PLAN
+  Created: March 13, 2026
+================================================================================
+
+STATUS KEY:
+  [ ] = Not started
+  [~] = In progress
+  [x] = Completed
+  [!] = Blocked / Issue
+
+================================================================================
+PHASE 1: TOAST SYSTEM (Infrastructure)
+================================================================================
+Goal: Wire up the existing Toaster component so toast notifications work app-wide.
+
+Files to EDIT (no new files):
+  - frontend/app/layout.tsx                    → Add <Toaster /> import + render
+  - frontend/app/(admin)/admin/layout.tsx      → Add <Toaster /> import + render
+
+Notes:
+  - Toaster component already exists at components/ui/toaster.tsx
+  - useToast hook already exists at hooks/use-toast.ts
+  - Currently NEITHER is used anywhere — just wiring them in
+
+Steps:
+  [x] 1.1  Add Toaster to root layout (frontend/app/layout.tsx)
+  [x] 1.2  Add Toaster to admin layout (frontend/app/(admin)/admin/layout.tsx)
+  [x] 1.3  Verify no TypeScript errors
+
+================================================================================
+PHASE 2: TOAST ALERTS FOR CRUD OPERATIONS
+================================================================================
+Goal: Add success/error toast notifications to all admin CRUD actions.
+
+Files to EDIT (no new files):
+  - frontend/app/(admin)/admin/cms/page.tsx        → toast on create/update/delete/publish
+  - frontend/app/(admin)/admin/accounts/page.tsx   → toast on user create/role change/delete/restore
+  - frontend/app/(admin)/admin/settings/page.tsx   → toast on profile update/password change
+  - frontend/app/(admin)/admin/home-content/page.tsx → toast on save
+  - frontend/app/(admin)/admin/heroes/page.tsx     → toast on save
+  - frontend/app/(admin)/admin/inquiries/page.tsx  → toast on status change/reply
+
+Steps:
+  [x] 2.1  Add toast calls to CMS page (create, update, delete, publish/unpublish)
+  [x] 2.2  Add toast calls to Accounts page (create, role change, soft-delete, restore)
+  [x] 2.3  Add toast calls to Settings page (profile update, password change)
+  [x] 2.4  Add toast calls to Home Content page
+  [x] 2.5  Add toast calls to Heroes page
+  [x] 2.6  Add toast calls to Inquiries page
+  [x] 2.7  Verify no TypeScript errors
+
+================================================================================
+PHASE 3: LOGIN PAGE IMPROVEMENTS
+================================================================================
+Goal: Better error messages on login page.
+
+Files to EDIT:
+  - backend/my-php-backend/routes/auth.php         → Return distinct error codes
+  - frontend/app/(admin)/admin/page.tsx             → Show specific error messages
+  - frontend/components/providers/admin-provider.tsx → Return error message from login
+
+Steps:
+  [x] 3.1  Update auth.php login to return error_code (user_not_found / wrong_password / account_disabled)
+  [x] 3.2  Update login page: specific error messages based on error_code
+  [x] 3.3  Verify no TypeScript errors
+  Note: Forgot password feature was removed.
+
+================================================================================
+PHASE 4: UPLOAD FOLDER RESTRUCTURING
+================================================================================
+Goal: Organize uploads into subfolders by category/label instead of flat structure.
+
+Files to EDIT (no new files):
+  - backend/my-php-backend/routes/media.php   → Accept category/label params, create subfolders
+  - frontend/lib/api.ts                       → Pass category/label when uploading
+  - frontend/app/(admin)/admin/cms/page.tsx   → Send category/label with upload calls
+
+New folder structure:
+  /uploads/images/{category}/{label}/filename.ext
+  Example: /uploads/images/places/heritage/1710000000_church.jpg
+  Fallback: /uploads/images/ (if no category/label provided — backward compatible)
+
+Steps:
+  [x] 4.1  Update _media_upload() to accept category & label query params
+  [x] 4.2  Update _media_list() to recurse into subdirectories (already recursive)
+  [x] 4.3  Update _media_delete() to handle nested paths (already works)
+  [x] 4.4  Update frontend upload calls to pass category/label
+  [x] 4.5  Verify existing uploads still accessible (backward compatible)
+  [x] 4.6  Verify no TypeScript errors
+
+================================================================================
+PHASE 5: PROFILE PICTURE WITH CIRCLE CROP
+================================================================================
+Goal: Discord/FB-style circle crop dialog for profile picture uploads.
+
+Files to EDIT:
+  - frontend/app/(admin)/admin/settings/page.tsx   → Replace camera icon upload with crop dialog
+
+Files to CREATE:
+  - frontend/components/ui/profile-picture-crop.tsx → Circle crop dialog component
+
+Dependencies to INSTALL:
+  - react-easy-crop (lightweight crop library)
+
+Steps:
+  [x] 5.1  Install react-easy-crop package
+  [x] 5.2  Create ProfilePictureCropDialog component
+  [x] 5.3  Integrate crop dialog into settings page (replace current upload flow)
+  [x] 5.4  Verify crop → upload → save works end-to-end
+  [x] 5.5  Verify no TypeScript errors
+
+================================================================================
+PHASE 6: HOME PAGE RESTRUCTURE
+================================================================================
+Goal: Rebuild home page with new section order and content.
+
+CURRENT sections (7):
+  1. Hero (carousel, 4 slides, auto-shuffle)
+  2. Tourism Tagline
+  3. Featured Spotlight
+  4. Arts & Culture Slider
+  5. Human Wonders
+  6. History & Art Timeline
+  7. News
+
+NEW sections (10):
+  1. Hero (single topic, NO auto-shuffle)
+  2. Tourism Tagline & Stats
+  3. Featured Spotlight
+  4. Arts & Culture Slider (5 random featured, 1 per sub-category)
+  5. Tourist Wonders Carousel (destinations)
+  6. Culinary Wonders (3 items)
+  7. Cultural Practices (3 items)
+  8. History Milestones
+  9. People Wonders (3 items)
+  10. Crafts & Artisan (3 items)
+
+Files to EDIT:
+  - frontend/app/(site)/page.tsx                              → New section imports + order
+  - frontend/components/sections/hero-section.tsx              → Single slide mode (no auto-advance)
+  - frontend/components/sections/culinary-section.tsx          → FIX: show actual culinary content (currently shows notable figures)
+
+Files to CREATE:
+  - frontend/components/sections/cultural-practices-section.tsx → 3 cards from CMS practices content
+  - frontend/components/sections/crafts-section.tsx             → 3 cards from CMS crafts content
+
+Files already existing (REUSE, no changes needed):
+  - frontend/components/sections/destinations-carousel-section.tsx → Tourist Wonders
+  - frontend/components/sections/featured-people-wonders.tsx       → People Wonders (already 3 items)
+  - frontend/components/sections/tourism-tagline-section.tsx       → Stays as-is
+  - frontend/components/sections/featured-spotlight.tsx            → Stays as-is
+  - frontend/components/sections/arts-culture-slider-section.tsx   → Stays as-is
+  - frontend/components/sections/history-art-section.tsx           → Stays as-is
+
+REMOVED from home:
+  - news-section (users access via navbar /news)
+
+Steps:
+  [x] 6.1  Modify hero-section.tsx: single slide, no auto-advance
+  [x] 6.2  Fix culinary-section.tsx: fetch & display actual culinary content (3 items)
+  [x] 6.3  Create cultural-practices-section.tsx (3 cards)
+  [x] 6.4  Create crafts-section.tsx (3 cards)
+  [x] 6.5  Update page.tsx: new imports, new section order, remove NewsSection
+  [x] 6.6  Verify all sections render with data from /api/home/featured
+  [x] 6.7  Verify no TypeScript errors
+
+================================================================================
+PHASE 7: PAGODA FESTIVAL NAVBAR ITEM + CONFETTI
+================================================================================
+Goal: Add "Pagoda Festival 2026" nav item next to Inquiry with confetti on hover.
+
+Files to EDIT:
+  - frontend/components/layout/navbar.tsx   → Add nav item + confetti hover logic
+
+Dependencies to INSTALL:
+  - canvas-confetti (~6KB, lightweight)
+
+Steps:
+  [x] 7.1  Install canvas-confetti + @types/canvas-confetti
+  [x] 7.2  Add "Pagoda Festival 2026" to navLinks array (after Inquiry)
+  [x] 7.3  Add confetti hover handler (debounced, fires from item position)
+  [x] 7.4  Style the item distinctly (festive/golden color)
+  [x] 7.5  Verify desktop + mobile rendering
+  [x] 7.6  Verify no TypeScript errors
+
+================================================================================
+PHASE 8: NOTIFICATION TOGGLE
+================================================================================
+Goal: Add notification preferences toggle in settings for all roles.
+
+Files to EDIT:
+  - frontend/app/(admin)/admin/settings/page.tsx  → Add notifications card (visible to all roles)
+  - backend/my-php-backend/models/User.php         → Add preferences methods
+  - backend/my-php-backend/routes/users.php        → Add PUT /api/users/{id}/preferences
+
+Backend DB changes:
+  - ALTER users table: add notification_prefs JSON column (or create user_preferences table)
+
+Steps:
+  [ ] 8.1  Add notification_prefs column to users table
+  [ ] 8.2  Add preferences endpoint in users route
+  [ ] 8.3  Update User model with preference methods
+  [ ] 8.4  Add notification toggle UI in settings page (all roles)
+  [ ] 8.5  Wire toggle to API
+  [ ] 8.6  Verify no TypeScript errors
+
+================================================================================
+SUMMARY — FILES CREATED vs EDITED
+================================================================================
+
+NEW FILES (only 3):
+  1. frontend/components/ui/profile-picture-crop.tsx
+  2. frontend/components/sections/cultural-practices-section.tsx
+  3. frontend/components/sections/crafts-section.tsx
+
+EDITED FILES (existing):
+  - frontend/app/layout.tsx
+  - frontend/app/(admin)/admin/layout.tsx
+  - frontend/app/(admin)/admin/cms/page.tsx
+  - frontend/app/(admin)/admin/accounts/page.tsx
+  - frontend/app/(admin)/admin/settings/page.tsx
+  - frontend/app/(admin)/admin/home-content/page.tsx
+  - frontend/app/(admin)/admin/heroes/page.tsx
+  - frontend/app/(admin)/admin/inquiries/page.tsx
+  - frontend/app/(admin)/admin/page.tsx (login)
+  - frontend/app/(site)/page.tsx
+  - frontend/components/layout/navbar.tsx
+  - frontend/components/sections/hero-section.tsx
+  - frontend/components/sections/culinary-section.tsx
+  - frontend/lib/api.ts
+  - backend/my-php-backend/routes/auth.php
+  - backend/my-php-backend/routes/media.php
+  - backend/my-php-backend/routes/users.php
+  - backend/my-php-backend/models/User.php
+
+DB CHANGES:
+  - users table: +password_reset_token, +token_expires_at, +notification_prefs
+
+NPM PACKAGES TO INSTALL:
+  - react-easy-crop (Phase 5)
+  - canvas-confetti + @types/canvas-confetti (Phase 7)
+
+================================================================================

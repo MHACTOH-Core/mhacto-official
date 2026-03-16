@@ -27,21 +27,25 @@ function resolveImage(post: CMSPost, fallback = "/images/heroes/hero-bocaue.jpg"
 // ─── Destinations mappers ─────────────────────────────────────────
 
 export function cmsToHeritageSite(post: CMSPost): HeritageSite {
+  const titleLower = (post.title ?? "").toLowerCase()
+  const catLower = (post.category ?? "").toLowerCase()
+  const combined = titleLower + " " + catLower
   return {
     id: post.id,
     name: post.title,
     established: post.established ?? "",
-    category: (post.category?.toLowerCase().includes("church") ? "church"
-      : post.category?.toLowerCase().includes("monument") ? "monument"
-      : post.category?.toLowerCase().includes("bridge") ? "bridge"
-      : post.category?.toLowerCase().includes("building") ? "building"
+    category: (combined.includes("church") ? "church"
+      : combined.includes("monument") ? "monument"
+      : combined.includes("bridge") ? "bridge"
+      : combined.includes("building") ? "building"
       : "streetscape") as HeritageSite["category"],
     description: post.body?.substring(0, 300) ?? "",
     story: post.story ?? "",
-    location: post.location ?? "",
-    hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
+    location: post.location ?? "",
+    hours: post.hours ?? "",
     isProtected: post.isFeatured ?? false,
     protectionLevel: post.isFeatured ? "Heritage Site" : undefined,
     author: post.author ?? undefined,
@@ -49,10 +53,10 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
 }
 
 export function cmsToMuseum(post: CMSPost): Museum {
-  const cat = (post.category ?? "").toLowerCase()
-  const type: Museum["type"] = cat.includes("art") ? "art"
-    : cat.includes("natural") ? "natural"
-    : cat.includes("house") ? "house"
+  const combined = ((post.category ?? "") + " " + (post.title ?? "")).toLowerCase()
+  const type: Museum["type"] = combined.includes("art") ? "art"
+    : combined.includes("natural") ? "natural"
+    : combined.includes("house") ? "house"
     : "history"
   return {
     id: post.id,
@@ -64,6 +68,7 @@ export function cmsToMuseum(post: CMSPost): Museum {
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
@@ -72,7 +77,7 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
   return {
     id: post.id,
     name: post.title,
-    denomination: post.category ?? "Roman Catholic",
+    denomination: (post.category && post.category !== "religious") ? post.category : "Roman Catholic",
     established: post.established ?? "",
     description: post.body?.substring(0, 300) ?? "",
     significance: post.story ?? "",
@@ -80,26 +85,31 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
+    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
 
 export function cmsToTourPackage(post: CMSPost): TourPackage {
-  const cat = (post.category ?? "").toLowerCase()
-  const type: TourPackage["type"] = cat.includes("food") ? "food"
-    : cat.includes("festival") ? "festival"
-    : cat.includes("nature") ? "nature"
-    : cat.includes("custom") ? "custom"
+  const tourType = (post.tourType ?? post.category ?? "").toLowerCase()
+  const type: TourPackage["type"] = tourType.includes("food") ? "food"
+    : tourType.includes("festival") ? "festival"
+    : tourType.includes("nature") ? "nature"
+    : tourType.includes("custom") ? "custom"
     : "heritage"
+  const diff = (post.tourDifficulty ?? "").toLowerCase()
+  const difficulty: TourPackage["difficulty"] = diff === "moderate" ? "moderate"
+    : diff === "active" ? "active"
+    : "easy"
   return {
     id: post.id,
     name: post.title,
     duration: post.hours ?? "Full Day",
     type,
-    difficulty: "easy",
+    difficulty,
     description: post.body ?? "",
-    itinerary: [],
-    includes: post.highlights ?? [],
+    itinerary: post.itinerary ?? [],
+    includes: post.includes ?? [],
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
     bookingContact: post.contact ?? "MHACTO Office",
@@ -139,7 +149,7 @@ export function cmsToFestival(post: CMSPost): Festival {
   return {
     id: post.id,
     name: post.title,
-    date: post.established ?? "",
+    date: post["established"] ?? "",
     type,
     description: post.body ?? "",
     story: post.story ?? "",
@@ -173,7 +183,7 @@ export function cmsToArtisan(post: CMSPost): Artisan {
     id: post.id,
     name: post.title,
     craft: post.category ?? "",
-    experience: post.established ?? "",
+    experience: post["established"] ?? "",
     description: post.body ?? "",
     products: post.highlights ?? [],
     awards: [],

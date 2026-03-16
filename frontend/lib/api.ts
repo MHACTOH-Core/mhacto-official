@@ -88,11 +88,16 @@ export function apiListMedia(type: "images" | "videos" | "all" = "all") {
 export async function apiUploadMedia(
   files: File[],
   type: "image" | "video" = "image",
+  options?: { category?: string; label?: string },
 ): Promise<MediaUploadResult> {
   const formData = new FormData()
   files.forEach((file) => formData.append("files[]", file))
 
-  const uploadUrl = `${API_BASE}/api/media/upload.php?type=${type}`
+  const params = new URLSearchParams({ type })
+  if (options?.category) params.set("category", options.category)
+  if (options?.label) params.set("label", options.label)
+
+  const uploadUrl = `${API_BASE}/api/media/upload.php?${params.toString()}`
   const response = await fetch(uploadUrl, { method: "POST", body: formData })
   const rawText = await response.text()
   const parsedResult: MediaUploadResult = rawText
@@ -119,6 +124,8 @@ export interface LoginResponse {
   user: {
     id: number
     username: string
+    fullName: string
+    profilePicture?: string | null
     email: string
     role: string
   }
@@ -351,6 +358,62 @@ export function apiLogActivity(action: string, description: string) {
   })
 }
 
+// ─── Users / Account Management ───────────────────────────────────
+
+import type { AdminUser } from "@/lib/data/admin-data"
+
+/** Fetch all user accounts (active + optionally archived) */
+export function apiFetchUsers(includeArchived = false) {
+  const qs = includeArchived ? "?all=1" : ""
+  return apiFetch<AdminUser[]>(`/api/users${qs}`)
+}
+
+/** Create a new user account */
+export function apiCreateUser(data: { fullName: string; email: string; password: string; role: string }) {
+  return apiFetch<{ message: string; user: AdminUser }>("/api/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+/** Update an existing user account */
+export function apiUpdateUser(id: number, data: Record<string, unknown>) {
+  return apiFetch<{ message: string; user: AdminUser }>(`/api/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  })
+}
+
+/** Archive (soft-delete) a user account */
+export function apiArchiveUser(id: number) {
+  return apiFetch<{ message: string }>(`/api/users/${id}`, {
+    method: "DELETE",
+  })
+}
+
+/** Restore an archived user account */
+export function apiRestoreUser(id: number) {
+  return apiFetch<{ message: string }>(`/api/users/${id}/restore`, {
+    method: "PUT",
+  })
+}
+
+/** Change password (requires current password verification) */
+export function apiChangePassword(id: number, oldPassword: string, newPassword: string) {
+  return apiFetch<{ message: string }>(`/api/users/${id}/change-password`, {
+    method: "PUT",
+    body: JSON.stringify({ oldPassword, newPassword }),
+  })
+}
+
+/** Update own profile (name, profile picture) */
+export function apiUpdateProfile(id: number, data: { full_name?: string; profile_picture?: string | null }) {
+  return apiFetch<{ message: string; user: AdminUser }>(`/api/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  })
+}
+
 // ─── Public content endpoints (for tourist site) ──────────────────
 
 export interface FeaturedContent {
@@ -497,26 +560,12 @@ export function apiFetchByLabel(label: string, limit?: number) {
   return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
 }
 
-/** Fetch published posts by category key (e.g. 'history', 'arts-culture', 'tourist-destinations') */
-export function apiFetchByCategory(category: string, limit?: number) {
-  const params = new URLSearchParams({ category, status: "published" })
-  if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
-}
-
 // ─── Featured posts by label / category (for navbar dropdowns) ────
 
 /** Fetch featured posts, optionally filtered by label key (e.g. 'local-cuisine', 'destinations') */
 export function apiFetchFeaturedByLabel(label?: string, limit?: number) {
   const params = new URLSearchParams({ featured: "1" })
   if (label) params.set("label", label)
-  if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
-}
-
-/** Fetch featured posts, filtered by category key (e.g. 'arts-culture', 'tourist-destinations') */
-export function apiFetchFeaturedByCategory(category: string, limit?: number) {
-  const params = new URLSearchParams({ featured: "1", category })
   if (limit) params.set("limit", String(limit))
   return apiFetch<CMSPost[]>(`/api/posts/read.php?${params}`)
 }
@@ -593,8 +642,17 @@ export function apiFetchHeroSlides() {
 }
 
 /** @deprecated Culinary items auto-fetched from CMS label 'local-cuisine' */
-export function apiFetchCulinaryItems() {
-  return apiFetchByLabel("local-cuisine") as Promise<CulinaryItem[]>
+export async function apiFetchCulinaryItems(): Promise<CulinaryItem[]> {
+  const posts = await apiFetchByLabel("local-cuisine");
+  return posts.map((post) => ({
+    itemId: Number(post.id),
+    title: post.title,
+    description: post.body,
+    image: Array.isArray(post.image) ? post.image[0] ?? "" : "",
+    tag: post.label,
+    sortOrder: 0,
+    isActive: post.status === "published",
+  }));
 }
 
 // Legacy admin CRUD stubs — kept for backward compat with admin page.
@@ -606,8 +664,17 @@ export function apiFetchAllHeroSlides() {
   return apiFetch<HeroSlide[]>("/api/home/hero.php?all=1")
 }
 /** @deprecated */
-export function apiFetchAllCulinaryItems() {
-  return apiFetchByLabel("local-cuisine") as Promise<CulinaryItem[]>
+export async function apiFetchAllCulinaryItems(): Promise<CulinaryItem[]> {
+  const posts = await apiFetchByLabel("local-cuisine");
+  return posts.map((post) => ({
+    itemId: Number(post.id),
+    title: post.title,
+    description: post.body,
+    image: Array.isArray(post.image) ? post.image[0] ?? "" : "",
+    tag: post.label,
+    sortOrder: 0,
+    isActive: post.status === "published",
+  }));
 }
 /** @deprecated Hero is now a single video section in site_settings */
 export function apiCreateHeroSlide(data: Partial<HeroSlide>) {

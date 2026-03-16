@@ -1,12 +1,16 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowLeft, BookOpen, Clock, MapPin, Ticket } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { museums } from "@/lib/data/destinations-data"
+import { type Museum } from "@/lib/data/destinations-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToMuseum } from "@/lib/cms-mappers"
+import { type CMSPost } from "@/lib/data/admin-data"
 
 const typeLabels: Record<string, string> = {
   history: "History & Heritage",
@@ -22,6 +26,18 @@ const typeColor: Record<string, string> = {
 }
 
 export default function MuseumsPage() {
+  const [museums, setMuseums] = useState<Museum[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("destinations")
+      .then((posts: CMSPost[]) => {
+        if (!posts?.length) return
+        const museumPosts = posts.filter(p => (p.category ?? "").toLowerCase().includes("museum"))
+        if (museumPosts.length) setMuseums(museumPosts.map(cmsToMuseum))
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}

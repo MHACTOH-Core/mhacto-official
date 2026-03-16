@@ -18,21 +18,24 @@ import {
   Home,
   Menu,
   ImageIcon,
+  Users,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useAdmin } from "@/components/providers/admin-provider"
+import type { UserRole } from "@/lib/data/admin-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-const navItems = [
+const navItems: { href: string; label: string; icon: typeof LayoutDashboard; roles?: UserRole[] }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/home-content", label: "Home Content", icon: Home },
-  { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon },
-  { href: "/admin/cms", label: "CMS", icon: FileEdit },
-  { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
+  { href: "/admin/home-content", label: "Home Content", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/cms", label: "CMS", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/accounts", label: "Accounts", icon: Users, roles: ["super_admin", "admin"] },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/activity-log", label: "Activity Log", icon: ClipboardList },
 ]
@@ -44,12 +47,19 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
   onLinkClick?: () => void
 }) {
   const pathname = usePathname()
-  const { logout, inquiries } = useAdmin()
+  const { logout, inquiries, currentUser } = useAdmin()
   const { theme, setTheme } = useTheme()
 
   const unreadCount = inquiries.filter((i) => i.status === "unread").length
+  const userRole = currentUser?.role ?? "content_manager"
 
   const showLabels = isMobile || !collapsed
+
+  // Filter nav items by role
+  const visibleItems = navItems.filter((item) => {
+    if (!item.roles) return true
+    return item.roles.includes(userRole)
+  })
 
   return (
     <>
@@ -66,7 +76,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
 
       {/* Nav links */}
       <nav className="flex-1 space-y-1 px-2 py-4">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
             <Link
