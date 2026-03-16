@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Hammer, ArrowRight, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { artisans, type Artisan } from "@/lib/data/culture-data"
+import type { Artisan } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToArtisan } from "@/lib/cms-mappers"
 import { asset } from "@/lib/utils"
@@ -14,7 +14,7 @@ import { asset } from "@/lib/utils"
 const MAX_FEATURED = 3
 
 export function CraftsSection() {
-  const [items, setItems] = useState<Artisan[]>(artisans.slice(0, MAX_FEATURED))
+  const [items, setItems] = useState<Artisan[]>([])
 
   useEffect(() => {
     apiFetchFeaturedByLabel("crafts-artisan", MAX_FEATURED)

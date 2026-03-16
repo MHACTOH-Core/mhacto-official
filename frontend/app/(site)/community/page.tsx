@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent } from "@/components/ui/card"
-import { allSchools, hospitals as fallbackHospitals, type SchoolEntry, type Hospital } from "@/lib/data/community-data"
+import { type SchoolEntry, type Hospital } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToSchoolEntry, cmsToHospital } from "@/lib/cms-mappers"
 
@@ -93,12 +93,12 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<Tab>("schools")
 
   // Schools state
-  const [schools, setSchools] = useState<SchoolEntry[]>(allSchools)
+  const [schools, setSchools] = useState<SchoolEntry[]>([])
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
 
   // Hospitals state
-  const [hospitals, setHospitals] = useState<Hospital[]>(fallbackHospitals)
+  const [hospitals, setHospitals] = useState<Hospital[]>([])
 
   useEffect(() => {
     apiFetchByLabel("schools")

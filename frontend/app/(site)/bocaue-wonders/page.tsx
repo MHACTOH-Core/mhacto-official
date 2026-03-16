@@ -10,7 +10,7 @@ import {
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { peopleWonders as staticPeopleWonders, type PeopleWonder } from "@/lib/data/culture-data"
+import { type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
 
@@ -139,7 +139,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
 }
 
 export default function BocaueWondersPage() {
-  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>(staticPeopleWonders)
+  const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
   const [activeFilter, setActiveFilter] = useState<Category>("all")
 
   useEffect(() => {

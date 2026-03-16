@@ -9,13 +9,6 @@ import { apiFetchPostById } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { resolveMediaUrl } from "@/lib/utils"
 import ContentDetailLayout, { type QuickFact } from "@/components/sections/content-detail-layout"
-import {
-  localCuisine,
-  festivals,
-  culturalPractices,
-  artisans,
-  peopleWonders,
-} from "@/lib/data/culture-data"
 
 // ─── Normalised display model ─────────────────────────────────────
 
@@ -55,94 +48,6 @@ function fromCMSPost(post: CMSPost): NormalizedItem {
   }
 }
 
-function lookupStaticItem(label: string, id: string): NormalizedItem | null {
-  switch (label) {
-    case "local-cuisine": {
-      const item = localCuisine.find((c) => c.id === id)
-      if (!item) return null
-      return {
-        id: item.id,
-        title: item.name,
-        bodyText: item.description,
-        storyText: item.story,
-        image: [item.image, ...(item.gallery ?? [])],
-        highlights: [],
-        extras: [
-          { label: "Where to find", value: item.where.join(" · ") },
-          ...(item.bestTime ? [{ label: "Best time", value: item.bestTime }] : []),
-        ],
-        categoryTag: item.type,
-      }
-    }
-    case "festivals": {
-      const item = festivals.find((f) => f.id === id)
-      if (!item) return null
-      return {
-        id: item.id,
-        title: item.name,
-        bodyText: item.description,
-        storyText: item.story,
-        image: [item.image, ...(item.gallery ?? [])],
-        highlights: item.highlights,
-        extras: [{ label: "Date", value: item.date }],
-        categoryTag: item.type,
-      }
-    }
-    case "cultural-practices": {
-      const item = culturalPractices.find((p) => p.id === id)
-      if (!item) return null
-      return {
-        id: item.id,
-        title: item.name,
-        bodyText: item.description,
-        storyText: item.significance,
-        image: item.image ? [item.image, ...(item.gallery ?? [])] : (item.gallery ?? []),
-        highlights: [],
-        extras: [{ label: "Status", value: item.status }],
-        categoryTag: item.category,
-      }
-    }
-    case "crafts-artisan": {
-      const item = artisans.find((a) => a.id === id)
-      if (!item) return null
-      return {
-        id: item.id,
-        title: item.name,
-        bodyText: item.description,
-        storyText: "",
-        image: item.image ? [item.image, ...(item.gallery ?? [])] : (item.gallery ?? []),
-        highlights: [...item.products, ...(item.awards ?? [])],
-        extras: [
-          { label: "Craft", value: item.craft },
-          { label: "Experience", value: item.experience },
-          { label: "Location", value: item.location },
-        ],
-        categoryTag: item.craft,
-      }
-    }
-    case "people-wonders": {
-      const item = peopleWonders.find((p) => p.id === id)
-      if (!item) return null
-      return {
-        id: item.id,
-        title: item.name,
-        bodyText: item.description,
-        storyText: item.achievement,
-        image: item.image ? [item.image, ...(item.gallery ?? [])] : (item.gallery ?? []),
-        highlights: item.awards ?? [],
-        extras: [
-          { label: "Title", value: item.title },
-          { label: "Category", value: item.category },
-          ...(item.year ? [{ label: "Year", value: item.year }] : []),
-        ],
-        categoryTag: item.category,
-      }
-    }
-    default:
-      return null
-  }
-}
-
 // ─── Props ────────────────────────────────────────────────────────
 
 export interface CultureDetailProps {
@@ -179,7 +84,7 @@ export default function CultureDetailClient({
   highlightsLabel = "Highlights",
   storyLabel = "The Story",
 }: CultureDetailProps) {
-  const [item, setItem] = useState<NormalizedItem | null>(() => lookupStaticItem(label, id))
+  const [item, setItem] = useState<NormalizedItem | null>(null)
   const [apiLoading, setApiLoading] = useState(true)
 
   useEffect(() => {

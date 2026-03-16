@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { MapPin, Phone, Calendar, Store } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { localBusinesses, type LocalBusiness } from "@/lib/data/culture-data"
+import { type LocalBusiness } from "@/lib/data/culture-data"
+import { apiFetchByLabel } from "@/lib/api"
+import { cmsToLocalBusiness } from "@/lib/cms-mappers"
 
 const typeLabels: Record<LocalBusiness["type"], string> = {
   food: "Food & Bakery",
@@ -24,6 +27,14 @@ const typeColor: Record<LocalBusiness["type"], string> = {
 }
 
 export default function LocalBusinessPage() {
+  const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>([])
+
+  useEffect(() => {
+    apiFetchByLabel("local-business")
+      .then((posts) => { if (posts?.length) setLocalBusinesses(posts.map(cmsToLocalBusiness)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       <PageHero

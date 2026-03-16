@@ -10,7 +10,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { GalleryImage } from "@/components/ui/gallery-image"
-import { artisans as staticArtisans, culturalPractices as staticPractices, type Artisan, type CulturalPractice } from "@/lib/data/culture-data"
+import { type Artisan, type CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToArtisan, cmsToCulturalPractice } from "@/lib/cms-mappers"
 
@@ -148,8 +148,8 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 
 // ── Page ──────────────────────────────────────────────────────────────
 export default function CraftsArtisanPage() {
-  const [artisanList, setArtisanList] = useState<Artisan[]>(staticArtisans)
-  const [practiceList, setPracticeList] = useState<CulturalPractice[]>(staticPractices.filter(p => p.category === "crafts"))
+  const [artisanList, setArtisanList] = useState<Artisan[]>([])
+  const [practiceList, setPracticeList] = useState<CulturalPractice[]>([])
 
   useEffect(() => {
     apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
