@@ -21,7 +21,7 @@ const TEAL_DIM  = "hsla(195, 85%, 62%, 0.15)"
 const WARM      = "hsl(210, 25%, 96%)"         // cool white for headings
 const TEXT_BODY  = "hsl(210, 15%, 82%)"        // light blue-gray body
 const TEXT_DIM   = "hsl(215, 12%, 55%)"        // muted blue-gray
-const SERIF     = "'Georgia', 'Times New Roman', serif"
+const SERIF     = "'Poppins', sans-serif"
 
 /* ── Animation presets ────────────────────────────────────────────── */
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -327,6 +327,20 @@ export default function PagodaPage() {
           0%, 100% { transform: scale(1); opacity: 0.6 }
           50%      { transform: scale(1.2); opacity: 1 }
         }
+        @keyframes particleRise {
+          0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0 }
+          10%  { opacity: 1 }
+          50%  { transform: translateY(-60px) translateX(8px) scale(1.1); opacity: 0.8 }
+          80%  { transform: translateY(-110px) translateX(-5px) scale(0.6); opacity: 0.3 }
+          100% { transform: translateY(-140px) translateX(3px) scale(0.2); opacity: 0 }
+        }
+        @keyframes particleSway {
+          0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0 }
+          10%  { opacity: 0.9 }
+          40%  { transform: translateY(-50px) translateX(-10px) scale(1.15); opacity: 0.7 }
+          70%  { transform: translateY(-95px) translateX(6px) scale(0.5); opacity: 0.25 }
+          100% { transform: translateY(-130px) translateX(-3px) scale(0.15); opacity: 0 }
+        }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after { animation-duration: 0.01ms !important; }
         }
@@ -346,22 +360,26 @@ export default function PagodaPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="relative min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen overflow-hidden">
 
-        {/* Subtle blue glow from top */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] sm:w-[800px] h-[400px] pointer-events-none z-[1]"
-          style={{
-            background: `radial-gradient(ellipse at center top, ${GOLD}15 0%, transparent 70%)`,
-          }}
-        />
+        {/* ── Background hero image (right-aligned, fades on left) ── */}
+        <div className="absolute inset-0 z-[1]">
+          <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover object-center lg:object-right" />
+          {/* Mobile overlay: stronger dim so text is readable */}
+          <div className="absolute inset-0 lg:hidden" style={{ background: `linear-gradient(to bottom, ${BG}cc 0%, ${BG}99 35%, ${BG}dd 100%)` }} />
+          {/* Desktop left fade: image fades away into dark background */}
+          <div className="absolute inset-0 hidden lg:block" style={{ background: `linear-gradient(to right, ${BG} 0%, ${BG}f0 20%, ${BG}88 40%, transparent 65%)` }} />
+          {/* Bottom fade */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, transparent 25%)` }} />
+          {/* Top vignette */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}50 0%, transparent 18%)` }} />
+        </div>
 
-        {/* Hero split layout: text left, image right */}
-        <div className="relative z-10 mx-auto max-w-7xl h-full px-6 sm:px-10 lg:px-16 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 pt-28 sm:pt-32 lg:pt-0 pb-20 lg:pb-0 min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen">
+        {/* Hero text content — left side */}
+        <div className="relative z-10 mx-auto max-w-7xl h-full px-5 sm:px-10 lg:px-16 flex items-end sm:items-center pt-24 sm:pt-32 lg:pt-0 pb-24 sm:pb-20 lg:pb-0 min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen">
 
-          {/* ── Left: Text content ── */}
-          <div className="flex-1 flex flex-col justify-center lg:pr-12 xl:pr-20 z-10">
+          <div className="max-w-[320px] sm:max-w-md">
             {/* Festival badge */}
             <motion.div initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] as const }}>
-              <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.4em] px-4 py-2 rounded-full border backdrop-blur-sm"
+              <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.4em] px-4 py-2 rounded-full border"
                 style={{ color: GOLD, borderColor: `${GOLD}50`, backgroundColor: `${GOLD}12` }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: GOLD }} />
                 Bocaue River Festival
@@ -373,7 +391,7 @@ export default function PagodaPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.01, delay: 0.1 }}
-              className="mt-5 text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.9] tracking-tight"
+              className="mt-4 sm:mt-5 text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black leading-[0.9] tracking-tight"
               style={{ fontFamily: SERIF }}
             >
               <motion.span
@@ -384,7 +402,7 @@ export default function PagodaPage() {
                 style={{ backgroundImage: `linear-gradient(135deg, ${WARM} 0%, ${GOLD} 100%)` }}
               >Pagoda</motion.span>
               <motion.span
-                className="block italic font-light text-[0.55em] mt-1 bg-clip-text text-transparent"
+                className="block font-bold text-[0.55em] mt-1 bg-clip-text text-transparent"
                 initial={{ opacity: 0, y: 30, clipPath: 'inset(0 0 100% 0)' }}
                 animate={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
                 transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -405,7 +423,7 @@ export default function PagodaPage() {
             <motion.p
               initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-4 text-sm sm:text-base md:text-lg max-w-lg leading-relaxed"
+              className="mt-4 text-sm sm:text-base leading-relaxed"
               style={{ color: `${WARM}bb` }}
             >
               A centuries-old fluvial procession honoring the Holy Cross of Wawa — where faith, river, and celebration unite.
@@ -415,10 +433,10 @@ export default function PagodaPage() {
             <motion.div
               initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.6, delay: 1.0, ease: [0.22, 1, 0.36, 1] as const }}
-              className="mt-8 inline-flex items-center gap-4 rounded-2xl px-5 py-3 sm:px-7 sm:py-4 border backdrop-blur-sm"
+              className="mt-6 sm:mt-8 inline-flex items-center gap-3 sm:gap-4 rounded-2xl px-4 py-3 sm:px-7 sm:py-4 border backdrop-blur-sm"
               style={{ backgroundColor: `${BG_CARD}bb`, borderColor: `${GOLD}20` }}
             >
-              <div className="flex flex-col items-center justify-center rounded-xl w-14 h-14 sm:w-16 sm:h-16 shrink-0"
+              <div className="flex flex-col items-center justify-center rounded-xl w-12 h-12 sm:w-16 sm:h-16 shrink-0"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, ${RED})` }}>
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider leading-none" style={{ color: BG }}>Jul</span>
                 <span className="text-base sm:text-lg font-black leading-none mt-0.5" style={{ color: BG }}>1st</span>
@@ -433,29 +451,47 @@ export default function PagodaPage() {
               </div>
             </motion.div>
           </div>
+        </div>
 
-          {/* ── Right: Hero image (no animation) ── */}
-          <motion.div
-            className="flex-1 relative w-full lg:w-auto lg:max-w-[55%] xl:max-w-[50%]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[25/22] lg:max-h-[75vh] rounded-2xl lg:rounded-3xl overflow-hidden" style={{ boxShadow: `0 25px 80px ${BG}80, 0 0 40px ${GOLD}08` }}>
-              <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
-              {/* Subtle border */}
-              <div className="absolute inset-0 rounded-2xl lg:rounded-3xl border" style={{ borderColor: `${GOLD}15` }} />
-            </div>
-          </motion.div>
+        {/* Blue fire-like rising particles */}
+        <div className="absolute inset-0 pointer-events-none z-[25] overflow-hidden" aria-hidden>
+          {[
+            { bottom: '8%',  left: '5%',   s: 5, delay: 0,    dur: 3.2, anim: 'particleRise' },
+            { bottom: '12%', left: '12%',  s: 3, delay: 0.6,  dur: 2.8, anim: 'particleSway' },
+            { bottom: '5%',  left: '20%',  s: 4, delay: 1.2,  dur: 3.5, anim: 'particleRise' },
+            { bottom: '10%', left: '30%',  s: 3, delay: 0.3,  dur: 2.6, anim: 'particleSway' },
+            { bottom: '15%', left: '42%',  s: 5, delay: 1.8,  dur: 3.0, anim: 'particleRise' },
+            { bottom: '8%',  left: '50%',  s: 4, delay: 0.9,  dur: 3.4, anim: 'particleSway' },
+            { bottom: '6%',  left: '58%',  s: 3, delay: 2.1,  dur: 2.9, anim: 'particleRise' },
+            { bottom: '12%', left: '68%',  s: 5, delay: 0.4,  dur: 3.1, anim: 'particleSway' },
+            { bottom: '9%',  left: '76%',  s: 4, delay: 1.5,  dur: 3.6, anim: 'particleRise' },
+            { bottom: '14%', left: '85%',  s: 3, delay: 0.7,  dur: 2.7, anim: 'particleSway' },
+            { bottom: '7%',  left: '92%',  s: 4, delay: 2.4,  dur: 3.3, anim: 'particleRise' },
+            { bottom: '18%', left: '8%',   s: 3, delay: 1.0,  dur: 3.8, anim: 'particleSway' },
+            { bottom: '4%',  left: '36%',  s: 5, delay: 2.0,  dur: 2.5, anim: 'particleRise' },
+            { bottom: '11%', left: '62%',  s: 3, delay: 1.4,  dur: 3.0, anim: 'particleSway' },
+            { bottom: '16%', left: '48%',  s: 4, delay: 0.2,  dur: 3.2, anim: 'particleRise' },
+          ].map((p, i) => (
+            <div key={i} className="absolute rounded-full" style={{
+              bottom: p.bottom,
+              left: p.left,
+              width: p.s,
+              height: p.s,
+              background: `radial-gradient(circle, hsla(195,85%,68%,0.9), hsla(215,75%,55%,0.4))`,
+              boxShadow: `0 0 ${p.s + 4}px hsla(195,85%,62%,0.5), 0 0 ${p.s + 8}px hsla(215,75%,55%,0.2)`,
+              animation: `${p.anim} ${p.dur}s ease-out ${p.delay}s infinite`,
+              opacity: 0,
+            }} />
+          ))}
         </div>
 
         {/* Scroll indicator */}
         <ScrollIndicator />
 
         {/* Animated water waves at bottom edge */}
-        <div className="absolute bottom-0 left-0 right-0 h-[60px] pointer-events-none z-[5] overflow-hidden" aria-hidden>
+        <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none z-[5] overflow-hidden" aria-hidden>
           <svg className="absolute bottom-0 w-[200%]" style={{ animation: 'waveFlow1 12s linear infinite', height: '100%' }} viewBox="0 0 2880 80" preserveAspectRatio="none">
-            <path d="M0,30 C240,60 480,10 720,40 C960,70 1200,15 1440,30 C1680,60 1920,10 2160,40 C2400,70 2640,15 2880,30 L2880,80 L0,80Z" fill={BG} opacity="0.5" />
+            <path d="M0,30 C240,60 480,10 720,40 C960,70 1200,15 1440,30 C1680,60 1920,10 2160,40 C2400,70 2640,15 2880,30 L2880,80 L0,80Z" fill={BG} opacity="0.65" />
           </svg>
           <svg className="absolute bottom-0 w-[200%]" style={{ animation: 'waveFlow3 8s linear infinite', height: '70%' }} viewBox="0 0 2880 80" preserveAspectRatio="none">
             <path d="M0,50 C360,15 720,60 1080,35 C1440,60 1800,15 2160,50 C2520,60 2700,25 2880,50 L2880,80 L0,80Z" fill={BG} />

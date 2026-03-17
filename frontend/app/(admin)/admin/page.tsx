@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { asset } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,9 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (isLoggedIn) router.push("/admin/dashboard")
@@ -47,93 +50,139 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left side */}
-      <div className="flex w-full flex-col justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-12 sm:px-12 lg:w-1/2 lg:px-16 xl:px-24">
-        <div className="pointer-events-none absolute inset-0 opacity-5 lg:w-1/2">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-              backgroundSize: "40px 40px",
-            }}
-          />
+
+      <style>{`
+        @keyframes adm-fadeIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .adm-fade { opacity: 0; animation: adm-fadeIn 0.5s cubic-bezier(0.22,1,0.36,1) forwards; }
+        @media (prefers-reduced-motion: reduce) {
+          .adm-fade { animation: none; opacity: 1; }
+        }
+      `}</style>
+
+      {/* ════════════════════════════════════════════════════
+          LEFT — Login form
+      ════════════════════════════════════════════════════ */}
+      <div className="relative flex w-full flex-col justify-between bg-[hsl(200,25%,8%)] lg:w-[480px] xl:w-[520px] shrink-0">
+
+        {/* Subtle grid dot pattern */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.03]" aria-hidden
+          style={{ backgroundImage: "radial-gradient(circle, hsl(193,70%,50%) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+        {/* Top — Logo bar */}
+        <div className={`relative z-10 flex items-center gap-3 px-8 pt-8 sm:px-10 ${mounted ? "adm-fade" : "opacity-0"}`}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+            <Image src={asset("/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={28} height={28} className="object-contain" />
+          </div>
+          <div>
+            <span className="block text-sm font-bold tracking-wide text-white/90">MHACTO</span>
+            <span className="block text-[10px] font-medium text-white/35">Bocaue, Bulacan</span>
+          </div>
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-md animate-fade-in-up">
-          {/* Logo & heading */}
-          <div className="mb-10 flex flex-col items-center text-center lg:items-start lg:text-left">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 p-2 shadow-lg">
-              <Image
-                src={asset("/images/logos/MHACTO_LOGO.png")}
-                alt="MHACTO Logo"
-                width={52}
-                height={52}
-                className="object-contain"
-              />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
-            <p className="mt-1.5 text-sm text-slate-400">Sign in to the MHACTO Admin Panel</p>
-          </div>
+        {/* Center — Form */}
+        <div className={`relative z-10 px-8 sm:px-10 ${mounted ? "adm-fade" : "opacity-0"}`}
+          style={{ animationDelay: "0.1s" }}>
 
-          {/* ── Login Form ── */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-slate-300">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <Input
-                  id="email" type="email" placeholder="admin@mhacto.gov.ph"
-                  value={email} onChange={(e) => setEmail(e.target.value)} required
-                  className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-slate-300">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <Input
-                  id="password" type={showPassword ? "text" : "password"}
-                  placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
-                  value={password} onChange={(e) => setPassword(e.target.value)} required
-                  className="border-white/10 bg-white/5 pl-10 pr-10 text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-red-400 animate-fade-in-up">
-                {error}
+          <div className="mx-auto w-full max-w-sm">
+            {/* Heading */}
+            <div className="mb-8">
+              <h1 className="text-[26px] font-extrabold tracking-tight text-white sm:text-3xl">
+                Admin Portal
+              </h1>
+              <p className="mt-1 text-sm text-white/40">
+                Sign in to manage content, inquiries &amp; analytics.
               </p>
-            )}
+            </div>
 
-            <Button type="submit" className="w-full rounded-lg font-semibold" size="lg" disabled={loading}>
-              {loading ? "Signing in\u2026" : "Sign In"}
-            </Button>
-          </form>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-white/45">
+                  Email
+                </Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25 transition-colors duration-200 group-focus-within:text-primary" />
+                  <Input
+                    id="email" type="email" placeholder="admin@mhacto.gov.ph"
+                    value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
+                    className="h-11 rounded-lg border-white/[0.08] bg-white/[0.04] pl-11 text-sm text-white placeholder:text-white/20 transition-colors duration-200 focus:border-primary/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
 
-          <div className="mt-4 rounded-lg bg-white/5 p-3">
-            <p className="text-center text-xs text-slate-500">
-              Demo credentials:{" "}
-              <span className="text-slate-400">admin@mhacto.gov.ph</span> /{" "}
-              <span className="text-slate-400">admin123</span>
-            </p>
+              {/* Password */}
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-white/45">
+                  Password
+                </Label>
+                <div className="relative group">
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25 transition-colors duration-200 group-focus-within:text-primary" />
+                  <Input
+                    id="password" type={showPassword ? "text" : "password"}
+                    placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                    value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password"
+                    className="h-11 rounded-lg border-white/[0.08] bg-white/[0.04] pl-11 pr-11 text-sm text-white placeholder:text-white/20 transition-colors duration-200 focus:border-primary/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-primary/30"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/25 transition-colors duration-200 hover:text-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 cursor-pointer">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2.5">
+                  <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+                  <p className="text-xs text-red-300">{error}</p>
+                </div>
+              )}
+
+              {/* Submit */}
+              <Button type="submit" size="lg" disabled={loading}
+                className="w-full h-11 rounded-lg font-semibold text-sm bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground transition-colors duration-200 cursor-pointer border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(200,25%,8%)]">
+                <span className="flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-20" /><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </span>
+              </Button>
+            </form>
+
+            {/* Demo hint */}
+            <div className="mt-5 rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
+              <p className="text-center text-[11px] text-white/30">
+                Demo: <span className="font-medium text-white/45">admin@mhacto.gov.ph</span> / <span className="font-medium text-white/45">admin123</span>
+              </p>
+            </div>
           </div>
+        </div>
 
-          <p className="mt-8 text-center text-xs text-slate-600 lg:text-left">
-            &copy; {new Date().getFullYear()} MHACTO &mdash; Bocaue, Bulacan
+        {/* Bottom — Footer */}
+        <div className={`relative z-10 px-8 pb-6 sm:px-10 ${mounted ? "adm-fade" : "opacity-0"}`}
+          style={{ animationDelay: "0.2s" }}>
+          <p className="text-[11px] text-white/15">
+            &copy; {new Date().getFullYear()} Municipal History, Arts, Culture &amp; Tourism Office
           </p>
         </div>
       </div>
 
-      {/* Right side — Image */}
-      <div className="relative hidden lg:block lg:w-1/2">
+      {/* ════════════════════════════════════════════════════
+          RIGHT — Full-bleed hero image
+      ════════════════════════════════════════════════════ */}
+      <div className="relative hidden flex-1 lg:block">
         <Image
           src={asset("/images/heroes/hero-bocaue.jpg")}
           alt="Bocaue, Bulacan"
@@ -141,27 +190,34 @@ export default function AdminLoginPage() {
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-black/20 to-black/60" />
+        {/* Gradient blend into left panel */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(200,25%,8%)] via-[hsl(200,25%,8%)]/40 to-transparent w-[30%]" />
+        {/* Bottom vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
 
-        {/* Overlay text */}
-        <div className="absolute bottom-12 left-10 right-10 z-10 animate-fade-in-right delay-300">
-          <div className="rounded-2xl bg-black/30 p-8 backdrop-blur-md">
-            <h2 className="text-3xl font-bold text-white">
-              MHACTO <span className="text-primary">Admin Portal</span>
+        {/* Overlay card — bottom right */}
+        <div className={`absolute bottom-10 right-10 left-10 z-10 max-w-lg ml-auto ${mounted ? "adm-fade" : "opacity-0"}`}
+          style={{ animationDelay: "0.3s" }}>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-6 backdrop-blur-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 w-6 rounded-full bg-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">Bocaue, Bulacan</span>
+            </div>
+            <h2 className="text-xl font-bold text-white leading-snug sm:text-2xl">
+              Heritage, Arts, Culture<br />
+              <span className="text-primary">&amp; Tourism</span>
             </h2>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80">
-              Manage your tourism website content, view analytics, respond to
-              inquiries, and keep Bocaue&apos;s digital presence thriving &mdash; all from
-              one dashboard.
+            <p className="mt-2 text-xs leading-relaxed text-white/50 max-w-sm">
+              Manage destinations, cultural content, tourism inquiries, and analytics — all in one place.
             </p>
-            <div className="mt-4 flex gap-6 text-xs text-white/60">
-              <span>Dashboard</span>
-              <span>&middot;</span>
-              <span>CMS</span>
-              <span>&middot;</span>
+            <div className="mt-4 flex items-center gap-4 text-[11px] font-medium text-white/30">
+              <span>Content</span>
+              <span className="h-0.5 w-0.5 rounded-full bg-white/20" />
               <span>Inquiries</span>
-              <span>&middot;</span>
+              <span className="h-0.5 w-0.5 rounded-full bg-white/20" />
               <span>Analytics</span>
+              <span className="h-0.5 w-0.5 rounded-full bg-white/20" />
+              <span>Media</span>
             </div>
           </div>
         </div>
