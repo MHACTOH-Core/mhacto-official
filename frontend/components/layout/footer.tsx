@@ -5,7 +5,29 @@ import { asset } from "@/lib/utils"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground reveal-on-scroll">
+    <footer className="relative border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground overflow-hidden">
+      {/* Animated wave accent at top of footer */}
+      <style>{`
+        @keyframes footerWave1 { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+        @keyframes footerWave2 { 0% { transform: translateX(-50%) } 100% { transform: translateX(0) } }
+      `}</style>
+      <div className="absolute top-0 left-0 right-0 h-[3px] overflow-hidden pointer-events-none" aria-hidden>
+        <svg
+          className="absolute top-0 h-[3px]"
+          style={{ width: '200%', animation: 'footerWave1 10s linear infinite' }}
+          viewBox="0 0 2880 6" preserveAspectRatio="none"
+        >
+          <path d="M0,3 C120,0 240,6 360,3 C480,0 600,6 720,3 C840,0 960,6 1080,3 C1200,0 1320,6 1440,3 C1560,0 1680,6 1800,3 C1920,0 2040,6 2160,3 C2280,0 2400,6 2520,3 C2640,0 2760,6 2880,3" fill="none" stroke="rgba(45,212,191,0.35)" strokeWidth="2" />
+        </svg>
+        <svg
+          className="absolute top-0 h-[3px]"
+          style={{ width: '200%', animation: 'footerWave2 7s linear infinite' }}
+          viewBox="0 0 2880 6" preserveAspectRatio="none"
+        >
+          <path d="M0,3 C180,6 360,0 540,3 C720,6 900,0 1080,3 C1260,6 1440,0 1620,3 C1800,6 1980,0 2160,3 C2340,6 2520,0 2700,3 C2880,6 2880,0 2880,3" fill="none" stroke="rgba(45,212,191,0.2)" strokeWidth="1.5" />
+        </svg>
+      </div>
+
       <div className="mx-auto max-w-7xl px-4 py-12 lg:px-8">
         <div className="grid gap-8 md:grid-cols-3">
           {/* Brand */}

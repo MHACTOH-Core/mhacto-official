@@ -355,7 +355,47 @@ export function Navbar() {
   return (
     <>
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-white/80 backdrop-blur-md shadow-sm">
-      <nav className="mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-2.5 lg:py-3 lg:px-8">
+      {/* Animated river shimmer — behind all content */}
+      <style>{`
+        @keyframes navShimmer {
+          0%   { background-position: -200% 0 }
+          100% { background-position: 200% 0 }
+        }
+        @keyframes navWaveFlow {
+          0%   { transform: translateX(0) }
+          100% { transform: translateX(-50%) }
+        }
+      `}</style>
+
+      {/* Subtle water-light caustic band that glides across the header */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        aria-hidden
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, transparent 35%, rgba(45,212,191,0.06) 45%, rgba(45,212,191,0.10) 50%, rgba(45,212,191,0.06) 55%, transparent 65%, transparent 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'navShimmer 6s ease-in-out infinite',
+        }}
+      />
+
+      {/* Flowing wave accent at the very bottom of the navbar */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] pointer-events-none z-[1] overflow-hidden" aria-hidden>
+        <svg
+          className="absolute bottom-0 h-[2px]"
+          style={{ width: '200%', animation: 'navWaveFlow 8s linear infinite' }}
+          viewBox="0 0 2880 4"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,2 C120,0 240,4 360,2 C480,0 600,4 720,2 C840,0 960,4 1080,2 C1200,0 1320,4 1440,2 C1560,0 1680,4 1800,2 C1920,0 2040,4 2160,2 C2280,0 2400,4 2520,2 C2640,0 2760,4 2880,2"
+            fill="none"
+            stroke="rgba(45,212,191,0.45)"
+            strokeWidth="2"
+          />
+        </svg>
+      </div>
+
+      <nav className="relative z-[2] mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-2.5 lg:py-3 lg:px-8">
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
@@ -390,7 +430,7 @@ export function Navbar() {
         </div>
 
         {/* Right – Bocaue logo + mobile menu */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link href="/" className="hidden md:flex shrink-0 items-center gap-1.5">
             <Image
               src={asset("/images/logos/Municipality_of_bocaue.png")}

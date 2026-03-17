@@ -470,7 +470,7 @@ export default function InquirePage() {
                           <Label className="text-sm font-semibold text-foreground">
                             Purpose of Visit <span className="text-destructive">*</span>
                           </Label>
-                          <Select value={purpose} onValueChange={setPurpose} required>
+                          <Select value={purpose} onValueChange={setPurpose} required modal={false}>
                             <SelectTrigger className="w-full rounded-xl">
                               <SelectValue placeholder="Select purpose" />
                             </SelectTrigger>

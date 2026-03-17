@@ -40,15 +40,31 @@ export function RevealObserver() {
       function autoInjectRevealClasses() {
         const viewportH = window.innerHeight
 
+        /**
+         * Helper: returns true if the element (or a parent) is already
+         * animated by Framer Motion — indicated by a `style` attribute
+         * that contains `transform` or `opacity`, which motion.div sets.
+         */
+        function isFramerManaged(el: HTMLElement): boolean {
+          // Framer Motion sets data-projection-id on animated elements
+          if (el.hasAttribute("data-projection-id")) return true
+          // Walk up to check if a parent container is motion-managed
+          const parent = el.parentElement
+          if (parent && parent.hasAttribute("data-projection-id")) return true
+          return false
+        }
+
         // Target: section > div containers that hold page content
         document.querySelectorAll("main section > div, main > section").forEach((el) => {
           const htmlEl = el as HTMLElement
-          // Skip if already has reveal classes, is above fold, or is inside admin
+          // Skip if already has reveal classes, is above fold, is inside admin,
+          // or is managed by Framer Motion (has its own animation system)
           if (
             htmlEl.classList.contains("reveal-on-scroll") ||
             htmlEl.classList.contains("revealed") ||
             htmlEl.closest("[data-no-reveal]") ||
-            htmlEl.closest(".flex.h-screen") // admin layout
+            htmlEl.closest(".flex.h-screen") || // admin layout
+            isFramerManaged(htmlEl)
           ) return
 
           const rect = htmlEl.getBoundingClientRect()
@@ -61,7 +77,11 @@ export function RevealObserver() {
         // Target: card grids — add staggered reveals to direct children
         document.querySelectorAll("main .grid").forEach((grid) => {
           const gridEl = grid as HTMLElement
-          if (gridEl.closest("[data-no-reveal]") || gridEl.closest(".flex.h-screen")) return
+          if (
+            gridEl.closest("[data-no-reveal]") ||
+            gridEl.closest(".flex.h-screen") ||
+            isFramerManaged(gridEl)
+          ) return
 
           const rect = gridEl.getBoundingClientRect()
           if (rect.top <= viewportH * 0.85) return
@@ -70,7 +90,8 @@ export function RevealObserver() {
             const childEl = child as HTMLElement
             if (
               childEl.classList.contains("reveal-on-scroll") ||
-              childEl.classList.contains("revealed")
+              childEl.classList.contains("revealed") ||
+              isFramerManaged(childEl)
             ) return
             childEl.classList.add("reveal-on-scroll")
             if (i < 6) childEl.classList.add(`reveal-delay-${i + 1}`)

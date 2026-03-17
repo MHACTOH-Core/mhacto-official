@@ -27,6 +27,7 @@ CREATE TABLE users (
   user_id       INT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(100) DEFAULT NULL,
   full_name     VARCHAR(200) DEFAULT NULL      COMMENT 'Display name',
+  profile_picture VARCHAR(255) DEFAULT NULL   COMMENT 'Profile image URL',
   email         VARCHAR(255) NOT NULL,
   password_hash VARCHAR(100) DEFAULT NULL,
   role          ENUM('super_admin','admin','content_manager') DEFAULT 'admin',
