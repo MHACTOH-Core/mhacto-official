@@ -3,35 +3,31 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion, useScroll, useTransform, useInView, useMotionValueEvent, type Variants } from "framer-motion"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { motion, useScroll, useTransform, useInView, type Variants } from "framer-motion"
 import { apiFetchByLabel } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { asset, resolveMediaUrl } from "@/lib/utils"
 
-/* ── Design tokens — Pagoda sa Bocaue river festival palette ─────── */
-const BG        = "hsl(222, 25%, 10%)"         // deep navy
-const BG_CARD   = "hsl(222, 25%, 13%)"         // slightly lighter card
-const BG_MUTED  = "hsl(222, 18%, 20%)"         // muted panel
-const GOLD      = "hsl(175, 70%, 48%)"         // teal accent (matching site theme)
-const GOLD_DIM  = "hsla(175, 70%, 48%, 0.12)"
-const RED       = "#c0392b"                    // festival red banners
-const RED_DIM   = "rgba(192,57,43,0.10)"
-const TEAL      = "hsl(175, 70%, 48%)"         // teal-green accent
-const TEAL_DIM  = "hsla(175, 70%, 48%, 0.15)"
-const WARM      = "hsl(42, 30%, 95%)"          // creamy white for headings
-const TEXT_BODY  = "hsl(42, 18%, 86%)"         // warm cream body text
-const TEXT_DIM   = "hsl(38, 12%, 60%)"         // sandy muted
-/* Fonts: uses site-wide Poppins (body via inherit) + Barbara (headings via font-heading class) */
+/* ── Design tokens — Pagoda sa Bocaue blue gradient palette ──────── */
+const BG        = "hsl(222, 30%, 8%)"          // deep midnight blue
+const BG_CARD   = "hsl(222, 28%, 12%)"         // slightly lighter card
+const BG_MUTED  = "hsl(222, 22%, 17%)"         // muted panel
+const GOLD      = "hsl(215, 75%, 60%)"         // vibrant blue accent
+const GOLD_DIM  = "hsla(215, 75%, 60%, 0.12)"
+const RED       = "hsl(235, 55%, 50%)"         // deep indigo accent
+const RED_DIM   = "hsla(235, 55%, 50%, 0.10)"
+const TEAL      = "hsl(195, 85%, 62%)"         // sky blue / cyan accent
+const TEAL_DIM  = "hsla(195, 85%, 62%, 0.15)"
+const WARM      = "hsl(210, 25%, 96%)"         // cool white for headings
+const TEXT_BODY  = "hsl(210, 15%, 82%)"        // light blue-gray body
+const TEXT_DIM   = "hsl(215, 12%, 55%)"        // muted blue-gray
+const SERIF     = "'Georgia', 'Times New Roman', serif"
 
 /* ── Animation presets ────────────────────────────────────────────── */
 const EASE = [0.22, 1, 0.36, 1] as const
-const fadeUp   = { initial: { opacity: 0, y: 50 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.9, ease: EASE } }
-const scaleIn  = { initial: { opacity: 0, scale: 0.9 }, whileInView: { opacity: 1, scale: 1 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 1, ease: EASE } }
-const slideL   = { initial: { opacity: 0, x: -70 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 0.9, ease: EASE } }
-const slideR   = { initial: { opacity: 0, x: 70 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 0.9, ease: EASE } }
-const blurUp   = { initial: { opacity: 0, y: 30, filter: 'blur(10px)' }, whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' }, viewport: { once: true, margin: "-60px" }, transition: { duration: 1, ease: EASE } }
-const rotateIn = { initial: { opacity: 0, rotate: -3, y: 40 }, whileInView: { opacity: 1, rotate: 0, y: 0 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 1.1, ease: EASE } }
+const fadeUp   = { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6, ease: EASE } }
+const scaleIn  = { initial: { opacity: 0, scale: 0.94 }, whileInView: { opacity: 1, scale: 1 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 0.6, ease: EASE } }
+const blurUp   = { initial: { opacity: 0, y: 20, filter: 'blur(8px)' }, whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' }, viewport: { once: true, margin: "-60px" }, transition: { duration: 0.7, ease: EASE } }
 
 /* Stagger container + child variants for cascading reveals */
 const staggerContainer: Variants = {
@@ -39,16 +35,16 @@ const staggerContainer: Variants = {
   visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 }
 const staggerChild: Variants = {
-  hidden: { opacity: 0, y: 30, filter: 'blur(6px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.7, ease: EASE } },
+  hidden: { opacity: 0, y: 20, filter: 'blur(4px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.5, ease: EASE } },
 }
 
-/* Image reveal with clip-path sweep */
+/* Image reveal — smooth fade + scale entrance */
 const imageReveal = {
-  initial: { clipPath: 'inset(0 100% 0 0)' },
-  whileInView: { clipPath: 'inset(0 0% 0 0)' },
-  viewport: { once: true, margin: "-60px" },
-  transition: { duration: 1.2, ease: EASE },
+  initial: { opacity: 0, y: 30, scale: 0.97 },
+  whileInView: { opacity: 1, y: 0, scale: 1 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.7, ease: EASE },
 }
 
 /* ── Scroll Progress Bar ─────────────────────────────────────────── */
@@ -80,10 +76,12 @@ function ScrollIndicator() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ delay: 2.8, duration: 1.2 }}
-      className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center"
+      transition={{ delay: 1.5, duration: 0.8 }}
+      className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
     >
-      {/* Animated chevrons — three staggered arrows */}
+      <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: TEXT_DIM }}>
+        Scroll down
+      </span>
       <motion.div className="flex flex-col items-center gap-[2px]">
         {[0, 1, 2].map((i) => (
           <motion.svg
@@ -147,48 +145,42 @@ const FALLBACK_GALLERY = [
   asset("/images/places/fireworks.jpg"),
 ]
 
-/* ── Floating Lanterns (gentle rising lights) ─────────────────────── */
-const LANTERNS = Array.from({ length: 30 }, (_, i) => ({
-  id: i,
-  left: `${((i * 31 + 11) % 92) + 4}%`,
-  size: 10 + (i % 5) * 6,
-  delay: (i * 0.5) % 6,
-  duration: 8 + (i % 6) * 3,
-  color: i % 3 === 0 ? TEAL : i % 3 === 1 ? 'hsl(200, 80%, 60%)' : 'hsl(190, 70%, 55%)',
-}))
+/* Gallery detail data — descriptions for each gallery image */
+interface GalleryItem { title: string; description: string; category: string }
+const GALLERY_DETAILS: GalleryItem[] = [
+  {
+    title: "Fluvial Procession on the Bocaue River",
+    description: "Colorful boats adorned with flowers, religious icons, and vibrant banners sail across the Bocaue River during the annual Pagoda festival. Devotees from all over Bulacan gather along the riverbanks to witness this spectacular fluvial parade honoring the Holy Cross of Wawa.",
+    category: "Procession",
+  },
+  {
+    title: "Fireworks Over the River",
+    description: "A breathtaking display of fireworks illuminates the night sky above the Bocaue River, casting golden and crimson reflections on the water below. This pyrotechnic spectacle marks the climax of the Pagoda festival, symbolizing the fire of faith that has burned for over 400 years.",
+    category: "Celebration",
+  },
+  {
+    title: "Bocaue Church — Home of the Holy Cross",
+    description: "The historic church of Bocaue, where the Holy Cross of Wawa is enshrined year-round. Built during the Spanish colonial era, this church serves as the spiritual heart of the Pagoda festival and the starting point of the sacred cross-river procession.",
+    category: "Heritage",
+  },
+  {
+    title: "Old Town Bocaue — Streets of Tradition",
+    description: "The charming streets and ancestral houses of old Bocaue come alive during the Pagoda festival. Locals decorate their homes with banderitas and religious imagery, while street vendors fill the air with the aroma of traditional Filipino delicacies.",
+    category: "Culture",
+  },
+  {
+    title: "Decorated Floats Along the Waterway",
+    description: "Intricately decorated barges and floats glide along the river, each one a masterpiece of devotion. Families and barangays compete to create the most beautiful float, showcasing months of preparation and craftsmanship passed down through generations.",
+    category: "Procession",
+  },
+  {
+    title: "Evening Celebration by the River",
+    description: "As twilight settles over the Bocaue River, the floating pagodas glow with hundreds of lanterns and candles. The evening celebration brings together music, prayer, and community — a sacred moment where the river becomes a mirror reflecting centuries of unwavering faith.",
+    category: "Celebration",
+  },
+]
 
-function FloatingLanterns() {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[8] overflow-hidden" aria-hidden>
-      {LANTERNS.map((l) => (
-        <div key={l.id} className="absolute" style={{
-          left: l.left, bottom: '-5%', width: l.size, height: l.size,
-          animation: `lanternRise ${l.duration}s ${l.delay}s ease-in-out infinite`,
-        }}>
-          <div className="w-full h-full rounded-full" style={{
-            background: `radial-gradient(circle, ${l.color} 0%, ${l.color}bb 25%, transparent 60%)`,
-            boxShadow: `0 0 ${l.size * 2}px ${l.color}, 0 0 ${l.size * 4}px ${l.color}88`,
-          }} />
-        </div>
-      ))}
-    </div>
-  )
-}
 
-/* ── River Shimmer — subtle water reflection ─────────────────────── */
-function RiverShimmer() {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0" aria-hidden style={{
-      background: `linear-gradient(180deg, transparent 0%, transparent 60%, ${TEAL}05 75%, ${TEAL}08 85%, transparent 100%)`,
-    }}>
-      <div className="absolute bottom-0 left-0 right-0 h-[40%]" style={{
-        backgroundImage: `repeating-linear-gradient(90deg, transparent, ${TEAL}05 4%, transparent 8%)`,
-        backgroundSize: '250% 100%',
-        animation: 'riverShimmer 8s ease-in-out infinite alternate',
-      }} />
-    </div>
-  )
-}
 
 /* ── Wave Section Divider ─────────────────────────────────────────── */
 function WaveDivider({ colorTop, colorBottom }: { colorTop: string; colorBottom: string }) {
@@ -231,52 +223,66 @@ export default function PagodaPage() {
   const [overview, setOverview] = useState(FALLBACK_OVERVIEW)
   const [subs, setSubs] = useState<SubBlock[]>(FALLBACK_SUBS)
   const [gallery, setGallery] = useState<string[]>(FALLBACK_GALLERY)
-
-  // Lightbox state
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [galleryDetail, setGalleryDetail] = useState<number | null>(null)
+  const galleryScrollRef = useRef<HTMLDivElement>(null)
 
   const { scrollYProgress } = useScroll()
-  const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -100])
-  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1.1, 1.25])
 
-  const openLightbox = useCallback((i: number) => {
-    setLightboxIndex(i)
-    document.body.style.overflow = 'hidden'
-  }, [])
-
-  const closeLightbox = useCallback(() => {
-    setLightboxIndex(null)
-    document.body.style.overflow = ''
-  }, [])
-
-  const lightboxPrev = useCallback(() => {
-    setLightboxIndex((prev) => (prev !== null ? (prev - 1 + gallery.length) % gallery.length : null))
-  }, [gallery.length])
-
-  const lightboxNext = useCallback(() => {
-    setLightboxIndex((prev) => (prev !== null ? (prev + 1) % gallery.length : null))
-  }, [gallery.length])
-
-  // Keyboard navigation for lightbox
+  // Auto-slideshow: continuous infinite loop scrolling left
   useEffect(() => {
-    if (lightboxIndex === null) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeLightbox()
-      if (e.key === 'ArrowLeft') lightboxPrev()
-      if (e.key === 'ArrowRight') lightboxNext()
+    const container = galleryScrollRef.current
+    if (!container) return
+    let animFrame: number
+    const speed = 0.5 // px per frame
+    let paused = false
+
+    const step = () => {
+      if (!paused && container) {
+        container.scrollLeft += speed
+        // Seamless loop: the strip renders 2 copies of the gallery.
+        // When we've scrolled past the first copy, jump back by exactly
+        // half the total scroll width so the user sees no visual break.
+        const halfScroll = container.scrollWidth / 2
+        if (container.scrollLeft >= halfScroll) {
+          container.scrollLeft -= halfScroll
+        }
+      }
+      animFrame = requestAnimationFrame(step)
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [lightboxIndex, closeLightbox, lightboxPrev, lightboxNext])
+    animFrame = requestAnimationFrame(step)
 
-  // Hide scrollbar on pagoda page, restore on leave
+    const pause = () => { paused = true }
+    const resume = () => { paused = false }
+    container.addEventListener('mouseenter', pause)
+    container.addEventListener('mouseleave', resume)
+    container.addEventListener('touchstart', pause, { passive: true })
+    container.addEventListener('touchend', resume)
+
+    return () => {
+      cancelAnimationFrame(animFrame)
+      container.removeEventListener('mouseenter', pause)
+      container.removeEventListener('mouseleave', resume)
+      container.removeEventListener('touchstart', pause)
+      container.removeEventListener('touchend', resume)
+    }
+  }, [gallery])
+
+  // Lightbox keyboard navigation
   useEffect(() => {
-    const style = document.createElement('style')
-    style.id = 'pagoda-scrollbar-hide'
-    style.textContent = 'html{scrollbar-width:none}html::-webkit-scrollbar{display:none}'
-    document.head.appendChild(style)
-    return () => { style.remove() }
-  }, [])
+    if (galleryDetail === null) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setGalleryDetail(null)
+      if (e.key === 'ArrowRight') setGalleryDetail((prev) => (prev !== null ? (prev + 1) % gallery.length : null))
+      if (e.key === 'ArrowLeft') setGalleryDetail((prev) => (prev !== null ? (prev - 1 + gallery.length) % gallery.length : null))
+    }
+    // Prevent scroll when lightbox is open
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handler)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handler)
+    }
+  }, [galleryDetail, gallery.length])
 
   useEffect(() => {
     apiFetchByLabel("pagoda")
@@ -299,57 +305,12 @@ export default function PagodaPage() {
 
       {/* ─── All CSS Keyframes ─────────────────────────────────── */}
       <style>{`
-        @keyframes lanternRise {
-          0%   { transform: translateY(0) scale(0.6); opacity: 0 }
-          5%   { opacity: 0.9 }
-          40%  { opacity: 0.7 }
-          80%  { opacity: 0.3 }
-          100% { transform: translateY(-110vh) scale(1.1); opacity: 0 }
-        }
-        @keyframes riverShimmer {
-          0%   { background-position: 0% 0% }
-          100% { background-position: 100% 0% }
-        }
         @keyframes waveFlow1 { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes waveFlow2 { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes waveFlow3 { 0% { transform: translateX(-50%) } 100% { transform: translateX(0) } }
         @keyframes gentlePulse {
           0%, 100% { opacity: 0.4; transform: scale(1) }
           50%      { opacity: 0.8; transform: scale(1.05) }
-        }
-        @keyframes shimmerGold {
-          0%   { background-position: -200% 0 }
-          100% { background-position: 200% 0 }
-        }
-        @keyframes candleFlicker {
-          0%, 100% { opacity: 0.6; transform: scaleY(1) }
-          25%      { opacity: 1; transform: scaleY(1.1) }
-          50%      { opacity: 0.7; transform: scaleY(0.95) }
-          75%      { opacity: 0.9; transform: scaleY(1.05) }
-        }
-        @keyframes floatBoat {
-          0%, 100% { transform: translateY(0) rotate(-0.5deg) }
-          50%      { transform: translateY(-8px) rotate(0.5deg) }
-        }
-        @keyframes glowPulse {
-          0%, 100% { box-shadow: 0 0 20px ${TEAL}20, 0 0 60px ${TEAL}05 }
-          50%      { box-shadow: 0 0 40px ${TEAL}40, 0 0 100px ${TEAL}15 }
-        }
-        @keyframes textShine {
-          0%   { background-position: -200% center }
-          100% { background-position: 200% center }
-        }
-        @keyframes borderDraw {
-          0%   { stroke-dashoffset: 1000 }
-          100% { stroke-dashoffset: 0 }
-        }
-        @keyframes fadeInScale {
-          0%   { opacity: 0; transform: scale(0.8) }
-          100% { opacity: 1; transform: scale(1) }
-        }
-        @keyframes spinSlow {
-          0%   { transform: rotate(0deg) }
-          100% { transform: rotate(360deg) }
         }
         @keyframes orbFloat1 {
           0%, 100% { transform: translate(0, 0) scale(1) }
@@ -362,26 +323,9 @@ export default function PagodaPage() {
           33%      { transform: translate(-70px, -90px) scale(1.12) }
           66%      { transform: translate(50px, -40px) scale(0.88) }
         }
-        @keyframes gentleBreathe {
-          0%, 100% { opacity: 0.04 }
-          50%      { opacity: 0.09 }
-        }
         @keyframes auraPulse {
           0%, 100% { transform: scale(1); opacity: 0.6 }
           50%      { transform: scale(1.2); opacity: 1 }
-        }
-        @keyframes waterCaustic {
-          0%   { background-position: 0% 0% }
-          50%  { background-position: 100% 100% }
-          100% { background-position: 0% 0% }
-        }
-        @keyframes gentleBob {
-          0%, 100% { transform: translateY(0) }
-          50%      { transform: translateY(-4px) }
-        }
-        @keyframes rippleOut {
-          0%   { transform: scale(0); opacity: 0.6 }
-          100% { transform: scale(4); opacity: 0 }
         }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after { animation-duration: 0.01ms !important; }
@@ -391,93 +335,32 @@ export default function PagodaPage() {
       {/* Scroll progress bar */}
       <ScrollProgress />
 
-      {/* Global atmospheric layers */}
-      <FloatingLanterns />
-      <RiverShimmer />
-
-      {/* Ambient floating orbs — large glowing teal/blue/gold spheres */}
+      {/* Ambient floating orbs — subtle blue atmospheric glow */}
       <div className="fixed inset-0 pointer-events-none z-[2] overflow-hidden" aria-hidden>
-        <div className="absolute w-[500px] h-[500px] rounded-full blur-[150px]" style={{ top: '15%', left: '5%', backgroundColor: TEAL, opacity: 0.18, animation: 'orbFloat1 25s ease-in-out infinite' }} />
-        <div className="absolute w-[450px] h-[450px] rounded-full blur-[130px]" style={{ top: '55%', right: '3%', backgroundColor: 'hsl(200, 80%, 55%)', opacity: 0.14, animation: 'orbFloat2 30s ease-in-out infinite' }} />
-        <div className="absolute w-[350px] h-[350px] rounded-full blur-[110px]" style={{ top: '35%', left: '45%', backgroundColor: GOLD, opacity: 0.1, animation: 'orbFloat1 35s ease-in-out infinite reverse' }} />
+        <div className="absolute w-[500px] h-[500px] rounded-full blur-[150px]" style={{ top: '15%', left: '5%', backgroundColor: GOLD, opacity: 0.08, animation: 'orbFloat1 25s ease-in-out infinite' }} />
+        <div className="absolute w-[450px] h-[450px] rounded-full blur-[130px]" style={{ top: '55%', right: '3%', backgroundColor: TEAL, opacity: 0.06, animation: 'orbFloat2 30s ease-in-out infinite' }} />
       </div>
-
-      {/* Film grain texture for cinematic depth */}
-      <div className="fixed inset-0 pointer-events-none z-[9]" aria-hidden style={{
-        opacity: 0.06,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundRepeat: 'repeat',
-        backgroundSize: '200px 200px',
-        animation: 'gentleBreathe 6s ease-in-out infinite',
-      }} />
 
       {/* ═══════════════════════════════════════════════════════════
           HERO — Immersive full-screen river festival banner
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative h-[85vh] sm:h-[90vh] lg:h-screen min-h-[500px] overflow-hidden">
+      <section className="relative min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen overflow-hidden">
 
-        {/* ── Cinematic curtain reveal overlay ── */}
-        <motion.div
-          className="absolute inset-0 z-[15] pointer-events-none"
-          initial={{ scaleY: 1 }}
-          animate={{ scaleY: 0 }}
-          transition={{ duration: 1.4, delay: 0.2, ease: [0.76, 0, 0.24, 1] }}
-          style={{ backgroundColor: BG, transformOrigin: 'top' }}
-        />
-
-        {/* ── Light sweep across image on reveal ── */}
-        <motion.div
-          className="absolute inset-0 z-[6] pointer-events-none"
-          initial={{ x: '-100%' }}
-          animate={{ x: '200%' }}
-          transition={{ duration: 1.8, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            background: `linear-gradient(105deg, transparent 30%, ${GOLD}18 45%, ${WARM}12 50%, ${GOLD}18 55%, transparent 70%)`,
-          }}
-        />
-
-        {/* Parallax background image with entrance transition */}
-        <motion.div
-          className="absolute inset-0"
-          initial={{ scale: 1.3, filter: 'brightness(0.3) saturate(0)' }}
-          animate={{ scale: 1.1, filter: 'brightness(1) saturate(1)' }}
-          transition={{ duration: 2.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          style={{ y: heroY, scale: heroScale }}
-        >
-          <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover" />
-        </motion.div>
-
-        {/* Vignette border that pulses once on load */}
-        <motion.div
-          className="absolute inset-0 z-[4] pointer-events-none"
-          initial={{ opacity: 0.8 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, delay: 0.5 }}
-          style={{
-            boxShadow: `inset 0 0 150px 60px ${BG}`,
-          }}
-        />
-
-        {/* Gradient overlays for depth */}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}40 0%, transparent 30%, transparent 50%, ${BG}cc 80%, ${BG} 100%)` }} />
-        <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${BG}80 0%, transparent 40%, transparent 60%, ${BG}80 100%)` }} />
-
-        {/* Gold light bloom from center top */}
-        <motion.div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] sm:w-[800px] h-[400px] pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, delay: 1.5 }}
+        {/* Subtle blue glow from top */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] sm:w-[800px] h-[400px] pointer-events-none z-[1]"
           style={{
             background: `radial-gradient(ellipse at center top, ${GOLD}15 0%, transparent 70%)`,
           }}
         />
 
-        {/* Hero content at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-6 sm:px-10 lg:px-16 pb-14 sm:pb-18 lg:pb-22">
-          <div className="mx-auto max-w-6xl">
+        {/* Hero split layout: text left, image right */}
+        <div className="relative z-10 mx-auto max-w-7xl h-full px-6 sm:px-10 lg:px-16 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 pt-28 sm:pt-32 lg:pt-0 pb-20 lg:pb-0 min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen">
+
+          {/* ── Left: Text content ── */}
+          <div className="flex-1 flex flex-col justify-center lg:pr-12 xl:pr-20 z-10">
             {/* Festival badge */}
-            <motion.div initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.9, delay: 1.4, ease: [0.22, 1, 0.36, 1] as const }}>
+            <motion.div initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] as const }}>
               <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.4em] px-4 py-2 rounded-full border backdrop-blur-sm"
                 style={{ color: GOLD, borderColor: `${GOLD}50`, backgroundColor: `${GOLD}12` }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: GOLD }} />
@@ -485,42 +368,43 @@ export default function PagodaPage() {
               </span>
             </motion.div>
 
-            {/* Main title — staggered letter-group reveal */}
+            {/* Main title */}
             <motion.h1
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.01, delay: 1.5 }}
-              className="mt-5 text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.9] tracking-tight font-heading"
+              transition={{ duration: 0.01, delay: 0.1 }}
+              className="mt-5 text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.9] tracking-tight"
+              style={{ fontFamily: SERIF }}
             >
               <motion.span
                 className="block bg-clip-text text-transparent"
-                initial={{ opacity: 0, y: 60, clipPath: 'inset(0 0 100% 0)' }}
+                initial={{ opacity: 0, y: 40, clipPath: 'inset(0 0 100% 0)' }}
                 animate={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
-                transition={{ duration: 1.2, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
-                style={{ backgroundImage: `linear-gradient(135deg, ${WARM} 0%, ${TEAL} 100%)` }}
+                transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                style={{ backgroundImage: `linear-gradient(135deg, ${WARM} 0%, ${GOLD} 100%)` }}
               >Pagoda</motion.span>
               <motion.span
                 className="block italic font-light text-[0.55em] mt-1 bg-clip-text text-transparent"
-                initial={{ opacity: 0, y: 40, clipPath: 'inset(0 0 100% 0)' }}
+                initial={{ opacity: 0, y: 30, clipPath: 'inset(0 0 100% 0)' }}
                 animate={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
-                transition={{ duration: 1.1, delay: 1.9, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 style={{ backgroundImage: `linear-gradient(135deg, ${TEAL} 0%, hsl(175, 55%, 72%) 100%)` }}
               >sa Bocaue</motion.span>
             </motion.h1>
 
-            {/* Decorative line that draws in under the title */}
+            {/* Decorative line */}
             <motion.div
               className="mt-4 h-[2px] rounded-full"
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 80, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 2.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.5, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ background: `linear-gradient(90deg, ${TEAL}, ${GOLD})` }}
             />
 
             {/* Subtitle */}
             <motion.p
               initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 2.4, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="mt-4 text-sm sm:text-base md:text-lg max-w-lg leading-relaxed"
               style={{ color: `${WARM}bb` }}
             >
@@ -530,7 +414,7 @@ export default function PagodaPage() {
             {/* Date callout */}
             <motion.div
               initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 1, delay: 2.7, ease: [0.22, 1, 0.36, 1] as const }}
+              transition={{ duration: 0.6, delay: 1.0, ease: [0.22, 1, 0.36, 1] as const }}
               className="mt-8 inline-flex items-center gap-4 rounded-2xl px-5 py-3 sm:px-7 sm:py-4 border backdrop-blur-sm"
               style={{ backgroundColor: `${BG_CARD}bb`, borderColor: `${GOLD}20` }}
             >
@@ -549,6 +433,20 @@ export default function PagodaPage() {
               </div>
             </motion.div>
           </div>
+
+          {/* ── Right: Hero image (no animation) ── */}
+          <motion.div
+            className="flex-1 relative w-full lg:w-auto lg:max-w-[55%] xl:max-w-[50%]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[25/22] lg:max-h-[75vh] rounded-2xl lg:rounded-3xl overflow-hidden" style={{ boxShadow: `0 25px 80px ${BG}80, 0 0 40px ${GOLD}08` }}>
+              <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+              {/* Subtle border */}
+              <div className="absolute inset-0 rounded-2xl lg:rounded-3xl border" style={{ borderColor: `${GOLD}15` }} />
+            </div>
+          </motion.div>
         </div>
 
         {/* Scroll indicator */}
@@ -577,7 +475,7 @@ export default function PagodaPage() {
           className="mx-auto max-w-5xl px-6"
         >
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 rounded-2xl border px-6 py-6 sm:px-10 sm:py-8 backdrop-blur-sm"
-            style={{ backgroundColor: `${BG_CARD}ee`, borderColor: `${GOLD}15`, animation: 'glowPulse 4s ease-in-out infinite' }}>
+            style={{ backgroundColor: `${BG_CARD}ee`, borderColor: `${GOLD}15` }}>
             {[
               { value: 400, suffix: "+", label: "Years of Tradition" },
               { value: 50, suffix: "+", label: "Decorated Boats" },
@@ -585,7 +483,7 @@ export default function PagodaPage() {
               { value: 1, suffix: "", label: "Holy Cross of Wawa" },
             ].map((stat, i) => (
               <motion.div key={i} variants={staggerChild} className="text-center">
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading" style={{ color: GOLD }}>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-black" style={{ color: GOLD, fontFamily: SERIF }}>
                   <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                 </p>
                 <p className="text-[10px] sm:text-xs mt-1 uppercase tracking-[0.15em]" style={{ color: TEXT_DIM }}>{stat.label}</p>
@@ -610,10 +508,10 @@ export default function PagodaPage() {
               className="absolute -left-[14px] top-0 w-[26px] h-[26px] rounded-full flex items-center justify-center"
               style={{ backgroundColor: BG, border: `2px solid ${GOLD}` }}
             >
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GOLD, animation: 'candleFlicker 3s ease-in-out infinite' }} />
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GOLD }} />
             </motion.div>
-            <span className="block text-6xl sm:text-7xl leading-[0.5] select-none mb-5 -ml-1 font-heading" style={{ color: `${GOLD}30` }}>&ldquo;</span>
-            <p className="text-lg sm:text-xl lg:text-2xl leading-[1.85] sm:leading-[1.95]" style={{ color: TEXT_BODY }}>{overview}</p>
+            <span className="block text-6xl sm:text-7xl leading-[0.5] select-none mb-5 -ml-1" style={{ color: `${GOLD}30`, fontFamily: SERIF }}>&ldquo;</span>
+            <p className="text-lg sm:text-xl lg:text-2xl leading-[1.85] sm:leading-[1.95]" style={{ color: TEXT_BODY, fontFamily: SERIF }}>{overview}</p>
             <motion.div
               initial={{ width: 0, opacity: 0 }} whileInView={{ width: 'auto', opacity: 1 }}
               viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
@@ -641,7 +539,7 @@ export default function PagodaPage() {
           {/* Section number + label */}
           <motion.div {...fadeUp} className="mb-10 sm:mb-14">
             <div className="flex items-center gap-4">
-              <span className="text-7xl sm:text-8xl font-black leading-none font-heading" style={{ color: `${GOLD}25` }}>01</span>
+              <span className="text-7xl sm:text-8xl font-black leading-none" style={{ color: `${GOLD}25`, fontFamily: SERIF }}>01</span>
               <div>
                 <div className="w-10 h-[2px] mb-2" style={{ backgroundColor: GOLD }} />
                 <span className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: GOLD }}>The Procession</span>
@@ -652,17 +550,15 @@ export default function PagodaPage() {
           <div className="grid md:grid-cols-[1.15fr_1fr] gap-10 lg:gap-0 items-center">
             {/* Image with parallax + reveal */}
             <motion.div {...imageReveal} className="relative lg:-mr-10 z-10">
-              <div className="relative aspect-[4/5] rounded-2xl group" style={{ animation: 'glowPulse 5s ease-in-out infinite' }}>
+              <div className="relative aspect-[4/5] rounded-2xl group">
                 <ParallaxImage src={subs[0]?.image || FALLBACK_SUBS[0].image} alt={subs[0]?.title || ''} className="absolute inset-0 rounded-2xl" />
                 <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${GOLD}20` }} />
-                <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl" style={{ background: `linear-gradient(90deg, ${GOLD}, ${RED}, ${GOLD})` }} />
-                <div className="absolute bottom-3 right-4 text-2xl" style={{ animation: 'floatBoat 4s ease-in-out infinite' }}>⛵</div>
               </div>
             </motion.div>
 
             {/* Text content with stagger */}
             <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="lg:pl-16">
-              <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5 font-heading" style={{ color: WARM }}>
+              <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5" style={{ color: WARM, fontFamily: SERIF }}>
                 {subs[0]?.title || FALLBACK_SUBS[0].title}
               </motion.h2>
               <motion.div variants={staggerChild} className="flex items-center gap-2 mb-6">
@@ -705,7 +601,7 @@ export default function PagodaPage() {
             <motion.div initial={{ width: 0 }} whileInView={{ width: 80 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
               className="h-px" style={{ backgroundColor: `${GOLD}40` }} />
           </motion.div>
-          <motion.p variants={staggerChild} className="text-2xl sm:text-3xl lg:text-4xl leading-snug font-light italic font-heading" style={{ color: WARM }}>
+          <motion.p variants={staggerChild} className="text-2xl sm:text-3xl lg:text-4xl leading-snug font-light italic" style={{ color: WARM, fontFamily: SERIF }}>
             &ldquo;Where the river meets faith, the Pagoda sails — carrying the hopes and prayers of every Bocaueño across the sacred waters.&rdquo;
           </motion.p>
           <motion.p variants={staggerChild} className="mt-5 text-xs uppercase tracking-[0.3em]" style={{ color: GOLD }}>— Pagoda sa Bocaue Tradition</motion.p>
@@ -718,14 +614,9 @@ export default function PagodaPage() {
           SECTION 2 — Fire & Light (reversed layout)
       ═══════════════════════════════════════════════════════════ */}
       <section className="relative py-20 sm:py-28 lg:py-32" style={{ backgroundColor: BG_MUTED }}>
-        {/* Red glow accent */}
+        {/* Deep blue glow accent */}
         <div className="absolute bottom-0 left-0 w-[450px] h-[450px] pointer-events-none" style={{
           background: `radial-gradient(circle, ${RED}22 0%, transparent 70%)`,
-        }} />
-        {/* Teal counter-glow */}
-        <div className="absolute top-10 right-0 w-[400px] h-[400px] pointer-events-none" style={{
-          background: `radial-gradient(circle, ${TEAL}18 0%, transparent 70%)`,
-          animation: 'orbFloat2 20s ease-in-out infinite',
         }} />
 
         <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-16">
@@ -735,14 +626,14 @@ export default function PagodaPage() {
                 <div className="w-10 h-[2px] mb-2 ml-auto" style={{ backgroundColor: RED }} />
                 <span className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: RED }}>Fire & Light</span>
               </div>
-              <span className="text-7xl sm:text-8xl font-black leading-none font-heading" style={{ color: `${RED}30` }}>02</span>
+              <span className="text-7xl sm:text-8xl font-black leading-none" style={{ color: `${RED}30`, fontFamily: SERIF }}>02</span>
             </div>
           </motion.div>
 
           <div className="grid md:grid-cols-[1fr_1.15fr] gap-10 lg:gap-0 items-center">
             {/* Text with stagger */}
             <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="lg:pr-16 md:order-1">
-              <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5 font-heading" style={{ color: WARM }}>
+              <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5" style={{ color: WARM, fontFamily: SERIF }}>
                 {subs[1]?.title || FALLBACK_SUBS[1].title}
               </motion.h2>
               <motion.div variants={staggerChild} className="flex items-center gap-2 mb-6">
@@ -756,11 +647,9 @@ export default function PagodaPage() {
 
             {/* Image with reveal + parallax */}
             <motion.div {...imageReveal} className="relative lg:-ml-10 z-10 md:order-2">
-              <div className="relative aspect-[4/5] rounded-2xl group" style={{ animation: 'glowPulse 5s ease-in-out infinite' }}>
+              <div className="relative aspect-[4/5] rounded-2xl group">
                 <ParallaxImage src={subs[1]?.image || FALLBACK_SUBS[1].image} alt={subs[1]?.title || ''} className="absolute inset-0 rounded-2xl" />
                 <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${RED}20` }} />
-                <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl" style={{ background: `linear-gradient(90deg, ${RED}, ${GOLD}, ${RED})` }} />
-                <div className="absolute top-4 right-5 text-xl" style={{ animation: 'candleFlicker 2s ease-in-out infinite' }}>🎆</div>
               </div>
             </motion.div>
           </div>
@@ -770,96 +659,174 @@ export default function PagodaPage() {
       <WaveDivider colorTop={BG_MUTED} colorBottom={BG} />
 
       {/* ═══════════════════════════════════════════════════════════
-          GALLERY — "Floating on the River" Masonry with Lightbox
+          GALLERY — Immersive image mosaic
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative py-20 sm:py-28 lg:py-32 overflow-hidden">
-        {/* Water caustic light overlay */}
-        <div className="absolute inset-0 pointer-events-none z-0" aria-hidden style={{
-          backgroundImage: `radial-gradient(ellipse at 20% 50%, ${TEAL}08 0%, transparent 50%), radial-gradient(ellipse at 80% 30%, ${GOLD}06 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, ${TEAL}05 0%, transparent 40%)`,
-          backgroundSize: '200% 200%',
-          animation: 'waterCaustic 12s ease-in-out infinite',
-        }} />
-
-        {/* Subtle horizontal water ripple lines */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden>
-          {[20, 40, 60, 80].map((top) => (
-            <div key={top} className="absolute left-0 right-0 h-px" style={{
-              top: `${top}%`,
-              background: `linear-gradient(90deg, transparent 0%, ${TEAL}10 30%, ${TEAL}18 50%, ${TEAL}10 70%, transparent 100%)`,
-              animation: `riverShimmer ${8 + top * 0.1}s ease-in-out infinite alternate`,
-            }} />
-          ))}
-        </div>
-
-        {/* Section header */}
-        <motion.div {...fadeUp} className="relative z-10 text-center mb-12 sm:mb-16 px-6">
+      <section className="py-20 sm:py-28 lg:py-32 overflow-hidden">
+        <motion.div {...fadeUp} className="text-center mb-12 sm:mb-16 px-6">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="h-px w-10" style={{ backgroundColor: `${GOLD}40` }} />
             <span className="text-[10px] uppercase tracking-[0.4em] font-bold" style={{ color: GOLD }}>Gallery</span>
             <div className="h-px w-10" style={{ backgroundColor: `${GOLD}40` }} />
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading" style={{ color: WARM }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold" style={{ color: WARM, fontFamily: SERIF }}>
             Moments on the River
           </h2>
-          <p className="text-sm mt-3 max-w-md mx-auto" style={{ color: TEXT_DIM }}>
-            Tap any image to explore the festival up close
-          </p>
         </motion.div>
 
-        {/* Masonry grid */}
-        <div className="relative z-10 mx-auto max-w-6xl px-6 sm:px-10 lg:px-16">
-          <div className="columns-2 md:columns-3 gap-4 sm:gap-5">
-            {gallery.map((src, i) => {
-              /* Vary aspect ratios for masonry feel */
-              const aspects = ['aspect-[3/4]', 'aspect-[4/5]', 'aspect-[3/4]', 'aspect-[5/6]', 'aspect-[4/5]', 'aspect-[3/4]']
-              const bobDelays = [0, 0.8, 1.6, 0.4, 1.2, 2.0]
+        {/* Auto-scrolling filmstrip */}
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="relative">
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 z-10 pointer-events-none" style={{ background: `linear-gradient(to right, ${BG}, transparent)` }} />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 z-10 pointer-events-none" style={{ background: `linear-gradient(to left, ${BG}, transparent)` }} />
+
+          <div ref={galleryScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto px-8 sm:px-16 pb-4" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            {/* Render two copies of gallery for seamless infinite loop */}
+            {[...gallery, ...gallery].map((src, idx) => {
+              const i = idx % gallery.length
+              const widths  = ["w-[300px]", "w-[220px]", "w-[340px]", "w-[260px]", "w-[380px]", "w-[240px]"]
+              const heights = ["h-[380px]", "h-[320px]", "h-[360px]", "h-[400px]", "h-[320px]", "h-[370px]"]
+              const offsets = ["mt-0", "mt-12", "mt-3", "mt-10", "mt-5", "mt-14"]
+              const rotations = [-2, 1.5, -1, 2, -1.5, 1]
+              const detail = GALLERY_DETAILS[i % GALLERY_DETAILS.length]
               return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.7, delay: i * 0.1, ease: EASE }}
-                  className="mb-4 sm:mb-5 break-inside-avoid"
-                  style={{ animation: `gentleBob ${3 + (i % 3) * 0.8}s ${bobDelays[i]}s ease-in-out infinite` }}
+                <motion.div key={`gallery-${idx}`}
+                  initial={{ opacity: 0, y: 80, rotate: rotations[i] * 2 }}
+                  whileInView={{ opacity: 1, y: 0, rotate: rotations[i] }}
+                  whileHover={{ rotate: 0, scale: 1.04, y: -8, zIndex: 20 }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.8, delay: (idx < gallery.length ? i * 0.12 : 0), ease: EASE }}
+                  className={`relative ${widths[i]} ${heights[i]} ${offsets[i]} shrink-0 overflow-hidden rounded-2xl group cursor-pointer`}
+                  style={{ transformStyle: 'preserve-3d' }}
+                  onClick={() => setGalleryDetail(i)}
+                  role="button"
+                  tabIndex={idx < gallery.length ? 0 : -1}
+                  aria-label={`View details: ${detail.title}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setGalleryDetail(i) } }}
                 >
-                  <button
-                    onClick={() => openLightbox(i)}
-                    className={`relative ${aspects[i % aspects.length]} w-full overflow-hidden rounded-xl group cursor-pointer block border-0 bg-transparent p-0`}
-                    aria-label={`View festival photo ${i + 1}`}
-                  >
-                    <Image
-                      src={src}
-                      alt={`Pagoda Festival moment ${i + 1}`}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                    />
-
-                    {/* Water reflection at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 h-[30%] pointer-events-none" style={{
-                      background: `linear-gradient(to bottom, transparent, ${TEAL}12)`,
-                    }} />
-
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"
-                      style={{ background: `linear-gradient(to top, ${BG}dd, ${BG}44 40%, transparent 70%)` }} />
-
-                    {/* Hover border glow */}
-                    <div className="absolute inset-0 rounded-xl border-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ borderColor: `${GOLD}50`, boxShadow: `inset 0 0 20px ${TEAL}15, 0 0 15px ${TEAL}10` }} />
-
-                    {/* Hover caption */}
-                    <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: GOLD }}>View Photo</p>
-                    </div>
-                  </button>
+                  <Image src={src} alt={detail.title} fill sizes="380px"
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-105" />
+                  <div className="absolute inset-0 rounded-2xl border transition-all duration-500"
+                    style={{ borderColor: `${GOLD}15` }} />
+                  {/* Hover label with detail title */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 rounded-b-2xl backdrop-blur-md"
+                    style={{ background: `${BG}99` }}>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: GOLD }}>{detail.category}</p>
+                    <p className="text-sm font-bold leading-snug" style={{ color: WARM }}>{detail.title}</p>
+                  </div>
+                  {/* Glow border on hover */}
+                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                    style={{ boxShadow: `inset 0 0 25px ${GOLD}15, 0 0 15px ${GOLD}10` }} />
                 </motion.div>
               )
             })}
           </div>
-        </div>
+        </motion.div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          GALLERY DETAIL MODAL — Image details on click
+      ═══════════════════════════════════════════════════════════ */}
+      {galleryDetail !== null && (() => {
+        const detail = GALLERY_DETAILS[galleryDetail % GALLERY_DETAILS.length]
+        return (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-10"
+            role="dialog"
+            aria-modal="true"
+            aria-label={detail.title}
+          >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+              onClick={() => setGalleryDetail(null)}
+            />
+
+            {/* Close button */}
+            <button
+              onClick={() => setGalleryDetail(null)}
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+              style={{ backgroundColor: `${BG_CARD}cc`, color: WARM }}
+              aria-label="Close"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
+
+            {/* Prev / Next arrows */}
+            <button
+              onClick={() => setGalleryDetail((galleryDetail - 1 + gallery.length) % gallery.length)}
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+              style={{ backgroundColor: `${BG_CARD}cc`, color: WARM }}
+              aria-label="Previous image"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <button
+              onClick={() => setGalleryDetail((galleryDetail + 1) % gallery.length)}
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+              style={{ backgroundColor: `${BG_CARD}cc`, color: WARM }}
+              aria-label="Next image"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+
+            {/* Modal content */}
+            <motion.div
+              key={galleryDetail}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 w-full max-w-5xl rounded-2xl lg:rounded-3xl overflow-hidden flex flex-col lg:flex-row"
+              style={{ backgroundColor: BG_CARD, boxShadow: `0 30px 80px rgba(0,0,0,0.5)` }}
+            >
+              {/* Image side */}
+              <div className="relative w-full lg:w-[55%] aspect-[4/3] lg:aspect-auto lg:min-h-[450px] shrink-0">
+                <Image
+                  src={gallery[galleryDetail]}
+                  alt={detail.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 55vw"
+                  className="object-cover"
+                />
+                {/* Category badge */}
+                <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm"
+                  style={{ backgroundColor: `${BG}88`, color: GOLD }}>
+                  {detail.category}
+                </div>
+              </div>
+
+              {/* Info side */}
+              <div className="flex-1 p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
+                {/* Counter */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1" style={{ backgroundColor: `${GOLD}20` }} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: TEXT_DIM }}>
+                    {galleryDetail + 1} / {gallery.length}
+                  </span>
+                  <div className="h-px flex-1" style={{ backgroundColor: `${GOLD}20` }} />
+                </div>
+
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight mb-4" style={{ color: WARM, fontFamily: SERIF }}>
+                  {detail.title}
+                </h3>
+
+                <div className="w-12 h-[2px] rounded-full mb-5" style={{ background: `linear-gradient(90deg, ${GOLD}, ${TEAL})` }} />
+
+                <p className="text-sm sm:text-[15px] leading-[1.9]" style={{ color: TEXT_BODY }}>
+                  {detail.description}
+                </p>
+
+                {/* Bottom tag */}
+                <div className="mt-6 pt-5 border-t flex items-center gap-3" style={{ borderColor: `${GOLD}15` }}>
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GOLD }} />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: GOLD }}>Pagoda sa Bocaue Festival</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )
+      })()}
 
       <WaveDivider colorTop={BG} colorBottom={BG_CARD} />
 
@@ -875,7 +842,7 @@ export default function PagodaPage() {
           <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-16">
             <motion.div {...fadeUp} className="mb-10 sm:mb-14">
               <div className="flex items-center gap-4">
-                <span className="text-7xl sm:text-8xl font-black leading-none font-heading" style={{ color: `${TEAL}25` }}>03</span>
+                <span className="text-7xl sm:text-8xl font-black leading-none" style={{ color: `${TEAL}25`, fontFamily: SERIF }}>03</span>
                 <div>
                   <div className="w-10 h-[2px] mb-2" style={{ backgroundColor: TEAL }} />
                   <span className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: TEAL }}>Heritage</span>
@@ -885,15 +852,14 @@ export default function PagodaPage() {
 
             <div className="grid md:grid-cols-[1.15fr_1fr] gap-10 lg:gap-0 items-center">
               <motion.div {...imageReveal} className="relative lg:-mr-10 z-10">
-                <div className="relative aspect-[4/5] rounded-2xl group" style={{ animation: 'glowPulse 5s ease-in-out infinite' }}>
+                <div className="relative aspect-[4/5] rounded-2xl group">
                   <ParallaxImage src={subs[2].image} alt={subs[2].title} className="absolute inset-0 rounded-2xl" />
                   <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${TEAL}20` }} />
-                  <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl" style={{ background: `linear-gradient(90deg, ${TEAL}, ${GOLD}, ${TEAL})` }} />
                 </div>
               </motion.div>
 
               <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="lg:pl-16">
-                <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5 font-heading" style={{ color: WARM }}>
+                <motion.h2 variants={staggerChild} className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5" style={{ color: WARM, fontFamily: SERIF }}>
                   {subs[2].title}
                 </motion.h2>
                 <motion.div variants={staggerChild} className="flex items-center gap-2 mb-6">
@@ -936,7 +902,7 @@ export default function PagodaPage() {
             <div className="h-px w-8" style={{ backgroundColor: `${GOLD}30` }} />
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 font-heading" style={{ color: WARM }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6" style={{ color: WARM, fontFamily: SERIF }}>
             Experience the Pagoda
           </h2>
           <p className="text-base sm:text-lg leading-relaxed mb-10" style={{ color: TEXT_BODY }}>
@@ -951,7 +917,7 @@ export default function PagodaPage() {
           >
             <motion.div variants={staggerChild}>
               <Link href="/inquire"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-300 hover:scale-110 hover:shadow-xl"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222,30%,8%)] cursor-pointer"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, ${RED})`, color: BG, boxShadow: `0 4px 20px ${GOLD}30` }}>
                 Plan Your Visit
                 <span className="text-xs">→</span>
@@ -959,7 +925,7 @@ export default function PagodaPage() {
             </motion.div>
             <motion.div variants={staggerChild}>
               <Link href="/events"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold uppercase tracking-wider border transition-all duration-300 hover:scale-110 hover:shadow-xl"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold uppercase tracking-wider border transition-all duration-200 hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222,30%,8%)] cursor-pointer"
                 style={{ color: GOLD, borderColor: `${GOLD}40`, backgroundColor: `${GOLD}08` }}>
                 View Events
               </Link>
@@ -974,108 +940,6 @@ export default function PagodaPage() {
           </div>
         </motion.div>
       </section>
-
-      {/* ═══════════════════════════════════════════════════════════
-          LIGHTBOX — Full-screen image viewer with river backdrop
-      ═══════════════════════════════════════════════════════════ */}
-      {lightboxIndex !== null && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          onClick={closeLightbox}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0" style={{ backgroundColor: `${BG}f5`, backdropFilter: 'blur(10px)' }} />
-
-          {/* Water shimmer in lightbox bg */}
-          <div className="absolute inset-0 pointer-events-none" aria-hidden style={{
-            backgroundImage: `radial-gradient(ellipse at 30% 70%, ${TEAL}08 0%, transparent 50%), radial-gradient(ellipse at 70% 30%, ${GOLD}06 0%, transparent 50%)`,
-            backgroundSize: '200% 200%',
-            animation: 'waterCaustic 10s ease-in-out infinite',
-          }} />
-
-          {/* Close button */}
-          <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[110] flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${BG}cc`, borderColor: `${GOLD}40` }}
-            aria-label="Close gallery"
-          >
-            <X className="h-5 w-5" style={{ color: WARM }} />
-          </button>
-
-          {/* Counter */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 z-[110] text-xs font-semibold tracking-wider" style={{ color: TEXT_DIM }}>
-            {lightboxIndex + 1} / {gallery.length}
-          </div>
-
-          {/* Prev arrow */}
-          <button
-            onClick={(e) => { e.stopPropagation(); lightboxPrev() }}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-[110] flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${BG}cc`, borderColor: `${GOLD}30` }}
-            aria-label="Previous photo"
-          >
-            <ChevronLeft className="h-6 w-6" style={{ color: GOLD }} />
-          </button>
-
-          {/* Next arrow */}
-          <button
-            onClick={(e) => { e.stopPropagation(); lightboxNext() }}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-[110] flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${BG}cc`, borderColor: `${GOLD}30` }}
-            aria-label="Next photo"
-          >
-            <ChevronRight className="h-6 w-6" style={{ color: GOLD }} />
-          </button>
-
-          {/* Main image */}
-          <motion.div
-            key={lightboxIndex}
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-[105] w-[90vw] h-[75vh] sm:w-[80vw] sm:h-[80vh] max-w-5xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={gallery[lightboxIndex]}
-              alt={`Pagoda Festival photo ${lightboxIndex + 1}`}
-              fill
-              sizes="90vw"
-              className="object-contain"
-              priority
-            />
-            {/* Reflection under the image */}
-            <div className="absolute -bottom-8 left-[10%] right-[10%] h-8 rounded-b-xl overflow-hidden pointer-events-none" style={{ opacity: 0.15 }}>
-              <div className="w-full h-full" style={{
-                background: `linear-gradient(to bottom, ${TEAL}30, transparent)`,
-                filter: 'blur(4px)',
-              }} />
-            </div>
-          </motion.div>
-
-          {/* Thumbnail strip at bottom */}
-          <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-2">
-            {gallery.map((src, i) => (
-              <button
-                key={i}
-                onClick={(e) => { e.stopPropagation(); setLightboxIndex(i) }}
-                className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden transition-all duration-200 border-2 ${
-                  i === lightboxIndex ? 'scale-110' : 'opacity-50 hover:opacity-80'
-                }`}
-                style={{ borderColor: i === lightboxIndex ? GOLD : 'transparent' }}
-                aria-label={`View photo ${i + 1}`}
-              >
-                <Image src={src} alt="" fill sizes="56px" className="object-cover" />
-              </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
     </main>
   )
 }
