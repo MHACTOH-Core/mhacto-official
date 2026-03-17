@@ -31,14 +31,14 @@ const categoryColor: Record<string, string> = {
 }
 
 const navSections = [
-  { id: "timeline", label: "Timeline" },
   { id: "notable-figures", label: "Notable Figures" },
+  { id: "timeline", label: "Timeline" },
 ]
 
 
 
 export default function HistoryPage() {
-  const [activeSection, setActiveSection] = useState("timeline")
+  const [activeSection, setActiveSection] = useState("notable-figures")
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
   const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
@@ -58,7 +58,7 @@ export default function HistoryPage() {
         const el = document.getElementById(s.id)
         if (el && el.getBoundingClientRect().top <= 120) { setActiveSection(s.id); return }
       }
-      setActiveSection("timeline")
+      setActiveSection("notable-figures")
     }
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
@@ -83,7 +83,7 @@ export default function HistoryPage() {
       />
 
             {/* Sticky nav */}
-        <div className="sticky top-[57px] lg:top-[78px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="sticky top-[57px] lg:top-[67px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             <div className="flex gap-1 overflow-x-auto py-1">
               {navSections.map((s) => (
@@ -103,59 +103,8 @@ export default function HistoryPage() {
           </div>
         </div>
 
-      {/* ── Timeline ── */}
-      <section id="timeline" className="py-12 sm:py-16 lg:py-20 border-b border-border">
-        <div className="mx-auto max-w-4xl px-4 lg:px-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Clock className="h-5 w-5 text-primary" /></div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Timeline of Events</h2>
-              <p className="text-muted-foreground">From pre-colonial roots to the present day</p>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
-            <div className="space-y-6">
-              {timelineEvents.map((event) => (
-                <div key={event.year} className="relative pl-12">
-                  <div className={`absolute left-0 top-1.5 h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-black shadow-sm ${eraColor[event.era] ?? "bg-primary"}`}>
-                    <Calendar className="h-4 w-4" />
-                  </div>
-                  <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-md transition-all">
-                    <CardContent className="p-5">
-                      <div className="flex flex-wrap items-start gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs font-bold">{event.year}</Badge>
-                        <Badge variant="outline" className={`text-xs ${eraColor[event.era] ? eraColor[event.era].replace("bg-", "bg-") + " text-white border-0" : ""}`}>{event.era}</Badge>
-                        {event.significance === "major" && <Badge className="text-xs bg-red-500 text-white border-0"><Shield className="h-2.5 w-2.5 mr-1" /> Major Event</Badge>}
-                      </div>
-                      <h3 className="text-base font-black text-foreground mb-1">{event.title}</h3>
-                      {event.author && <p className="text-xs text-muted-foreground/70 mb-1">By {event.author}</p>}
-                      <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
-                      {event.image && (
-                        <div className="relative h-40 rounded-lg overflow-hidden mb-3">
-                          <Image src={event.image} alt={event.title} fill className="object-cover" />
-                        </div>
-                      )}
-                      <button
-                        onClick={() => setExpandedId(expandedId === event.year ? null : event.year)}
-                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                      >
-                        {expandedId === event.year ? <><ChevronUp className="h-3.5 w-3.5" /> Hide details</> : <><ChevronDown className="h-3.5 w-3.5" /> Read more</>}
-                      </button>
-                      {expandedId === event.year && (
-                        <p className="mt-3 text-sm text-foreground leading-relaxed border-t border-border pt-3">{event.details}</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Notable Figures ── */}
-      <section id="notable-figures" className="py-12 sm:py-16 lg:py-20">
+      <section id="notable-figures" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
@@ -203,6 +152,57 @@ export default function HistoryPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Timeline ── */}
+      <section id="timeline" className="py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-4xl px-4 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Clock className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Timeline of Events</h2>
+              <p className="text-muted-foreground">From pre-colonial roots to the present day</p>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
+            <div className="space-y-6">
+              {timelineEvents.map((event) => (
+                <div key={event.year} className="relative pl-12">
+                  <div className={`absolute left-0 top-1.5 h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-black shadow-sm ${eraColor[event.era] ?? "bg-primary"}`}>
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-md transition-all">
+                    <CardContent className="p-5">
+                      <div className="flex flex-wrap items-start gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs font-bold">{event.year}</Badge>
+                        <Badge variant="outline" className={`text-xs ${eraColor[event.era] ? eraColor[event.era].replace("bg-", "bg-") + " text-white border-0" : ""}`}>{event.era}</Badge>
+                        {event.significance === "major" && <Badge className="text-xs bg-red-500 text-white border-0"><Shield className="h-2.5 w-2.5 mr-1" /> Major Event</Badge>}
+                      </div>
+                      <h3 className="text-base font-black text-foreground mb-1">{event.title}</h3>
+                      {event.author && <p className="text-xs text-muted-foreground/70 mb-1">By {event.author}</p>}
+                      <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+                      {event.image && (
+                        <div className="relative h-40 rounded-lg overflow-hidden mb-3">
+                          <Image src={event.image} alt={event.title} fill className="object-cover" />
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setExpandedId(expandedId === event.year ? null : event.year)}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        {expandedId === event.year ? <><ChevronUp className="h-3.5 w-3.5" /> Hide details</> : <><ChevronDown className="h-3.5 w-3.5" /> Read more</>}
+                      </button>
+                      {expandedId === event.year && (
+                        <p className="mt-3 text-sm text-foreground leading-relaxed border-t border-border pt-3">{event.details}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

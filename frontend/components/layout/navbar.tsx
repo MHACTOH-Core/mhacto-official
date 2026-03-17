@@ -49,8 +49,8 @@ const navLinks: NavItem[] = [
         label: "History",
         href: "/history",
         children: [
-          { label: "Timeline of Events", href: "/history/timeline", isHash: false },
           { label: "Notable Persons", href: "/history/notable-persons", isHash: false },
+          { label: "Timeline of Events", href: "/history/timeline", isHash: false },
         ],
       },
       {
