@@ -90,7 +90,19 @@ function _media_upload(): void
 
     foreach ($files as $file) {
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors[] = "File {$file['name']}: upload error code {$file['error']}";
+            $reason = match ($file['error']) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE
+                    => 'The file is too large. Images must be under 10 MB and videos under 200 MB.',
+                UPLOAD_ERR_PARTIAL
+                    => 'The upload was interrupted. Please check your connection and try again.',
+                UPLOAD_ERR_NO_FILE
+                    => 'No file was selected. Please choose a file and try again.',
+                UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE
+                    => 'Server storage issue. Please contact the administrator.',
+                default
+                    => 'An unexpected error occurred. Please try again.',
+            };
+            $errors[] = "\"{$file['name']}\" — {$reason}";
             continue;
         }
 
@@ -99,14 +111,16 @@ function _media_upload(): void
         $isImage = in_array($mime, $allowedImageTypes);
 
         if (!$isVideo && !$isImage) {
-            $errors[] = "File {$file['name']}: unsupported file type ({$mime})";
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $errors[] = "\"{$file['name']}\" — This file type (.{$ext}) is not supported. Please use JPG, PNG, GIF, WebP, or SVG for images, and MP4, WebM, or OGG for videos.";
             continue;
         }
 
         $maxSize = $isVideo ? $maxVideoSize : $maxImageSize;
         if ($file['size'] > $maxSize) {
-            $maxMB = $maxSize / (1024 * 1024);
-            $errors[] = "File {$file['name']}: exceeds {$maxMB}MB limit";
+            $maxMB = (int)($maxSize / (1024 * 1024));
+            $fileMB = round($file['size'] / (1024 * 1024), 1);
+            $errors[] = "\"{$file['name']}\" — This file is too large ({$fileMB} MB). The maximum allowed size is {$maxMB} MB. Try compressing or resizing it before uploading.";
             continue;
         }
 
@@ -135,7 +149,7 @@ function _media_upload(): void
                 'type' => $isVideo ? 'video' : 'image',
             ];
         } else {
-            $errors[] = "File {$file['name']}: failed to move uploaded file";
+            $errors[] = "\"{$file['name']}\" — Could not save the file. Please try again or contact the administrator.";
         }
     }
 
@@ -185,6 +199,8 @@ function _media_scanDir(string $dir, string $urlPrefix, array $extensions): arra
         RecursiveIteratorIterator::SELF_FIRST
     );
 
+    $videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
+
     foreach ($iterator as $file) {
         if ($file->isFile()) {
             $ext = strtolower($file->getExtension());
@@ -196,6 +212,8 @@ function _media_scanDir(string $dir, string $urlPrefix, array $extensions): arra
                     'url'       => $urlPrefix . $relativePath,
                     'size'      => $file->getSize(),
                     'modified'  => date('Y-m-d H:i:s', $file->getMTime()),
+                    'extension' => $ext,
+                    'type'      => in_array($ext, $videoExts) ? 'video' : 'image',
                 ];
             }
         }

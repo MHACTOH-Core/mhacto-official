@@ -10,7 +10,7 @@
  */
 
 import type { CMSPost } from "@/lib/data/admin-data"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import type { HeritageSite, Museum, ReligiousSite, TourPackage } from "@/lib/data/destinations-data"
 import type { CuisineItem, Festival, CulturalPractice, Artisan, PeopleWonder, LocalBusiness, Restaurant } from "@/lib/data/culture-data"
 import type { TimelineEvent, NotablePerson } from "@/lib/data/history-data"
@@ -20,8 +20,7 @@ import type { SchoolEntry, College, PublicSchool, Hospital, Barangay } from "@/l
 
 function resolveImage(post: CMSPost, fallback = "/images/heroes/hero-bocaue.jpg"): string {
   const img = post.image?.[0] ?? ""
-  if (!img) return asset(fallback)
-  return img.startsWith("/images") ? asset(img) : img
+  return resolveMediaUrl(img || null, fallback)
 }
 
 // ─── Destinations mappers ─────────────────────────────────────────
@@ -43,7 +42,7 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
     story: post.story ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
-    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     location: post.location ?? "",
     hours: post.hours ?? "",
     isProtected: post.isFeatured ?? false,
@@ -68,7 +67,7 @@ export function cmsToMuseum(post: CMSPost): Museum {
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
-    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
@@ -85,7 +84,7 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
-    gallery: (post.image ?? []).map((img) => img.startsWith("/images") ? asset(img) : img).filter(Boolean),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     author: post.author ?? undefined,
   }
 }
@@ -133,6 +132,7 @@ export function cmsToCuisineItem(post: CMSPost): CuisineItem {
     description: post.body ?? "",
     story: post.story ?? "",
     image: resolveImage(post, "/images/places/Food.jpg"),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     where: post.location ? [post.location] : [],
     bestTime: post.hours ?? undefined,
     isFeatured: post.isFeatured ?? false,

@@ -153,6 +153,7 @@ export default function LocalCuisinePage() {
   // Featured items for carousel (fall back to all if none marked)
   const featuredItems = localCuisine.filter((c) => c.isFeatured)
   const carouselItems = featuredItems.length > 0 ? featuredItems : localCuisine
+  const canLoop = carouselItems.length >= 3
   const currentCarouselItem = carouselItems[featuredIndex] ?? carouselItems[0]
   const rest = filtered.filter((c) => c.id !== currentCarouselItem?.id)
 
@@ -166,10 +167,16 @@ export default function LocalCuisinePage() {
 
   // Auto-play
   useEffect(() => {
-    if (!carouselApi || !isPlaying) return
-    const id = setInterval(() => carouselApi.scrollNext(), 5000)
+    if (!carouselApi || !isPlaying || carouselItems.length <= 1) return
+    const id = setInterval(() => {
+      if (canLoop || carouselApi.canScrollNext()) {
+        carouselApi.scrollNext()
+      } else {
+        carouselApi.scrollTo(0)
+      }
+    }, 5000)
     return () => clearInterval(id)
-  }, [carouselApi, isPlaying])
+  }, [carouselApi, isPlaying, canLoop, carouselItems.length])
 
   const pauseAutoPlay = useCallback(() => {
     setIsPlaying(false)
@@ -185,8 +192,26 @@ export default function LocalCuisinePage() {
       .catch(() => {})
   }, [])
 
-  const handlePrev = () => { pauseAutoPlay(); carouselApi?.scrollPrev() }
-  const handleNext = () => { pauseAutoPlay(); carouselApi?.scrollNext() }
+  const handlePrev = () => {
+    pauseAutoPlay()
+    if (carouselApi) {
+      if (canLoop || carouselApi.canScrollPrev()) {
+        carouselApi.scrollPrev()
+      } else {
+        carouselApi.scrollTo(carouselItems.length - 1)
+      }
+    }
+  }
+  const handleNext = () => {
+    pauseAutoPlay()
+    if (carouselApi) {
+      if (canLoop || carouselApi.canScrollNext()) {
+        carouselApi.scrollNext()
+      } else {
+        carouselApi.scrollTo(0)
+      }
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -223,8 +248,8 @@ export default function LocalCuisinePage() {
         </div>
       </section>
 
-      {/* ── Featured spotlight ── */}
-      {activeType === "all" && (
+      {/* ── Featured spotlight — roundabout carousel ── */}
+      {activeType === "all" && carouselItems.length > 0 && (
         <section className="py-14 sm:py-20 bg-muted/30">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             {/* Section heading */}
@@ -241,7 +266,7 @@ export default function LocalCuisinePage() {
             <div className="relative px-8 sm:px-12" onMouseEnter={pauseAutoPlay} onTouchStart={pauseAutoPlay}>
               <Carousel
                 setApi={setCarouselApi}
-                opts={{ loop: true, align: "center" }}
+                opts={{ loop: canLoop, align: "center" }}
                 className="w-full"
               >
                 <CarouselContent className="items-stretch">
@@ -250,106 +275,101 @@ export default function LocalCuisinePage() {
                     return (
                       <CarouselItem
                         key={item.id}
-                        className="basis-[92%] sm:basis-4/5 md:basis-[68%] lg:basis-[60%]"
+                        className="basis-[85%] sm:basis-3/4 md:basis-[60%] lg:basis-[50%]"
                       >
-                        <div
-                          className="transition-all duration-500 ease-out h-full"
-                          style={{
-                            transform: isActive ? "scale(1)" : "scale(0.9)",
-                            opacity: isActive ? 1 : 0.4,
-                            pointerEvents: isActive ? "auto" : "none",
-                          }}
-                        >
-                          <div className="overflow-hidden rounded-2xl bg-card border border-border shadow-xl h-full flex flex-col">
-                            {/* Cinematic image */}
-                            <GalleryImage
-                              src={item.image}
-                              alt={item.name}
-                              outerClassName="shrink-0"
-                              className="relative h-56 sm:h-72 md:h-80 overflow-hidden"
-                              imageClassName="object-cover transition-transform duration-700 group-hover:scale-105"
-                              sizes="(max-width:640px) 92vw, (max-width:1024px) 68vw, 60vw"
-                            >
-                              {/* Dark gradient from bottom */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                        <Link href={`/culture/local-cuisine/${item.id}`} className="block h-full">
+                          <div
+                            className="transition-all duration-500 ease-out h-full"
+                            style={{
+                              transform: isActive ? "scale(1)" : "scale(0.92)",
+                              opacity: isActive ? 1 : 0.5,
+                            }}
+                          >
+                            <Card className="overflow-hidden border-border shadow-xl h-full flex flex-col group cursor-pointer hover:shadow-2xl transition-shadow duration-300">
+                              {/* Image */}
+                              <GalleryImage
+                                src={item.image}
+                                alt={item.name}
+                                outerClassName="shrink-0"
+                                className="relative h-52 sm:h-64 md:h-72 overflow-hidden"
+                                imageClassName="object-cover transition-transform duration-700 group-hover:scale-105"
+                                sizes="(max-width:640px) 85vw, (max-width:1024px) 60vw, 50vw"
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                              {/* Badge top-left */}
-                              <div className="absolute top-4 left-4">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${typeBadge[item.type]}`}>
-                                  {typeIcon[item.type]}
-                                  {typeLabels[item.type]}
-                                </span>
-                              </div>
+                                {/* Badge top-left */}
+                                <div className="absolute top-3 left-3">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${typeBadge[item.type]}`}>
+                                    {typeIcon[item.type]}
+                                    {typeLabels[item.type]}
+                                  </span>
+                                </div>
 
-                              {/* Title overlaid on image bottom */}
-                              <div className="absolute bottom-0 left-0 right-0 p-5">
-                                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
-                                  {item.name}
-                                </h2>
-                                {item.tagalogName && item.tagalogName !== item.name && (
-                                  <p className="text-xs text-white/70 italic mt-0.5">{item.tagalogName}</p>
-                                )}
-                              </div>
-                            </GalleryImage>
+                                {/* Title on image */}
+                                <div className="absolute bottom-0 left-0 right-0 p-4">
+                                  <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight drop-shadow-md">
+                                    {item.name}
+                                  </h3>
+                                  {item.tagalogName && item.tagalogName !== item.name && (
+                                    <p className="text-xs text-white/70 italic mt-0.5">{item.tagalogName}</p>
+                                  )}
+                                </div>
+                              </GalleryImage>
 
-                            {/* Detail panel */}
-                            <div className="flex flex-col flex-1 p-5 sm:p-6">
-                              <p className="text-sm text-muted-foreground leading-relaxed mb-5 line-clamp-2">
-                                {item.description}
-                              </p>
-
-                              {/* Info pills row */}
-                              <div className="grid grid-cols-2 gap-2.5 mb-5">
-                                {[
-                                  { icon: <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Where to find", val: item.where[0] },
-                                  { icon: <Clock className="h-3.5 w-3.5 text-primary shrink-0" />, label: "Best time", val: item.bestTime ?? "Year-round" },
-                                ].map((row) => (
-                                  <div key={row.label} className="flex items-center gap-2.5 rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
-                                    {row.icon}
-                                    <div className="min-w-0">
-                                      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                                        {row.label}
-                                      </p>
-                                      <p className="text-xs font-semibold text-foreground truncate">{row.val}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Story teaser */}
-                              <div className="mt-auto rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/40 p-4">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1.5">
-                                  The Story
+                              {/* Content */}
+                              <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-4">
+                                  {item.description}
                                 </p>
-                                <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">{item.story}</p>
-                              </div>
-                            </div>
+
+                                {/* Where & time */}
+                                <div className="mt-auto border-t border-border pt-3 space-y-1.5">
+                                  {item.where.length > 0 && (
+                                    <div className="flex items-center gap-2 text-xs text-foreground">
+                                      <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                                      {item.where[0]}
+                                    </div>
+                                  )}
+                                  {item.bestTime && (
+                                    <div className="flex items-center gap-2 text-xs text-foreground">
+                                      <Clock className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                                      {item.bestTime}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
                           </div>
-                        </div>
+                        </Link>
                       </CarouselItem>
                     )
                   })}
                 </CarouselContent>
               </Carousel>
 
-              {/* Side arrows */}
-              <button
-                onClick={handlePrev}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
-                aria-label="Previous delicacy"
-              >
-                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
-                aria-label="Next delicacy"
-              >
-                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
-              </button>
+              {/* Side arrows — only when more than 1 item */}
+              {carouselItems.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
+                    aria-label="Previous delicacy"
+                  >
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-muted hover:shadow-lg transition-all"
+                    aria-label="Next delicacy"
+                  >
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
+                  </button>
+                </>
+              )}
             </div>
 
-            {/* Dots + counter */}
+            {/* Dots + counter — only when more than 1 item */}
+            {carouselItems.length > 1 && (
             <div className="mt-7 flex items-center justify-center gap-3">
               <div className="flex items-center gap-1.5">
                 {carouselItems.map((_, i) => (
@@ -369,6 +389,7 @@ export default function LocalCuisinePage() {
                 {featuredIndex + 1} / {carouselItems.length}
               </span>
             </div>
+            )}
           </div>
         </section>
       )}
@@ -382,7 +403,7 @@ export default function LocalCuisinePage() {
                 {activeType === "all" ? "All Local Delicacies" : typeLabels[activeType as CuisineItem["type"]]}
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {filtered.length} dish{filtered.length !== 1 ? "es" : ""} — click &quot;The Story&quot; to learn more
+                {filtered.length} dish{filtered.length !== 1 ? "es" : ""} — click a dish to learn more
               </p>
             </div>
           </div>

@@ -2,7 +2,7 @@
 // database.php - PDO connection script for MariaDB
 
 class Database {
-    private $host = 'localhost';
+    private $host = '127.0.0.1';
     private $db   = 'mhacto_db'; // Change to your database name
     private $user = 'mhacto_admin';      // Change to your database user
     private $pass = 'mhactoAdmin';  // Change to your database password

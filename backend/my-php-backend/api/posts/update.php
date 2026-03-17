@@ -81,6 +81,9 @@ function mapFrontendToDb(array $data, PDO $pdo): array {
     // newsDate → news_date
     if (isset($data['newsDate'])) $mapped['news_date'] = $data['newsDate'];
 
+    // author (stored directly in content table)
+    if (isset($data['author'])) $mapped['author'] = $data['author'];
+
     // contentCategory → category_id (lookup)
     if (isset($data['contentCategory'])) {
         $catMap = [

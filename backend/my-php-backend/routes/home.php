@@ -9,6 +9,7 @@
  *   /api/home/landmarks       GET / POST / PUT / DELETE / PATCH
  *   /api/home/milestones      GET / POST / PUT / PATCH / DELETE
  *   /api/home/culinary        GET            — auto-pulled from CMS
+ *   /api/home/restaurants     GET            — featured restaurants (Arts & Culture)
  *   /api/home/featured        GET            — all featured content grouped by section
  */
 
@@ -38,6 +39,9 @@ function handle_home(string $method, ?string $sub, ?string $subId): void
                 break;
             case 'culinary':
                 _home_culinary($method, $db);
+                break;
+            case 'restaurants':
+                _home_restaurants($method, $db);
                 break;
             case 'featured':
                 _home_featured($method, $db);
@@ -305,6 +309,54 @@ function _home_culinary(string $method, PDO $db): void
     Response::json($items);
 }
 
+// ── /api/home/restaurants ────────────────────────────────────────────
+
+function _home_restaurants(string $method, PDO $db): void
+{
+    if ($method !== 'GET') {
+        Response::error('Restaurants are auto-pulled from CMS. Use the CMS endpoints.', 405);
+    }
+
+    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 6;
+
+    $sql = "
+        SELECT
+            c.content_id, c.title, c.description,
+            c.status, c.created_at,
+            COALESCE(lbl.label_name, 'Restaurants & Eateries') AS tag,
+            (SELECT ci.image_url FROM content_images ci
+             WHERE ci.content_id = c.content_id
+             ORDER BY ci.is_thumbnail DESC, ci.sort_order ASC, ci.image_id ASC
+             LIMIT 1) AS image
+        FROM content c
+        INNER JOIN content_fields cm ON c.content_id = cm.content_id
+            AND cm.meta_key = 'label_key' AND cm.meta_value = 'restaurants'
+        INNER JOIN content_fields feat ON c.content_id = feat.content_id
+            AND feat.meta_key = 'is_featured' AND feat.meta_value = '1'
+        LEFT JOIN content_fields lm ON c.content_id = lm.content_id AND lm.meta_key = 'label_id'
+        LEFT JOIN category lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
+        WHERE c.status = 'published'
+        ORDER BY c.created_at DESC
+    ";
+    if ($limit > 0) $sql .= " LIMIT " . $limit;
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $items = array_map(fn($row) => [
+        'itemId'      => (int) $row['content_id'],
+        'title'       => $row['title'] ?? '',
+        'description' => $row['description'] ?? '',
+        'image'       => $row['image'] ?? '',
+        'tag'         => $row['tag'] ?? 'Restaurants & Eateries',
+        'sortOrder'   => 0,
+        'isActive'    => ($row['status'] ?? '') === 'published',
+    ], $rows);
+
+    Response::json($items);
+}
+
 // ── /api/home/featured ──────────────────────────────────────────────
 //
 // Returns all published posts marked as is_featured='1', grouped by section.
@@ -328,6 +380,7 @@ function _home_featured(string $method, PDO $db): void
     // Label groups for arts & culture section
     $artsCultureLabels = [
         'localCuisine'      => 'local-cuisine',
+        'restaurants'       => 'restaurants',
         'festivals'         => 'festivals',
         'culturalPractices' => 'cultural-practices',
         'craftsArtisan'     => 'crafts-artisan',

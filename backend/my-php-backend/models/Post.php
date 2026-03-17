@@ -22,7 +22,7 @@ class Post
         return "
             SELECT
                 c.content_id, c.user_id, c.title, c.description,
-                c.status, c.post_type, c.created_at, c.updated_at,
+                c.status, c.post_type, c.author, c.created_at, c.updated_at,
                 cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -103,7 +103,7 @@ class Post
         // Label is stored in content_fields as 'label_key'
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -169,7 +169,7 @@ class Post
     {
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -201,7 +201,7 @@ class Post
     {
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -236,7 +236,7 @@ class Post
         $lim = $limit ? "LIMIT {$limit}" : "";
         $q = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
@@ -255,7 +255,7 @@ class Post
         $lim = $limit ? "LIMIT {$limit}" : "";
         $q = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
@@ -277,9 +277,9 @@ class Post
         try {
             $stmt = $this->conn->prepare("
                 INSERT INTO content
-                  (user_id, category_id, title, description, status, post_type)
+                  (user_id, category_id, title, description, status, post_type, author)
                 VALUES
-                  (:uid, :cid, :title, :desc, :status, :pt)
+                  (:uid, :cid, :title, :desc, :status, :pt, :author)
             ");
             $stmt->execute([
                 ':uid'    => $data['user_id'] ?? 1,
@@ -288,6 +288,7 @@ class Post
                 ':desc'   => $data['description'] ?? '',
                 ':status' => $data['status'] ?? 'draft',
                 ':pt'     => $data['post_type'] ?? 'place',
+                ':author' => $data['author'] ?? null,
             ]);
             $contentId = (int) $this->conn->lastInsertId();
 
@@ -350,7 +351,7 @@ class Post
         try {
             // Update core content columns
             $fields = []; $params = [':id' => $id];
-            $allowed = ['title', 'description', 'status', 'post_type', 'category_id'];
+            $allowed = ['title', 'description', 'status', 'post_type', 'category_id', 'author'];
 
             foreach ($allowed as $f) {
                 if (array_key_exists($f, $data)) {
@@ -460,6 +461,7 @@ class Post
             'tourType'        => $meta['tour_type'] ?? null,
             'tourDifficulty'  => $meta['tour_difficulty'] ?? null,
             'newsDate'        => $meta['news_date'] ?? null,
+            'author'          => $row['author'] ?? null,
             'createdAt'       => $row['created_at'],
             'updatedAt'       => $row['updated_at'],
         ];

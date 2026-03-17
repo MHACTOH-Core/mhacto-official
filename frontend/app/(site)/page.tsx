@@ -29,12 +29,16 @@ const CraftsSection = dynamic(
   () => import("@/components/sections/crafts-section").then((m) => m.CraftsSection),
   { loading: () => <SectionSkeleton /> }
 )
-const NewsSection = dynamic(
-  () => import("@/components/sections/news-section").then((m) => m.NewsSection),
+const RestaurantSection = dynamic(
+  () => import("@/components/sections/restaurant-section").then((m) => m.RestaurantSection),
   { loading: () => <SectionSkeleton /> }
 )
-const TravelToursSection = dynamic(
-  () => import("@/components/sections/travel-tours-section").then((m) => m.TravelToursSection),
+const FeaturedDelicacySlider = dynamic(
+  () => import("@/components/sections/featured-delicacy-slider").then((m) => m.FeaturedDelicacySlider),
+  { loading: () => <SectionSkeleton /> }
+)
+const NewsSection = dynamic(
+  () => import("@/components/sections/news-section").then((m) => m.NewsSection),
   { loading: () => <SectionSkeleton /> }
 )
 
@@ -78,13 +82,13 @@ export default function Home() {
       {/* 5. Tourist Wonders Carousel (destinations) */}
       <DestinationsCarouselSection />
 
-      {/* 5b. Travel & Tours */}
-      <TravelToursSection />
-
       {/* 6. Culinary Wonders */}
       <CulinarySection />
-
-      {/* 7. Cultural Practices */}
+      {/* 7. Restaurant Wonders */}
+      <RestaurantSection />
+      {/* 7b. Featured Delicacy Slider */}
+      <FeaturedDelicacySlider />
+      {/* 8. Cultural Practices */}
       <CulturalPracticesSection />
 
       {/* 8. History Milestones */}

@@ -250,6 +250,10 @@ export default function CMSPage() {
   const [mediaBrowseOpen, setMediaBrowseOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
+  // Validation hints (auto-clear after a few seconds)
+  const [contactHint, setContactHint] = useState<string | null>(null)
+  const [establishedHint, setEstablishedHint] = useState<string | null>(null)
+
   useEffect(() => {
     if (!isLoggedIn) router.push("/admin")
   }, [isLoggedIn, router])
@@ -943,7 +947,7 @@ export default function CMSPage() {
                                 setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls] }))
                               }
                               if (result.errors.length > 0) {
-                                toast({ title: "Upload warning", description: "Some files failed: " + result.errors.join("; "), variant: "destructive" })
+                                toast({ title: "Upload warning", description: result.errors.join("\n"), variant: "destructive" })
                               }
                             } catch (err) {
                               toast({ title: "Upload failed", description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
@@ -1031,12 +1035,28 @@ export default function CMSPage() {
                           <Input
                             value={form.contact}
                             onChange={(e) => {
-                              const val = e.target.value.replace(/[^0-9+()\-\s]/g, '')
+                              const raw = e.target.value
+                              const val = raw.replace(/[^0-9+()\-\s]/g, '')
+                              if (val !== raw) {
+                                setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
+                                setTimeout(() => setContactHint(null), 4000)
+                              } else if (val.replace(/\D/g, '').length > 15) {
+                                setContactHint("Phone numbers should not exceed 15 digits.")
+                                setTimeout(() => setContactHint(null), 4000)
+                                return
+                              } else {
+                                setContactHint(null)
+                              }
                               setForm({ ...form, contact: val })
                             }}
                             type="tel"
                             placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
+                            maxLength={25}
                           />
+                          {contactHint && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">{contactHint}</p>
+                          )}
+                          <p className="text-[11px] text-muted-foreground">Numbers, +, parentheses, and dashes only. Max 15 digits.</p>
                         </div>
                       )}
 
@@ -1047,9 +1067,24 @@ export default function CMSPage() {
                           </Label>
                           <Input
                             value={form.established}
-                            onChange={(e) => setForm({ ...form, established: e.target.value })}
+                            onChange={(e) => {
+                              const raw = e.target.value
+                              const val = raw.replace(/[^0-9\s\-\/,A-Za-z.]/g, '')
+                              if (val !== raw) {
+                                setEstablishedHint("Special characters are not allowed. Use numbers, letters, dashes, or slashes.")
+                                setTimeout(() => setEstablishedHint(null), 4000)
+                              } else {
+                                setEstablishedHint(null)
+                              }
+                              setForm({ ...form, established: val })
+                            }}
                             placeholder={fieldPlaceholder("established", "e.g. 1787")}
+                            maxLength={50}
                           />
+                          {establishedHint && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">{establishedHint}</p>
+                          )}
+                          <p className="text-[11px] text-muted-foreground">Year or date when this was established (e.g. 1787, March 1945).</p>
                         </div>
                       )}
                     </div>

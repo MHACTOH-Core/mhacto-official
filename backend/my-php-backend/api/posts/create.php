@@ -91,6 +91,11 @@ function mapFrontendToDb(array $data): array {
         $db['news_date'] = $data['newsDate'];
     }
 
+    // author (stored directly in content table)
+    if (isset($data['author'])) {
+        $db['author'] = $data['author'];
+    }
+
     return $db;
 }
 
