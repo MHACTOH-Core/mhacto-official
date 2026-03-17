@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { asset } from "@/lib/utils"
 import {
@@ -9,7 +10,6 @@ import {
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { GalleryImage } from "@/components/ui/gallery-image"
 import { type PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
@@ -72,14 +72,14 @@ function PersonCard({ person }: { person: PeopleWonder }) {
     <Link href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card className="group overflow-hidden border-border hover:border-primary/40 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer">
       {/* Photo */}
-      <GalleryImage
-        src={person.image ?? asset("/images/placeholder-user.jpg")}
-        gallery={person.gallery}
-        alt={person.name}
-        className="relative h-56 overflow-hidden bg-muted"
-        imageClassName="object-cover group-hover:scale-105 transition-transform duration-700"
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      >
+      <div className="relative h-56 overflow-hidden bg-muted">
+        <Image
+          src={person.image ?? asset("/images/placeholder-user.jpg")}
+          alt={person.name}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-700"
+        />
         {/* gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
@@ -105,7 +105,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
           <h3 className="text-lg font-black text-white leading-snug drop-shadow-lg">{person.name}</h3>
           <p className="text-xs text-white/80 leading-tight mt-0.5 line-clamp-1">{person.title}</p>
         </div>
-      </GalleryImage>
+      </div>
 
       {/* Content */}
       <CardContent className="p-5 flex flex-col flex-1">

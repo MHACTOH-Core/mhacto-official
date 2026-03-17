@@ -211,6 +211,7 @@ export function cmsToPeopleWonder(post: CMSPost): PeopleWonder {
     year: post.established ?? undefined,
     awards: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Arts.jpg"),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     isAlive: true,
     author: post.author ?? undefined,
   }
@@ -269,6 +270,7 @@ export function cmsToNotablePerson(post: CMSPost): NotablePerson {
     description: post.body ?? "",
     legacy: post.story ?? "",
     image: resolveImage(post, "/images/places/Arts.jpg"),
+    gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     featured: post.isFeatured ?? false,
     author: post.author ?? undefined,
   }

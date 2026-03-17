@@ -30,6 +30,7 @@ export interface NotablePerson {
   description: string
   legacy: string
   image?: string
+  gallery?: string[]
   featured?: boolean
   author?: string
 }
