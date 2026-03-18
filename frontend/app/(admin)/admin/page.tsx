@@ -163,7 +163,7 @@ function BlueWaveParticles() {
 }
 
 export default function AdminLoginPage() {
-  const { login, isLoggedIn } = useAdmin()
+  const { login, isLoggedIn, isHydrated } = useAdmin()
   const router = useRouter()
 
   const [email, setEmail] = useState("")
@@ -177,10 +177,10 @@ export default function AdminLoginPage() {
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
-    if (isLoggedIn) router.push("/admin/dashboard")
-  }, [isLoggedIn, router])
+    if (isHydrated && isLoggedIn) router.push("/admin/dashboard")
+  }, [isHydrated, isLoggedIn, router])
 
-  if (isLoggedIn) return null
+  if (!isHydrated || isLoggedIn) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

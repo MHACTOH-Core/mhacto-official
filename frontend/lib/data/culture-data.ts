@@ -59,7 +59,7 @@ export interface LocalBusiness {
 export interface PeopleWonder {
   id: string
   name: string
-  category: "pageant" | "arts" | "sports" | "entertainment" | "academics"
+  category: "pageant" | "arts" | "sports" | "entertainment" | "academics" | "civic"
   title: string
   achievement: string
   description: string

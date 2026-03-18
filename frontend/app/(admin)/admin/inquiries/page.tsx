@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
@@ -74,7 +74,7 @@ const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{
 
 export default function InquiriesPage() {
   const router = useRouter()
-  const { isLoggedIn, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry } = useAdmin()
+  const { isLoggedIn, isHydrated, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry } = useAdmin()
 
   const { toast } = useToast()
 
@@ -92,13 +92,30 @@ export default function InquiriesPage() {
   const [showReplyBox, setShowReplyBox] = useState(false)
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/admin")
-  }, [isLoggedIn, router])
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
-  // Filtered by tab — Spam and Trash are hidden from "All Mail"
-  const getFiltered = () => {
+  // Memoized tab counts — single pass over inquiries
+  const tabCounts = useMemo(() => {
+    const counts: Record<MailboxTab, number> = {
+      all: 0, unread: 0, in_progress: 0, assigned: 0, archived: 0, spam: 0, trash: 0,
+    }
+    for (const i of inquiries) {
+      if (i.status !== "spam" && i.status !== "trash") counts.all++
+      if (i.status === "unread") counts.unread++
+      else if (i.status === "in_progress") counts.in_progress++
+      else if (i.status === "assigned") counts.assigned++
+      else if (i.status === "archived") counts.archived++
+      else if (i.status === "spam") counts.spam++
+      else if (i.status === "trash") counts.trash++
+    }
+    return counts
+  }, [inquiries])
+
+  // Memoized filtered list
+  const filtered = useMemo(() => {
     let list = inquiries
     switch (activeTab) {
       case "all":
@@ -135,19 +152,7 @@ export default function InquiriesPage() {
     return list.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-  }
-
-  const filtered = getFiltered()
-
-  const tabCounts: Record<MailboxTab, number> = {
-    all:         inquiries.filter((i) => i.status !== "spam" && i.status !== "trash").length,
-    unread:      inquiries.filter((i) => i.status === "unread").length,
-    in_progress: inquiries.filter((i) => i.status === "in_progress").length,
-    assigned:    inquiries.filter((i) => i.status === "assigned").length,
-    archived:    inquiries.filter((i) => i.status === "archived").length,
-    spam:        inquiries.filter((i) => i.status === "spam").length,
-    trash:       inquiries.filter((i) => i.status === "trash").length,
-  }
+  }, [inquiries, activeTab, search])
 
   const unreadCount = tabCounts.unread
 

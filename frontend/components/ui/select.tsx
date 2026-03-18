@@ -6,10 +6,9 @@
 
   import { cn } from '@/lib/utils'
 
-  const Select = React.forwardRef<
-    React.ElementRef<typeof SelectPrimitive.Root>,
-    React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
-  >(({ children, ...props }, _ref) => {
+  type SelectProps = React.ComponentProps<typeof SelectPrimitive.Root> & { modal?: boolean }
+
+  function Select({ children, ...props }: SelectProps) {
     /* Prevent Radix from hiding the scrollbar and adding padding-right to body */
     React.useEffect(() => {
       const style = document.createElement('style')
@@ -18,8 +17,7 @@
       return () => { document.head.removeChild(style) }
     }, [])
     return <SelectPrimitive.Root {...props}>{children}</SelectPrimitive.Root>
-  })
-  Select.displayName = 'Select'
+  }
 
   const SelectGroup = SelectPrimitive.Group
 

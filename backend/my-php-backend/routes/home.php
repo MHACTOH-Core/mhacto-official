@@ -8,12 +8,13 @@
  *   /api/home/spotlight       GET / POST / PUT / DELETE
  *   /api/home/landmarks       GET / POST / PUT / DELETE / PATCH
  *   /api/home/milestones      GET / POST / PUT / PATCH / DELETE
+ *   /api/home/timeline-posts  GET            — published CMS timeline posts (for milestone picker)
  *   /api/home/culinary        GET            — auto-pulled from CMS
  *   /api/home/restaurants     GET            — featured restaurants (Arts & Culture)
  *   /api/home/featured        GET            — all featured content grouped by section
  */
 
-function handle_home(string $method, ?string $sub, ?string $subId): void
+function handle_home(string $method, ?string $sub): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/HomeContent.php';
@@ -36,6 +37,9 @@ function handle_home(string $method, ?string $sub, ?string $subId): void
                 break;
             case 'milestones':
                 _home_milestones($method, $db);
+                break;
+            case 'timeline-posts':
+                _home_timelinePosts($method, $db);
                 break;
             case 'culinary':
                 _home_culinary($method, $db);
@@ -221,8 +225,8 @@ function _home_milestones(string $method, PDO $db): void
 
         case 'POST':
             $data = json_decode(file_get_contents('php://input'), true);
-            if (!$data || empty($data['title']) || empty($data['year'])) {
-                Response::error('Title and year are required.', 400);
+            if (!$data || (empty($data['contentId']) && (empty($data['title']) || empty($data['year'])))) {
+                Response::error('Either contentId or title+year is required.', 400);
             }
             $milestoneId = $homeContent->createMilestone($data);
             Response::json(['message' => 'Milestone created successfully.', 'milestoneId' => (int) $milestoneId], 201);
@@ -259,6 +263,22 @@ function _home_milestones(string $method, PDO $db): void
         default:
             Response::error('Method not allowed.', 405);
     }
+}
+
+// ── /api/home/timeline-posts ────────────────────────────────────────
+// Returns published CMS posts with label 'timeline-of-events' for the
+// admin milestone picker dropdown.
+
+function _home_timelinePosts(string $method, PDO $db): void
+{
+    if ($method !== 'GET') {
+        Response::error('Method not allowed.', 405);
+    }
+
+    require_once __DIR__ . '/../models/Post.php';
+    $post = new Post($db);
+    $posts = $post->readByLabel('timeline-of-events', 'published');
+    Response::json($posts);
 }
 
 // ── /api/home/culinary ──────────────────────────────────────────────

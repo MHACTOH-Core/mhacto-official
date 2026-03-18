@@ -1,5 +1,14 @@
 RewriteEngine On
 
+# ── Pass Authorization header to PHP (Apache strips it by default) ──
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# ── Force ALL /api/* requests through the central router ──────────
+# Ensures auth middleware, CORS, and rate-limiting always run,
+# even if a legacy .php file exists on disk.
+RewriteRule ^api/ index.php [QSA,L]
+
 # ── Let existing files through (uploads, vendor, etc.) ──
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]

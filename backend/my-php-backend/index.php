@@ -29,6 +29,7 @@ if (php_sapi_name() === 'cli-server') {
 }
 
 require_once __DIR__ . '/core/Response.php';
+require_once __DIR__ . '/core/security.php';
 
 // ── CORS (one place for the whole API) ────────────────────────────
 Response::cors();
@@ -101,22 +102,26 @@ if ($resource && file_exists($routeFile)) {
     $handler = "handle_{$resource}";
 
     if (function_exists($handler)) {
-        $handler($method, $param1, $param2);
-        exit();
-    }
-}
+        // ── Auth middleware ───────────────────────────────────────
+        // Public-read resources allow unauthenticated GET requests.
+        // Everything else (POST/PUT/PATCH/DELETE on any resource, and
+        // all requests to admin-only resources) requires a valid JWT.
+        //
+        // Special cases:
+        //  - /api/auth/*           → handles its own auth (login, me)
+        //  - POST /api/inquiries   → public tourist contact form (no id)
+        //  - POST /api/analytics/* → public page-view logging
+        $publicReadResources = ['posts', 'heroes', 'home', 'destinations', 'analytics', 'settings'];
+        $isPublicRead = ($method === 'GET' && in_array($resource, $publicReadResources, true));
+        $isAuthRoute  = ($resource === 'auth');
+        $isPublicInquiryCreate = ($resource === 'inquiries' && $method === 'POST' && !$param1);
+        $isPublicAnalytics     = ($resource === 'analytics' && $method === 'POST');
 
-// ── Fallback: try the old file-per-action structure ─────────────
-// This keeps backward compatibility while migrating.
-// e.g. /api/posts/read → api/posts/read.php
-if ($resource && $rawParam1 && !is_numeric($rawParam1)) {
-    $legacyFile = __DIR__ . "/api/{$resource}/{$rawParam1}";
-    // Append .php if not already present
-    if (!str_ends_with($legacyFile, '.php')) {
-        $legacyFile .= '.php';
-    }
-    if (file_exists($legacyFile)) {
-        require $legacyFile;
+        if (!$isPublicRead && !$isAuthRoute && !$isPublicInquiryCreate && !$isPublicAnalytics) {
+            Auth::requireAuth(); // 401 if invalid — halts execution
+        }
+
+        $handler($method, $param1, $param2);
         exit();
     }
 }

@@ -13,6 +13,7 @@ export interface HeritageSite {
   gallery?: string[]
   isProtected: boolean
   protectionLevel?: string
+  author?: string
 }
 
 // ── Museums ──────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ export interface Museum {
   contact: string
   image: string
   gallery?: string[]
+  author?: string
 }
 
 // ── Religious Sites ──────────────────────────────────────────────────
@@ -43,6 +45,7 @@ export interface ReligiousSite {
   highlights: string[]
   image: string
   gallery?: string[]
+  author?: string
 }
 
 // ── Tour Packages ────────────────────────────────────────────────────
@@ -51,7 +54,7 @@ export interface TourPackage {
   name: string
   duration: string
   type: "heritage" | "food" | "festival" | "nature" | "custom"
-  difficulty: "easy" | "moderate" | "challenging"
+  difficulty: "easy" | "moderate" | "challenging" | "active"
   description: string
   itinerary: string[]
   includes: string[]
@@ -59,4 +62,5 @@ export interface TourPackage {
   image: string
   gallery?: string[]
   bookingContact?: string
+  author?: string
 }

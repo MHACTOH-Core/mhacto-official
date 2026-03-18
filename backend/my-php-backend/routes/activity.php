@@ -6,7 +6,7 @@
  * POST /api/activity         — log an admin action
  */
 
-function handle_activity(string $method, ?string $param1, ?string $param2): void
+function handle_activity(string $method, ?string $param1): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/ActivityLog.php';
@@ -17,7 +17,7 @@ function handle_activity(string $method, ?string $param1, ?string $param2): void
 
         switch ($method) {
             case 'GET':
-                $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 100;
+                $limit = isset($_GET['limit']) ? max(1, min((int) $_GET['limit'], 500)) : 100;
                 Response::json($log->readAll($limit));
                 break;
 

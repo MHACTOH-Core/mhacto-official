@@ -135,7 +135,7 @@ export default function BarangaysPage() {
     return barangayList.filter(
       (b) =>
         b.name.toLowerCase().includes(q) ||
-        b.captain.toLowerCase().includes(q) ||
+        (b.captain ?? "").toLowerCase().includes(q) ||
         b.description.toLowerCase().includes(q)
     )
   }, [search, barangayList])

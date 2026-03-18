@@ -34,6 +34,11 @@ desktop.ini
 npm-debug.log*
 pnpm-debug.log*
 
+# ── Local config overrides (per-developer) ───
+backend/my-php-backend/config/database.local.php
+backend/my-php-backend/config/email.local.php
+backend/my-php-backend/config/jwt.local.php
+
 # ── Misc ─────────────────────────────────────
 *.tsbuildinfo
 frontend/package-lock.json

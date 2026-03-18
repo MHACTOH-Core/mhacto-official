@@ -12,13 +12,19 @@ import { cmsToHospital } from "@/lib/cms-mappers"
 
 const typeBadge: Record<Hospital["type"], string> = {
   government: "bg-blue-100 text-blue-800 border-blue-200",
+  public: "bg-blue-100 text-blue-800 border-blue-200",
   private: "bg-purple-100 text-purple-800 border-purple-200",
+  clinic: "bg-teal-100 text-teal-800 border-teal-200",
+  specialty: "bg-amber-100 text-amber-800 border-amber-200",
   "lying-in": "bg-pink-100 text-pink-800 border-pink-200",
   rhu: "bg-green-100 text-green-800 border-green-200",
 }
 const typeLabels: Record<Hospital["type"], string> = {
   government: "Government",
+  public: "Public",
   private: "Private Hospital",
+  clinic: "Clinic",
+  specialty: "Specialty",
   "lying-in": "Lying-In / Birthing",
   rhu: "Rural Health Unit",
 }

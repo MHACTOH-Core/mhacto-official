@@ -76,6 +76,7 @@ export default function AccountsPage() {
   const router = useRouter()
   const {
     isLoggedIn,
+    isHydrated,
     currentUser,
     users,
     createUser,
@@ -102,14 +103,14 @@ export default function AccountsPage() {
   const [restoreTarget, setRestoreTarget] = useState<AdminUser | null>(null)
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/admin")
-  }, [isLoggedIn, router])
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
   useEffect(() => {
     if (isLoggedIn) refreshUsers()
   }, [isLoggedIn, refreshUsers])
 
-  if (!isLoggedIn || !currentUser) return null
+  if (!isHydrated || !isLoggedIn || !currentUser) return null
 
   // Only super_admin and admin can access accounts
   if (currentUser.role === "content_manager") {

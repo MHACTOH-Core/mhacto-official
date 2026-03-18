@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { ArrowLeft, BookOpen, Clock, MapPin, Ticket } from "lucide-react"
+import { ArrowLeft, BookOpen, Clock, MapPin, Ticket, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { type Museum } from "@/lib/data/destinations-data"
@@ -27,6 +27,8 @@ const typeColor: Record<string, string> = {
 
 export default function MuseumsPage() {
   const [museums, setMuseums] = useState<Museum[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetchByLabel("destinations")
@@ -35,7 +37,8 @@ export default function MuseumsPage() {
         const museumPosts = posts.filter(p => (p.category ?? "").toLowerCase().includes("museum"))
         if (museumPosts.length) setMuseums(museumPosts.map(cmsToMuseum))
       })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -79,6 +82,27 @@ export default function MuseumsPage() {
               <p className="text-muted-foreground">Public and heritage collections in and around Bocaue</p>
             </div>
           </div>
+
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-3 text-muted-foreground">Loading museums...</span>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Unable to load museums.</p>
+              <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && museums.length === 0 && (
+            <div className="text-center py-20">
+              <BookOpen className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground">No museums listed yet.</p>
+            </div>
+          )}
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {museums.map((museum) => (

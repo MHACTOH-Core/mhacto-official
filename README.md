@@ -64,6 +64,146 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 
 ---
 
+## Prerequisites
+
+| Tool | Version | Install (Windows) |
+|------|---------|--------------------|
+| **Node.js** | 20+ | [nodejs.org](https://nodejs.org/) (LTS) or `winget install OpenJS.NodeJS.LTS` |
+| **pnpm** | 9+ | `npm install -g pnpm` (after installing Node) |
+| **PHP** | 8.1+ | [windows.php.net](https://windows.php.net/download/) — download the **Thread Safe** zip, extract to `C:\php`, add to PATH |
+| **MySQL / MariaDB** | 8+ / 10.6+ | [XAMPP](https://www.apachefriends.org/) (easiest) or standalone [MySQL installer](https://dev.mysql.com/downloads/installer/) |
+| **Git** | latest | [git-scm.com](https://git-scm.com/) — during install, choose **"Checkout as-is, commit Unix-style line endings"** |
+
+> **Tip (Windows):** If you use XAMPP, PHP and MySQL are already included. Just make sure `C:\xampp\php` and `C:\xampp\mysql\bin` are in your system PATH.
+
+---
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-org/mhacto-official.git
+cd mhacto-official
+```
+
+### 2. Set up the database
+
+Open a MySQL client (MySQL Workbench, phpMyAdmin, or terminal) and run:
+
+```sql
+SOURCE backend/my-php-backend/database/schema.sql;
+```
+
+Or on Windows CMD:
+
+```cmd
+mysql -u root -p < backend\my-php-backend\database\schema.sql
+```
+
+This creates the `mhacto_db` database with all 11 tables and seeds the initial data.
+
+### 3. Configure database credentials
+
+```bash
+# Linux / macOS
+cp backend/my-php-backend/config/database.local.example.php backend/my-php-backend/config/database.local.php
+
+# Windows CMD
+copy backend\my-php-backend\config\database.local.example.php backend\my-php-backend\config\database.local.php
+
+# Windows PowerShell
+Copy-Item backend\my-php-backend\config\database.local.example.php backend\my-php-backend\config\database.local.php
+```
+
+Edit `database.local.php` with your local MySQL username and password. This file is git-ignored.
+
+### 4. Start the PHP backend
+
+```bash
+cd backend/my-php-backend
+php -S localhost:8000 index.php
+```
+
+> **Important:** You must include `index.php` in the command — the central router needs it. Just `php -S localhost:8000` alone will not route API requests correctly.
+
+> **Windows note:** If `php` is not recognized, add its folder to your system PATH: Settings → System → Environment Variables → Path → add `C:\php` (or `C:\xampp\php`).
+
+### 5. Set up the frontend
+
+Open a **new terminal** (keep the PHP server running):
+
+```bash
+cd frontend
+
+# Copy the env example
+cp .env.example .env.local          # Linux / macOS
+copy .env.example .env.local        # Windows CMD
+
+# Install dependencies
+pnpm install
+
+# Start dev server
+pnpm dev
+```
+
+The frontend runs at **http://localhost:3000**.
+
+### 6. Verify everything works
+
+- Open **http://localhost:3000** — you should see the homepage
+- Open **http://localhost:8000/api/posts** — you should see a JSON response
+- Open **http://localhost:3000/MHACTO-PROJECT/admin** — admin CMS dashboard
+
+---
+
+## Windows-Specific Notes
+
+### PHP `php_pdo_mysql` extension
+
+If you get a "could not find driver" error, enable the MySQL PDO extension:
+
+1. Open your `php.ini` file (inside the PHP folder)
+2. Find `;extension=pdo_mysql` and remove the leading semicolon
+3. Also uncomment `;extension=openssl` (needed by PHPMailer)
+4. Restart the PHP server
+
+If there's no `php.ini`, copy `php.ini-development` to `php.ini`.
+
+### Line endings
+
+The `.gitattributes` file ensures all text files use LF in the repository. Git on Windows will automatically convert to CRLF in your working directory — this is normal and expected. **Do not change the `.gitattributes` file.**
+
+### Long paths (if cloning fails)
+
+If you get errors about file paths being too long:
+
+```cmd
+git config --global core.longpaths true
+```
+
+### pnpm on Windows
+
+If `pnpm` commands fail with execution policy errors in PowerShell:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+---
+
+## Project Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `.gitattributes` | Enforces LF line endings in the repo (Windows gets CRLF automatically) |
+| `.editorconfig` | Consistent indent/charset/EOL across all editors |
+| `.node-version` | Node.js version hint for version managers (nvm, fnm) |
+| `frontend/.env.example` | Template for frontend environment variables |
+| `backend/.../database.local.example.php` | Template for local DB credentials |
+
+---
+
 ## Changelog
 
 ### March 6, 2026 — Schema Reset, Nav Cleanup & Bug Fixes

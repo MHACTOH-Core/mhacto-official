@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Image from "next/image"
-import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield } from "lucide-react"
+import { BookOpen, Users, Clock, Calendar, Star, ChevronDown, ChevronUp, Shield, Loader2 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -42,14 +42,20 @@ export default function HistoryPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([])
   const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let completed = 0
+    const done = () => { if (++completed >= 2) setLoading(false) }
     apiFetchByLabel("timeline-of-events")
       .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(done)
     apiFetchByLabel("notable-figures")
       .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
-      .catch(() => {})
+      .catch((err) => setError((prev) => prev ?? err.message))
+      .finally(done)
   }, [])
 
   useEffect(() => {
@@ -103,7 +109,23 @@ export default function HistoryPage() {
           </div>
         </div>
 
+      {/* ── Loading / Error ── */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground">Loading history...</span>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="text-center py-20">
+          <p className="text-muted-foreground">Unable to load history data.</p>
+          <p className="text-sm text-muted-foreground mt-1">{error}</p>
+        </div>
+      )}
+
       {/* ── Notable Figures ── */}
+      {!loading && !error && (
       <section id="notable-figures" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
@@ -155,8 +177,10 @@ export default function HistoryPage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── Timeline ── */}
+      {!loading && !error && (
       <section id="timeline" className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-4xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
@@ -169,8 +193,8 @@ export default function HistoryPage() {
           <div className="relative">
             <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
             <div className="space-y-6">
-              {timelineEvents.map((event) => (
-                <div key={event.year} className="relative pl-12">
+              {timelineEvents.map((event, i) => (
+                <div key={`${event.year}-${i}`} className="relative pl-12">
                   <div className={`absolute left-0 top-1.5 h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-black shadow-sm ${eraColor[event.era] ?? "bg-primary"}`}>
                     <Calendar className="h-4 w-4" />
                   </div>
@@ -206,6 +230,7 @@ export default function HistoryPage() {
           </div>
         </div>
       </section>
+      )}
     </main>
   )
 }

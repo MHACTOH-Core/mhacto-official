@@ -7,7 +7,7 @@
  * DELETE /api/media          — delete file (?path=/uploads/images/x.jpg)
  */
 
-function handle_media(string $method, ?string $param1, ?string $param2): void
+function handle_media(string $method, ?string $param1): void
 {
     try {
         switch ($method) {
@@ -74,6 +74,10 @@ function _media_upload(): void
     // Optional subfolder organization: ?category=places&label=heritage
     $category = isset($_GET['category']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['category']) : '';
     $label    = isset($_GET['label'])    ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['label'])    : '';
+
+    if (strlen($category) > 50 || strlen($label) > 50) {
+        Response::error('Category/label too long (max 50 chars).', 400);
+    }
 
     if (!is_dir($imageDir)) mkdir($imageDir, 0755, true);
     if (!is_dir($videoDir)) mkdir($videoDir, 0755, true);

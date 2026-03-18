@@ -5,7 +5,7 @@ import { asset } from "@/lib/utils"
 import { useState, useMemo, useEffect } from "react"
 import {
   School, Activity, ArrowUpDown, BookOpen, Users,
-  Phone, MapPin, Clock, AlertTriangle, CheckCircle, ChevronRight,
+  Phone, MapPin, Clock, AlertTriangle, CheckCircle, ChevronRight, Loader2,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -55,13 +55,19 @@ const sortLabels: Record<SortKey, string> = {
 //  Hospital config 
 const typeBadge: Record<Hospital["type"], string> = {
   government: "bg-blue-100 text-blue-800 border-blue-200",
+  public: "bg-blue-100 text-blue-800 border-blue-200",
   private: "bg-purple-100 text-purple-800 border-purple-200",
+  clinic: "bg-teal-100 text-teal-800 border-teal-200",
+  specialty: "bg-amber-100 text-amber-800 border-amber-200",
   "lying-in": "bg-pink-100 text-pink-800 border-pink-200",
   rhu: "bg-green-100 text-green-800 border-green-200",
 }
 const typeLabels: Record<Hospital["type"], string> = {
   government: "Government",
+  public: "Public",
   private: "Private Hospital",
+  clinic: "Clinic",
+  specialty: "Specialty",
   "lying-in": "Lying-In / Birthing",
   rhu: "Rural Health Unit",
 }
@@ -103,16 +109,24 @@ export default function CommunityPage() {
   // Barangay state
   const [barangays, setBarangays] = useState<Barangay[]>([])
 
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
+    let completed = 0
+    const done = () => { if (++completed >= 3) setLoading(false) }
     apiFetchByLabel("schools")
       .then((posts) => { if (posts?.length) setSchools(posts.map(cmsToSchoolEntry)) })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(done)
     apiFetchByLabel("hospitals")
       .then((posts) => { if (posts?.length) setHospitals(posts.map(cmsToHospital)) })
-      .catch(() => {})
+      .catch((err) => setError((prev) => prev ?? err.message))
+      .finally(done)
     apiFetchByLabel("barangay")
       .then((posts) => { if (posts?.length) setBarangays(posts.map(cmsToBarangay)) })
-      .catch(() => {})
+      .catch((err) => setError((prev) => prev ?? err.message))
+      .finally(done)
   }, [])
 
   const displayedSchools = useMemo(() => {
@@ -205,8 +219,23 @@ export default function CommunityPage() {
         </div>
       </section>
 
+      {/*  Loading / Error  */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground">Loading community data...</span>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="text-center py-20">
+          <p className="text-muted-foreground">Unable to load community data.</p>
+          <p className="text-sm text-muted-foreground mt-1">{error}</p>
+        </div>
+      )}
+
       {/*  Schools tab  */}
-      {activeTab === "schools" && (
+      {!loading && !error && activeTab === "schools" && (
         <>
           <section className="mx-auto max-w-7xl px-6 pt-10 pb-4 lg:px-16">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -251,6 +280,12 @@ export default function CommunityPage() {
           </section>
 
           <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-16">
+            {displayedSchools.length === 0 && (
+              <div className="text-center py-16">
+                <School className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-muted-foreground">No schools found.</p>
+              </div>
+            )}
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
               {displayedSchools.map((school) => (
                 <div
@@ -303,7 +338,7 @@ export default function CommunityPage() {
       )}
 
       {/*  Hospitals tab  */}
-      {activeTab === "hospitals" && (
+      {!loading && !error && activeTab === "hospitals" && (
         <>
           <div className="bg-red-600 text-white py-3">
             <div className="mx-auto max-w-7xl px-4 lg:px-8 flex items-center gap-3 justify-center">
@@ -326,6 +361,12 @@ export default function CommunityPage() {
                 </div>
               </div>
 
+              {hospitals.length === 0 && (
+                <div className="text-center py-16 col-span-full">
+                  <Activity className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No health facilities listed yet.</p>
+                </div>
+              )}
               <div className="grid gap-6 sm:grid-cols-2 items-start">
                 {hospitals.map((hospital) => (
                   <Card key={hospital.id} className={`border-border flex flex-col`}>
@@ -382,7 +423,7 @@ export default function CommunityPage() {
       )}
 
       {/*  Barangay tab  */}
-      {activeTab === "barangay" && (
+      {!loading && !error && activeTab === "barangay" && (
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             <div className="flex items-center gap-3 mb-10">
@@ -395,6 +436,12 @@ export default function CommunityPage() {
               </div>
             </div>
 
+            {barangays.length === 0 && (
+              <div className="text-center py-16">
+                <MapPin className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-muted-foreground">No barangays listed yet.</p>
+              </div>
+            )}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {barangays.map((brgy) => (
                 <a

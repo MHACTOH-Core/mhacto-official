@@ -153,6 +153,9 @@ class Settings
             'siteLogoUrl'                => ['group' => 'general', 'key' => 'site_logo_url',      'type' => 'string'],
             'enableInquiryNotifications' => ['group' => 'general', 'key' => 'notify_inquiries',   'type' => 'boolean'],
             'enableAnalytics'            => ['group' => 'general', 'key' => 'enable_analytics',   'type' => 'boolean'],
+            // Social
+            'facebookUrl'                => ['group' => 'social',  'key' => 'facebook_url',       'type' => 'string'],
+            'instagramUrl'               => ['group' => 'social',  'key' => 'instagram_url',      'type' => 'string'],
             // Hero
             'heroSubtitle'               => ['group' => 'hero', 'key' => 'hero_subtitle',     'type' => 'string'],
             'heroTitle'                  => ['group' => 'hero', 'key' => 'hero_title',        'type' => 'string'],
@@ -179,6 +182,9 @@ class Settings
             'enableInquiryNotifications' => $map['notify_inquiries'] ?? true,
             'enableAnalytics'            => $map['enable_analytics'] ?? true,
             'maintenanceMode'            => false,
+            // Social
+            'facebookUrl'                => $map['facebook_url'] ?? '',
+            'instagramUrl'               => $map['instagram_url'] ?? '',
             // Hero
             'heroSubtitle'      => $map['hero_subtitle'] ?? '',
             'heroTitle'         => $map['hero_title'] ?? 'Explore The River',
@@ -219,6 +225,8 @@ class Settings
             'enableInquiryNotifications' => true,
             'enableAnalytics'            => true,
             'maintenanceMode'            => false,
+            'facebookUrl'                => '',
+            'instagramUrl'               => '',
         ], $this->heroDefaults());
     }
 

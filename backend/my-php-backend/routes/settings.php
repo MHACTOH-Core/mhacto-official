@@ -6,7 +6,7 @@
  * PUT /api/settings   — update site settings
  */
 
-function handle_settings(string $method, ?string $param1, ?string $param2): void
+function handle_settings(string $method, ?string $param1): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/Settings.php';

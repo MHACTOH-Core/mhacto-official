@@ -297,7 +297,7 @@ export default function PagodaPage() {
           }
         }
       })
-      .catch(() => {})
+      .catch((err) => { console.error("Failed to load pagoda data:", err.message) })
   }, [])
 
   return (

@@ -61,6 +61,8 @@ export interface CMSPost {
   newsDate?: string
   // Featured flag — per-label featured assignment
   isFeatured?: boolean
+  // Restaurant-specific
+  priceRange?: string
   // Author display name
   author?: string
   createdAt: string // ISO
@@ -99,6 +101,7 @@ export type ActivityAction =
   | "archive_post"
   | "reply_inquiry"
   | "archive_inquiry"
+  | "delete_inquiry"
   | "update_settings"
 
 export type UserRole = "super_admin" | "admin" | "content_manager"
@@ -154,6 +157,8 @@ export interface AdminSettings {
   contactEmail: string
   contactPhone: string
   address: string
+  facebookUrl: string
+  instagramUrl: string
   enableInquiryNotifications: boolean
   enableAnalytics: boolean
   maintenanceMode: boolean
@@ -251,6 +256,7 @@ export const activityLabels: Record<ActivityAction, string> = {
   archive_post: "Archived a post",
   reply_inquiry: "Replied to an inquiry",
   archive_inquiry: "Archived an inquiry",
+  delete_inquiry: "Deleted an inquiry",
   update_settings: "Updated settings",
 }
 
@@ -550,6 +556,8 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   contactEmail: "mhacto@bocaue.gov.ph",
   contactPhone: "(044) 123-4567",
   address: "Municipal Hall, Bocaue, Bulacan 3018",
+  facebookUrl: "",
+  instagramUrl: "",
   enableInquiryNotifications: true,
   enableAnalytics: true,
   maintenanceMode: false,

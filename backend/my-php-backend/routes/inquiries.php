@@ -73,6 +73,14 @@ function _inquiries_create(Inquiry $inquiry): void
         Response::error('Name, email, and message are required.', 400);
     }
 
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        Response::error('Invalid email address.', 400);
+    }
+
+    if (strlen($data['name']) > 255 || strlen($data['message']) > 10000) {
+        Response::error('Field length exceeded.', 400);
+    }
+
     $success = $inquiry->create([
         'name'              => $data['name'],
         'email'             => $data['email'],

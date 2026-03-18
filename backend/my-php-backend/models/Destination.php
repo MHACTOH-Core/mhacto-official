@@ -78,7 +78,7 @@ class Destination
 
         } catch (PDOException $exception) {
             $this->conn->rollBack();
-            echo "MARIADB ERROR: " . $exception->getMessage();
+            error_log("Destination::create error: " . $exception->getMessage());
             return false;
         }
     }

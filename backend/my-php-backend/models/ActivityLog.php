@@ -41,15 +41,13 @@ class ActivityLog
                   VALUES (:user_id, :content_id, :action, :details, :page_path, :ip)";
 
         try {
-            // Encode details as JSON if it isn't already
-            $jsonDetails = json_encode($details);
-
+            // Store details as-is (already a plain string from callers)
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
                 ':user_id'    => $userId,
                 ':content_id' => $contentId,
                 ':action'     => $action,
-                ':details'    => $jsonDetails,
+                ':details'    => $details,
                 ':page_path'  => $pagePath,
                 ':ip'         => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
             ]);

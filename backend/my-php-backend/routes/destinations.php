@@ -6,7 +6,7 @@
  * POST /api/destinations     — create destination
  */
 
-function handle_destinations(string $method, ?string $id, ?string $param2): void
+function handle_destinations(string $method, ?string $id): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/Destination.php';
@@ -29,8 +29,9 @@ function handle_destinations(string $method, ?string $id, ?string $param2): void
                     Response::error('Incomplete data. Please fill all fields.', 400);
                 }
 
-                // Hardcoded user 1 until auth tokens are implemented
-                $user_id = 1;
+                // Extract user from JWT (guaranteed valid — router enforces auth)
+                $authUser = Auth::getAuthUser();
+                $user_id = $authUser['sub'];
 
                 $success = $destination->create(
                     $user_id,

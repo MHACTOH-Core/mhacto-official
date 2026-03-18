@@ -25,6 +25,9 @@ import {
 } from "@/lib/data/admin-data"
 import {
   apiLogin,
+  apiVerifyAuth,
+  setAuthToken,
+  restoreAuthToken,
   apiFetchPosts,
   apiCreatePost,
   apiUpdatePost,
@@ -92,6 +95,7 @@ interface AdminContextValue {
 
   // Loading / refresh
   loading: boolean
+  isHydrated: boolean
   refreshPosts: () => Promise<void>
   refreshInquiries: () => Promise<void>
 }
@@ -208,16 +212,43 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Hydrate from localStorage first (fast), then fetch fresh data from backend
+  // Hydrate from localStorage first (fast), then verify token with backend
   useEffect(() => {
     setPosts(loadJsonFromStorage("admin_posts", []))
     setInquiries(loadJsonFromStorage("admin_inquiries", []))
     setActivityLog(loadJsonFromStorage("admin_activity", []))
     setSettings(loadJsonFromStorage("admin_settings", DEFAULT_SETTINGS))
-    setIsLoggedIn(loadJsonFromStorage("admin_logged_in", false))
     setAdminEmail(loadJsonFromStorage("admin_email", ""))
     setCurrentUser(loadJsonFromStorage("admin_current_user", null))
-    setIsHydrated(true)
+
+    // Verify JWT with backend instead of trusting localStorage flag
+    const token = restoreAuthToken()
+    if (token) {
+      apiVerifyAuth().then((user) => {
+        if (user) {
+          setIsLoggedIn(true)
+          setAdminEmail(user.email)
+          setCurrentUser({
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName || user.username,
+            email: user.email,
+            role: (user.role || "admin") as UserRole,
+            profilePicture: user.profilePicture ?? null,
+          })
+          saveJsonToStorage("admin_logged_in", true)
+        } else {
+          // Token invalid — force logout
+          setIsLoggedIn(false)
+          setCurrentUser(null)
+          saveJsonToStorage("admin_logged_in", false)
+        }
+        setIsHydrated(true)
+      })
+    } else {
+      setIsLoggedIn(false)
+      setIsHydrated(true)
+    }
   }, [])
 
   // Once hydrated & logged in, pull fresh data from API
@@ -230,6 +261,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<true | string> => {
     try {
       const loginResponse = await apiLogin(email, password)
+      // Store JWT token
+      setAuthToken(loginResponse.token)
       const userObj = {
         id: loginResponse.user.id,
         username: loginResponse.user.username,
@@ -255,6 +288,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false)
     setAdminEmail("")
     setCurrentUser(null)
+    setAuthToken(null)
     saveJsonToStorage("admin_logged_in", false)
     saveJsonToStorage("admin_email", "")
     saveJsonToStorage("admin_current_user", null)
@@ -296,6 +330,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         await refreshPosts()
       } catch (err) {
         console.error("createPost API error:", err)
+        setPosts((prev) => prev.filter((p) => p.id !== tempPost.id))
       }
     },
     [logActivityFn, refreshPosts],
@@ -303,6 +338,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const updatePost = useCallback(
     async (id: string, data: Partial<CMSPost>) => {
+      const snapshot = posts.find((p) => p.id === id)
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p,
@@ -320,9 +356,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         await refreshPosts()
       } catch (err) {
         console.error("updatePost API error:", err)
+        if (snapshot) setPosts((prev) => prev.map((p) => (p.id === id ? snapshot : p)))
       }
     },
-    [logActivityFn, refreshPosts],
+    [posts, logActivityFn, refreshPosts],
   )
 
   const deletePost = useCallback(
@@ -334,23 +371,26 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         await apiDeletePost(id)
       } catch (err) {
         console.error("deletePost API error:", err)
+        await refreshPosts()
       }
     },
-    [posts, logActivityFn],
+    [posts, logActivityFn, refreshPosts],
   )
 
   // ── Inquiries ──
   const updateInquiryFn = useCallback(
     async (id: string, data: Partial<Inquiry>) => {
+      const snapshot = inquiries.find((inq) => inq.id === id)
       setInquiries((prev) => prev.map((inq) => (inq.id === id ? { ...inq, ...data } : inq)))
       try {
         await apiUpdateInquiry(id, data as Record<string, unknown>)
         await refreshInquiries()
       } catch (err) {
         console.error("updateInquiry API error:", err)
+        if (snapshot) setInquiries((prev) => prev.map((inq) => (inq.id === id ? snapshot : inq)))
       }
     },
-    [refreshInquiries],
+    [inquiries, refreshInquiries],
   )
 
   const deleteInquiry = useCallback(
@@ -367,6 +407,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         await refreshInquiries()
       } catch (err) {
         console.error("deleteInquiry API error:", err)
+        await refreshInquiries()
       }
     },
     [inquiries, logActivityFn, refreshInquiries],
@@ -376,14 +417,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const inq = inquiries.find((i) => i.id === id)
       setInquiries((prev) => prev.filter((i) => i.id !== id))
-      logActivityFn("archive_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
+      logActivityFn("delete_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
       try {
         await apiDeleteInquiry(id)
       } catch (err) {
         console.error("permanentDeleteInquiry API error:", err)
+        // Rollback: re-fetch from backend to restore state
+        await refreshInquiries()
       }
     },
-    [inquiries, logActivityFn],
+    [inquiries, logActivityFn, refreshInquiries],
   )
 
   // ── Settings ──
@@ -544,6 +587,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         updateProfile: updateProfileFn,
         changePassword: changePasswordFn,
         loading: isLoadingBackendData,
+        isHydrated,
         refreshPosts,
         refreshInquiries,
       }}

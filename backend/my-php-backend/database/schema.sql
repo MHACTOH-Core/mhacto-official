@@ -204,7 +204,7 @@ CREATE TABLE milestone (
   sort_order   VARCHAR(50)  DEFAULT '0',
   is_active    TINYINT(1)   DEFAULT 1,
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  updates_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_active_order (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -234,6 +234,14 @@ CREATE TABLE page_views (
 -- Default admin user (password: admin123)
 INSERT INTO users (username, full_name, email, password_hash, role, status) VALUES
 ('admin', 'MHACTO Super Admin', 'mhacto.municipalityofbocaue@gmail.com', '$2y$12$bAccO9YaDEfSb0HO/TT5aeEZY3ehXExHqrYUPcxugQffxk5U7BmLG', 'super_admin', 'active');
+
+-- Admin user (password: admin123)
+INSERT INTO users (username, full_name, email, password_hash, role, status) VALUES
+('mhactoadmin', 'MHACTO Admin', 'admin@mhacto.gov.ph', '$2y$12$oXhkY.s8u5dIhk9YVC9IV.koc1OAQc8DmZ4wSZyQsMuvlAsveFNZG', 'admin', 'active');
+
+-- Content manager user (password: content123)
+INSERT INTO users (username, full_name, email, password_hash, role, status) VALUES
+('contentmgr', 'Content Manager', 'content@mhacto.gov.ph', '$2y$12$Id6pRjWKWgwQUWbhLJrFkeOWPfx/S6UaDQjUymQwZ1y0MZy1qacv6', 'content_manager', 'active');
 
 -- Categories (broad groups)
 INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES

@@ -65,6 +65,7 @@ import {
   apiReorderMilestones,
   apiUpdateHeroSettings,
   apiFetchPosts,
+  apiFetchTimelinePosts,
   type Spotlight,
   type Milestone,
   type HeroSettings,
@@ -77,7 +78,7 @@ type ContentType = "spotlight" | "milestone"
 
 export default function HomeContentPage() {
   const router = useRouter()
-  const { isLoggedIn } = useAdmin()
+  const { isLoggedIn, isHydrated } = useAdmin()
 
   const { toast } = useToast()
 
@@ -88,13 +89,17 @@ export default function HomeContentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Active tab state (persists across re-renders after save)
+  const [activeTab, setActiveTab] = useState("hero")
+
   // CMS posts for selection
   const [cmsEvents, setCmsEvents] = useState<CMSPost[]>([])
+  const [cmsTimelinePosts, setCmsTimelinePosts] = useState<CMSPost[]>([])
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogType, setDialogType] = useState<ContentType>("spotlight")
-  const [editingItem, setEditingItem] = useState<Spotlight | Milestone | null>(null)
+  const [editingItem, setEditingItem] = useState<(FeaturedContent & Spotlight) | Milestone | null>(null)
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ type: ContentType; id: number } | null>(null)
@@ -110,12 +115,13 @@ export default function HomeContentPage() {
   const [heroFormData, setHeroFormData] = useState<Partial<HeroSettings>>({})
 
   useEffect(() => {
+    if (!isHydrated) return
     if (!isLoggedIn) {
       router.push("/admin")
       return
     }
     loadAllContent()
-  }, [isLoggedIn, router])
+  }, [isHydrated, isLoggedIn, router])
 
   // Initialize hero form data when heroSettings loads
   useEffect(() => {
@@ -142,15 +148,17 @@ export default function HomeContentPage() {
     setLoading(true)
     setError(null)
     try {
-      const [settings, spots, miles, allPosts] = await Promise.all([
+      const [settings, spots, miles, allPosts, timelinePosts] = await Promise.all([
         apiFetchHeroSettings().catch(() => null),
         apiFetchAllSpotlights().catch(() => []),
         apiFetchAllMilestones().catch(() => []),
         apiFetchPosts("published").catch(() => []),
+        apiFetchTimelinePosts().catch(() => []),
       ])
       setHeroSettings(settings)
       setSpotlights(Array.isArray(spots) ? spots : spots ? [spots] : [])
       setMilestones(miles)
+      setCmsTimelinePosts(timelinePosts)
       
       // Filter CMS posts by type/category
       const events = allPosts.filter((p: CMSPost) => p.postType === "event" || p.label === "events" || p.label === "festivals")
@@ -171,10 +179,21 @@ export default function HomeContentPage() {
     setDialogOpen(true)
   }
 
-  const openEditDialog = (type: ContentType, item: Spotlight | Milestone) => {
+  const openEditDialog = (type: ContentType, item: (FeaturedContent & Spotlight) | Milestone) => {
     setDialogType(type)
     setEditingItem(item)
-    setFormData({ ...item })
+    if (type === "milestone") {
+      const mile = item as Milestone
+      const linkedPost = mile.contentId ? cmsTimelinePosts.find(p => p.id === mile.contentId) : null
+      setFormData({
+        ...mile,
+        _previewTitle: linkedPost?.title || mile.title || "",
+        _previewYear: linkedPost?.established || mile.year || "",
+        _previewDescription: linkedPost?.body?.substring(0, 300) || mile.description || "",
+      })
+    } else {
+      setFormData({ ...item })
+    }
     setDialogOpen(true)
   }
 
@@ -183,7 +202,7 @@ export default function HomeContentPage() {
       case "spotlight":
         return { contentId: "", sortOrder: spotlights.length + 1, isActive: false }
       case "milestone":
-        return { year: "", title: "", description: "", detail: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
+        return { contentId: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
       default:
         return {}
     }
@@ -198,10 +217,12 @@ export default function HomeContentPage() {
           await apiCreateSpotlight(formData as Partial<Spotlight>)
         }
       } else if (dialogType === "milestone") {
+        // Strip preview-only fields before sending to API
+        const { _previewTitle, _previewYear, _previewDescription, ...milestoneData } = formData
         if (editingItem) {
-          await apiUpdateMilestone((editingItem as Milestone).milestoneId, formData as Partial<Milestone>)
+          await apiUpdateMilestone((editingItem as Milestone).milestoneId, milestoneData as Partial<Milestone>)
         } else {
-          await apiCreateMilestone(formData as Partial<Milestone>)
+          await apiCreateMilestone(milestoneData as Partial<Milestone>)
         }
       }
       setDialogOpen(false)
@@ -295,7 +316,7 @@ export default function HomeContentPage() {
     }
   }
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
   return (
     <div className="flex h-screen bg-background">
@@ -330,7 +351,7 @@ export default function HomeContentPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
             </div>
           ) : (
-            <Tabs defaultValue="hero" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:w-auto lg:inline-grid">
                 <TabsTrigger value="hero" className="gap-2">
                   <Video className="h-4 w-4" />
@@ -752,16 +773,67 @@ export default function HomeContentPage() {
             {/* Milestone Form */}
             {dialogType === "milestone" && (
               <>
+                <div className="space-y-2">
+                  <Label htmlFor="contentId">Select Timeline Event from CMS</Label>
+                  <Select
+                    value={(formData.contentId as string) || ""}
+                    onValueChange={(v) => {
+                      const selectedPost = cmsTimelinePosts.find(p => p.id === v)
+                      setFormData({
+                        ...formData,
+                        contentId: v,
+                        _previewTitle: selectedPost?.title || "",
+                        _previewYear: selectedPost?.established || "",
+                        _previewDescription: selectedPost?.body?.substring(0, 300) || "",
+                      })
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a timeline event..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cmsTimelinePosts.length === 0 ? (
+                        <p className="p-2 text-sm text-muted-foreground">No published timeline events found. Create timeline-of-events in CMS first.</p>
+                      ) : (
+                        cmsTimelinePosts.map((post) => (
+                          <SelectItem key={post.id} value={post.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{post.title}</span>
+                              {post.established && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({post.established})
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Milestones are linked to CMS timeline-of-events content. Data is pulled automatically.
+                  </p>
+                </div>
+
+                {/* Preview of selected timeline event */}
+                {formData.contentId && (
+                  <Card className="bg-muted/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Selected Timeline Event Preview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        {(formData._previewYear as string) && (
+                          <Badge variant="outline" className="font-bold">{formData._previewYear as string}</Badge>
+                        )}
+                        <p className="font-medium">{formData._previewTitle as string}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{formData._previewDescription as string}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="year">Year</Label>
-                    <Input
-                      id="year"
-                      value={(formData.year as string) || ""}
-                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                      placeholder="1580 or Present"
-                    />
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="side">Timeline Side</Label>
                     <Select
@@ -777,37 +849,6 @@ export default function HomeContentPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={(formData.title as string) || ""}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Founding of Bocaue"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Short Description</Label>
-                  <Textarea
-                    id="description"
-                    value={(formData.description as string) || ""}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description shown initially..."
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="detail">Expanded Detail</Label>
-                  <Textarea
-                    id="detail"
-                    value={(formData.detail as string) || ""}
-                    onChange={(e) => setFormData({ ...formData, detail: e.target.value })}
-                    placeholder="Full detail shown when user clicks 'Read more'..."
-                    rows={5}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sortOrder">Sort Order</Label>
                     <Input
@@ -817,14 +858,14 @@ export default function HomeContentPage() {
                       onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
                     />
                   </div>
-                  <div className="flex items-center gap-2 pt-8">
-                    <Switch
-                      id="isActive"
-                      checked={(formData.isActive as boolean) ?? true}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                    />
-                    <Label htmlFor="isActive">Active</Label>
-                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="isActive"
+                    checked={(formData.isActive as boolean) ?? true}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  />
+                  <Label htmlFor="isActive">Active</Label>
                 </div>
               </>
             )}

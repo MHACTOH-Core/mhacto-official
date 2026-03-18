@@ -19,8 +19,14 @@ export function RevealObserver() {
     let domMutationObserver: MutationObserver | null = null
     let mutationDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-    // Delay setup so it doesn't mutate the DOM during React hydration
-    const hydrationDelayTimer = setTimeout(() => {
+    // Delay setup so it doesn't mutate the DOM during React hydration.
+    // Use requestIdleCallback (or a generous setTimeout fallback) so we
+    // only touch classNames *after* React has finished hydrating.
+    const scheduleSetup = typeof requestIdleCallback === "function"
+      ? requestIdleCallback
+      : (cb: () => void) => setTimeout(cb, 800)
+
+    const hydrationDelayTimer = scheduleSetup(() => {
       intersectionObserver = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
@@ -58,13 +64,16 @@ export function RevealObserver() {
         document.querySelectorAll("main section > div, main > section").forEach((el) => {
           const htmlEl = el as HTMLElement
           // Skip if already has reveal classes, is above fold, is inside admin,
-          // or is managed by Framer Motion (has its own animation system)
+          // is managed by Framer Motion, or already contains children with
+          // explicit reveal-on-scroll (avoids hydration mismatch when React
+          // re-renders and the DOM has classes the JSX never set).
           if (
             htmlEl.classList.contains("reveal-on-scroll") ||
             htmlEl.classList.contains("revealed") ||
             htmlEl.closest("[data-no-reveal]") ||
             htmlEl.closest(".flex.h-screen") || // admin layout
-            isFramerManaged(htmlEl)
+            isFramerManaged(htmlEl) ||
+            htmlEl.querySelector(".reveal-on-scroll")
           ) return
 
           const rect = htmlEl.getBoundingClientRect()
@@ -122,10 +131,14 @@ export function RevealObserver() {
         attributes: false,
         characterData: false,
       })
-    }, 100)
+    })
 
     return () => {
-      clearTimeout(hydrationDelayTimer)
+      if (typeof cancelIdleCallback === "function" && typeof hydrationDelayTimer === "number") {
+        cancelIdleCallback(hydrationDelayTimer)
+      } else {
+        clearTimeout(hydrationDelayTimer as ReturnType<typeof setTimeout>)
+      }
       if (mutationDebounceTimer) clearTimeout(mutationDebounceTimer)
       intersectionObserver?.disconnect()
       domMutationObserver?.disconnect()

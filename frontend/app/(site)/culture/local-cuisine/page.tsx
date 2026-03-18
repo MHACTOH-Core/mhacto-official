@@ -274,7 +274,7 @@ export default function LocalCuisinePage() {
                     const isActive = index === featuredIndex
                     return (
                       <CarouselItem
-                        key={item.id}
+                        key={`${item.id}-${index}`}
                         className="basis-[85%] sm:basis-3/4 md:basis-[60%] lg:basis-[50%]"
                       >
                         <Link href={`/culture/local-cuisine/${item.id}`} className="block h-full">

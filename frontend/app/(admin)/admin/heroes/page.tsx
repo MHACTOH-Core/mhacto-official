@@ -162,7 +162,7 @@ function resolveHeroImage(url: string): string {
 
 export default function HeroesAdminPage() {
   const router = useRouter()
-  const { isLoggedIn } = useAdmin()
+  const { isLoggedIn, isHydrated } = useAdmin()
 
   const { toast } = useToast()
 
@@ -190,12 +190,13 @@ export default function HeroesAdminPage() {
   const [formDescription, setFormDescription] = useState("")
 
   useEffect(() => {
+    if (!isHydrated) return
     if (!isLoggedIn) {
       router.push("/admin")
       return
     }
     loadHeroes()
-  }, [isLoggedIn, router])
+  }, [isHydrated, isLoggedIn, router])
 
   async function loadHeroes() {
     setLoading(true)
@@ -256,7 +257,7 @@ export default function HeroesAdminPage() {
     setSaveConfirmOpen(true)
   }
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

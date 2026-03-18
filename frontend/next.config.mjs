@@ -6,9 +6,10 @@ const isDev = process.env.NODE_ENV !== 'production'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export' is only applied during `next build` (production).
+  // output: 'export' is only applied during production static builds.
   // In dev mode it causes the server to exit immediately on Linux.
-  ...(isDev ? {} : { output: 'export' }),
+  // Set STATIC_EXPORT=false to build without static export (e.g. when backend is unavailable).
+  ...(!isDev && process.env.STATIC_EXPORT !== 'false' ? { output: 'export' } : {}),
   basePath: '/MHACTO-PROJECT',
   images: {
     unoptimized: true,

@@ -11,6 +11,35 @@
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 
+// ─── JWT token management ─────────────────────────────────────────
+
+let authToken: string | null = null
+
+/** Store the JWT token (call after login). */
+export function setAuthToken(token: string | null) {
+  authToken = token
+  if (typeof window !== "undefined") {
+    if (token) {
+      localStorage.setItem("admin_token", token)
+    } else {
+      localStorage.removeItem("admin_token")
+    }
+  }
+}
+
+/** Restore token from localStorage (call on mount). */
+export function restoreAuthToken(): string | null {
+  if (typeof window === "undefined") return null
+  const stored = localStorage.getItem("admin_token")
+  if (stored) authToken = stored
+  return authToken
+}
+
+/** Get current token (for verification). */
+export function getAuthToken(): string | null {
+  return authToken
+}
+
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
 /**
@@ -28,6 +57,11 @@ export async function apiFetch<T>(
   const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
   if (options.body) {
     headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
+  }
+
+  // Attach JWT token if available
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`
   }
 
   const response = await fetch(url, {
@@ -100,9 +134,14 @@ export async function apiUploadMedia(
   const uploadUrl = `${API_BASE}/api/media/upload.php?${params.toString()}`
   const response = await fetch(uploadUrl, { method: "POST", body: formData })
   const rawText = await response.text()
-  const parsedResult: MediaUploadResult = rawText
-    ? JSON.parse(rawText)
-    : { uploaded: [], errors: [], count: 0 }
+  let parsedResult: MediaUploadResult
+  try {
+    parsedResult = rawText
+      ? JSON.parse(rawText)
+      : { uploaded: [], errors: [], count: 0 }
+  } catch {
+    throw new Error("Invalid JSON response from upload endpoint")
+  }
 
   if (!response.ok) {
     throw new Error((parsedResult as unknown as Record<string, string>).message ?? "Upload failed")
@@ -121,6 +160,7 @@ export function apiDeleteMedia(path: string) {
 
 export interface LoginResponse {
   message: string
+  token: string
   user: {
     id: number
     username: string
@@ -133,10 +173,24 @@ export interface LoginResponse {
 
 /** Authenticate an admin user against the backend */
 export function apiLogin(email: string, password: string) {
-  return apiFetch<LoginResponse>("/api/auth/login.php", {
+  return apiFetch<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   })
+}
+
+/** Verify the stored JWT with the backend. Returns user data or null. */
+export async function apiVerifyAuth(): Promise<LoginResponse["user"] | null> {
+  const token = restoreAuthToken()
+  if (!token) return null
+  try {
+    const res = await apiFetch<{ user: LoginResponse["user"] }>("/api/auth/me")
+    return res.user
+  } catch {
+    // Token invalid/expired — clear it
+    setAuthToken(null)
+    return null
+  }
 }
 
 // ─── Admin data-fetching helpers ──────────────────────────────────
@@ -145,9 +199,6 @@ import type {
   Inquiry,
   ActivityLogEntry,
   AdminSettings,
-  PageView,
-  DailyVisit,
-  TopDestination,
 } from "@/lib/data/admin-data"
 
 export type { CMSPost } from "@/lib/data/admin-data"
@@ -175,41 +226,6 @@ export function apiFetchActivityLog(limit = 100) {
 /** Fetch site-wide settings (general + hero configuration) */
 export function apiFetchSettings() {
   return apiFetch<AdminSettings>("/api/settings/read.php")
-}
-
-/** Fetch page-level view counts for the analytics dashboard */
-export function apiFetchPageViews() {
-  return apiFetch<PageView[]>("/api/analytics/pageviews.php")
-}
-
-/** Fetch daily visit totals over the last N days (default 30) */
-export function apiFetchDailyVisits(days = 30) {
-  return apiFetch<DailyVisit[]>(`/api/analytics/visits.php?days=${days}`)
-}
-
-/**
- * Log a destination click.
- * Called on the public site when a visitor navigates to a destination page.
- * Sends a lightweight POST with the destination's content_id.
- */
-export function apiLogDestinationView(
-  contentId: number,
-  sessionId?: string,
-) {
-  return apiFetch<{ message: string }>("/api/analytics/log-view.php", {
-    method: "POST",
-    body: JSON.stringify({ contentId, sessionId }),
-  })
-}
-
-/**
- * Fetch the top N most-clicked destinations (default 10, max 50).
- * Used by the admin analytics dashboard.
- */
-export function apiFetchTopDestinations(limit = 10) {
-  return apiFetch<TopDestination[]>(
-    `/api/analytics/top-destinations.php?limit=${limit}`,
-  )
 }
 
 // ─── Page Heroes (per-page hero image/text CMS) ──────────────────
@@ -304,14 +320,6 @@ export function apiReplyInquiry(id: string, replyText: string, repliedBy?: strin
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/reply.php?id=${id}`, {
     method: "POST",
     body: JSON.stringify({ reply_text: replyText, replied_by: repliedBy ?? "Admin" }),
-  })
-}
-
-/** Assign an inquiry to a tourist guide — sets status to 'assigned' and saves guide name */
-export function apiAssignInquiry(id: string, assignedTo: string) {
-  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/update.php?id=${id}`, {
-    method: "POST",
-    body: JSON.stringify({ status: "assigned", assigned_to: assignedTo }),
   })
 }
 
@@ -435,6 +443,7 @@ export interface FeaturedContent {
 
 export interface Milestone {
   milestoneId: number
+  contentId?: string | null
   year: string
   title: string
   description: string
@@ -527,6 +536,11 @@ export function apiReorderMilestones(order: number[]) {
   return apiFetch<{ message: string }>("/api/home/milestones.php", {
     method: "PATCH", body: JSON.stringify({ order }),
   })
+}
+
+/** Fetch published CMS posts with label 'timeline-of-events' (for admin milestone picker) */
+export function apiFetchTimelinePosts() {
+  return apiFetch<CMSPost[]>("/api/home/timeline-posts.php")
 }
 
 // ─── Public content fetches ───────────────────────────────────────

@@ -22,7 +22,7 @@ class Post
         return "
             SELECT
                 c.content_id, c.user_id, c.title, c.description,
-                c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                c.status, c.post_type, c.created_at, c.updated_at,
                 cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -103,7 +103,7 @@ class Post
         // Label is stored in content_fields as 'label_key'
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -135,9 +135,12 @@ class Post
         $where = "WHERE cat.label_name = :cn";
         $params = [':cn' => $catName];
         if ($status) { $where .= " AND c.status = :s"; $params[':s'] = $status; }
-        $lim = $limit ? "LIMIT {$limit}" : "";
-        $stmt = $this->conn->prepare($this->baseSelect() . " {$where} ORDER BY c.created_at DESC {$lim}");
-        $stmt->execute($params);
+        $sql = $this->baseSelect() . " {$where} ORDER BY c.created_at DESC";
+        if ($limit !== null) { $sql .= " LIMIT :_lim"; }
+        $stmt = $this->conn->prepare($sql);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
@@ -151,12 +154,13 @@ class Post
 
     public function readPublishedPlaces(?int $limit = null): array
     {
-        $lim = $limit ? "LIMIT {$limit}" : "";
         $q = $this->baseSelect() . "
             WHERE c.post_type = 'place' AND c.status = 'published'
-            ORDER BY c.created_at DESC {$lim}
+            ORDER BY c.created_at DESC
         ";
+        if ($limit !== null) { $q .= " LIMIT :_lim"; }
         $stmt = $this->conn->prepare($q);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
@@ -169,7 +173,7 @@ class Post
     {
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -187,10 +191,12 @@ class Post
             )";
             $params[':lk'] = $labelKey;
         }
-        $lim = $limit ? "LIMIT {$limit}" : "";
-        $sql .= " ORDER BY c.created_at DESC {$lim}";
+        $sql .= " ORDER BY c.created_at DESC";
+        if ($limit !== null) { $sql .= " LIMIT :_lim"; }
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
@@ -201,7 +207,7 @@ class Post
     {
         $sql = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
@@ -224,47 +230,51 @@ class Post
             $sql .= " AND cat.label_name = :cn";
             $params[':cn'] = $catName;
         }
-        $lim = $limit ? "LIMIT {$limit}" : "";
-        $sql .= " ORDER BY c.created_at DESC {$lim}";
+        $sql .= " ORDER BY c.created_at DESC";
+        if ($limit !== null) { $sql .= " LIMIT :_lim"; }
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readPublishedNews(?int $limit = null): array
     {
-        $lim = $limit ? "LIMIT {$limit}" : "";
         $q = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'news' AND c.status = 'published'
-            ORDER BY nd.meta_value DESC {$lim}
+            ORDER BY nd.meta_value DESC
         ";
+        if ($limit !== null) { $q .= " LIMIT :_lim"; }
         $stmt = $this->conn->prepare($q);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readPublishedEvents(?int $limit = null): array
     {
-        $lim = $limit ? "LIMIT {$limit}" : "";
         $q = "
             SELECT c.content_id, c.user_id, c.title, c.description,
-                   c.status, c.post_type, c.author, c.created_at, c.updated_at,
+                   c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'event' AND c.status = 'published'
-            ORDER BY nd.meta_value DESC {$lim}
+            ORDER BY nd.meta_value DESC
         ";
+        if ($limit !== null) { $q .= " LIMIT :_lim"; }
         $stmt = $this->conn->prepare($q);
+        if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
         return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
@@ -277,9 +287,9 @@ class Post
         try {
             $stmt = $this->conn->prepare("
                 INSERT INTO content
-                  (user_id, category_id, title, description, status, post_type, author)
+                  (user_id, category_id, title, description, status, post_type)
                 VALUES
-                  (:uid, :cid, :title, :desc, :status, :pt, :author)
+                  (:uid, :cid, :title, :desc, :status, :pt)
             ");
             $stmt->execute([
                 ':uid'    => $data['user_id'] ?? 1,
@@ -288,7 +298,6 @@ class Post
                 ':desc'   => $data['description'] ?? '',
                 ':status' => $data['status'] ?? 'draft',
                 ':pt'     => $data['post_type'] ?? 'place',
-                ':author' => $data['author'] ?? null,
             ]);
             $contentId = (int) $this->conn->lastInsertId();
 
@@ -351,7 +360,7 @@ class Post
         try {
             // Update core content columns
             $fields = []; $params = [':id' => $id];
-            $allowed = ['title', 'description', 'status', 'post_type', 'category_id', 'author'];
+            $allowed = ['title', 'description', 'status', 'post_type', 'category_id'];
 
             foreach ($allowed as $f) {
                 if (array_key_exists($f, $data)) {
@@ -461,7 +470,7 @@ class Post
             'tourType'        => $meta['tour_type'] ?? null,
             'tourDifficulty'  => $meta['tour_difficulty'] ?? null,
             'newsDate'        => $meta['news_date'] ?? null,
-            'author'          => $row['author'] ?? null,
+            'author'          => null,
             'createdAt'       => $row['created_at'],
             'updatedAt'       => $row['updated_at'],
         ];

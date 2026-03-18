@@ -2,17 +2,22 @@
 /**
  * Route: /api/auth
  *
- * POST /api/auth/login — authenticate admin user
+ * POST /api/auth/login — authenticate admin user, return JWT
+ * GET  /api/auth/me    — verify token, return current user
  */
 
-function handle_auth(string $method, ?string $action, ?string $param2): void
+function handle_auth(string $method, ?string $action): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/User.php';
+    require_once __DIR__ . '/../core/security.php';
 
     switch ($action) {
         case 'login':
             _auth_login($method);
+            break;
+        case 'me':
+            _auth_me($method);
             break;
         default:
             Response::error('Not found.', 404);
@@ -37,16 +42,9 @@ function _auth_login(string $method): void
         $db   = (new Database())->getConnection();
         $user = new User($db);
 
-        // First check if the email exists at all
-        $stmt = $db->prepare(
-            "SELECT user_id, username, full_name, profile_picture, email, password_hash, role, status
-             FROM users WHERE email = :email LIMIT 1"
-        );
-        $email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
+        $row = $user->findByEmail($data->email);
 
-        if ($stmt->rowCount() === 0) {
+        if (!$row) {
             Response::json([
                 'success'    => false,
                 'error_code' => 'user_not_found',
@@ -54,8 +52,6 @@ function _auth_login(string $method): void
             ], 401);
             return;
         }
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row['status'] !== 'active') {
             Response::json([
@@ -76,8 +72,16 @@ function _auth_login(string $method): void
         }
 
         unset($row['password_hash'], $row['status']);
+
+        $token = Auth::generateToken(
+            (int) $row['user_id'],
+            $row['role'] ?? 'admin',
+            $row['email']
+        );
+
         Response::json([
             'message' => 'Login successful',
+            'token'   => $token,
             'user'    => [
                 'id'             => $row['user_id'],
                 'username'       => $row['username'],
@@ -89,6 +93,46 @@ function _auth_login(string $method): void
         ]);
     } catch (Exception $e) {
         error_log("auth/login error: " . $e->getMessage());
+        Response::error('Internal server error.', 500);
+    }
+}
+
+// ── Verify token / current user ─────────────────────────────────
+
+function _auth_me(string $method): void
+{
+    if ($method !== 'GET') {
+        Response::error('Method not allowed. Use GET.', 405);
+    }
+
+    $authUser = Auth::requireAuth(); // 401 if invalid
+
+    try {
+        $db   = (new Database())->getConnection();
+        $stmt = $db->prepare(
+            "SELECT user_id, username, full_name, profile_picture, email, role
+             FROM users WHERE user_id = :id AND status = 'active' LIMIT 1"
+        );
+        $stmt->bindParam(':id', $authUser['sub'], PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            Response::error('User not found or deactivated.', 401);
+        }
+
+        Response::json([
+            'user' => [
+                'id'             => $row['user_id'],
+                'username'       => $row['username'],
+                'fullName'       => $row['full_name'] ?? $row['username'],
+                'profilePicture' => $row['profile_picture'] ?? null,
+                'email'          => $row['email'],
+                'role'           => $row['role'] ?? 'admin',
+            ],
+        ]);
+    } catch (Exception $e) {
+        error_log("auth/me error: " . $e->getMessage());
         Response::error('Internal server error.', 500);
     }
 }

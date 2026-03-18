@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const {
     isLoggedIn,
+    isHydrated,
     pageViews,
     dailyVisits,
     totalViews,
@@ -41,10 +42,10 @@ export default function DashboardPage() {
   } = useAdmin()
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/admin")
-  }, [isLoggedIn, router])
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
   const publishedPosts = posts.filter((p) => p.status === "published").length
   const unreadInquiries = inquiries.filter((i) => i.status === "unread").length

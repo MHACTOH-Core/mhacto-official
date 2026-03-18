@@ -1,9 +1,24 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram } from "lucide-react"
 import { asset } from "@/lib/utils"
+import { apiFetchSettings } from "@/lib/api"
 
 export function Footer() {
+  const [facebookUrl, setFacebookUrl] = useState("")
+  const [instagramUrl, setInstagramUrl] = useState("")
+
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => {
+        if (s?.facebookUrl) setFacebookUrl(s.facebookUrl)
+        if (s?.instagramUrl) setInstagramUrl(s.instagramUrl)
+      })
+      .catch(() => {})
+  }, [])
   return (
     <footer className="relative border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground overflow-hidden">
       {/* Animated wave accent at top of footer */}
@@ -103,20 +118,31 @@ export function Footer() {
               Follow Us
             </h4>
             <div className="flex gap-3">
-              <a
-                href="#"
-                aria-label="Facebook"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                aria-label="Instagram"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
+              {facebookUrl && (
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {!facebookUrl && !instagramUrl && (
+                <p className="text-sm text-muted-foreground">Coming soon</p>
+              )}
             </div>
           </div>
         </div>

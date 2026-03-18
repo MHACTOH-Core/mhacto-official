@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { ArrowLeft, Landmark, Clock, MapPin, Star, Shield } from "lucide-react"
+import { ArrowLeft, Landmark, Clock, MapPin, Star, Shield, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { type HeritageSite } from "@/lib/data/destinations-data"
@@ -14,6 +14,8 @@ import { type CMSPost } from "@/lib/data/admin-data"
 
 export default function HeritageSitesPage() {
   const [heritageSites, setHeritageSites] = useState<HeritageSite[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetchByLabel("destinations")
@@ -25,7 +27,8 @@ export default function HeritageSitesPage() {
         })
         setHeritageSites((heritage.length ? heritage : posts).map(cmsToHeritageSite))
       })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -69,6 +72,27 @@ export default function HeritageSitesPage() {
               <p className="text-muted-foreground">Tangible history preserved for future generations</p>
             </div>
           </div>
+
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-3 text-muted-foreground">Loading heritage sites...</span>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Unable to load heritage sites.</p>
+              <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && heritageSites.length === 0 && (
+            <div className="text-center py-20">
+              <Landmark className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground">No heritage sites listed yet.</p>
+            </div>
+          )}
 
           <div className="space-y-8">
             {heritageSites.map((site, idx) => (

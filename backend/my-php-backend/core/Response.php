@@ -15,16 +15,25 @@ class Response
 {
     /**
      * Emit the CORS headers required by a Next.js frontend.
-     * Adjust the origin for production.
+     * Only whitelisted origins are reflected back.
      */
     public static function cors(): void
     {
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? 'http://localhost:3000';
+        $allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'https://mhactoh-core.github.io',
+        ];
 
-        header("Access-Control-Allow-Origin: {$origin}");
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+        if (in_array($origin, $allowedOrigins, true)) {
+            header("Access-Control-Allow-Origin: {$origin}");
+            header("Access-Control-Allow-Credentials: true");
+        }
+
         header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-        header("Access-Control-Allow-Credentials: true");
         header("Content-Type: application/json; charset=UTF-8");
     }
 

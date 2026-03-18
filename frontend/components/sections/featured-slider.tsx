@@ -101,6 +101,8 @@ export function FeaturedSlider({
   )
   const [activeIndex, setActiveIndex] = useState(0)
   const [fading, setFading] = useState(false)
+  const [fetchedCount, setFetchedCount] = useState(0)
+  const [hasRealContent, setHasRealContent] = useState(false)
 
   // Fetch one featured post per slide
   useEffect(() => {
@@ -108,6 +110,7 @@ export function FeaturedSlider({
       apiFetchFeaturedByLabel(cfg.label, 1)
         .then((posts) => {
           if (posts?.length) {
+            setHasRealContent(true)
             const mapped = mapPost(posts[0])
             setSlides((prev) => {
               const next = [...prev]
@@ -125,6 +128,7 @@ export function FeaturedSlider({
           }
         })
         .catch(() => {})
+        .finally(() => setFetchedCount((c) => c + 1))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -152,7 +156,9 @@ export function FeaturedSlider({
     return () => clearInterval(timer)
   }, [next, duration])
 
+  // Hide entire section if all fetches completed with no featured content
   if (slides.length === 0) return null
+  if (fetchedCount >= slideConfigs.length && !hasRealContent) return null
 
   const slide = slides[activeIndex]
 

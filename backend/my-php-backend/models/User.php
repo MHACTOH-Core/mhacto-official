@@ -42,30 +42,26 @@ class User
         }
     }
 
-    public function login(string $username, string $password): array|false
+    /**
+     * Look up a user by email — returns the full row (including password_hash
+     * and status) so callers can perform granular auth checks.
+     */
+    public function findByEmail(string $email): array|false
     {
-        $username = htmlspecialchars(strip_tags($username));
+        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
-        $query = "SELECT user_id, username, full_name, profile_picture, email, password_hash, role
+        $query = "SELECT user_id, username, full_name, profile_picture, email, password_hash, role, status
                   FROM {$this->table_name}
-                  WHERE username = :username AND status = 'active'
+                  WHERE email = :email
                   LIMIT 1";
 
         try {
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':username', $username);
+            $stmt->bindParam(':email', $email);
             $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (password_verify($password, $row['password_hash'])) {
-                    unset($row['password_hash']);
-                    return $row;
-                }
-            }
-            return false;
+            return $stmt->rowCount() > 0 ? $stmt->fetch(PDO::FETCH_ASSOC) : false;
         } catch (PDOException $e) {
-            error_log("User::login error: " . $e->getMessage());
+            error_log("User::findByEmail error: " . $e->getMessage());
             return false;
         }
     }

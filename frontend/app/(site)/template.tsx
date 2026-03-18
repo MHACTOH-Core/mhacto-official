@@ -12,8 +12,8 @@ const curtain = {
     opacity: 1,
   },
   transition: {
-    clipPath: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-    opacity: { duration: 0.4, ease: "easeOut" },
+    clipPath: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    opacity: { duration: 0.4, ease: "easeOut" as const },
   },
 }
 

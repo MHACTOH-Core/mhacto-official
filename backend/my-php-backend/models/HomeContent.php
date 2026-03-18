@@ -105,32 +105,45 @@ class HomeContent
 
     public function updateSpotlight($id, $data)
     {
-        if (!empty($data['isActive'])) {
-            $this->conn->exec("UPDATE featured_content SET is_active = 0 WHERE section = 'spotlight' AND featured_id != " . intval($id));
-        }
-
-        $fields = [];
-        $params = [':id' => $id];
-
-        $fieldMap = [
-            'contentId' => 'content_id',
-            'isActive'  => 'is_active',
-        ];
-
-        foreach ($fieldMap as $apiField => $dbField) {
-            if (isset($data[$apiField])) {
-                $value = $data[$apiField];
-                if ($apiField === 'isActive') $value = $value ? 1 : 0;
-                $fields[] = "{$dbField} = :{$apiField}";
-                $params[":{$apiField}"] = $value;
+        $this->conn->beginTransaction();
+        try {
+            if (!empty($data['isActive'])) {
+                $deact = $this->conn->prepare("UPDATE featured_content SET is_active = 0 WHERE section = 'spotlight' AND featured_id != :id");
+                $deact->execute([':id' => $id]);
             }
+
+            $fields = [];
+            $params = [':id' => $id];
+
+            $fieldMap = [
+                'contentId' => 'content_id',
+                'isActive'  => 'is_active',
+            ];
+
+            foreach ($fieldMap as $apiField => $dbField) {
+                if (isset($data[$apiField])) {
+                    $value = $data[$apiField];
+                    if ($apiField === 'isActive') $value = $value ? 1 : 0;
+                    $fields[] = "{$dbField} = :{$apiField}";
+                    $params[":{$apiField}"] = $value;
+                }
+            }
+
+            if (empty($fields)) {
+                $this->conn->commit();
+                return false;
+            }
+
+            $sql = "UPDATE featured_content SET " . implode(', ', $fields) . " WHERE featured_id = :id AND section = 'spotlight'";
+            $stmt = $this->conn->prepare($sql);
+            $result = $stmt->execute($params);
+            $this->conn->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->conn->rollBack();
+            error_log("HomeContent::updateSpotlight error: " . $e->getMessage());
+            return false;
         }
-
-        if (empty($fields)) return false;
-
-        $sql = "UPDATE featured_content SET " . implode(', ', $fields) . " WHERE featured_id = :id AND section = 'spotlight'";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute($params);
     }
 
     public function deleteSpotlight($id)
@@ -203,16 +216,23 @@ class HomeContent
 
     public function reorderFeaturedLandmarks($order)
     {
-        $stmt = $this->conn->prepare("UPDATE featured_content SET sort_order = :sortOrder WHERE featured_id = :id AND section = 'landmark'");
+        $this->conn->beginTransaction();
+        try {
+            $stmt = $this->conn->prepare("UPDATE featured_content SET sort_order = :sortOrder WHERE featured_id = :id AND section = 'landmark'");
 
-        foreach ($order as $index => $id) {
-            $stmt->execute([
-                ':sortOrder' => $index + 1,
-                ':id'        => $id,
-            ]);
+            foreach ($order as $index => $id) {
+                $stmt->execute([
+                    ':sortOrder' => $index + 1,
+                    ':id'        => $id,
+                ]);
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->conn->rollBack();
+            return false;
         }
-
-        return true;
     }
 
     // ── HERO SETTINGS (convenience — delegates to config table via Settings model) ──
@@ -321,16 +341,28 @@ class HomeContent
 
     public function getMilestones($all = false)
     {
-        $sql = "SELECT milestone_id AS milestoneId, year, title, description, detail,
-                       side, sort_order AS sortOrder, is_active AS isActive,
-                       created_at AS createdAt, updates_at AS updatedAt
-                FROM milestone";
+        // JOIN with CMS content + content_fields to pull data from linked timeline posts.
+        // Falls back to milestone's own fields if no content_id is set (backward compat).
+        $sql = "SELECT m.milestone_id AS milestoneId,
+                       m.content_id AS contentId,
+                       COALESCE(cf_year.meta_value, m.year) AS year,
+                       COALESCE(c.title, m.title) AS title,
+                       COALESCE(c.description, m.description) AS description,
+                       COALESCE(cf_story.meta_value, m.detail) AS detail,
+                       m.side, m.sort_order AS sortOrder, m.is_active AS isActive,
+                       m.created_at AS createdAt, m.updated_at AS updatedAt
+                FROM milestone m
+                LEFT JOIN content c ON m.content_id = c.content_id
+                LEFT JOIN content_fields cf_year ON m.content_id = cf_year.content_id
+                    AND cf_year.meta_key = 'established'
+                LEFT JOIN content_fields cf_story ON m.content_id = cf_story.content_id
+                    AND cf_story.meta_key = 'story'";
 
         if (!$all) {
-            $sql .= " WHERE is_active = 1";
+            $sql .= " WHERE m.is_active = 1";
         }
 
-        $sql .= " ORDER BY sort_order ASC";
+        $sql .= " ORDER BY m.sort_order ASC";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
@@ -338,21 +370,23 @@ class HomeContent
 
         return array_map(function ($row) {
             $row['isActive'] = (bool) $row['isActive'];
+            $row['contentId'] = $row['contentId'] ? (string) $row['contentId'] : null;
             return $row;
         }, $results);
     }
 
     public function createMilestone($data)
     {
-        $sql = "INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active)
-                VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
+        $sql = "INSERT INTO milestone (content_id, year, title, description, detail, side, sort_order, is_active)
+                VALUES (:contentId, :year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([
-            ':year'        => $data['year'] ?? 0,
-            ':title'       => $data['title'] ?? '',
-            ':description' => $data['description'] ?? '',
-            ':detail'      => $data['detail'] ?? '',
+            ':contentId'   => !empty($data['contentId']) ? (int) $data['contentId'] : null,
+            ':year'        => $data['year'] ?? null,
+            ':title'       => $data['title'] ?? null,
+            ':description' => $data['description'] ?? null,
+            ':detail'      => $data['detail'] ?? null,
             ':side'        => $data['side'] ?? 'left',
             ':sortOrder'   => $data['sortOrder'] ?? '0',
             ':isActive'    => isset($data['isActive']) ? ($data['isActive'] ? 1 : 0) : 1,
@@ -367,6 +401,7 @@ class HomeContent
         $params = [':id' => $id];
 
         $fieldMap = [
+            'contentId'   => 'content_id',
             'year'        => 'year',
             'title'       => 'title',
             'description' => 'description',
@@ -400,16 +435,23 @@ class HomeContent
 
     public function reorderMilestones($order)
     {
-        $stmt = $this->conn->prepare("UPDATE milestone SET sort_order = :sortOrder WHERE milestone_id = :id");
+        $this->conn->beginTransaction();
+        try {
+            $stmt = $this->conn->prepare("UPDATE milestone SET sort_order = :sortOrder WHERE milestone_id = :id");
 
-        foreach ($order as $index => $id) {
-            $stmt->execute([
-                ':sortOrder' => $index + 1,
-                ':id'        => $id,
-            ]);
+            foreach ($order as $index => $id) {
+                $stmt->execute([
+                    ':sortOrder' => $index + 1,
+                    ':id'        => $id,
+                ]);
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->conn->rollBack();
+            return false;
         }
-
-        return true;
     }
 
     // ── Format helper for featured_content rows ────────────────────

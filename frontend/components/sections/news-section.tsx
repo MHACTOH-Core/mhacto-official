@@ -72,7 +72,7 @@ export function NewsSection() {
             .map((article) => ({
               id: article.id,
               title: article.title,
-              summary: article.body?.substring(0, 200) + "..." || "",
+              summary: article.body ? article.body.substring(0, 200) + "..." : "",
               image: resolveMediaUrl(article.image?.[0]),
               date: article.newsDate || article.createdAt,
               category: article.label || "news",

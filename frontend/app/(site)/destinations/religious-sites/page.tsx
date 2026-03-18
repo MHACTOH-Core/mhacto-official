@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { ArrowLeft, Church, Clock, MapPin, Star } from "lucide-react"
+import { ArrowLeft, Church, Clock, MapPin, Star, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { type ReligiousSite } from "@/lib/data/destinations-data"
@@ -14,6 +14,8 @@ import { type CMSPost } from "@/lib/data/admin-data"
 
 export default function ReligiousSitesPage() {
   const [religiousSites, setReligiousSites] = useState<ReligiousSite[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetchByLabel("destinations")
@@ -22,7 +24,8 @@ export default function ReligiousSitesPage() {
         const religious = posts.filter(p => (p.category ?? "").toLowerCase().includes("religious"))
         if (religious.length) setReligiousSites(religious.map(cmsToReligiousSite))
       })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -66,6 +69,27 @@ export default function ReligiousSitesPage() {
               <p className="text-muted-foreground">Sacred places in Bocaue open to pilgrims and visitors</p>
             </div>
           </div>
+
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-3 text-muted-foreground">Loading religious sites...</span>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Unable to load religious sites.</p>
+              <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && religiousSites.length === 0 && (
+            <div className="text-center py-20">
+              <Church className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground">No religious sites listed yet.</p>
+            </div>
+          )}
 
           <div className="space-y-8">
             {religiousSites.map((site) => (

@@ -38,7 +38,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { isLoggedIn, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword } = useAdmin()
+  const { isLoggedIn, isHydrated, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword } = useAdmin()
 
   const { toast } = useToast()
 
@@ -71,14 +71,14 @@ export default function SettingsPage() {
   const [cropDialogOpen, setCropDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/admin")
-  }, [isLoggedIn, router])
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
   useEffect(() => {
     setForm(settings)
   }, [settings])
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
   const handleSave = () => {
     setSaveConfirmOpen(true)
@@ -130,7 +130,7 @@ export default function SettingsPage() {
       const file = new File([blob], "profile.jpg", { type: "image/jpeg" })
       const result = await apiUploadMedia([file], "image", { category: "profiles" })
       if (result.uploaded?.length) {
-        await updateProfile({ profile_picture: result.uploaded[0] })
+        await updateProfile({ profile_picture: result.uploaded[0].url })
         toast({ title: "Profile picture updated", description: "Your profile picture has been changed." })
       }
     } catch (err) {
@@ -380,6 +380,31 @@ export default function SettingsPage() {
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                 />
+              </div>
+              <Separator />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Facebook URL</Label>
+                  <Input
+                    type="url"
+                    value={form.facebookUrl}
+                    onChange={(e) =>
+                      setForm({ ...form, facebookUrl: e.target.value })
+                    }
+                    placeholder="https://facebook.com/..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Instagram URL</Label>
+                  <Input
+                    type="url"
+                    value={form.instagramUrl}
+                    onChange={(e) =>
+                      setForm({ ...form, instagramUrl: e.target.value })
+                    }
+                    placeholder="https://instagram.com/..."
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

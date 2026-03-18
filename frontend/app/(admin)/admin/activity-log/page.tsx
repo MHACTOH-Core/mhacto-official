@@ -41,6 +41,7 @@ const actionIcons: Record<ActivityAction, React.ComponentType<{ className?: stri
   archive_post: Archive,
   reply_inquiry: Send,
   archive_inquiry: Archive,
+  delete_inquiry: Trash2,
   update_settings: Settings,
 }
 
@@ -54,20 +55,21 @@ const actionColors: Record<ActivityAction, string> = {
   archive_post: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
   reply_inquiry: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   archive_inquiry: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  delete_inquiry: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
   update_settings: "bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-300",
 }
 
 export default function ActivityLogPage() {
   const router = useRouter()
-  const { isLoggedIn, activityLog, currentUser } = useAdmin()
+  const { isLoggedIn, isHydrated, activityLog, currentUser } = useAdmin()
   const [search, setSearch] = useState("")
   const [filterAction, setFilterAction] = useState<ActivityAction | "all">("all")
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/admin")
-  }, [isLoggedIn, router])
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
-  if (!isLoggedIn) return null
+  if (!isHydrated || !isLoggedIn) return null
 
   // Role-based filtering: content_manager and admin see only their own logs
   const roleFiltered = currentUser?.role === "super_admin"

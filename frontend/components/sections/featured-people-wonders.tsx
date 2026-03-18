@@ -18,6 +18,7 @@ const categoryColors: Record<PeopleWonder["category"], string> = {
   sports: "bg-blue-100 text-blue-700 border-blue-200",
   entertainment: "bg-purple-100 text-purple-700 border-purple-200",
   academics: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  civic: "bg-emerald-100 text-emerald-700 border-emerald-200",
 }
 
 const categoryLabel: Record<PeopleWonder["category"], string> = {
@@ -26,10 +27,12 @@ const categoryLabel: Record<PeopleWonder["category"], string> = {
   sports: "Sports",
   entertainment: "Entertainment",
   academics: "Academics",
+  civic: "Civic",
 }
 
 export function FeaturedPeopleWonders() {
   const [persons, setPersons] = useState<PeopleWonder[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     apiFetchFeaturedByLabel("people-wonders", MAX_FEATURED)
@@ -37,7 +40,10 @@ export function FeaturedPeopleWonders() {
         if (posts?.length) setPersons(posts.slice(0, MAX_FEATURED).map(cmsToPeopleWonder))
       })
       .catch(() => {})
+      .finally(() => setIsLoading(false))
   }, [])
+
+  if (!isLoading && persons.length === 0) return null
 
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-muted/20">

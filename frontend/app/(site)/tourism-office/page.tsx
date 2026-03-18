@@ -1,9 +1,11 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Building2, Phone, Mail, Clock, MapPin, Users, Layers, Target, ArrowRight, CheckCircle } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
+import { apiFetchSettings } from "@/lib/api"
 
 const staff = [
   { name: "Office of the Mayor", role: "Chief Executive", note: "oversees MHACTO direction" },
@@ -54,6 +56,27 @@ const programs = [
 ]
 
 export default function TourismOfficePage() {
+  const [contactInfo, setContactInfo] = useState({
+    address: "Bocaue Municipal Hall, Rizal Ave., Bocaue, Bulacan",
+    phone: "(044) 123-4567",
+    email: "mhacto.bocaue@bocaue.gov.ph",
+  })
+
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => {
+        if (s) {
+          setContactInfo({
+            address: s.address || contactInfo.address,
+            phone: s.contactPhone || contactInfo.phone,
+            email: s.contactEmail || contactInfo.email,
+          })
+        }
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       <PageHero
@@ -103,9 +126,9 @@ export default function TourismOfficePage() {
                 </div>
                 <div className="p-5 space-y-2">
                   {[
-                    { icon: MapPin, text: "Bocaue Municipal Hall, Rizal Ave., Bocaue, Bulacan" },
-                    { icon: Phone,  text: "(044) 123-4567" },
-                    { icon: Mail,   text: "mhacto.bocaue@bocaue.gov.ph" },
+                    { icon: MapPin, text: contactInfo.address },
+                    { icon: Phone,  text: contactInfo.phone },
+                    { icon: Mail,   text: contactInfo.email },
                     { icon: Clock,  text: "Mon–Fri: 8:00 AM – 5:00 PM" },
                   ].map(({ icon: Icon, text }) => (
                     <div key={text} className="flex items-start gap-3 rounded-xl bg-muted/50 px-3 py-2.5">

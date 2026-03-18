@@ -66,6 +66,7 @@ export function cmsToMuseum(post: CMSPost): Museum {
     location: post.location ?? "",
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
+    contact: post.contact ?? "",
     image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     author: post.author ?? undefined,
@@ -107,7 +108,9 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
     type,
     difficulty,
     description: post.body ?? "",
-    itinerary: post.itinerary ?? [],
+    itinerary: (post.itinerary ?? [])
+      .map(item => (item?.time && item?.activity) ? `${item.time} – ${item.activity}` : "")
+      .filter(Boolean),
     includes: post.includes ?? [],
     highlights: post.highlights ?? [],
     image: resolveImage(post, "/images/places/Church.jpg"),
@@ -276,24 +279,6 @@ export function cmsToNotablePerson(post: CMSPost): NotablePerson {
   }
 }
 
-// ─── Filter helpers for destinations page ─────────────────────────
-
-const HERITAGE_TYPES = ["Heritage Site", "Landmark"]
-const MUSEUM_TYPES = ["Museum"]
-const RELIGIOUS_TYPES = ["Religious Site"]
-
-export function filterHeritage(posts: CMSPost[]): CMSPost[] {
-  return posts.filter(p => HERITAGE_TYPES.includes(p.category ?? ""))
-}
-
-export function filterMuseums(posts: CMSPost[]): CMSPost[] {
-  return posts.filter(p => MUSEUM_TYPES.includes(p.category ?? ""))
-}
-
-export function filterReligious(posts: CMSPost[]): CMSPost[] {
-  return posts.filter(p => RELIGIOUS_TYPES.includes(p.category ?? ""))
-}
-
 // ─── Community mappers ────────────────────────────────────────────
 
 /** Parse a comma-separated or newline-separated string into an array */
@@ -348,7 +333,7 @@ export function cmsToPublicSchool(post: CMSPost): PublicSchool {
     barangay: post.location ?? "",
     description: post.body ?? "",
     programs: parseList(post.story),
-    enrollmentRange: post.established ?? undefined,
+    enrollment: post.established ?? undefined,
   }
 }
 
@@ -394,15 +379,6 @@ export function cmsToHospital(post: CMSPost): Hospital {
     hours: post.hours ?? "",
     emergency: post.isFeatured ?? false,
   }
-}
-
-/** Filter schools by ownership from a shared CMS posts array */
-export function filterPublicSchools(posts: CMSPost[]): CMSPost[] {
-  return posts.filter(p => !(p.category ?? "").toLowerCase().includes("private"))
-}
-
-export function filterPrivateSchools(posts: CMSPost[]): CMSPost[] {
-  return posts.filter(p => (p.category ?? "").toLowerCase().includes("private"))
 }
 
 // ─── Restaurant mapper ────────────────────────────────────────────

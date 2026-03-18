@@ -8,7 +8,7 @@
  * PUT /api/heroes/{slug}       — update page hero
  */
 
-function handle_heroes(string $method, ?string $slug, ?string $param2): void
+function handle_heroes(string $method, ?string $slug): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/PageHero.php';

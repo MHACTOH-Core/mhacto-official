@@ -131,6 +131,8 @@ export function FeaturedSpotlight() {
     : asset("/images/places/river-festival.jpg")
 
   return (
+    <section className="py-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-4 lg:px-8">
     <div
       className="group relative w-full overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/10 reveal-on-scroll reveal-scale"
       onMouseEnter={() => setIsHovered(true)}
@@ -272,5 +274,7 @@ export function FeaturedSpotlight() {
         <div className="h-full w-full bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       </div>
     </div>
+    </div>
+    </section>
   )
 }

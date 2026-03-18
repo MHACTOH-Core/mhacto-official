@@ -9,7 +9,7 @@
  * DELETE /api/posts/{id}     — delete post
  */
 
-function handle_posts(string $method, ?string $id, ?string $param2): void
+function handle_posts(string $method, ?string $id): void
 {
     require_once __DIR__ . '/../config/database.php';
     require_once __DIR__ . '/../models/Post.php';
@@ -108,6 +108,9 @@ function _posts_create(Post $post): void
 
     $mapped    = _posts_mapFrontendToDb($data);
     $contentId = $post->create($mapped);
+    if (!$contentId) {
+        Response::error('Failed to create post.', 500);
+    }
     $created   = $post->readOne($contentId);
 
     Response::json([
@@ -127,7 +130,10 @@ function _posts_update(Post $post, ?string $id, PDO $pdo): void
     if (!$data) Response::error('No data provided.', 400);
 
     $mapped = _posts_mapUpdateToDb($data, $pdo);
-    $post->update($postId, $mapped);
+    $success = $post->update($postId, $mapped);
+    if (!$success) {
+        Response::error('Failed to update post.', 500);
+    }
     $updated = $post->readOne($postId);
 
     Response::json([

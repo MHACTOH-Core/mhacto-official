@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { Map, Clock, Users } from "lucide-react"
+import { Map, Clock, Users, Loader2 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,21 +29,26 @@ const typeLabels: Record<TourPackage["type"], string> = {
 const difficultyLabel: Record<TourPackage["difficulty"], string> = {
   easy: "Easy",
   moderate: "Moderate",
+  challenging: "Challenging",
   active: "Active",
 }
 const difficultyColor: Record<TourPackage["difficulty"], string> = {
   easy: "bg-green-100 text-green-800 border-green-200",
   moderate: "bg-amber-100 text-amber-800 border-amber-200",
+  challenging: "bg-orange-100 text-orange-800 border-orange-200",
   active: "bg-red-100 text-red-800 border-red-200",
 }
 
 export default function TravelToursPage() {
   const [tourPackages, setTourPackages] = useState<TourPackage[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetchByLabel("travel-tours")
       .then((posts) => { if (posts?.length) setTourPackages(posts.map(cmsToTourPackage)) })
-      .catch(() => {})
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -72,6 +77,27 @@ export default function TravelToursPage() {
               <p className="text-muted-foreground">Book directly with the MHACTO office</p>
             </div>
           </div>
+
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-3 text-muted-foreground">Loading tours...</span>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Unable to load tour packages.</p>
+              <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && tourPackages.length === 0 && (
+            <div className="text-center py-20">
+              <Map className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground">No tour packages available yet.</p>
+            </div>
+          )}
 
           <div className="space-y-10">
             {tourPackages.map((pkg) => (

@@ -8,7 +8,7 @@
  * POST /api/analytics/log-view           — log a destination page view
  */
 
-function handle_analytics(string $method, ?string $action, ?string $param2): void
+function handle_analytics(string $method, ?string $action): void
 {
     require_once __DIR__ . '/../config/database.php';
 
