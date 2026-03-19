@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * PageView Model — Per-destination click analytics.
  *

@@ -1,4 +1,9 @@
 <?php
+namespace App\Models;
+
+use PDO;
+use PDOException;
+
 /**
  * ActivityLog Model — Schema v2.
  * `details` column is now JSON type.

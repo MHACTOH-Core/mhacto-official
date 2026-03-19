@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database;
+use App\Models\Destination;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/destinations
  *
@@ -8,9 +12,6 @@
 
 function handle_destinations(string $method, ?string $id): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/Destination.php';
-
     try {
         $db = (new Database())->getConnection();
         $destination = new Destination($db);
@@ -23,14 +24,13 @@ function handle_destinations(string $method, ?string $id): void
                 break;
 
             case 'POST':
+                $authUser = Auth::requireAuth();
                 $data = json_decode(file_get_contents('php://input'), true);
 
                 if (empty($data['title']) || empty($data['description']) || empty($data['location']) || empty($data['hours']) || empty($data['contact'])) {
                     Response::error('Incomplete data. Please fill all fields.', 400);
                 }
 
-                // Extract user from JWT (guaranteed valid — router enforces auth)
-                $authUser = Auth::getAuthUser();
                 $user_id = $authUser['sub'];
 
                 $success = $destination->create(
@@ -54,6 +54,6 @@ function handle_destinations(string $method, ?string $id): void
         }
     } catch (Exception $e) {
         error_log("destinations error: " . $e->getMessage());
-        Response::error('Destinations: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }

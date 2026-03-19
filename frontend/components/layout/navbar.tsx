@@ -41,7 +41,7 @@ function PagodaText({ className, size = "sm" }: { className?: string; size?: "sm
 const navLinks: NavItem[] = [
   { label: "Home", href: "/", isHash: false },
   {
-    label: "Bocaue River Town Wonders",
+    label: "Bocaue the RiverTown Wonders",
     href: "/bocaue-wonders",
     isHash: false,
     children: [
@@ -50,17 +50,17 @@ const navLinks: NavItem[] = [
         href: "/history",
         children: [
           { label: "Timeline of Events", href: "/history/timeline", isHash: false },
-          { label: "Notable Persons", href: "/history/notable-persons", isHash: false },
+          { label: "Remarkable Persons", href: "/history/notable-persons", isHash: false },
         ],
       },
       {
         label: "Arts & Culture",
         href: "/culture",
         children: [
-          { label: "Local Cuisine", href: "/culture/local-cuisine", isHash: false },
+          { label: "Culinary Wonders", href: "/culture/local-cuisine", isHash: false },
           { label: "Festivals", href: "/culture/festivals-celebrations", isHash: false },
           { label: "Cultural Practices", href: "/culture/practices-traditions", isHash: false },
-          { label: "Crafts & Artisan", href: "/culture/crafts-artisan", isHash: false },
+          { label: "Art Wonders", href: "/culture/crafts-artisan", isHash: false },
           { label: "People Wonders", href: "/culture/people-wonders", isHash: false },
         ],
       },

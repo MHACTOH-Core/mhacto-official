@@ -34,10 +34,10 @@ const statusConfig = {
 }
 
 const navSections = [
-  { id: "cuisine", label: "Local Cuisine" },
+  { id: "cuisine", label: "Culinary Wonders" },
   { id: "festivals", label: "Festivals" },
   { id: "practices", label: "Cultural Practices" },
-  { id: "crafts-artisans", label: "Crafts & Artisans" },
+  { id: "crafts-artisans", label: "Art Wonders" },
   { id: "people-wonders", label: "People Wonders" },
 ]
 

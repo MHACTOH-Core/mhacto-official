@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database;
+use App\Models\Settings;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/settings
  *
@@ -8,9 +12,6 @@
 
 function handle_settings(string $method, ?string $param1): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/Settings.php';
-
     try {
         $db = (new Database())->getConnection();
         $settings = new Settings($db);
@@ -21,6 +22,7 @@ function handle_settings(string $method, ?string $param1): void
                 break;
 
             case 'PUT':
+                Auth::requireAuth();
                 $data = json_decode(file_get_contents('php://input'), true);
                 if (!$data) Response::error('No data provided.', 400);
 
@@ -36,6 +38,6 @@ function handle_settings(string $method, ?string $param1): void
         }
     } catch (Exception $e) {
         error_log("settings error: " . $e->getMessage());
-        Response::error('Settings: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }

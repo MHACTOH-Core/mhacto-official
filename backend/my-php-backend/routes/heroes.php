@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database;
+use App\Models\PageHero;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/heroes
  *
@@ -10,9 +14,6 @@
 
 function handle_heroes(string $method, ?string $slug): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/PageHero.php';
-
     try {
         $db    = (new Database())->getConnection();
         $model = new PageHero($db);
@@ -34,6 +35,7 @@ function handle_heroes(string $method, ?string $slug): void
             case 'PUT':
             case 'POST':
             case 'PATCH':
+                Auth::requireAuth();
                 if (!$resolvedSlug) Response::error('Missing required slug.', 400);
 
                 $data = json_decode(file_get_contents('php://input'), true);
@@ -53,6 +55,6 @@ function handle_heroes(string $method, ?string $slug): void
         }
     } catch (Exception $e) {
         error_log("heroes error: " . $e->getMessage());
-        Response::error('Heroes: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }

@@ -1,4 +1,9 @@
 <?php
+use App\Config\Database;
+use App\Models\Inquiry;
+use App\Core\Auth;
+use App\Core\Validator;
+use App\Core\Response;
 /**
  * Route: /api/inquiries
  *
@@ -11,15 +16,13 @@
 
 function handle_inquiries(string $method, ?string $idOrAction, ?string $subAction): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/Inquiry.php';
-
     try {
         $db = (new Database())->getConnection();
         $inquiry = new Inquiry($db);
 
-        // POST /api/inquiries/{id}/reply
+        // POST /api/inquiries/{id}/reply — admin action, requires auth
         if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'reply') {
+            Auth::requireAuth();
             _inquiries_reply($inquiry, (int) $idOrAction);
             return;
         }
@@ -31,17 +34,21 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
 
         switch ($method) {
             case 'GET':
+                Auth::requireAuth();
                 _inquiries_read($inquiry);
                 break;
             case 'POST':
+                // Public form submission — no auth required
                 _inquiries_create($inquiry);
                 break;
             case 'PUT':
             case 'PATCH':
+                Auth::requireAuth();
                 if (!$id) Response::error('Missing inquiry ID.', 400);
                 _inquiries_update($inquiry, $id);
                 break;
             case 'DELETE':
+                Auth::requireAuth();
                 if (!$id) Response::error('Missing inquiry ID.', 400);
                 _inquiries_delete($inquiry, $id);
                 break;
@@ -50,7 +57,7 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
         }
     } catch (Exception $e) {
         error_log("inquiries error: " . $e->getMessage());
-        Response::error('Inquiries: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }
 
@@ -60,6 +67,26 @@ function _inquiries_read(Inquiry $inquiry): void
 {
     $status = $_GET['status'] ?? null;
     $data = $status ? $inquiry->readByStatus($status) : $inquiry->readAll();
+
+    // Pagination: when ?page= is provided, return paginated envelope
+    $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : null;
+    if ($page !== null) {
+        $perPage = isset($_GET['per_page']) ? max(1, min((int) $_GET['per_page'], 100)) : 20;
+        $total   = count($data);
+        $offset  = ($page - 1) * $perPage;
+        $paged   = array_slice($data, $offset, $perPage);
+
+        Response::json([
+            'items' => array_values($paged),
+            'meta'  => [
+                'page'     => $page,
+                'perPage'  => $perPage,
+                'total'    => $total,
+                'lastPage' => (int) ceil($total / $perPage),
+            ],
+        ]);
+    }
+
     Response::json($data);
 }
 
@@ -69,8 +96,21 @@ function _inquiries_create(Inquiry $inquiry): void
 {
     $data = json_decode(file_get_contents('php://input'), true);
 
-    if (!$data || empty($data['name']) || empty($data['email']) || empty($data['message'])) {
-        Response::error('Name, email, and message are required.', 400);
+    if (!$data) {
+        Response::error('Invalid request body.', 400);
+    }
+
+    $errors = Validator::validate($data, [
+        'name'    => 'required|string|min:2|max:200',
+        'email'   => 'required|email|max:255',
+        'message' => 'required|string|min:5|max:5000',
+        'contactNumber' => 'phone',
+        'numberOfPax'   => 'integer|min:1|max:500',
+        'dateOfVisit'   => 'date',
+    ]);
+
+    if ($errors) {
+        Response::error(implode(' ', $errors), 400);
     }
 
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {

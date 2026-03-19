@@ -1,6 +1,5 @@
 import NewsDetailClient from "./news-detail-client"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+import { API_BASE } from "@/lib/api"
 
 /**
  * Fetch all published news IDs so `output: 'export'` can pre-render them.
@@ -8,8 +7,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
  */
 export async function generateStaticParams() {
   try {
-    const res = await fetch(`${API_BASE}/api/posts/read.php?type=news`)
-    const data: { id: string }[] = await res.json()
+    const res = await fetch(`${API_BASE}/api/v1/posts?type=news`)
+    const json = await res.json()
+    const data: { id: string }[] = json.data ?? json
     return data.map((a) => ({ id: String(a.id) }))
   } catch {
     return []

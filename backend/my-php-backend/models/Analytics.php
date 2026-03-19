@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * Analytics Model — Schema v2.
  * Page views now live in `activity_logs` (action = 'page_view').

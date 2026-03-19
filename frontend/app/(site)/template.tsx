@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 
 const curtain = {
@@ -18,8 +19,11 @@ const curtain = {
 }
 
 export default function SiteTemplate({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
   return (
     <motion.div
+      key={pathname}
       initial={curtain.initial}
       animate={curtain.animate}
       transition={curtain.transition}

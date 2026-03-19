@@ -1,4 +1,9 @@
 <?php
+namespace App\Models;
+
+use PDO;
+use PDOException;
+
 /**
  * User Model — Schema v2 with roles.
  * Columns: user_id, username, full_name, email, password_hash, role, status, created_at

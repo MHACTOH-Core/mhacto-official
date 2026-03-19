@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { API_BASE } from '@/lib/api'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -12,8 +13,6 @@ export function asset(path: string): string {
   if (!path.startsWith('/')) return path
   return `${BASE_PATH}${path}`
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 /**
  * Resolve a media URL returned by the CMS backend.

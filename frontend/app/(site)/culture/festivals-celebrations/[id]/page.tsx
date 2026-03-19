@@ -1,11 +1,11 @@
 import CultureDetailClient from "@/components/sections/culture-detail-client"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+import { API_BASE } from "@/lib/api"
 
 export async function generateStaticParams() {
   try {
-    const res = await fetch(`${API_BASE}/api/posts/read.php?label=festivals&status=published`)
-    const data: { id: string | number }[] = await res.json()
+    const res = await fetch(`${API_BASE}/api/v1/posts?label=festivals&status=published`)
+    const json = await res.json()
+    const data: { id: string | number }[] = json.data ?? json
     return data.map((p) => ({ id: String(p.id) }))
   } catch {
     return []

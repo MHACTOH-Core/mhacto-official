@@ -1,4 +1,9 @@
 <?php
+namespace App\Models;
+
+use PDO;
+use PDOException;
+
 /**
  * Destination Model — Schema v2.
  * Now reads from `content` + `content_fields` (location, hours, contact as meta keys).

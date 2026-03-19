@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database;
+use App\Models\ActivityLog;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/activity
  *
@@ -8,8 +12,8 @@
 
 function handle_activity(string $method, ?string $param1): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/ActivityLog.php';
+    // All activity log operations require authentication
+    Auth::requireAuth();
 
     try {
         $db  = (new Database())->getConnection();
@@ -47,6 +51,6 @@ function handle_activity(string $method, ?string $param1): void
         }
     } catch (Exception $e) {
         error_log("activity error: " . $e->getMessage());
-        Response::error('Activity: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }

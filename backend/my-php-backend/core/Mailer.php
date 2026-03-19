@@ -1,23 +1,20 @@
 <?php
+namespace App\Core;
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception as MailException;
+
 /**
  * core/Mailer.php — PHPMailer wrapper for MHACTO
  *
  * Usage:
- *   require_once __DIR__ . '/Mailer.php';
- *
  *   // Send reply to visitor
  *   Mailer::sendReply($visitorEmail, $visitorName, $replyMessage, $originalMessage);
  *
  *   // Notify admin of new inquiry
  *   Mailer::notifyAdmin($name, $email, $message, $inquiryId);
  */
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-// Load PHPMailer via Composer autoload
-require_once __DIR__ . '/../vendor/autoload.php';
 
 class Mailer
 {
@@ -71,7 +68,7 @@ class Mailer
             $mail->AltBody = self::replyTemplatePlain($toName, $replyText, $origMessage);
             $mail->send();
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log("Mailer::sendReply failed: " . $e->getMessage());
             return false;
         }
@@ -101,7 +98,7 @@ class Mailer
             $mail->AltBody = self::newInquiryTemplatePlain($senderName, $senderEmail, $message, $inquiryId);
             $mail->send();
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log("Mailer::notifyAdmin failed: " . $e->getMessage());
             return false;
         }

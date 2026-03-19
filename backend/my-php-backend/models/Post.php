@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * Post Model — Schema v2.
  * Full CRUD for CMS content.

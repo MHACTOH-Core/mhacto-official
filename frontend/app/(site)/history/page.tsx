@@ -31,7 +31,7 @@ const categoryColor: Record<string, string> = {
 }
 
 const navSections = [
-  { id: "notable-figures", label: "Notable Figures" },
+  { id: "notable-figures", label: "Remarkable Persons" },
   { id: "timeline", label: "Timeline" },
 ]
 

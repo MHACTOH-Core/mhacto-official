@@ -196,7 +196,7 @@ export default function CMSPage() {
       payload.category = form.category && form.category !== "none" ? form.category : undefined
       payload.story = form.story || undefined
       payload.highlights = form.highlights.trim()
-        ? form.highlights.split("\n").map((h) => h.trim()).filter(Boolean)
+        ? form.highlights.split("\n").map((h: string) => h.trim()).filter(Boolean)
         : undefined
       if (form.postType === "event") {
         payload.newsDate = form.newsDate || undefined

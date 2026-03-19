@@ -1,4 +1,9 @@
 <?php
+use App\Config\Database;
+use App\Models\HomeContent;
+use App\Models\Post;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/home
  *
@@ -16,8 +21,10 @@
 
 function handle_home(string $method, ?string $sub): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/HomeContent.php';
+    // Write operations on home content require authentication
+    if ($method !== 'GET') {
+        Auth::requireAuth();
+    }
 
     try {
         $db = (new Database())->getConnection();
@@ -55,7 +62,7 @@ function handle_home(string $method, ?string $sub): void
         }
     } catch (Exception $e) {
         error_log("home/{$sub} error: " . $e->getMessage());
-        Response::error("home/{$sub}: " . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }
 
@@ -391,7 +398,6 @@ function _home_featured(string $method, PDO $db): void
         Response::error('Method not allowed.', 405);
     }
 
-    require_once __DIR__ . '/../models/Post.php';
     $post = new Post($db);
 
     $section = $_GET['section'] ?? null;

@@ -360,17 +360,19 @@ export default function PagodaPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="relative min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen overflow-hidden">
 
-        {/* ── Background hero image (right-aligned, fades on left) ── */}
+        {/* ── Background hero image — full-bleed cinematic fade ── */}
         <div className="absolute inset-0 z-[1]">
-          <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover object-center lg:object-right" />
-          {/* Mobile overlay: stronger dim so text is readable */}
-          <div className="absolute inset-0 lg:hidden" style={{ background: `linear-gradient(to bottom, ${BG}cc 0%, ${BG}99 35%, ${BG}dd 100%)` }} />
-          {/* Desktop left fade: image fades away into dark background */}
-          <div className="absolute inset-0 hidden lg:block" style={{ background: `linear-gradient(to right, ${BG} 0%, ${BG}f0 20%, ${BG}88 40%, transparent 65%)` }} />
-          {/* Bottom fade */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, transparent 25%)` }} />
+          <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover object-center" />
+          {/* Overall dim for depth & text readability */}
+          <div className="absolute inset-0" style={{ background: `${BG}55` }} />
+          {/* Strong bottom fade — image dissolves into background */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, ${BG}ee 12%, ${BG}99 35%, transparent 60%)` }} />
+          {/* Left fade for text area */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${BG}dd 0%, ${BG}aa 18%, ${BG}55 35%, transparent 55%)` }} />
           {/* Top vignette */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}50 0%, transparent 18%)` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}88 0%, transparent 22%)` }} />
+          {/* Soft right edge fade */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to left, ${BG}66 0%, transparent 15%)` }} />
         </div>
 
         {/* Hero text content — left side */}
@@ -588,7 +590,6 @@ export default function PagodaPage() {
             <motion.div {...imageReveal} className="relative lg:-mr-10 z-10">
               <div className="relative aspect-[4/5] rounded-2xl group">
                 <ParallaxImage src={subs[0]?.image || FALLBACK_SUBS[0].image} alt={subs[0]?.title || ''} className="absolute inset-0 rounded-2xl" />
-                <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${GOLD}20` }} />
               </div>
             </motion.div>
 
@@ -685,7 +686,7 @@ export default function PagodaPage() {
             <motion.div {...imageReveal} className="relative lg:-ml-10 z-10 md:order-2">
               <div className="relative aspect-[4/5] rounded-2xl group">
                 <ParallaxImage src={subs[1]?.image || FALLBACK_SUBS[1].image} alt={subs[1]?.title || ''} className="absolute inset-0 rounded-2xl" />
-                <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${RED}20` }} />
+                
               </div>
             </motion.div>
           </div>
@@ -740,8 +741,6 @@ export default function PagodaPage() {
                 >
                   <Image src={src} alt={detail.title} fill sizes="380px"
                     className="object-cover transition-transform duration-500 ease-out group-hover:scale-105" />
-                  <div className="absolute inset-0 rounded-2xl border transition-all duration-500"
-                    style={{ borderColor: `${GOLD}15` }} />
                   {/* Hover label with detail title */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 rounded-b-2xl backdrop-blur-md"
                     style={{ background: `${BG}99` }}>
@@ -890,7 +889,6 @@ export default function PagodaPage() {
               <motion.div {...imageReveal} className="relative lg:-mr-10 z-10">
                 <div className="relative aspect-[4/5] rounded-2xl group">
                   <ParallaxImage src={subs[2].image} alt={subs[2].title} className="absolute inset-0 rounded-2xl" />
-                  <div className="absolute inset-0 rounded-2xl border" style={{ borderColor: `${TEAL}20` }} />
                 </div>
               </motion.div>
 

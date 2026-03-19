@@ -1,4 +1,9 @@
 <?php
+use App\Config\Database;
+use App\Models\Post;
+use App\Core\Auth;
+use App\Core\Response;
+
 /**
  * Route: /api/posts
  *
@@ -11,8 +16,6 @@
 
 function handle_posts(string $method, ?string $id): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/Post.php';
 
     try {
         $db = (new Database())->getConnection();
@@ -24,12 +27,15 @@ function handle_posts(string $method, ?string $id): void
                 _posts_read($post, $id);
                 break;
             case 'POST':
+                Auth::requireAuth();
                 _posts_create($post);
                 break;
             case 'PUT':
+                Auth::requireAuth();
                 _posts_update($post, $id, $db);
                 break;
             case 'DELETE':
+                Auth::requireAuth();
                 _posts_delete($post, $id);
                 break;
             default:
@@ -37,7 +43,7 @@ function handle_posts(string $method, ?string $id): void
         }
     } catch (Exception $e) {
         error_log("posts error: " . $e->getMessage());
-        Response::error('Posts: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }
 
@@ -92,6 +98,25 @@ function _posts_read(Post $post, ?string $id): void
 
     if ($limit && !$type) {
         $data = array_slice($data, 0, $limit);
+    }
+
+    // Pagination: when ?page= is provided, return paginated envelope
+    $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : null;
+    if ($page !== null) {
+        $perPage = isset($_GET['per_page']) ? max(1, min((int) $_GET['per_page'], 100)) : 20;
+        $total   = count($data);
+        $offset  = ($page - 1) * $perPage;
+        $paged   = array_slice($data, $offset, $perPage);
+
+        Response::json([
+            'items' => array_values($paged),
+            'meta'  => [
+                'page'     => $page,
+                'perPage'  => $perPage,
+                'total'    => $total,
+                'lastPage' => (int) ceil($total / $perPage),
+            ],
+        ]);
     }
 
     Response::json($data);

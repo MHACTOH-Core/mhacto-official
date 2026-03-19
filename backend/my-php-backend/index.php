@@ -28,8 +28,13 @@ if (php_sapi_name() === 'cli-server') {
     }
 }
 
-require_once __DIR__ . '/core/Response.php';
-require_once __DIR__ . '/core/security.php';
+// ── Load Composer autoloader + environment variables ──────────────
+require_once __DIR__ . '/vendor/autoload.php';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+use App\Core\Response;
+use App\Core\Auth;
 
 // ── CORS (one place for the whole API) ────────────────────────────
 Response::cors();
@@ -62,18 +67,25 @@ $path = $basePath ? substr($uri, strlen($basePath)) : $uri;
 $path = '/' . trim($path, '/');
 
 // ── Route matching ─────────────────────────────────────────────────
-// Expected: /api/{resource}[/{action-or-id}][/{sub-id}]
+// Supported:  /api/v1/{resource}[/{param}][/{sub}]
+//             /api/{resource}[/{param}][/{sub}]     (backward compat)
 $segments = explode('/', trim($path, '/'));
 
 // segments[0] should be "api"
 if (($segments[0] ?? '') !== 'api') {
-    // Not an API request — could be an upload URL or something else
     Response::error('Not found.', 404);
 }
 
-$resource  = $segments[1] ?? '';
-$rawParam1 = $segments[2] ?? null;  // original URL segment (may be "read.php")
-$rawParam2 = $segments[3] ?? null;
+// Accept /api/v1/... — strip version segment so the rest of the router
+// always works with [resource, param1, param2].
+$offset = 1;
+if (($segments[1] ?? '') === 'v1') {
+    $offset = 2;
+}
+
+$resource  = $segments[$offset] ?? '';
+$rawParam1 = $segments[$offset + 1] ?? null;
+$rawParam2 = $segments[$offset + 2] ?? null;
 
 // Legacy .php action names (e.g. "read.php", "update.php") in the URL
 // are stripped to their base name so route handlers receive clean values.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
@@ -16,8 +16,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X } from "lucide-react"
 import { ROLE_LABELS } from "@/lib/data/admin-data"
-import { apiUploadMedia } from "@/lib/api"
+import { API_BASE } from "@/lib/api"
 import { ProfilePictureCropDialog } from "@/components/ui/profile-picture-crop"
+import { usePasswordForm, useProfilePicture } from "@/hooks/use-settings-forms"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,22 +54,40 @@ export default function SettingsPage() {
   const [nameValue, setNameValue] = useState("")
   const [nameSaving, setNameSaving] = useState(false)
 
-  // Password change state
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
-  const [oldPassword, setOldPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [showOldPw, setShowOldPw] = useState(false)
-  const [showNewPw, setShowNewPw] = useState(false)
-  const [pwError, setPwError] = useState("")
-  const [pwSaving, setPwSaving] = useState(false)
-  const [pwSuccess, setPwSuccess] = useState(false)
+  // Password change hook
+  const {
+    dialogOpen: passwordDialogOpen,
+    setDialogOpen: setPasswordDialogOpen,
+    oldPassword, setOldPassword,
+    newPassword, setNewPassword,
+    confirmPassword, setConfirmPassword,
+    showOldPw, setShowOldPw,
+    showNewPw, setShowNewPw,
+    error: pwError,
+    saving: pwSaving,
+    success: pwSuccess,
+    open: openPasswordDialog,
+    submit: submitPasswordChange,
+  } = usePasswordForm({
+    changePassword,
+    onSuccess: () => toast({ title: "Password changed", description: "Your password has been updated successfully." }),
+    onError: (msg) => toast({ title: "Password change failed", description: msg, variant: "destructive" }),
+  })
 
-  // Profile picture state
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploadingPicture, setUploadingPicture] = useState(false)
-  const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const [cropDialogOpen, setCropDialogOpen] = useState(false)
+  // Profile picture hook
+  const {
+    fileInputRef,
+    uploading: uploadingPicture,
+    cropSrc,
+    cropDialogOpen,
+    setCropDialogOpen,
+    handleSelect: handlePictureSelect,
+    handleCroppedUpload,
+  } = useProfilePicture({
+    updateProfile,
+    onSuccess: () => toast({ title: "Profile picture updated", description: "Your profile picture has been changed." }),
+    onError: () => toast({ title: "Upload failed", description: "Failed to upload profile picture.", variant: "destructive" }),
+  })
 
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
@@ -108,68 +127,8 @@ export default function SettingsPage() {
     toast({ title: "Profile updated", description: "Your name has been updated." })
   }
 
-  // Profile picture: open file picker → show crop dialog
-  const handlePictureSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setCropSrc(reader.result as string)
-      setCropDialogOpen(true)
-    }
-    reader.readAsDataURL(file)
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }
-
-  // After cropping, upload the cropped blob
-  const handleCroppedUpload = async (blob: Blob) => {
-    setCropDialogOpen(false)
-    setCropSrc(null)
-    setUploadingPicture(true)
-    try {
-      const file = new File([blob], "profile.jpg", { type: "image/jpeg" })
-      const result = await apiUploadMedia([file], "image", { category: "profiles" })
-      if (result.uploaded?.length) {
-        await updateProfile({ profile_picture: result.uploaded[0].url })
-        toast({ title: "Profile picture updated", description: "Your profile picture has been changed." })
-      }
-    } catch (err) {
-      console.error("Picture upload error:", err)
-      toast({ title: "Upload failed", description: "Failed to upload profile picture.", variant: "destructive" })
-    }
-    setUploadingPicture(false)
-  }
-
-  // Password change
-  const openPasswordDialog = () => {
-    setOldPassword("")
-    setNewPassword("")
-    setConfirmPassword("")
-    setPwError("")
-    setPwSuccess(false)
-    setShowOldPw(false)
-    setShowNewPw(false)
-    setPasswordDialogOpen(true)
-  }
-  const submitPasswordChange = async () => {
-    setPwError("")
-    if (newPassword.length < 6) { setPwError("New password must be at least 6 characters."); return }
-    if (newPassword !== confirmPassword) { setPwError("New passwords do not match."); return }
-    setPwSaving(true)
-    const result = await changePassword(oldPassword, newPassword)
-    setPwSaving(false)
-    if (result === true) {
-      setPwSuccess(true)
-      toast({ title: "Password changed", description: "Your password has been updated successfully." })
-      setTimeout(() => setPasswordDialogOpen(false), 1500)
-    } else {
-      setPwError(result)
-      toast({ title: "Password change failed", description: result, variant: "destructive" })
-    }
-  }
-
   const profilePicSrc = currentUser?.profilePicture
-    ? (currentUser.profilePicture.startsWith("http") ? currentUser.profilePicture : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${currentUser.profilePicture}`)
+    ? (currentUser.profilePicture.startsWith("http") ? currentUser.profilePicture : `${API_BASE}${currentUser.profilePicture}`)
     : null
 
   return (
@@ -288,7 +247,7 @@ export default function SettingsPage() {
               {cropSrc && (
                 <ProfilePictureCropDialog
                   open={cropDialogOpen}
-                  onOpenChange={(open) => { setCropDialogOpen(open); if (!open) setCropSrc(null) }}
+                  onOpenChange={setCropDialogOpen}
                   imageSrc={cropSrc}
                   onCropComplete={handleCroppedUpload}
                 />

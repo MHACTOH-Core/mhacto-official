@@ -1,4 +1,10 @@
 <?php
+use App\Config\Database;
+use App\Models\Analytics;
+use App\Models\PageView;
+use App\Core\Auth;
+use App\Core\Response;
+
 /**
  * Route: /api/analytics
  *
@@ -10,22 +16,20 @@
 
 function handle_analytics(string $method, ?string $action): void
 {
-    require_once __DIR__ . '/../config/database.php';
-
     try {
         $db = (new Database())->getConnection();
 
         switch ($action) {
             case 'pageviews':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                require_once __DIR__ . '/../models/Analytics.php';
+                Auth::requireAuth();
                 $analytics = new Analytics($db);
                 Response::json($analytics->getPageViews());
                 break;
 
             case 'visits':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                require_once __DIR__ . '/../models/Analytics.php';
+                Auth::requireAuth();
                 $analytics = new Analytics($db);
                 $days = isset($_GET['days']) ? (int) $_GET['days'] : 30;
                 Response::json($analytics->getDailyVisits($days));
@@ -33,15 +37,15 @@ function handle_analytics(string $method, ?string $action): void
 
             case 'top-destinations':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                require_once __DIR__ . '/../models/PageView.php';
+                Auth::requireAuth();
                 $pageView = new PageView($db);
                 $limit = isset($_GET['limit']) ? max(1, min((int) $_GET['limit'], 50)) : 10;
                 Response::json($pageView->getTopDestinations($limit));
                 break;
 
             case 'log-view':
+                // Public endpoint — no auth required (visitor tracking)
                 if ($method !== 'POST') Response::error('Method not allowed. Use POST.', 405);
-                require_once __DIR__ . '/../models/PageView.php';
                 $input = Response::getJsonInput();
                 if (!$input || empty($input->contentId) || !is_numeric($input->contentId)) {
                     Response::error('Missing or invalid "contentId".', 400);
@@ -59,6 +63,6 @@ function handle_analytics(string $method, ?string $action): void
         }
     } catch (Exception $e) {
         error_log("analytics error: " . $e->getMessage());
-        Response::error('Analytics: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }

@@ -1,4 +1,6 @@
 <?php
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/media
  *
@@ -9,6 +11,9 @@
 
 function handle_media(string $method, ?string $param1): void
 {
+    // All media operations require authentication
+    Auth::requireAuth();
+
     try {
         switch ($method) {
             case 'GET':
@@ -25,7 +30,7 @@ function handle_media(string $method, ?string $param1): void
         }
     } catch (Exception $e) {
         error_log("media error: " . $e->getMessage());
-        Response::error('Media: ' . $e->getMessage(), 500);
+        Response::error('An internal error occurred.', 500);
     }
 }
 

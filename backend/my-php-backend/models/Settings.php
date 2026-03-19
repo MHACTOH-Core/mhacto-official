@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * Settings Model — Schema v2.
  * Reads from `config` table (key-value store grouped by config_group).

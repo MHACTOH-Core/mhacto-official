@@ -1,4 +1,6 @@
 <?php
+namespace App\Core;
+
 /**
  * Response — Standardised CORS headers and JSON responses.
  *
@@ -14,23 +16,25 @@
 class Response
 {
     /**
-     * Emit the CORS headers required by a Next.js frontend.
-     * Only whitelisted origins are reflected back.
+     * Emit the CORS headers required by the frontend.
+     * Only whitelisted origins (from ALLOWED_ORIGINS env var) are accepted.
+     * In development, defaults to http://localhost:3000 if not configured.
      */
     public static function cors(): void
     {
-        $allowedOrigins = [
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'https://mhactoh-core.github.io',
-        ];
+        $allowedRaw = $_ENV['ALLOWED_ORIGINS'] ?? 'http://localhost:3000';
+        $allowedOrigins = array_map('trim', explode(',', $allowedRaw));
 
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-        if (in_array($origin, $allowedOrigins, true)) {
-            header("Access-Control-Allow-Origin: {$origin}");
-            header("Access-Control-Allow-Credentials: true");
+        if (in_array($requestOrigin, $allowedOrigins, true)) {
+            header("Access-Control-Allow-Origin: {$requestOrigin}");
+        } elseif ($requestOrigin === '' && php_sapi_name() === 'cli-server') {
+            // Allow same-origin requests during local dev (no Origin header)
+            header("Access-Control-Allow-Origin: http://localhost:3000");
         }
+        // If origin is not whitelisted, no Access-Control-Allow-Origin header is sent,
+        // causing the browser to block the request.
 
         header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -54,18 +58,26 @@ class Response
         }
     }
 
-    /** Send a JSON response and exit. */
+    /** Send a JSON response and exit. Wraps data in a standard envelope. */
     public static function json(mixed $data, int $code = 200): void
     {
         http_response_code($code);
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        echo json_encode([
+            'success' => true,
+            'data'    => $data,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit();
     }
 
     /** Shorthand error response. */
     public static function error(string $message, int $code = 400): void
     {
-        self::json(['message' => $message], $code);
+        http_response_code($code);
+        echo json_encode([
+            'success' => false,
+            'error'   => $message,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit();
     }
 
     /** Decode the raw JSON body. */

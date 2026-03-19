@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * HomeContent Model — Schema v2.
  *

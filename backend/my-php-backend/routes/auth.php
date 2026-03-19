@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database;
+use App\Models\User;
+use App\Core\Auth;
+use App\Core\Response;
 /**
  * Route: /api/auth
  *
@@ -8,10 +12,6 @@
 
 function handle_auth(string $method, ?string $action): void
 {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../models/User.php';
-    require_once __DIR__ . '/../core/security.php';
-
     switch ($action) {
         case 'login':
             _auth_login($method);
@@ -72,24 +72,25 @@ function _auth_login(string $method): void
         }
 
         unset($row['password_hash'], $row['status']);
+        $user = [
+            'id'             => $row['user_id'],
+            'username'       => $row['username'],
+            'fullName'       => $row['full_name'] ?? $row['username'],
+            'profilePicture' => $row['profile_picture'] ?? null,
+            'email'          => $row['email'],
+            'role'           => $row['role'] ?? 'admin',
+        ];
 
-        $token = Auth::generateToken(
-            (int) $row['user_id'],
-            $row['role'] ?? 'admin',
-            $row['email']
-        );
+        $token = Auth::generateToken([
+            'id'    => $user['id'],
+            'email' => $user['email'],
+            'role'  => $user['role'],
+        ]);
 
         Response::json([
             'message' => 'Login successful',
             'token'   => $token,
-            'user'    => [
-                'id'             => $row['user_id'],
-                'username'       => $row['username'],
-                'fullName'       => $row['full_name'] ?? $row['username'],
-                'profilePicture' => $row['profile_picture'] ?? null,
-                'email'          => $row['email'],
-                'role'           => $row['role'] ?? 'admin',
-            ],
+            'user'    => $user,
         ]);
     } catch (Exception $e) {
         error_log("auth/login error: " . $e->getMessage());

@@ -1,4 +1,9 @@
 <?php
+namespace App\Models;
+
+use PDO;
+use PDOException;
+
 /**
  * Inquiry Model — Schema v5 (hybrid + reply thread + assignment).
  * Real sortable columns: date_of_visit, number_of_pax.

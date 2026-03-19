@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 /**
  * PageHero Model — manages per-page hero image/text configuration.
  * Stores data in the `config` table with config_group = 'page_hero_{slug}'.
