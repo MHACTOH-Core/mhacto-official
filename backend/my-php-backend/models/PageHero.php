@@ -18,7 +18,7 @@ class PageHero
     private const PAGES = [
         'destinations' => [
             'displayName'  => 'Tourist Destinations',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Landmark',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
@@ -27,7 +27,7 @@ class PageHero
         ],
         'culture' => [
             'displayName'  => 'Arts & Culture',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Sparkles',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
@@ -37,7 +37,7 @@ class PageHero
 
         'history' => [
             'displayName'  => 'History of Bocaue',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'BookOpen',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
@@ -46,7 +46,7 @@ class PageHero
         ],
         'events' => [
             'displayName'  => 'Municipal Events',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'CalendarDays',
             'accentColor'  => 'cyan-300',
             'label'        => 'Events',
@@ -55,7 +55,7 @@ class PageHero
         ],
         'news' => [
             'displayName'  => 'News & Blog',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Megaphone',
             'accentColor'  => 'blue-300',
             'label'        => 'News & Blog',
@@ -64,7 +64,7 @@ class PageHero
         ],
         'inquire' => [
             'displayName'  => 'Tourist Inquiry',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => '',
             'accentColor'  => 'cyan-300',
             'label'        => 'Tourism',
@@ -73,7 +73,7 @@ class PageHero
         ],
         'mission-vision' => [
             'displayName'  => 'Mission & Vision',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => '',
             'accentColor'  => 'cyan-300',
             'label'        => 'MHACTO Bocaue',
@@ -82,7 +82,7 @@ class PageHero
         ],
         'tourism-office' => [
             'displayName'  => 'Tourism Office',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Building2',
             'accentColor'  => 'cyan-300',
             'label'        => 'Organization',
@@ -91,7 +91,7 @@ class PageHero
         ],
         'travel-tours' => [
             'displayName'  => 'Travel & Tours',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Map',
             'accentColor'  => 'cyan-300',
             'label'        => 'Tourism',
@@ -103,7 +103,7 @@ class PageHero
 
         'local-cuisine' => [
             'displayName'  => 'Local Cuisine',
-            'imageUrl'     => '/images/places/Food.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Utensils',
             'accentColor'  => 'amber-300',
             'label'        => 'Local Culinary',
@@ -112,7 +112,7 @@ class PageHero
         ],
         'festivals-celebrations' => [
             'displayName'  => 'Festivals & Celebrations',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Sparkles',
             'accentColor'  => 'amber-300',
             'label'        => 'Culture',
@@ -121,7 +121,7 @@ class PageHero
         ],
         'practices-traditions' => [
             'displayName'  => 'Cultural Practices & Traditions',
-            'imageUrl'     => '/images/places/Arts.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Heart',
             'accentColor'  => 'pink-300',
             'label'        => 'Culture',
@@ -130,7 +130,7 @@ class PageHero
         ],
         'crafts-artisan' => [
             'displayName'  => 'Crafts & Artisan',
-            'imageUrl'     => '/images/places/Arts.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Hammer',
             'accentColor'  => 'amber-300',
             'label'        => 'Arts & Culture',
@@ -139,7 +139,7 @@ class PageHero
         ],
         'people-wonders' => [
             'displayName'  => 'People Wonders',
-            'imageUrl'     => '/images/places/Arts.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Users',
             'accentColor'  => 'pink-300',
             'label'        => 'Arts & Culture',
@@ -148,7 +148,7 @@ class PageHero
         ],
         'timeline' => [
             'displayName'  => 'Timeline of Events',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Clock',
             'accentColor'  => 'amber-300',
             'label'        => 'History',
@@ -157,7 +157,7 @@ class PageHero
         ],
         'notable-persons' => [
             'displayName'  => 'Notable Persons',
-            'imageUrl'     => '/images/places/Arts.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Users',
             'accentColor'  => 'purple-300',
             'label'        => 'History',
@@ -166,7 +166,7 @@ class PageHero
         ],
         'local-business' => [
             'displayName'  => 'Local Business',
-            'imageUrl'     => '/images/places/Food.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Store',
             'accentColor'  => 'green-300',
             'label'        => 'Community',
@@ -178,7 +178,7 @@ class PageHero
 
         'schools' => [
             'displayName'  => 'Schools in Bocaue',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'School',
             'accentColor'  => 'cyan-300',
             'label'        => 'Community',
@@ -187,7 +187,7 @@ class PageHero
         ],
         'hospitals' => [
             'displayName'  => 'Hospitals & Health',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Activity',
             'accentColor'  => 'red-300',
             'label'        => 'Community',
@@ -196,7 +196,7 @@ class PageHero
         ],
         'pagoda' => [
             'displayName'  => 'Pagoda Festival',
-            'imageUrl'     => '/images/places/river-festival.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Sparkles',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
@@ -205,7 +205,7 @@ class PageHero
         ],
         'barangays' => [
             'displayName'  => 'Barangays of Bocaue',
-            'imageUrl'     => '/images/places/oldtownbocaue.jpg',
+            'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Landmark',
             'accentColor'  => 'emerald-300',
             'label'        => 'Community',

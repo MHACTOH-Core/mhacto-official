@@ -62,7 +62,7 @@ export default function EventDetailClient({ id }: { id: string }) {
       {/* Hero image */}
       {heroImage && (
         <div className="relative w-full h-64 sm:h-80 md:h-96 bg-muted">
-          <Image src={heroImage} alt={event.title} fill className="object-cover" priority />
+          <Image src={heroImage} alt={event.title} fill sizes="100vw" className="object-cover" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         </div>
       )}
@@ -124,8 +124,8 @@ export default function EventDetailClient({ id }: { id: string }) {
               {event.image.slice(1).map((img, i) => {
                 const src = img.startsWith("/images") ? asset(img) : img
                 return (
-                  <div key={i} className="relative h-48 sm:h-56 rounded-xl overflow-hidden bg-muted">
-                    <Image src={src} alt={`${event.title} - Image ${i + 2}`} fill className="object-cover" />
+                  <div key={img} className="relative h-48 sm:h-56 rounded-xl overflow-hidden bg-muted">
+                    <Image src={src} alt={`${event.title} - Image ${i + 2}`} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
                   </div>
                 )
               })}

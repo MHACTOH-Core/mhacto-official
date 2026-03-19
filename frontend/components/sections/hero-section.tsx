@@ -36,12 +36,10 @@ export function HeroSection() {
     apiFetchHeroSlides()
       .then((slides) => {
         if (slides && slides.length > 0) {
-          // Normalise image paths — prefix local assets with basePath
+          // Normalise image paths — resolve /uploads/ via API, others via basePath
           const normalizedSlides = slides.map((slide) => ({
             ...slide,
-            src: slide.src.startsWith("/")
-              ? asset(slide.src)
-              : slide.src,
+            src: resolveMediaUrl(slide.src),
           }))
           setActiveSlideIndex(0)
           setPreviousSlideIndex(null)
@@ -127,7 +125,7 @@ export function HeroSection() {
           loop
           muted
           playsInline
-          poster={resolveMediaUrl("/uploads/images/heroes/hero-bocaue.jpg")}
+          poster={asset("/images/defaults/no-image.svg")}
         />
 
         {/* Dynamic dark overlay — intensifies as user scrolls */}

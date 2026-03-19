@@ -39,9 +39,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tl3, 'label_key', 'timeline-of-events'), (@tl3, 'label_id', '5'), (@tl3, 'is_featured', '1'), (@tl3, 'year', '1896');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@tl1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tl2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tl3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@tl1, '/images/defaults/no-image.svg', 1, 0),
+(@tl2, '/images/defaults/no-image.svg', 1, 0),
+(@tl3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 3: NOTABLE FIGURES
@@ -69,9 +69,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@fig3, 'label_key', 'notable-figures'), (@fig3, 'label_id', '6'), (@fig3, 'is_featured', '0');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@fig1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@fig2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@fig3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@fig1, '/images/defaults/no-image.svg', 1, 0),
+(@fig2, '/images/defaults/no-image.svg', 1, 0),
+(@fig3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 4: CULTURAL PRACTICES & TRADITIONS
@@ -99,9 +99,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@cp3, 'label_key', 'cultural-practices'), (@cp3, 'label_id', '9'), (@cp3, 'is_featured', '0');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@cp1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@cp2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@cp3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@cp1, '/images/defaults/no-image.svg', 1, 0),
+(@cp2, '/images/defaults/no-image.svg', 1, 0),
+(@cp3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 5: CRAFTS & ARTISAN
@@ -129,9 +129,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@ca3, 'label_key', 'crafts-artisan'), (@ca3, 'label_id', '19'), (@ca3, 'is_featured', '0');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@ca1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@ca2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@ca3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@ca1, '/images/defaults/no-image.svg', 1, 0),
+(@ca2, '/images/defaults/no-image.svg', 1, 0),
+(@ca3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 6: PEOPLE & WONDERS
@@ -159,9 +159,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@pw3, 'label_key', 'people-wonders'), (@pw3, 'label_id', '20'), (@pw3, 'is_featured', '0');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@pw1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@pw2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@pw3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@pw1, '/images/defaults/no-image.svg', 1, 0),
+(@pw2, '/images/defaults/no-image.svg', 1, 0),
+(@pw3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 7: TRAVEL TOURS
@@ -192,9 +192,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tt3, 'duration', '1 hour'), (@tt3, 'price', 'PHP 100 per person');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@tt1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tt2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tt3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@tt1, '/images/defaults/no-image.svg', 1, 0),
+(@tt2, '/images/defaults/no-image.svg', 1, 0),
+(@tt3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 8: EVENTS
@@ -225,9 +225,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@ev3, 'news_date', '2025-12-28'), (@ev3, 'location', 'Municipal Grounds, Bocaue, Bulacan');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@ev1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@ev2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@ev3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@ev1, '/images/defaults/no-image.svg', 1, 0),
+(@ev2, '/images/defaults/no-image.svg', 1, 0),
+(@ev3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 9: SCHOOLS
@@ -258,9 +258,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@sc3, 'location', 'Poblacion, Bocaue, Bulacan');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@sc1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@sc2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@sc3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@sc1, '/images/defaults/no-image.svg', 1, 0),
+(@sc2, '/images/defaults/no-image.svg', 1, 0),
+(@sc3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 10: HOSPITALS
@@ -291,9 +291,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@hp3, 'location', 'Wakas, Bocaue, Bulacan'), (@hp3, 'hours', 'Mon-Sat 8AM-6PM');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@hp1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@hp2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@hp3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@hp1, '/images/defaults/no-image.svg', 1, 0),
+(@hp2, '/images/defaults/no-image.svg', 1, 0),
+(@hp3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 11: RESTAURANTS
@@ -330,9 +330,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@rs3, 'location', 'National Highway, Bocaue, Bulacan');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@rs1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@rs2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@rs3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@rs1, '/images/defaults/no-image.svg', 1, 0),
+(@rs2, '/images/defaults/no-image.svg', 1, 0),
+(@rs3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- STEP 12: TOURISM WONDERS
@@ -369,9 +369,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tw3, 'location', 'Fireworks District, Bocaue, Bulacan'), (@tw3, 'hours', 'Mon-Sat 8:00 AM - 6:00 PM');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@tw1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tw2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@tw3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@tw1, '/images/defaults/no-image.svg', 1, 0),
+(@tw2, '/images/defaults/no-image.svg', 1, 0),
+(@tw3, '/images/defaults/no-image.svg', 1, 0);
 
 -- ----------------------------------------------------------------
 -- Verify: SELECT meta_value AS label_key, COUNT(*) AS count

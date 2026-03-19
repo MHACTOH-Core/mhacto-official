@@ -111,8 +111,11 @@ class Post
                    cat.category_id, cat.label_name AS category_name
             FROM content c
             LEFT JOIN category cat ON c.category_id = cat.category_id
-            INNER JOIN content_fields cm ON c.content_id = cm.content_id
-                AND cm.meta_key = 'label_key' AND cm.meta_value = :lk
+            WHERE EXISTS (
+                SELECT 1 FROM content_fields cm
+                WHERE cm.content_id = c.content_id
+                  AND cm.meta_key = 'label_key' AND cm.meta_value = :lk
+            )
         ";
         $params = [':lk' => $labelKey];
         if ($status) { $sql .= " AND c.status = :s"; $params[':s'] = $status; }

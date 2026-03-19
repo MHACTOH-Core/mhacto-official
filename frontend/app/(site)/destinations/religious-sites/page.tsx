@@ -96,7 +96,7 @@ export default function ReligiousSitesPage() {
               <Card key={site.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
                 <div className="grid gap-0 md:grid-cols-[2fr_3fr]">
                   <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
-                    <Image src={site.image} alt={site.name} fill className="object-cover" />
+                    <Image src={site.image} alt={site.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute bottom-3 left-4">
                       <Badge className="text-xs bg-amber-500 text-white border-0">{site.denomination}</Badge>

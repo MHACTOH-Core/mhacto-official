@@ -100,10 +100,11 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   // Auto-focus the search input when the overlay opens
   useEffect(() => {
     if (open) {
-      setTimeout(() => searchInputRef.current?.focus(), 60)
+      const focusTimer = setTimeout(() => searchInputRef.current?.focus(), 60)
       setSearchQuery("")
       setSearchResults([])
       setHighlightedResultIndex(0)
+      return () => clearTimeout(focusTimer)
     }
   }, [open])
 

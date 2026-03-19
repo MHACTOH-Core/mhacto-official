@@ -66,7 +66,7 @@ export default function LocalBusinessPage() {
               <Card key={biz.id} className="group overflow-hidden border-border transition-all duration-300">
                 {biz.image && (
                   <div className="relative h-36 overflow-hidden">
-                    <Image src={biz.image} alt={biz.name} fill className="object-cover" />
+                    <Image src={biz.image} alt={biz.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute bottom-3 left-4">
                       <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>

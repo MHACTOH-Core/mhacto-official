@@ -183,7 +183,7 @@ export default function ContentDetailLayout({
                   <div className="flex gap-1.5 p-2 bg-muted/30">
                     {thumbs.map((img, i) => (
                       <button
-                        key={i}
+                        key={img}
                         onClick={() => setSelectedImage(img)}
                         className={`relative h-14 flex-1 overflow-hidden rounded-md border-2 transition-all duration-200 bg-muted ${
                           selectedImage === img ? "border-primary" : "border-transparent opacity-55 hover:opacity-90"
@@ -199,8 +199,8 @@ export default function ContentDetailLayout({
               {/* Quick-facts card */}
               {quickFacts && quickFacts.length > 0 && (
                 <div className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden shadow-sm">
-                  {quickFacts.map((fact, i) => (
-                    <div key={i} className="flex items-start gap-3 px-5 py-4">
+                  {quickFacts.map((fact) => (
+                    <div key={fact.label} className="flex items-start gap-3 px-5 py-4">
                       <span className="mt-0.5 shrink-0">{fact.icon}</span>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{fact.label}</p>
@@ -270,8 +270,8 @@ export default function ContentDetailLayout({
                     {highlightsLabel}
                   </h3>
                   <ul className="space-y-2.5">
-                    {highlights.map((item, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm text-foreground">
+                    {highlights.map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm text-foreground">
                         <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                         {item}
                       </li>

@@ -135,7 +135,6 @@ export default function DestinationsPage() {
                   {idx % 2 === 0 && (
                     <GalleryImage
                       src={site.image}
-                      gallery={site.gallery}
                       alt={site.name}
                       outerClassName="h-full"
                       className="relative flex-1 overflow-hidden min-h-[260px]"
@@ -167,7 +166,6 @@ export default function DestinationsPage() {
                   {idx % 2 !== 0 && (
                     <GalleryImage
                       src={site.image}
-                      gallery={site.gallery}
                       alt={site.name}
                       outerClassName="h-full order-first md:order-last"
                       className="relative flex-1 overflow-hidden min-h-[260px]"
@@ -198,7 +196,6 @@ export default function DestinationsPage() {
                 <Link href={`/destinations/${museum.id}`} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10" aria-label={museum.name} />
                 <GalleryImage
                   src={museum.image}
-                  gallery={museum.gallery}
                   alt={museum.name}
                   className="relative h-48 overflow-hidden"
                   imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -244,7 +241,6 @@ export default function DestinationsPage() {
                 <div className="grid gap-0 md:grid-cols-[2fr_3fr]">
                   <GalleryImage
                     src={site.image}
-                    gallery={site.gallery}
                     alt={site.name}
                     outerClassName="h-full"
                     className="relative flex-1 overflow-hidden min-h-[260px]"

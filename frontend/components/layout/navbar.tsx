@@ -107,14 +107,24 @@ export function Navbar() {
   const [activeDesktopDropdown, setActiveDesktopDropdown] = useState<string | null>(null)
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const dropdownCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scrollRafIdRef = useRef<number | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20)
+    const handleScroll = () => {
+      if (scrollRafIdRef.current != null) return
+      scrollRafIdRef.current = requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 20)
+        scrollRafIdRef.current = null
+      })
+    }
     window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      if (scrollRafIdRef.current != null) cancelAnimationFrame(scrollRafIdRef.current)
+    }
   }, [])
 
   // Ctrl+K / Cmd+K to open search
@@ -438,7 +448,6 @@ export function Navbar() {
               width={52}
               height={52}
               className="h-10 w-10 lg:h-11 lg:w-11 object-contain"
-              priority
             />
             <span className="hidden xl:block text-xs font-semibold leading-tight text-foreground">
               Municipality<br />of Bocaue

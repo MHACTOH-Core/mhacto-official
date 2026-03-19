@@ -315,7 +315,7 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 ('hero', 'hero_highlight_1',  '"Town Wonders"', 'string'),
 ('hero', 'hero_description',  '"Where rich heritage meets vibrant culture — explore centuries of tradition, lively festivals, and the warm hospitality of Bocaue."', 'string'),
 ('hero', 'hero_video_url',    '"/videos/bocaue-hero.mp4"', 'string'),
-('hero', 'hero_fallback_img', '"/images/heroes/hero-bocaue.jpg"', 'string'),
+('hero', 'hero_fallback_img', '"/images/defaults/no-image.svg"', 'string'),
 ('hero', 'hero_cta_text',     '"Explore Now"', 'string'),
 ('hero', 'hero_cta_link',     '"/destinations"', 'string');
 

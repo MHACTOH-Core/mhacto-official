@@ -81,7 +81,7 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
   if (logo && !imgError) {
     return (
       <div className="relative h-14 w-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-border/50 shadow-sm">
-        <Image src={logo} alt={`${name} logo`} fill className="object-contain p-1" onError={() => setImgError(true)} />
+        <Image src={logo} alt={`${name} logo`} fill sizes="56px" className="object-contain p-1" onError={() => setImgError(true)} />
       </div>
     )
   }

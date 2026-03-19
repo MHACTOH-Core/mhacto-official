@@ -74,7 +74,7 @@ function HeritageCard({ site }: { site: HeritageSite }) {
         <div className="flex gap-1.5 px-3 pt-2.5 pb-0">
           {thumbs.map((img, i) => (
             <button
-              key={i}
+              key={img}
               onClick={() => setSelectedImage(img)}
               className={`relative h-14 flex-1 overflow-hidden rounded-md border-2 transition-all duration-200 ${
                 selectedImage === img ? "border-primary shadow-sm" : "border-transparent opacity-60 hover:opacity-90"

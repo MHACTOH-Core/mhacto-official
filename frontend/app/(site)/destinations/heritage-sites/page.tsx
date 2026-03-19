@@ -100,7 +100,7 @@ export default function HeritageSitesPage() {
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px]">
-                      <Image src={site.image} alt={site.name} fill className="object-cover" />
+                      <Image src={site.image} alt={site.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" />
                       {site.isProtected && (
                         <div className="absolute top-3 left-3">
                           <Badge className="text-xs bg-amber-500 text-white border-0 flex items-center gap-1">
@@ -151,7 +151,7 @@ export default function HeritageSitesPage() {
                   </CardContent>
                   {idx % 2 !== 0 && (
                     <div className="relative h-64 md:h-auto overflow-hidden min-h-[260px] order-first md:order-last">
-                      <Image src={site.image} alt={site.name} fill className="object-cover" />
+                      <Image src={site.image} alt={site.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" />
                       {site.isProtected && (
                         <div className="absolute top-3 right-3">
                           <Badge className="text-xs bg-amber-500 text-white border-0 flex items-center gap-1">

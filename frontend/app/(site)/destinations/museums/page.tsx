@@ -108,7 +108,7 @@ export default function MuseumsPage() {
             {museums.map((museum) => (
               <Card key={museum.id} className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 <div className="relative h-36 overflow-hidden">
-                  <Image src={museum.image} alt={museum.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <Image src={museum.image} alt={museum.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4">
                     <Badge variant="outline" className={`text-xs ${typeColor[museum.type] ?? ""}`}>

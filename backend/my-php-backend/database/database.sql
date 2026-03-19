@@ -315,7 +315,7 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 ('hero', 'hero_highlight',    '"Town Wonders"', 'string'),
 ('hero', 'hero_description',  '"Where rich heritage meets vibrant culture — explore centuries of tradition, lively festivals, and the warm hospitality of Bocaue."', 'string'),
 ('hero', 'hero_video_url',    '"/videos/bocaue-hero.mp4"', 'string'),
-('hero', 'hero_fallback_img', '"/images/heroes/hero-bocaue.jpg"', 'string'),
+('hero', 'hero_fallback_img', '"/images/defaults/no-image.svg"', 'string'),
 ('hero', 'hero_cta_text',     '"Explore Now"', 'string'),
 ('hero', 'hero_cta_link',     '"/destinations"', 'string');
 
@@ -370,12 +370,12 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 
 -- Place images (placeholder paths)
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@place1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@place2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@place3, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@place4, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@place5, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@place6, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@place1, '/images/defaults/no-image.svg', 1, 0),
+(@place2, '/images/defaults/no-image.svg', 1, 0),
+(@place3, '/images/defaults/no-image.svg', 1, 0),
+(@place4, '/images/defaults/no-image.svg', 1, 0),
+(@place5, '/images/defaults/no-image.svg', 1, 0),
+(@place6, '/images/defaults/no-image.svg', 1, 0);
 
 
 -- ────────────────────────────────────────────────────────────────
@@ -398,9 +398,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@news3, 'label_key', 'news'), (@news3, 'label_id', '13'), (@news3, 'is_featured', '0'), (@news3, 'news_date', '2026-02-15');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@news1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@news2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@news3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@news1, '/images/defaults/no-image.svg', 1, 0),
+(@news2, '/images/defaults/no-image.svg', 1, 0),
+(@news3, '/images/defaults/no-image.svg', 1, 0);
 
 
 -- ────────────────────────────────────────────────────────────────
@@ -426,9 +426,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@event3, 'location', 'Municipal Grounds, Bocaue, Bulacan');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@event1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@event2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@event3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@event1, '/images/defaults/no-image.svg', 1, 0),
+(@event2, '/images/defaults/no-image.svg', 1, 0),
+(@event3, '/images/defaults/no-image.svg', 1, 0);
 
 
 -- ────────────────────────────────────────────────────────────────
@@ -454,9 +454,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@food3, 'location', 'Various eateries, Bocaue, Bulacan');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@food1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@food2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@food3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@food1, '/images/defaults/no-image.svg', 1, 0),
+(@food2, '/images/defaults/no-image.svg', 1, 0),
+(@food3, '/images/defaults/no-image.svg', 1, 0);
 
 
 -- ────────────────────────────────────────────────────────────────

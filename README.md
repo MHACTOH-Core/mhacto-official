@@ -206,6 +206,81 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### March 19, 2026 — Codebase Audit, Bug Fixes & Performance Optimizations
+
+Full codebase scan to eliminate all Next.js dev-tool warnings plus targeted performance improvements — all without changing any design or visual effect.
+
+#### 1. Image `sizes` Prop — 10 Fixes Across 7 Files
+
+Next.js warns when an `<Image fill>` component lacks a `sizes` attribute (causes the browser to download full-width images unnecessarily). Added responsive `sizes` values to every affected component:
+
+| File | Image | `sizes` Value |
+|------|-------|---------------|
+| `history/page.tsx` | Notable person card | `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw` |
+| `history/page.tsx` | Timeline event image | `(max-width: 768px) 100vw, 672px` |
+| `events/[id]/event-detail-client.tsx` | Hero image | `100vw` |
+| `events/[id]/event-detail-client.tsx` | Gallery images | `(max-width: 640px) 100vw, 50vw` |
+| `destinations/religious-sites/page.tsx` | Site image | `(max-width: 768px) 100vw, 40vw` |
+| `destinations/museums/page.tsx` | Museum card | `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw` |
+| `destinations/heritage-sites/page.tsx` | Even layout image | `(max-width: 768px) 100vw, 40vw` |
+| `destinations/heritage-sites/page.tsx` | Odd layout image | `(max-width: 768px) 100vw, 40vw` |
+| `community/local-business/page.tsx` | Business card | `(max-width: 640px) 100vw, 50vw` |
+| `community/page.tsx` | School logo | `56px` |
+
+#### 2. Array Index Keys — 8 Fixes Across 6 Files
+
+Replaced `key={i}` (React anti-pattern) with stable identifiers:
+
+| File | Component | Before → After |
+|------|-----------|----------------|
+| `events/[id]/event-detail-client.tsx` | Gallery wrapper div | `key={i}` → `key={img}` |
+| `gallery-image.tsx` | Thumbnail button | `key={i}` → `key={img}` |
+| `content-detail-layout.tsx` | Thumbnail button | `key={i}` → `key={img}` |
+| `content-detail-layout.tsx` | Quick-facts row | `key={i}` → `key={fact.label}` |
+| `content-detail-layout.tsx` | Highlights item | `key={i}` → `key={item}` |
+| `featured-slider.tsx` | Slide background | `key={s.id + i}` → `key={s.id}` |
+| `featured-slider.tsx` | Dot indicator | `key={i}` → `key={s.id}` |
+| `mission-vision/page.tsx` | Objective item | `key={i}` → `key={obj}` |
+| `history/historical-wonders/page.tsx` | Thumbnail button | `key={i}` → `key={img}` |
+
+#### 3. Timer Cleanup — `search-overlay.tsx`
+
+The search overlay's `useEffect` used a bare `setTimeout` without cleanup. If the overlay unmounted before the 60 ms timer fired, the callback would run against a stale ref. Fixed by capturing the timer ID and returning `clearTimeout`.
+
+#### 4. Hero Upload Path Fix — `heroes/page.tsx`
+
+Removed `uploadCategory="heroes"` from the hero image picker. Previously, hero images were uploaded to `/uploads/images/heroes/` (a separate subfolder). Now they go to `/uploads/images/` — the same location as all other CMS uploads.
+
+#### 5. CMS Preview Dialog Simplification — `cms-preview-dialog.tsx`
+
+Removed the multi-image carousel (prev/next buttons, dot indicators, `useState(imgIdx)`) from the CMS preview dialog. The preview now shows only the first image — quick glance is the sole purpose of the dialog; full editing uses the CMS form.
+
+#### 6. Performance Optimizations (Zero Visual Change)
+
+| Change | File | Details |
+|--------|------|---------|
+| **rAF-throttled scroll** | `navbar.tsx` | Wrapped the scroll handler in `requestAnimationFrame` with a guard ref. Prevents `setIsScrolled` from firing on every pixel of scroll — now fires at most once per frame (~60 Hz). |
+| **Admin template → CSS** | `admin/template.tsx` | Replaced `framer-motion` `<motion.div>` with a plain `<div>` + `animation: admin-fade-in 0.3s`. Same `opacity: 0 → 1` + `translateX(12px → 0)` with the same cubic-bezier curve. |
+| **Site template → CSS** | `site/template.tsx` | Replaced `framer-motion` `<motion.div>` with a plain `<div>` + `animation: site-curtain 0.6s`. Same `clip-path: inset(0 0 100% 0) → inset(0 0 0% 0)` + opacity fade with the same cubic-bezier curve. |
+| **CSS keyframes** | `globals.css` | Added `@keyframes admin-fade-in` and `@keyframes site-curtain`. |
+| **Removed dead dependency** | `package.json` | Removed `canvas-confetti` and `@types/canvas-confetti` (~6 KB) — the package was installed but never imported anywhere in the codebase. |
+| **Extra `priority` removed** | `navbar.tsx` | Removed redundant `priority` prop from the second navbar logo (Bocaue municipal seal). Only the first MHACTO logo needs priority loading. |
+
+#### 7. Dead Code Cleanup
+
+Deleted `components/ui/use-mobile.tsx` — an identical duplicate of `hooks/use-mobile.tsx` that was never imported by any file.
+
+#### 8. Backend — Image Path & Query Fixes (Prior Session, Uncommitted)
+
+| File | Change |
+|------|--------|
+| `config/Database.php` | Renamed from lowercase `database.php` for PSR-4 autoloader compatibility |
+| `models/Post.php` | `readByLabel()` — changed from `INNER JOIN content_fields` to `WHERE EXISTS` subquery (prevents duplicate rows when content has multiple meta rows with the same key) |
+| `models/PageHero.php` | All 22 default `imageUrl` values changed from hardcoded place images to `/images/defaults/no-image.svg` |
+| `database.sql`, `schema.sql`, `seed-*.sql` | All seed image paths updated from `/images/heroes/hero-bocaue.jpg` and `/images/places/*.jpg` to `/images/defaults/no-image.svg` |
+
+---
+
 ### March 6, 2026 — Schema Reset, Nav Cleanup & Bug Fixes
 
 #### 1. Database Schema Reset (schema.sql v2)

@@ -189,7 +189,7 @@ export function FeaturedSlider({
             {/* Background images — crossfade */}
             {slides.map((s, i) => (
               <div
-                key={s.id + i}
+                key={s.id}
                 className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${i === activeIndex ? "opacity-100 z-10" : "opacity-0 z-0"}`}
                 aria-hidden={i !== activeIndex}
               >
@@ -277,9 +277,9 @@ export function FeaturedSlider({
             {/* Bottom bar: dots + progress */}
             <div className="absolute bottom-0 left-0 right-0 z-30">
               <div className="absolute bottom-4 right-7 flex items-center gap-2">
-                {slides.map((_, i) => (
+                {slides.map((s, i) => (
                   <button
-                    key={i}
+                    key={s.id}
                     onClick={() => goTo(i)}
                     aria-label={`Slide ${i + 1}`}
                     className={`rounded-full transition-all duration-300 ${

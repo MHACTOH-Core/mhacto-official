@@ -140,7 +140,7 @@ export default function HistoryPage() {
               <Card key={person.id} className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col">
                 {person.image && (
                   <div className="relative h-36 overflow-hidden">
-                    <Image src={person.image} alt={person.name} fill className="object-cover" />
+                    <Image src={person.image} alt={person.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-4">
                       <Badge variant="outline" className={`text-xs ${categoryColor[person.category] ?? ""}`}>
@@ -210,7 +210,7 @@ export default function HistoryPage() {
                       <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
                       {event.image && (
                         <div className="relative h-40 rounded-lg overflow-hidden mb-3">
-                          <Image src={event.image} alt={event.title} fill className="object-cover" />
+                          <Image src={event.image} alt={event.title} fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" />
                         </div>
                       )}
                       <button

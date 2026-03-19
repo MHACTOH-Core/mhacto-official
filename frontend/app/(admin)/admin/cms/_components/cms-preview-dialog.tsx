@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import type { CMSPost, ContentStatus } from "@/lib/data/admin-data"
 import { contentLabels } from "@/lib/data/admin-data"
 import { Badge } from "@/components/ui/badge"
@@ -19,8 +18,6 @@ import {
   Tag,
   Sparkles,
   List,
-  ChevronLeft,
-  ChevronRight,
   User,
 } from "lucide-react"
 import { resolveMediaUrl } from "@/lib/utils"
@@ -39,8 +36,6 @@ interface CMSPreviewDialogProps {
 }
 
 export function CMSPreviewDialog({ post, onClose }: CMSPreviewDialogProps) {
-  const [imgIdx, setImgIdx] = useState(0)
-
   return (
     <Dialog open={!!post} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -72,35 +67,10 @@ export function CMSPreviewDialog({ post, onClose }: CMSPreviewDialogProps) {
               <div className="relative overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={resolveMediaUrl(post.image[imgIdx] ?? post.image[0])}
+                  src={resolveMediaUrl(post.image[0])}
                   alt=""
                   className="w-full h-48 object-cover"
                 />
-                {post.image.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => setImgIdx((i) => (i - 1 + post.image.length) % post.image.length)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setImgIdx((i) => (i + 1) % post.image.length)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                      {post.image.map((_: string, i: number) => (
-                        <button
-                          key={i}
-                          onClick={() => setImgIdx(i)}
-                          className={`h-1.5 w-1.5 rounded-full transition-colors ${i === imgIdx ? "bg-white" : "bg-white/50"}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             )}
             <div className="whitespace-pre-wrap text-sm text-card-foreground leading-relaxed">

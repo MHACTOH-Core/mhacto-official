@@ -79,9 +79,9 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@mus3, 'story', 'The Philippine Arena holds a Guinness World Record as the largest indoor arena, seating over 55,000. Its visitor center tells the story of its construction and the events that have graced its stage.');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@mus1, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@mus2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@mus3, '/images/heroes/hero-bocaue.jpg', 1, 0);
+(@mus1, '/images/defaults/no-image.svg', 1, 0),
+(@mus2, '/images/defaults/no-image.svg', 1, 0),
+(@mus3, '/images/defaults/no-image.svg', 1, 0);
 
 
 -- ────────────────────────────────────────────────────────────────
@@ -127,6 +127,6 @@ INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@rel3, 'story', 'Legend holds that a wooden crucifix was discovered floating in the Bocaue River at this very spot in the late 18th century. The miraculous finding gave rise to the Pagoda Festival, one of the Philippines'' most dramatic river processions.');
 
 INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VALUES
-(@rel1, '/images/places/Church.jpg', 1, 0),
-(@rel2, '/images/heroes/hero-bocaue.jpg', 1, 0),
-(@rel3, '/images/places/river-festival.jpg', 1, 0);
+(@rel1, '/images/defaults/no-image.svg', 1, 0),
+(@rel2, '/images/defaults/no-image.svg', 1, 0),
+(@rel3, '/images/defaults/no-image.svg', 1, 0);

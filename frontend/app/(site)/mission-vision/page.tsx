@@ -134,7 +134,7 @@ export default function MissionVisionPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {objectives.map((obj, i) => (
                 <div
-                  key={i}
+                  key={obj}
                   className="flex items-start gap-3 p-4 rounded-lg bg-muted/40 border border-border"
                 >
                   <span className="flex-shrink-0 mt-0.5 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
