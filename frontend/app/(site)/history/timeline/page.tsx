@@ -38,7 +38,7 @@ export default function TimelinePage() {
       {/* Hero */}
       <PageHero
         pageSlug="timeline"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Clock"
         fallbackAccentColor="amber-300"
         fallbackLabel="History"

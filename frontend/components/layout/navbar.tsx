@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Menu, ChevronDown, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 
 import {
   Sheet,
@@ -399,7 +399,7 @@ export function Navbar() {
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
-            src={asset("/images/logos/MHACTO_LOGO.png")}
+            src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
             alt="MHACTO Bocaue Logo"
             width={160}
             height={42}
@@ -433,7 +433,7 @@ export function Navbar() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link href="/" className="hidden md:flex shrink-0 items-center gap-1.5">
             <Image
-              src={asset("/images/logos/Municipality_of_bocaue.png")}
+              src={resolveMediaUrl("/uploads/images/logos/Municipality_of_bocaue.png")}
               alt="Municipality of Bocaue Logo"
               width={52}
               height={52}
@@ -462,7 +462,7 @@ export function Navbar() {
               {/* MHACTO logo in mobile menu */}
               <div className="mt-4 mb-4 flex justify-center">
                 <Image
-                  src={asset("/images/logos/MHACTO_LOGO.png")}
+                  src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
                   alt="MHACTO Bocaue Logo"
                   width={140}
                   height={36}

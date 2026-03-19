@@ -115,34 +115,34 @@ function ParallaxImage({ src, alt, className }: { src: string; alt: string; clas
 /* ── Fallback data ────────────────────────────────────────────────── */
 interface SubBlock { image: string; title: string; text: string }
 
-const FALLBACK_HERO = asset("/images/places/bocaue-pagoda.jpg")
+const FALLBACK_HERO = asset("/images/defaults/no-image.svg")
 const FALLBACK_OVERVIEW = "The Pagoda sa Bocaue is one of Bulacan's most cherished river festivals, a centuries-old tradition honoring the Holy Cross of Wawa. Every first Sunday of July, the Bocaue River transforms into a vibrant waterway filled with lavishly decorated boats, floating pagodas, and devotees crossing the river in a spectacular procession of faith and culture."
 
 const FALLBACK_SUBS: SubBlock[] = [
   {
-    image: asset("/images/places/river-festival.jpg"),
+    image: asset("/images/defaults/no-image.svg"),
     title: "The Sacred Cross-River Procession",
     text: "At the heart of the Pagoda festival lies the dramatic fluvial procession — a grand parade of ornately decorated boats carrying the Holy Cross across the Bocaue River. Devotees and spectators line both riverbanks as colorful floats adorned with flowers, banners, and religious icons glide across the shimmering waters.",
   },
   {
-    image: asset("/images/places/fireworks.jpg"),
+    image: asset("/images/defaults/no-image.svg"),
     title: "A Night of Fire & Light",
     text: "As dusk falls over the Bocaue River, the sky erupts in a breathtaking display of fireworks that illuminates the floating pagodas below. The reflection of golden sparks dancing across the dark water creates an unforgettable spectacle — a perfect union of fire above and river below, celebrating centuries of devotion.",
   },
   {
-    image: asset("/images/places/Church.jpg"),
+    image: asset("/images/defaults/no-image.svg"),
     title: "Faith Rooted in Heritage",
     text: "The origins of the Pagoda festival trace back to the miraculous discovery of the Holy Cross of Wawa in the Bocaue River. The tradition of carrying it across the water has endured for generations, surviving typhoons, tragedies, and the passage of time — a testament to the unshakeable faith of the Bocaueños.",
   },
 ]
 
 const FALLBACK_GALLERY = [
-  asset("/images/places/river-festival.jpg"),
-  asset("/images/places/fireworks.jpg"),
-  asset("/images/places/Church.jpg"),
-  asset("/images/places/oldtownbocaue.jpg"),
-  asset("/images/places/river-festival.jpg"),
-  asset("/images/places/fireworks.jpg"),
+  asset("/images/defaults/no-image.svg"),
+  asset("/images/defaults/no-image.svg"),
+  asset("/images/defaults/no-image.svg"),
+  asset("/images/defaults/no-image.svg"),
+  asset("/images/defaults/no-image.svg"),
+  asset("/images/defaults/no-image.svg"),
 ]
 
 /* Gallery detail data — descriptions for each gallery image */

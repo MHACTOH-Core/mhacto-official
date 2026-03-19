@@ -25,7 +25,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
  */
 export function resolveMediaUrl(
   url: string | undefined | null,
-  fallback = '/images/heroes/hero-bocaue.jpg',
+  fallback = '/images/defaults/no-image.svg',
 ): string {
   if (!url) return asset(fallback)
   if (url.startsWith('http://') || url.startsWith('https://')) return url

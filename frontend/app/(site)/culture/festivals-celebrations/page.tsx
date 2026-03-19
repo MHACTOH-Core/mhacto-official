@@ -37,7 +37,7 @@ export default function FestivalsCelebrationsPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="festivals-celebrations"
-        fallbackImage="/images/places/river-festival.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Sparkles"
         fallbackAccentColor="amber-300"
         fallbackLabel="Culture"

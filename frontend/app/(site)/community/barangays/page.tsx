@@ -154,7 +154,7 @@ export default function BarangaysPage() {
       {/* Hero — CMS-connected via pageSlug */}
       <PageHero
         pageSlug="barangays"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Landmark"
         fallbackAccentColor="emerald-300"
         fallbackLabel="Community"

@@ -89,7 +89,7 @@ export default function CulturePage() {
       {/* Hero */}
       <PageHero
         pageSlug="culture"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Sparkles"
         fallbackAccentColor="amber-300"
         fallbackLabel="Bocaue Wonders"

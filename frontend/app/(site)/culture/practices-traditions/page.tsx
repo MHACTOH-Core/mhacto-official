@@ -46,7 +46,7 @@ export default function PracticesTraditionsPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="practices-traditions"
-        fallbackImage="/images/places/Arts.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Heart"
         fallbackAccentColor="pink-300"
         fallbackLabel="Culture"

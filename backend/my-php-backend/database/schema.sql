@@ -32,6 +32,7 @@ CREATE TABLE users (
   password_hash VARCHAR(100) DEFAULT NULL,
   role          ENUM('super_admin','admin','content_manager') DEFAULT 'admin',
   status        ENUM('active','archived') DEFAULT 'active',
+  notification_prefs JSON DEFAULT NULL COMMENT 'Per-user notification preferences',
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

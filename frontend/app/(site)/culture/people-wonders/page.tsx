@@ -74,7 +74,7 @@ function PersonCard({ person }: { person: PeopleWonder }) {
       {/* Photo */}
       <div className="relative h-56 overflow-hidden bg-muted">
         <Image
-          src={person.image ?? asset("/images/placeholder-user.jpg")}
+          src={person.image ?? asset("/images/defaults/no-image.svg")}
           alt={person.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -185,7 +185,7 @@ export default function PeopleWondersPage() {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <PageHero
         pageSlug="people-wonders"
-        fallbackImage="/images/places/Arts.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="pink-300"
         fallbackLabel="Arts & Culture"

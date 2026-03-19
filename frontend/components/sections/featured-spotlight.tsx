@@ -128,7 +128,7 @@ export function FeaturedSpotlight() {
 
   const spotlightImageUrl = spotlightData.image
     ? spotlightData.image.startsWith("/images") ? asset(spotlightData.image) : spotlightData.image
-    : asset("/images/places/river-festival.jpg")
+    : asset("/images/defaults/no-image.svg")
 
   return (
     <section className="py-8 lg:py-12">

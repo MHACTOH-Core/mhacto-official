@@ -171,7 +171,7 @@ export default function SchoolsPage() {
       {/* Hero */}
       <PageHero
         pageSlug="schools"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="School"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Community"

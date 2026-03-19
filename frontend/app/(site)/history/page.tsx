@@ -80,7 +80,7 @@ export default function HistoryPage() {
       {/* Hero */}
       <PageHero
         pageSlug="history"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="BookOpen"
         fallbackAccentColor="amber-300"
         fallbackLabel="Bocaue Wonders"

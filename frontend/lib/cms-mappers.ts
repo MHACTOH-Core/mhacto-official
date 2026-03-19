@@ -18,7 +18,7 @@ import type { SchoolEntry, College, PublicSchool, Hospital, Barangay } from "@/l
 
 // ─── Image helper ─────────────────────────────────────────────────
 
-function resolveImage(post: CMSPost, fallback = "/images/heroes/hero-bocaue.jpg"): string {
+function resolveImage(post: CMSPost, fallback = "/images/defaults/no-image.svg"): string {
   const img = post.image?.[0] ?? ""
   return resolveMediaUrl(img || null, fallback)
 }
@@ -41,7 +41,7 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
     description: post.body?.substring(0, 300) ?? "",
     story: post.story ?? "",
     highlights: post.highlights ?? [],
-    image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     location: post.location ?? "",
     hours: post.hours ?? "",
@@ -67,7 +67,7 @@ export function cmsToMuseum(post: CMSPost): Museum {
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
     contact: post.contact ?? "",
-    image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     author: post.author ?? undefined,
   }
@@ -84,7 +84,7 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     location: post.location ?? "",
     hours: post.hours ?? "",
     highlights: post.highlights ?? [],
-    image: resolveImage(post, "/images/places/Church.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     author: post.author ?? undefined,
   }
@@ -113,7 +113,7 @@ export function cmsToTourPackage(post: CMSPost): TourPackage {
       .filter(Boolean),
     includes: post.includes ?? [],
     highlights: post.highlights ?? [],
-    image: resolveImage(post, "/images/places/Church.jpg"),
+    image: resolveImage(post),
     bookingContact: post.contact ?? "MHACTO Office",
     author: post.author ?? undefined,
   }
@@ -134,7 +134,7 @@ export function cmsToCuisineItem(post: CMSPost): CuisineItem {
     type,
     description: post.body ?? "",
     story: post.story ?? "",
-    image: resolveImage(post, "/images/places/Food.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     where: post.location ? [post.location] : [],
     bestTime: post.hours ?? undefined,
@@ -157,7 +157,7 @@ export function cmsToFestival(post: CMSPost): Festival {
     description: post.body ?? "",
     story: post.story ?? "",
     highlights: post.highlights ?? [],
-    image: resolveImage(post, "/images/places/river-festival.jpg"),
+    image: resolveImage(post),
     author: post.author ?? undefined,
   }
 }
@@ -176,7 +176,7 @@ export function cmsToCulturalPractice(post: CMSPost): CulturalPractice {
     description: post.body ?? "",
     significance: post.story ?? "",
     status: "active",
-    image: resolveImage(post, "/images/places/Arts.jpg"),
+    image: resolveImage(post),
     author: post.author ?? undefined,
   }
 }
@@ -191,7 +191,7 @@ export function cmsToArtisan(post: CMSPost): Artisan {
     products: post.highlights ?? [],
     awards: [],
     location: post.location ?? "",
-    image: resolveImage(post, "/images/places/Arts.jpg"),
+    image: resolveImage(post),
     author: post.author ?? undefined,
   }
 }
@@ -213,7 +213,7 @@ export function cmsToPeopleWonder(post: CMSPost): PeopleWonder {
     description: post.body ?? "",
     year: post.established ?? undefined,
     awards: post.highlights ?? [],
-    image: resolveImage(post, "/images/places/Arts.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     isAlive: true,
     author: post.author ?? undefined,
@@ -236,7 +236,7 @@ export function cmsToLocalBusiness(post: CMSPost): LocalBusiness {
     location: post.location ?? "",
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
-    image: resolveImage(post, "/images/places/Food.jpg"),
+    image: resolveImage(post),
   }
 }
 
@@ -249,7 +249,7 @@ export function cmsToTimelineEvent(post: CMSPost): TimelineEvent {
     title: post.title,
     description: post.body ?? "",
     details: post.story ?? "",
-    image: resolveImage(post, "/images/places/oldtownbocaue.jpg"),
+    image: resolveImage(post),
     significance: "notable",
     author: post.author ?? undefined,
   }
@@ -272,7 +272,7 @@ export function cmsToNotablePerson(post: CMSPost): NotablePerson {
     category,
     description: post.body ?? "",
     legacy: post.story ?? "",
-    image: resolveImage(post, "/images/places/Arts.jpg"),
+    image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     featured: post.isFeatured ?? false,
     author: post.author ?? undefined,
@@ -403,7 +403,7 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     location: post.location ?? "",
     hours: post.hours ?? "",
     priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
-    image: resolveImage(post, "/images/places/Food.jpg"),
+    image: resolveImage(post),
     isOpen: post.isFeatured ?? true,
     author: post.author ?? undefined,
   }

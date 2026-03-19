@@ -32,6 +32,27 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
             return;
         }
 
+        // Preferences: GET/PUT /api/users/{id}/preferences
+        if (in_array($method, ['GET', 'PUT']) && $param2 === 'preferences' && $param1 && is_numeric($param1)) {
+            $id = (int) $param1;
+            if ($method === 'GET') {
+                $prefs = $user->getPreferences($id);
+                Response::json($prefs);
+            } else {
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (!is_array($data)) {
+                    Response::error('Invalid preferences data.', 400);
+                }
+                $result = $user->updatePreferences($id, $data);
+                if ($result) {
+                    Response::json(['message' => 'Preferences updated.', 'preferences' => $user->getPreferences($id)]);
+                } else {
+                    Response::error('Failed to update preferences.', 400);
+                }
+            }
+            return;
+        }
+
         // Change password: PUT /api/users/{id}/change-password
         if ($method === 'PUT' && $param2 === 'change-password' && $param1 && is_numeric($param1)) {
             $data = json_decode(file_get_contents('php://input'), true);

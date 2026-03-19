@@ -46,6 +46,8 @@ import {
   apiRestoreUser,
   apiChangePassword,
   apiUpdateProfile,
+  apiFetchUserPreferences,
+  apiUpdateUserPreferences,
 } from "@/lib/api"
 
 // ─── Context shape ─────────────────────────────────────────────────
@@ -92,6 +94,10 @@ interface AdminContextValue {
   refreshUsers: () => Promise<void>
   updateProfile: (data: { full_name?: string; profile_picture?: string | null }) => Promise<boolean>
   changePassword: (oldPassword: string, newPassword: string) => Promise<string | true>
+
+  // Notification preferences (per-user)
+  notificationPrefs: { enableEmailNotifications: boolean; enableInquiryAlerts: boolean }
+  updateNotificationPrefs: (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }) => Promise<boolean>
 
   // Loading / refresh
   loading: boolean
@@ -145,6 +151,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [dailyVisits] = useState<DailyVisit[]>(MOCK_DAILY_VISITS)
   const [isHydrated, setIsHydrated] = useState(false)
   const [isLoadingBackendData, setIsLoadingBackendData] = useState(false)
+  const [notificationPrefs, setNotificationPrefs] = useState<{ enableEmailNotifications: boolean; enableInquiryAlerts: boolean }>({ enableEmailNotifications: true, enableInquiryAlerts: true })
 
   // ── Load all data from backend ──
   /**
@@ -256,6 +263,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (!isHydrated || !isLoggedIn) return
     fetchAllBackendData()
   }, [isHydrated, isLoggedIn, fetchAllBackendData])
+
+  // Fetch notification preferences when user is known
+  useEffect(() => {
+    if (!isHydrated || !isLoggedIn || !currentUser) return
+    apiFetchUserPreferences(currentUser.id)
+      .then((prefs) => setNotificationPrefs(prefs))
+      .catch(() => {})
+  }, [isHydrated, isLoggedIn, currentUser])
 
   // ── Auth ──
   const login = useCallback(async (email: string, password: string): Promise<true | string> => {
@@ -555,6 +570,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [currentUser, logActivityFn],
   )
 
+  // ── Notification preferences ──
+  const updateNotificationPrefsFn = useCallback(
+    async (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }): Promise<boolean> => {
+      if (!currentUser) return false
+      try {
+        const res = await apiUpdateUserPreferences(currentUser.id, prefs)
+        if (res.preferences) {
+          setNotificationPrefs(res.preferences)
+        }
+        return true
+      } catch (err) {
+        console.error("updateNotificationPrefs error:", err)
+        return false
+      }
+    },
+    [currentUser],
+  )
+
   return (
     <AdminContext.Provider
       value={{
@@ -586,6 +619,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         refreshUsers: refreshUsersFn,
         updateProfile: updateProfileFn,
         changePassword: changePasswordFn,
+        notificationPrefs,
+        updateNotificationPrefs: updateNotificationPrefsFn,
         loading: isLoadingBackendData,
         isHydrated,
         refreshPosts,

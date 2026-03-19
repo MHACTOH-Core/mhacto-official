@@ -170,7 +170,7 @@ export default function HistoricalWondersPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="historical-wonders"
-        fallbackImage="/images/places/church-bocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Landmark"
         fallbackAccentColor="amber-300"
         fallbackLabel="Heritage & History"

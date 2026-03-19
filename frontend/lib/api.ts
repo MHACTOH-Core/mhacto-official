@@ -422,6 +422,19 @@ export function apiUpdateProfile(id: number, data: { full_name?: string; profile
   })
 }
 
+/** Fetch per-user notification preferences */
+export function apiFetchUserPreferences(id: number) {
+  return apiFetch<{ enableEmailNotifications: boolean; enableInquiryAlerts: boolean }>(`/api/users/${id}/preferences`)
+}
+
+/** Update per-user notification preferences */
+export function apiUpdateUserPreferences(id: number, prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }) {
+  return apiFetch<{ message: string; preferences: { enableEmailNotifications: boolean; enableInquiryAlerts: boolean } }>(`/api/users/${id}/preferences`, {
+    method: "PUT",
+    body: JSON.stringify(prefs),
+  })
+}
+
 // ─── Public content endpoints (for tourist site) ──────────────────
 
 export interface FeaturedContent {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram } from "lucide-react"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import { apiFetchSettings } from "@/lib/api"
 
 export function Footer() {
@@ -49,7 +49,7 @@ export function Footer() {
           <div>
             <div className="flex items-center">
               <Image
-                src={asset("/images/logos/MHACTO_LOGO.png")}
+                src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
                 alt="MHACTO Bocaue Logo"
                 width={160}
                 height={40}
@@ -153,7 +153,7 @@ export function Footer() {
             {/* Left side - Bocaue */}
             <div className="flex items-center gap-3 text-center sm:text-left">
               <Image
-                src={asset("/images/logos/bocaue-logo.png")}
+                src={resolveMediaUrl("/uploads/images/logos/bocaue-logo.png")}
                 alt="Bocaue Logo"
                 width={56}
                 height={56}
@@ -177,7 +177,7 @@ export function Footer() {
                 <p className="text-xs text-muted-foreground/60 mt-0.5">STI College Balagtas</p>
               </div>
               <Image
-                src={asset("/images/logos/sti-logo.jpg")}
+                src={resolveMediaUrl("/uploads/images/logos/sti-logo.jpg")}
                 alt="STI College Balagtas Logo"
                 width={120}
                 height={90}

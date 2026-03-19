@@ -244,6 +244,44 @@ class User
         }
     }
 
+    /** Get notification preferences for a user */
+    public function getPreferences(int $id): array
+    {
+        $query = "SELECT notification_prefs FROM {$this->table_name} WHERE user_id = :id LIMIT 1";
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row || !$row['notification_prefs']) {
+                return ['enableEmailNotifications' => true, 'enableInquiryAlerts' => true];
+            }
+            return json_decode($row['notification_prefs'], true) ?: ['enableEmailNotifications' => true, 'enableInquiryAlerts' => true];
+        } catch (PDOException $e) {
+            error_log("User::getPreferences error: " . $e->getMessage());
+            return ['enableEmailNotifications' => true, 'enableInquiryAlerts' => true];
+        }
+    }
+
+    /** Update notification preferences for a user */
+    public function updatePreferences(int $id, array $prefs): bool
+    {
+        $allowed = ['enableEmailNotifications', 'enableInquiryAlerts'];
+        $filtered = array_intersect_key($prefs, array_flip($allowed));
+        $json = json_encode($filtered);
+
+        $query = "UPDATE {$this->table_name} SET notification_prefs = :prefs WHERE user_id = :id";
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':prefs', $json);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("User::updatePreferences error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     /** Restore an archived user back to active */
     public function restore(int $id): bool
     {

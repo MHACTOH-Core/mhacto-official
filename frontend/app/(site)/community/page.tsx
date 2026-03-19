@@ -159,7 +159,7 @@ export default function CommunityPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="community"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Bocaue"

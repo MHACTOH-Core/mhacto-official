@@ -39,7 +39,7 @@ export default function LocalBusinessPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="local-business"
-        fallbackImage="/images/places/Food.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Store"
         fallbackAccentColor="green-300"
         fallbackLabel="Community"

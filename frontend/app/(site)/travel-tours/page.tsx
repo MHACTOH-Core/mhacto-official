@@ -56,7 +56,7 @@ export default function TravelToursPage() {
       {/* Hero */}
       <PageHero
         pageSlug="travel-tours"
-        fallbackImage="/images/places/river-festival.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Map"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Tourism"

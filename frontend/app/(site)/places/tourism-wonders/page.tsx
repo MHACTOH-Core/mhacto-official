@@ -144,7 +144,7 @@ export default function TourismWondersPage() {
             story: p.story ?? "",
             image: p.image?.[0]
               ? (p.image[0].startsWith("/images") ? asset(p.image[0]) : p.image[0])
-              : asset("/images/places/oldtownbocaue.jpg"),
+              : asset("/images/defaults/no-image.svg"),
             category: (p.category?.toLowerCase() as PlaceCategory) ?? "landmark",
             location: p.location ?? "",
             hours: p.hours ?? "",
@@ -166,7 +166,7 @@ export default function TourismWondersPage() {
       {/* Hero */}
       <PageHero
         pageSlug="tourism-wonders"
-        fallbackImage="/images/places/philippine-arena.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Compass"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Bocaue Tourism"

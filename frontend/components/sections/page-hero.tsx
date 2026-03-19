@@ -60,7 +60,7 @@ function resolveIcon(iconName: string | undefined): React.ComponentType<{ classN
 // ── Resolve hero image URL ────────────────────────────────────────
 
 function resolveHeroImage(url: string): string {
-  if (!url) return asset("/images/places/oldtownbocaue.jpg")
+  if (!url) return asset("/images/defaults/no-image.svg")
   if (url.startsWith("http://") || url.startsWith("https://")) return url
   if (url.startsWith("/uploads/") || url.startsWith("uploads/")) {
     return resolveMediaUrl(url)

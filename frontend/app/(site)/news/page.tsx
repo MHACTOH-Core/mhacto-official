@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
 import { resolveMediaUrl } from "@/lib/utils"
-import NewsImage from "@/public/images/places/News.jpg"
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<NewsArticleAPI[]>([])
@@ -40,7 +39,7 @@ export default function NewsPage() {
       {/* Hero Section with Background Image */}
       <PageHero
         pageSlug="news"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Megaphone"
         fallbackAccentColor="blue-300"
         fallbackLabel="News & Blog"

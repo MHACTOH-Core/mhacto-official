@@ -35,7 +35,7 @@ export default function NotablePersonsPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="notable-persons"
-        fallbackImage="/images/places/Arts.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="purple-300"
         fallbackLabel="History"

@@ -198,12 +198,12 @@ Backend DB changes:
   - ALTER users table: add notification_prefs JSON column (or create user_preferences table)
 
 Steps:
-  [ ] 8.1  Add notification_prefs column to users table
-  [ ] 8.2  Add preferences endpoint in users route
-  [ ] 8.3  Update User model with preference methods
-  [ ] 8.4  Add notification toggle UI in settings page (all roles)
-  [ ] 8.5  Wire toggle to API
-  [ ] 8.6  Verify no TypeScript errors
+  [x] 8.1  Add notification_prefs column to users table
+  [x] 8.2  Add preferences endpoint in users route
+  [x] 8.3  Update User model with preference methods
+  [x] 8.4  Add notification toggle UI in settings page (all roles)
+  [x] 8.5  Wire toggle to API
+  [x] 8.6  Verify no TypeScript errors
 
 ================================================================================
 SUMMARY — FILES CREATED vs EDITED

@@ -64,7 +64,7 @@ export interface ContentDetailLayoutProps {
 
 // ─── Component ────────────────────────────────────────────────────
 
-const DEFAULT_PLACEHOLDER = "/images/heroes/hero-bocaue.jpg"
+const DEFAULT_PLACEHOLDER = "/images/defaults/no-image.svg"
 
 export default function ContentDetailLayout({
   heroImage,

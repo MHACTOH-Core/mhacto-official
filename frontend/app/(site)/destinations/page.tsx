@@ -88,7 +88,7 @@ export default function DestinationsPage() {
       {/* Hero */}
       <PageHero
         pageSlug="destinations"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Landmark"
         fallbackAccentColor="amber-300"
         fallbackLabel="Bocaue Wonders"

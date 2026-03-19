@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import {
   LayoutDashboard,
   FileEdit,
@@ -65,7 +65,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
     <>
       {/* Brand */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
-        <Image src={asset("/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={36} height={36} className="shrink-0" />
+        <Image src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={36} height={36} className="shrink-0" />
         {showLabels && (
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-card-foreground">MHACTO</p>

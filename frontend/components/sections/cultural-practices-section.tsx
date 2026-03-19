@@ -64,7 +64,7 @@ export function CulturalPracticesSection() {
             >
               <div className="relative h-48 overflow-hidden">
                 <Image
-                  src={item.image || asset("/images/places/Arts.jpg")}
+                  src={item.image || asset("/images/defaults/no-image.svg")}
                   alt={item.name}
                   fill
                   sizes="(max-width: 640px) 100vw, 33vw"

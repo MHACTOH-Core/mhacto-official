@@ -81,7 +81,7 @@ export default function TourismOfficePage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="tourism-office"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Building2"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Organization"

@@ -25,7 +25,7 @@ export default function BarangayPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="barangay"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="MapPin"
         fallbackAccentColor="emerald-300"
         fallbackLabel="Community"
@@ -63,7 +63,7 @@ export default function BarangayPage() {
                   {/* Thumbnail */}
                   <div className="relative h-48 w-full overflow-hidden bg-muted">
                     <Image
-                      src={brgy.image ? brgy.image : asset("/images/heroes/hero-bocaue.jpg")}
+                      src={brgy.image ? brgy.image : asset("/images/defaults/no-image.svg")}
                       alt={brgy.name}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 
 export function TourismTaglineSection() {
   return (
@@ -23,7 +23,7 @@ export function TourismTaglineSection() {
           <div className="flex shrink-0 items-center gap-6 lg:flex-col lg:gap-4 reveal-on-scroll reveal-left">
             <div className="flex flex-col items-center gap-1">
               <Image
-                src={asset("/images/logos/MHACTO_LOGO.png")}
+                src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
                 alt="MHACTO Bocaue"
                 width={180}
                 height={60}
@@ -33,7 +33,7 @@ export function TourismTaglineSection() {
             <div className="h-10 w-px bg-border lg:h-px lg:w-10" />
             <div className="flex flex-col items-center gap-1">
               <Image
-                src={asset("/images/logos/Municipality_of_bocaue.png")}
+                src={resolveMediaUrl("/uploads/images/logos/Municipality_of_bocaue.png")}
                 alt="Municipality of Bocaue"
                 width={72}
                 height={72}

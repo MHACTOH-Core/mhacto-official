@@ -249,7 +249,7 @@ export default function InquirePage() {
       {/* Hero */}
       <PageHero
         pageSlug="inquire"
-        fallbackImage="/images/places/river-festival.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Tourism"
         fallbackTitle="Tourist Inquiry & Registration"

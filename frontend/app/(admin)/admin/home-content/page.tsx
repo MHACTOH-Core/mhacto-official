@@ -442,7 +442,7 @@ export default function HomeContentPage() {
                           value={heroFormData.fallbackImage ?? ""}
                           onChange={(url) => setHeroFormData({ ...heroFormData, fallbackImage: url })}
                           accept="image"
-                          placeholder="/images/heroes/hero-bocaue.jpg or browse..."
+                          placeholder="Browse or upload a fallback image..."
                         />
                         <p className="text-xs text-muted-foreground">Shown if video cannot load — browse existing or upload</p>
                       </div>

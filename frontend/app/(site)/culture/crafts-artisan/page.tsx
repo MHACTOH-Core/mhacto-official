@@ -39,7 +39,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
       }`}
     >
       <GalleryImage
-        src={artisan.image ?? asset("/images/places/Arts.jpg")}
+        src={artisan.image ?? asset("/images/defaults/no-image.svg")}
         gallery={artisan.gallery}
         alt={artisan.name}
         className={`relative overflow-hidden bg-muted ${featured ? "h-72" : "h-52"}`}
@@ -174,7 +174,7 @@ export default function CraftsArtisanPage() {
       {/* ── Hero ───────────────────────────────────────────────── */}
       <PageHero
         pageSlug="crafts-artisan"
-        fallbackImage="/images/places/Arts.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Hammer"
         fallbackAccentColor="amber-300"
         fallbackLabel="Arts & Culture"

@@ -158,7 +158,7 @@ export default function HistoricalRoadmapPage() {
     <main className="min-h-screen bg-background">
       <PageHero
         pageSlug="historical-roadmap"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="BookOpen"
         fallbackAccentColor="amber-300"
         fallbackLabel="History of Bocaue"

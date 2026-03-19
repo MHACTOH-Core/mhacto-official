@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import { apiFetchHeroSlides, type HeroSlide } from "@/lib/api"
 
 /** Milliseconds between automatic slide transitions */
@@ -122,12 +122,12 @@ export function HeroSection() {
         <video
           className="absolute inset-0 w-full h-full object-cover"
           style={{ transform: `scale(${backgroundImageScale})` }}
-          src={asset("/images/Video2.mp4")}
+          src={resolveMediaUrl("/uploads/images/Video2.mp4")}
           autoPlay
           loop
           muted
           playsInline
-          poster={asset("/images/heroes/hero-bocaue.jpg")}
+          poster={resolveMediaUrl("/uploads/images/heroes/hero-bocaue.jpg")}
         />
 
         {/* Dynamic dark overlay — intensifies as user scrolls */}

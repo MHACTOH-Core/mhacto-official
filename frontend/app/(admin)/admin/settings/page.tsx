@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,7 +38,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { isLoggedIn, isHydrated, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword } = useAdmin()
+  const { isLoggedIn, isHydrated, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword, notificationPrefs, updateNotificationPrefs } = useAdmin()
 
   const { toast } = useToast()
 
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                       />
                     ) : (
                       <Image
-                        src={asset("/images/logos/MHACTO_LOGO.png")}
+                        src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
                         alt="Admin"
                         width={56}
                         height={56}
@@ -310,6 +310,62 @@ export default function SettingsPage() {
                 <Button variant="outline" size="sm" onClick={openPasswordDialog}>
                   Change Password
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Personal Notification Preferences — all roles */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/40">
+                  <Bell className="h-5 w-5 text-orange-600 dark:text-orange-300" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">My Notifications</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Personal notification preferences
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-card-foreground">
+                    Email Notifications
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email alerts for important updates
+                  </p>
+                </div>
+                <Switch
+                  checked={notificationPrefs.enableEmailNotifications}
+                  onCheckedChange={async (checked) => {
+                    const ok = await updateNotificationPrefs({ enableEmailNotifications: checked })
+                    if (ok) toast({ title: "Preference saved", description: `Email notifications ${checked ? "enabled" : "disabled"}.` })
+                    else toast({ title: "Failed to save", description: "Could not update preferences.", variant: "destructive" })
+                  }}
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-card-foreground">
+                    Inquiry Alerts
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when new inquiries are submitted
+                  </p>
+                </div>
+                <Switch
+                  checked={notificationPrefs.enableInquiryAlerts}
+                  onCheckedChange={async (checked) => {
+                    const ok = await updateNotificationPrefs({ enableInquiryAlerts: checked })
+                    if (ok) toast({ title: "Preference saved", description: `Inquiry alerts ${checked ? "enabled" : "disabled"}.` })
+                    else toast({ title: "Failed to save", description: "Could not update preferences.", variant: "destructive" })
+                  }}
+                />
               </div>
             </CardContent>
           </Card>

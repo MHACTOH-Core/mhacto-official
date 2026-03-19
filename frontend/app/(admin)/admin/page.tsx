@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Eye, EyeOff, MapPin } from "lucide-react"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { asset } from "@/lib/utils"
+import { asset, resolveMediaUrl } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -233,7 +233,7 @@ export default function AdminLoginPage() {
 
         {/* Pagoda Background Image */}
         <Image
-          src={asset("/images/places/PagodaImage.jpg")}
+          src={asset("/images/defaults/no-image.svg")}
           alt="Bocaue Pagoda"
           fill
           className="object-cover"
@@ -287,7 +287,7 @@ export default function AdminLoginPage() {
         {/* Mobile-only logo */}
         <div className={`lg:hidden mb-8 flex items-center gap-3 ${mounted ? "adm-fade" : "opacity-0"}`}>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06] border border-white/10">
-            <Image src={asset("/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={32} height={32} className="object-contain" />
+            <Image src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={32} height={32} className="object-contain" />
           </div>
           <div>
             <span className="block text-sm font-bold text-white/90">MHACTO</span>
@@ -302,11 +302,11 @@ export default function AdminLoginPage() {
           {/* Logos */}
           <div className="mb-8 flex items-center justify-center gap-5">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg shadow-black/15">
-              <Image src={asset("/images/logos/bocaue-logo.png")} alt="Municipality of Bocaue" width={58} height={58} className="object-contain rounded-full" />
+              <Image src={resolveMediaUrl("/uploads/images/logos/bocaue-logo.png")} alt="Municipality of Bocaue" width={58} height={58} className="object-contain rounded-full" />
             </div>
             <div className="h-10 w-px bg-white/15" />
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg shadow-black/15">
-              <Image src={asset("/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={58} height={58} className="object-contain rounded-full" />
+              <Image src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={58} height={58} className="object-contain rounded-full" />
             </div>
           </div>
 

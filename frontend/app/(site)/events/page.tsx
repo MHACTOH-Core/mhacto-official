@@ -188,7 +188,7 @@ export default function EventsPage() {
       {/* ── Hero ── */}
       <PageHero
         pageSlug="events"
-        fallbackImage="/images/places/river-festival.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="CalendarDays"
         fallbackAccentColor="cyan-300"
         fallbackLabel="Events"

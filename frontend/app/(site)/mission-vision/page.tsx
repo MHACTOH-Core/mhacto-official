@@ -45,7 +45,7 @@ export default function MissionVisionPage() {
       {/* Hero */}
       <PageHero
         pageSlug="mission-vision"
-        fallbackImage="/images/places/river-festival.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackAccentColor="cyan-300"
         fallbackLabel="MHACTO Bocaue"
         fallbackTitle="Mission & Vision"

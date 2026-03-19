@@ -18,25 +18,25 @@ export const categoryData: Record<CategoryType, { title: string; icon: string; d
     title: "History Wonders",
     icon: "📜",
     description: "Explore historical landmarks and heritage sites that showcase Bocaue's rich cultural legacy",
-    heroImage: asset("/images/places/Church.JPG"),
+    heroImage: asset("/images/defaults/no-image.svg"),
   },
   "arts-business": {
     title: "Arts and Business Wonders",
     icon: "🎨",
     description: "Discover art galleries, business districts, and creative spaces in Bocaue",
-    heroImage: asset("/images/places/Arts.JPG"),
+    heroImage: asset("/images/defaults/no-image.svg"),
   },
   tourism: {
     title: "Tourism Wonders",
     icon: "✈️",
     description: "Visit top tourist attractions and destinations perfect for travelers and adventurers",
-    heroImage: asset("/images/places/Arena.JPG"),
+    heroImage: asset("/images/defaults/no-image.svg"),
   },
   culinary: {
     title: "Culinary Wonders",
     icon: "🍽️",
     description: "Experience local cuisines and dining experiences that showcase Bocaue's flavors",
-    heroImage: asset("/images/places/Food.JPG"),
+    heroImage: asset("/images/defaults/no-image.svg"),
   },
 }
 
@@ -48,7 +48,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Historic Spanish-era church standing for centuries as a symbol of faith",
       description:
         "A beautifully preserved Spanish-colonial church dating back to the 1600s, featuring Baroque architecture and hand-carved retablos. The spiritual heart of Bocaue's religious heritage.",
-      image: asset("/images/places/Church.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "history",
       location: "Bocaue Town Center, Bulacan",
       highlights: [
@@ -64,7 +64,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Discover markers documenting Bocaue's journey through time",
       description:
         "Throughout Bocaue, historical markers and monuments commemorate significant events and figures that shaped the town's development from Spanish colonial times to modern era.",
-      image: asset("/images/places/Church.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "history",
       location: "Various locations in Bocaue",
       highlights: [
@@ -80,7 +80,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Experience the cultural significance of Bocaue's iconic river",
       description:
         "The Bocaue River is more than a geographic feature—it's the narrative thread of the town's story, from ancient fishing traditions to spiritual processions that echo through centuries.",
-      image: asset("/images/places/Church.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "history",
       location: "Bocaue River, Bulacan",
       highlights: [
@@ -96,7 +96,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Walk through streets lined with Spanish-era architectural influences",
       description:
         "Bocaue preserves examples of Spanish colonial architecture, including residential houses with bahay na bato styling and municipal buildings reflecting centuries of design tradition.",
-      image: asset("/images/places/Church.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "history",
       location: "Bocaue Town Proper",
       highlights: [
@@ -114,7 +114,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Meet traditional craftspeople creating handmade fireworks and crafts",
       description:
         "Bocaue has a centuries-old tradition of artisan craftsmanship, from handmade pyrotechnics to traditional weaving. Visit workshops where skilled artisans practice their craft using methods passed down through generations.",
-      image: asset("/images/places/Arts.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "arts-business",
       location: "Bocaue Artisan Districts",
       highlights: [
@@ -130,7 +130,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Explore emerging creative hubs and commercial centers",
       description:
         "Modern Bocaue is home to vibrant creative districts where local entrepreneurs, artists, and small businesses thrive. Visit galleries, workshops, and studios showcasing contemporary and traditional art.",
-      image: asset("/images/places/Arts.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "arts-business",
       location: "Various business zones in Bocaue",
       highlights: [
@@ -146,7 +146,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "The economic heartbeat of Bocaue's business community",
       description:
         "MacArthur Highway is the bustling commercial center of Bocaue, lined with shops, restaurants, and businesses. It's the perfect place to experience local commerce and entrepreneurship.",
-      image: asset("/images/places/Arts.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "arts-business",
       location: "MacArthur Highway, Bocaue",
       highlights: [
@@ -162,7 +162,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Experience authentic cultural performances and artistic expressions",
       description:
         "Throughout the year, Bocaue hosts cultural shows, theater performances, and artistic events celebrating local talent and heritage. From street performances to stage productions.",
-      image: asset("/images/places/Arts.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "arts-business",
       location: "Various venues in Bocaue",
       highlights: [
@@ -180,7 +180,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "World's largest indoor arena hosting world-class events",
       description:
         "An architectural marvel and Guinness World Record holder, the Philippine Arena can seat 55,000 people. Experience the scale and grandeur of this engineering wonder located right in Bocaue.",
-      image: asset("/images/places/philippine-arena.jpg"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "tourism",
       location: "Ciudad de Victoria, Bocaue, Bulacan",
       highlights: [
@@ -196,7 +196,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Witness the legendary fluvial parade and week-long festivities",
       description:
         "The Bocaue River Festival is a spectacular week-long celebration featuring the iconic pagoda fluvial procession, cultural shows, street dancing, and thousands of visitors from around the world.",
-      image: asset("/images/places/Arena.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "tourism",
       location: "Bocaue River, Bulacan",
       highlights: [
@@ -212,7 +212,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Scenic walks and nature experiences along the historic river",
       description:
         "Escape the hustle and bustle with tranquil nature walks along the Bocaue River. Enjoy birdwatching, photography opportunities, and the serene beauty of the river landscape.",
-      image: asset("/images/places/Arena.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "tourism",
       location: "Bocaue River, accessible from Town Center",
       highlights: [
@@ -228,7 +228,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Experience modern Bocaue with world-class facilities and communities",
       description:
         "Home to the Philippine Arena and mixed-use developments, Ciudad de Victoria represents Bocaue's modernization while maintaining its cultural identity. Shopping, dining, and entertainment all in one complex.",
-      image: asset("/images/places/Arena.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "tourism",
       location: "Ciudad de Victoria, Bocaue",
       highlights: [
@@ -246,7 +246,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Taste the famous crispy delicacy that put Bocaue on the national food map",
       description:
         "Bocaue is renowned nationwide for its exceptional chicharon—deep-fried pork rind with an incomparable crunch. Perfected through generations, these crispy treats are made using traditional double-fry methods and secret family recipes.",
-      image: asset("/images/places/Food.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "culinary",
       location: "MacArthur Highway, Bocaue",
       highlights: [
@@ -262,7 +262,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Discover authentic Bulacan rice cakes with centuries-old traditions",
       description:
         "Bocaue's kakanin (rice cakes) are made using ancestral recipes. Taste suman wrapped in banana leaves, bibingka baked over charcoal, colorful puto, and other delicacies that represent authentic Bulacan cuisine.",
-      image: asset("/images/places/Food.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "culinary",
       location: "Local markets and bakeries in Bocaue",
       highlights: [
@@ -278,7 +278,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Experience authentic Bocaue cuisine at family-run establishments",
       description:
         "From casual eateries to well-established restaurants, Bocaue's dining scene celebrates local flavors. Enjoy traditional Bulacan dishes prepared fresh using local ingredients and time-honored recipes.",
-      image: asset("/images/places/Food.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "culinary",
       location: "Various locations in Bocaue",
       highlights: [
@@ -294,7 +294,7 @@ export const categoryPlaces: Record<CategoryType, CategoryPlace[]> = {
       shortDescription: "Celebrate local cuisine at Bocaue's vibrant food festivals",
       description:
         "Throughout the year, Bocaue hosts food-related festivals and cook-offs where local chefs and home cooks showcase their culinary talents. Part of the River Festival and other cultural celebrations.",
-      image: asset("/images/places/Food.JPG"),
+      image: asset("/images/defaults/no-image.svg"),
       category: "culinary",
       location: "Various festival locations in Bocaue",
       highlights: [

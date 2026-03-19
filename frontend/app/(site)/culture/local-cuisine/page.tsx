@@ -218,7 +218,7 @@ export default function LocalCuisinePage() {
       {/* ── Hero ── */}
       <PageHero
         pageSlug="local-cuisine"
-        fallbackImage="/images/places/Food.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Utensils"
         fallbackAccentColor="amber-300"
         fallbackLabel="Local Culinary"
@@ -442,7 +442,7 @@ export default function LocalCuisinePage() {
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <GalleryImage
-                      src={place.image ?? "/images/places/Food.jpg"}
+                      src={place.image ?? "/images/defaults/no-image.svg"}
                       alt={place.name}
                       outerClassName="h-full"
                       className="relative flex-1 overflow-hidden min-h-[260px]"
@@ -530,7 +530,7 @@ export default function LocalCuisinePage() {
 
                   {idx % 2 !== 0 && (
                     <GalleryImage
-                      src={place.image ?? "/images/places/Food.jpg"}
+                      src={place.image ?? "/images/defaults/no-image.svg"}
                       alt={place.name}
                       outerClassName="h-full order-first md:order-last"
                       className="relative flex-1 overflow-hidden min-h-[260px]"

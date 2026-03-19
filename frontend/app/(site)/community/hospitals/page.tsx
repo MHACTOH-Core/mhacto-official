@@ -48,7 +48,7 @@ export default function HospitalsPage() {
       {/* Hero */}
       <PageHero
         pageSlug="hospitals"
-        fallbackImage="/images/places/oldtownbocaue.jpg"
+        fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Activity"
         fallbackAccentColor="red-300"
         fallbackLabel="Community"

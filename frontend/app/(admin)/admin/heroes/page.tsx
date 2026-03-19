@@ -152,7 +152,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 }
 
 function resolveHeroImage(url: string): string {
-  if (!url) return asset("/images/places/oldtownbocaue.jpg")
+  if (!url) return asset("/images/defaults/no-image.svg")
   if (url.startsWith("http://") || url.startsWith("https://")) return url
   if (url.startsWith("/uploads/") || url.startsWith("uploads/")) {
     return resolveMediaUrl(url)
@@ -406,10 +406,10 @@ export default function HeroesAdminPage() {
                   value={formImageUrl}
                   onChange={setFormImageUrl}
                   accept="image"
-                  placeholder="/images/places/photo.jpg or select from media library"
+                  placeholder="Select from media library or paste URL"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Use a local path (e.g. /images/places/photo.jpg), upload via media library, or paste an external URL.
+                  Upload via media library or paste an external URL.
                 </p>
               </div>
 
