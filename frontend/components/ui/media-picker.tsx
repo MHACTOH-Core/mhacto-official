@@ -8,8 +8,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +45,7 @@ import {
   API_BASE,
   type MediaFile,
 } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 export type MediaPickerAccept = "image" | "video" | "all"
 
@@ -81,7 +92,9 @@ export function MediaPicker({
   const [urlInput, setUrlInput] = useState("")
   const [search, setSearch] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
   const loadFiles = useCallback(async () => {
     setLoading(true)
@@ -141,14 +154,24 @@ export function MediaPicker({
     }
   }
 
-  const handleDelete = async (file: MediaFile) => {
-    if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    const file = deleteTarget
+    setDeleteTarget(null)
     try {
       await apiDeleteMedia(file.url)
       if (selected === file.url) setSelected(null)
       await loadFiles()
+      toast({
+        title: "Deleted",
+        description: `"${file.name}" has been deleted.`,
+      })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed")
+      toast({
+        title: "Delete failed",
+        description: err instanceof Error ? err.message : "Could not delete the file.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -177,6 +200,7 @@ export function MediaPicker({
         : "image/*,video/*"
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
@@ -281,7 +305,7 @@ export function MediaPicker({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDelete(file)
+                            setDeleteTarget(file)
                           }}
                           className="absolute right-1 top-1 rounded-full bg-destructive/80 p-1 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive"
                         >
@@ -424,6 +448,24 @@ export function MediaPicker({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete file?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteConfirm} className={buttonVariants({ variant: "destructive" })}>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 
