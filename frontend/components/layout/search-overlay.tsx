@@ -51,9 +51,9 @@ const categoryColor: Record<string, string> = {
 // ── Quick-access links shown before typing ────────────────────────────
 const quickLinks: { label: string; href: string; category: string }[] = [
   { label: "Pagoda Festival",    href: "/culture/festivals-celebrations", category: "Festival" },
-  { label: "Tourist Destinations", href: "/destinations",                category: "Heritage Site" },
+  { label: "Tourist Wonders",     href: "/destinations",                  category: "Heritage Site" },
   { label: "Travel & Tours",     href: "/travel-tours",                  category: "Tour Package" },
-  { label: "Local Cuisine",      href: "/culture/local-cuisine",         category: "Cuisine" },
+  { label: "Culinary Wonders",   href: "/culture/culinary-wonders",      category: "Cuisine" },
   { label: "People Wonders",     href: "/culture/people-wonders",        category: "People Wonder" },
   { label: "News",               href: "/news",                          category: "News" },
 ]

@@ -14,7 +14,7 @@ export const searchIndex: SearchResult[] = [
   { id: "page-home",           title: "Home",                  subtitle: "MHACTO Bocaue homepage",               href: "/",                              category: "Page", keywords: "home mhacto bocaue" },
   { id: "page-history",        title: "History",               subtitle: "Bocaue history overview",              href: "/history",                       category: "Page", keywords: "history bocaue overview" },
   { id: "page-culture",        title: "Arts & Culture",        subtitle: "Culture overview page",                href: "/culture",                       category: "Page", keywords: "arts culture bocaue" },
-  { id: "page-destinations",   title: "Tourist Destinations",  subtitle: "Places to visit in Bocaue",           href: "/destinations",                  category: "Page", keywords: "destinations tourist places visit" },
+  { id: "page-destinations",   title: "Tourist Wonders",       subtitle: "Places to visit in Bocaue",           href: "/destinations",                  category: "Page", keywords: "destinations tourist wonders places visit" },
   { id: "page-travel",         title: "Travel & Tours",        subtitle: "Tour packages in Bocaue",             href: "/travel-tours",                  category: "Page", keywords: "travel tours packages" },
   { id: "page-schools",        title: "Schools",               subtitle: "Schools in Bocaue",                   href: "/community/schools",             category: "Page", keywords: "schools education community" },
   { id: "page-hospitals",      title: "Hospitals",             subtitle: "Hospitals & clinics in Bocaue",       href: "/community/hospitals",           category: "Page", keywords: "hospitals clinics health community" },
@@ -24,14 +24,14 @@ export const searchIndex: SearchResult[] = [
   { id: "page-tourism-office", title: "About MHACTO",          subtitle: "Tourism office overview",             href: "/tourism-office",                category: "Page", keywords: "mhacto tourism office about" },
   { id: "page-mission-vision", title: "Mission & Vision",      subtitle: "MHACTO mission and vision",           href: "/mission-vision",                category: "Page", keywords: "mission vision goals" },
   { id: "page-inquire",        title: "Inquiry",               subtitle: "Contact & inquiries",                 href: "/inquire",                       category: "Page", keywords: "inquiry contact us" },
-  { id: "page-cuisine",        title: "Local Cuisine",         subtitle: "Food & delicacies of Bocaue",         href: "/culture/local-cuisine",         category: "Page", keywords: "cuisine food delicacies local" },
+  { id: "page-cuisine",        title: "Culinary Wonders",     subtitle: "Food & delicacies of Bocaue",         href: "/culture/culinary-wonders",         category: "Page", keywords: "cuisine food delicacies local culinary wonders" },
   { id: "page-festivals",      title: "Festivals & Celebrations", subtitle: "Cultural festivals of Bocaue",     href: "/culture/festivals-celebrations",category: "Page", keywords: "festivals celebrations pagoda fiestas" },
   { id: "page-pagoda",         title: "Pagoda Festival",       subtitle: "The iconic river procession of Bocaue", href: "/pagoda",                     category: "Page", keywords: "pagoda festival river procession holy cross wawa" },
   { id: "page-practices",      title: "Cultural Practices",    subtitle: "Traditions and customs",              href: "/culture/practices-traditions",  category: "Page", keywords: "cultural practices traditions customs" },
-  { id: "page-crafts",         title: "Crafts & Artisan",      subtitle: "Handcrafts and artisans",             href: "/culture/crafts-artisan",        category: "Page", keywords: "crafts artisan handmade weaving pottery" },
+  { id: "page-crafts",         title: "Art Wonders",           subtitle: "Handcrafts and artisans",             href: "/culture/art-wonders",          category: "Page", keywords: "crafts artisan handmade weaving pottery art wonders" },
   { id: "page-people-wonders", title: "People Wonders",        subtitle: "Notable living Bocaueños",            href: "/culture/people-wonders",        category: "Page", keywords: "people wonders notable living bocauenos" },
   { id: "page-timeline",       title: "Timeline of Events",    subtitle: "Historical timeline of Bocaue",       href: "/history/timeline",              category: "Page", keywords: "timeline events history" },
-  { id: "page-notable",        title: "Notable Persons",       subtitle: "Historical figures of Bocaue",        href: "/history/notable-persons",       category: "Page", keywords: "notable persons figures historical" },
+  { id: "page-notable",        title: "Remarkable Persons",    subtitle: "Historical figures of Bocaue",        href: "/history/remarkable-persons",    category: "Page", keywords: "notable remarkable persons figures historical" },
 
 ]
 

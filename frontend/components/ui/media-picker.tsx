@@ -435,6 +435,8 @@ interface MediaPickerTriggerProps {
   accept?: MediaPickerAccept
   label?: string
   placeholder?: string
+  uploadCategory?: string
+  uploadLabel?: string
 }
 
 /**
@@ -448,6 +450,8 @@ export function MediaPickerInput({
   accept = "all",
   label,
   placeholder,
+  uploadCategory,
+  uploadLabel,
 }: MediaPickerTriggerProps) {
   const [open, setOpen] = useState(false)
 
@@ -485,6 +489,8 @@ export function MediaPickerInput({
         accept={accept}
         title={dialogTitle}
         currentValue={value}
+        uploadCategory={uploadCategory}
+        uploadLabel={uploadLabel}
       />
     </>
   )

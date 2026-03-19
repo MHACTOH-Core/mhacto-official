@@ -50,7 +50,7 @@ import {
 import { MediaPicker } from "@/components/ui/media-picker"
 import { apiUploadMedia } from "@/lib/api"
 import { resolveMediaUrl } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/hooks/use-toast"
 import {
   type FormData,
   PLACE_CATEGORIES,
@@ -81,7 +81,6 @@ export function CMSEditDialog({
   onSelectPostType,
   onSave,
 }: CMSEditDialogProps) {
-  const { toast } = useToast()
 
   const [imageInputMode, setImageInputMode] = useState<"url" | "upload" | "browse">("url")
   const [imageUrlInput, setImageUrlInput] = useState("")
@@ -385,10 +384,10 @@ export function CMSEditDialog({
                             setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls] }))
                           }
                           if (result.errors.length > 0) {
-                            toast({ title: "Upload warning", description: result.errors.join("\n"), variant: "destructive" })
+                            toast({ title: "Something went wrong", description: result.errors.join("\n"), variant: "destructive" })
                           }
                         } catch (err) {
-                          toast({ title: "Upload failed", description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
+                          toast({ title: "Something went wrong", variant: "destructive" })
                         } finally {
                           setIsUploading(false)
                           e.target.value = ""

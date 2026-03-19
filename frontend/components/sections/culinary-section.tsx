@@ -46,7 +46,7 @@ export function CulinarySection() {
         <div className="mb-10 sm:mb-14 text-center reveal-on-scroll">
           <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
             <UtensilsCrossed className="h-4 w-4" />
-            Local Cuisine
+            Culinary Wonders
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
             Culinary Wonders
@@ -59,7 +59,7 @@ export function CulinarySection() {
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item, idx) => (
-            <Link key={item.id} href={`/culture/local-cuisine/${item.id}`} className={`block reveal-on-scroll reveal-delay-${idx + 1}`}>
+            <Link key={item.id} href={`/culture/culinary-wonders/${item.id}`} className={`block reveal-on-scroll reveal-delay-${idx + 1}`}>
             <Card
               className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer h-full"
             >
@@ -105,7 +105,7 @@ export function CulinarySection() {
         {/* CTA */}
         <div className="mt-10 text-center reveal-on-scroll">
           <Link
-            href="/culture/local-cuisine"
+            href="/culture/culinary-wonders"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             See All Cuisine

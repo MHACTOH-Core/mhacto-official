@@ -6,7 +6,7 @@ import { asset } from "@/lib/utils"
 export type ContentCategory =
   | "history"
   | "arts-culture"
-  | "tourist-destinations"
+  | "tourist-wonders"
   | "news"
   | "events"
   | "community"
@@ -171,7 +171,7 @@ export interface AdminSettings {
 export const contentCategories: Record<ContentCategory, { label: string; color: string }> = {
   "history": { label: "History", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
   "arts-culture": { label: "Arts & Culture", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
-  "tourist-destinations": { label: "Tourist Destinations", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+  "tourist-wonders": { label: "Tourist Wonders", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
   "events": { label: "Events", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
   "community": { label: "Community", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300" },
@@ -184,15 +184,15 @@ export const contentLabels: Record<ContentLabel, { label: string; color: string;
   "timeline-of-events": { label: "Timeline of Events", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", category: "history" },
   "notable-figures": { label: "Notable Figures", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "history" },
   // Arts & Culture
-  "local-cuisine": { label: "Local Cuisine", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300", category: "arts-culture" },
+  "local-cuisine": { label: "Culinary Wonders", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300", category: "arts-culture" },
   "festivals": { label: "Festivals", color: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/40 dark:text-fuchsia-300", category: "arts-culture" },
   "cultural-practices": { label: "Cultural Practices", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300", category: "arts-culture" },
-  "crafts-artisan": { label: "Crafts & Artisan", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", category: "arts-culture" },
+  "crafts-artisan": { label: "Art Wonders", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", category: "arts-culture" },
   "people-wonders": { label: "People Wonders", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", category: "arts-culture" },
   "restaurants": { label: "Restaurants & Eateries", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "arts-culture" },
-  // Tourist Destinations
-  "destinations": { label: "Destinations", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", category: "tourist-destinations" },
-  "travel-tours": { label: "Travel & Tours", color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", category: "tourist-destinations" },
+  // Tourist Wonders
+  "destinations": { label: "Destinations", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", category: "tourist-wonders" },
+  "travel-tours": { label: "Travel & Tours", color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", category: "tourist-wonders" },
   // News (standalone)
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300", category: "news" },
   // Events (standalone)

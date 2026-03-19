@@ -30,7 +30,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <Link href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/art-wonders/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured
@@ -147,13 +147,13 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
 }
 
 // ── Page ──────────────────────────────────────────────────────────────
-export default function CraftsArtisanPage() {
-  const [artisanList, setArtisanList] = useState<Artisan[]>([])
+export default function ArtWondersPage() {
+  const [artWonders, setArtWonders] = useState<Artisan[]>([])
   const [practiceList, setPracticeList] = useState<CulturalPractice[]>([])
 
   useEffect(() => {
     apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
-      .then((posts) => { if (posts?.length) setArtisanList(posts.map(cmsToArtisan)) })
+      .then((posts) => { if (posts?.length) setArtWonders(posts.map(cmsToArtisan)) })
       .catch(() => {})
     apiFetchByLabel("cultural-practices")  // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
       .then((posts) => { if (posts?.length) setPracticeList(posts.map(cmsToCulturalPractice)) })
@@ -161,8 +161,8 @@ export default function CraftsArtisanPage() {
   }, [])
 
   // The featured artisan is the first one (longest experience / most decorated)
-  const featured = artisanList[0] ?? null
-  const rest = artisanList.slice(1)
+  const featured = artWonders[0] ?? null
+  const rest = artWonders.slice(1)
 
   // Craft-related cultural practices for the spotlight strip
   const craftPractices = practiceList.filter(
@@ -173,12 +173,12 @@ export default function CraftsArtisanPage() {
     <main className="min-h-screen bg-background">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <PageHero
-        pageSlug="crafts-artisan"
+        pageSlug="art-wonders"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Hammer"
         fallbackAccentColor="amber-300"
         fallbackLabel="Arts & Culture"
-        fallbackTitle="Crafts & Artisan"
+        fallbackTitle="Art Wonders"
         fallbackDescription="Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists who keep centuries-old traditions alive with their hands and their hearts."
         showBackButton
         backHref="/culture"

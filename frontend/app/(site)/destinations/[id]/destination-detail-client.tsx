@@ -127,11 +127,11 @@ export default function DestinationDetailClient({ id }: { id: string }) {
       heroSubtitle={established ? `Est. ${established}` : undefined}
       breadcrumbs={[
         { label: "Home", href: "/" },
-        { label: "Tourist Destinations", href: "/destinations" },
+        { label: "Tourist Wonders", href: "/destinations" },
         { label: name },
       ]}
       backHref="/destinations"
-      backLabel="Tourist Destinations"
+      backLabel="Tourist Wonders"
       images={gallery && gallery.length > 0 ? gallery : [image]}
       quickFacts={quickFacts}
       leftExtra={

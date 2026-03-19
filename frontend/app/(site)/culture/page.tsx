@@ -13,10 +13,10 @@ import { apiFetchByLabel } from "@/lib/api"
 import { cmsToCuisineItem, cmsToFestival, cmsToCulturalPractice, cmsToArtisan, cmsToPeopleWonder } from "@/lib/cms-mappers"
 
 const subPages = [
-  { label: "Local Cuisine", href: "/culture/local-cuisine", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
+  { label: "Culinary Wonders", href: "/culture/culinary-wonders", icon: Utensils, desc: "Delicacies & food traditions", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" },
   { label: "Festivals & Celebrations", href: "/culture/festivals-celebrations", icon: Calendar, desc: "Annual events & festivities", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
   { label: "Cultural Practices", href: "/culture/practices-traditions", icon: Flame, desc: "Living customs & traditions", color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400" },
-  { label: "Crafts & Artisan", href: "/culture/crafts-artisan", icon: Hammer, desc: "Master craftspeople of Bocaue", color: "bg-stone-100 text-stone-700 dark:bg-stone-900/20 dark:text-stone-400" },
+  { label: "Art Wonders", href: "/culture/art-wonders", icon: Hammer, desc: "Master craftspeople of Bocaue", color: "bg-stone-100 text-stone-700 dark:bg-stone-900/20 dark:text-stone-400" },
   { label: "People Wonders", href: "/culture/people-wonders", icon: Users, desc: "Notable living Bocaueños", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
 ]
 
@@ -43,15 +43,15 @@ const navSections = [
 
 export default function CulturePage() {
   const [activeSection, setActiveSection] = useState("cuisine")
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+  const [culinaryWonders, setCulinaryWonders] = useState<CuisineItem[]>([])
   const [festivals, setFestivals] = useState<Festival[]>([])
   const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
-  const [artisansList, setArtisansList] = useState<Artisan[]>([])
+  const [artWonders, setArtWonders] = useState<Artisan[]>([])
   const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
 
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
-      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .then((posts) => { if (posts?.length) setCulinaryWonders(posts.map(cmsToCuisineItem)) })
       .catch(() => {})
     apiFetchByLabel("festivals")
       .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
@@ -60,7 +60,7 @@ export default function CulturePage() {
       .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
       .catch(() => {})
     apiFetchByLabel("crafts-artisan")
-      .then((posts) => { if (posts?.length) setArtisansList(posts.map(cmsToArtisan)) })
+      .then((posts) => { if (posts?.length) setArtWonders(posts.map(cmsToArtisan)) })
       .catch(() => {})
     apiFetchByLabel("people-wonders")
       .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
@@ -118,7 +118,7 @@ export default function CulturePage() {
           </div>
         </div>
 
-      {/* ── Local Cuisine ── */}
+      {/* ── Culinary Wonders ── */}
       <section id="cuisine" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
@@ -129,8 +129,8 @@ export default function CulturePage() {
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {localCuisine.slice(0, 3).map((item, i) => (
-              <Link key={`${item.id}-${i}`} href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+            {culinaryWonders.slice(0, 3).map((item, i) => (
+              <Link key={`${item.id}-${i}`} href={`/culture/culinary-wonders/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
@@ -160,7 +160,7 @@ export default function CulturePage() {
           </div>
           <div className="mt-8 text-center">
             <Link
-              href="/culture/local-cuisine"
+              href="/culture/culinary-wonders"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
             >
               See More
@@ -295,19 +295,19 @@ export default function CulturePage() {
         </div>
       </section>
 
-      {/* ── Crafts & Artisans ── */}
+      {/* ── Art Wonders ── */}
       <section id="crafts-artisans" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Hammer className="h-5 w-5 text-primary" /></div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Crafts &amp; Artisans</h2>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Art Wonders</h2>
               <p className="text-muted-foreground">Master craftspeople keeping Bocaue&apos;s traditions alive</p>
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {artisansList.map((artisan, i) => (
-              <Link key={`${artisan.id}-${i}`} href={`/culture/crafts-artisan/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+            {artWonders.map((artisan, i) => (
+              <Link key={`${artisan.id}-${i}`} href={`/culture/art-wonders/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
@@ -343,7 +343,7 @@ export default function CulturePage() {
           </div>
           <div className="mt-8 text-center">
             <Link
-              href="/culture/crafts-artisan"
+              href="/culture/art-wonders"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
             >
               See More

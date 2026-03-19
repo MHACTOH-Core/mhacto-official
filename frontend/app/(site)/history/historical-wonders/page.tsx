@@ -263,10 +263,10 @@ export default function HistoricalWondersPage() {
               Historical Roadmap
             </Link>
             <Link
-              href="/history/notable-persons"
+              href="/history/remarkable-persons"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-background text-foreground text-sm font-semibold hover:bg-muted transition-colors"
             >
-              Notable Persons
+              Remarkable Persons
             </Link>
           </div>
         </div>

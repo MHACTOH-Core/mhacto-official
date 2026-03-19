@@ -22,24 +22,24 @@ const categoryColors: Record<NotablePerson["category"], string> = {
   sports: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
 }
 
-export default function NotablePersonsPage() {
-  const [notablePersons, setNotablePersons] = useState<NotablePerson[]>([])
+export default function RemarkablePersonsPage() {
+  const [remarkablePersons, setRemarkablePersons] = useState<NotablePerson[]>([])
 
   useEffect(() => {
     apiFetchByLabel("notable-figures")
-      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
+      .then((posts) => { if (posts?.length) setRemarkablePersons(posts.map(cmsToNotablePerson)) })
       .catch(() => {})
   }, [])
 
   return (
     <main className="min-h-screen bg-background">
       <PageHero
-        pageSlug="notable-persons"
+        pageSlug="remarkable-persons"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="purple-300"
         fallbackLabel="History"
-        fallbackTitle="Notable Persons"
+        fallbackTitle="Remarkable Persons"
         fallbackDescription="The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of the municipality."
         showBackButton
       />
@@ -76,7 +76,7 @@ export default function NotablePersonsPage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
-            {notablePersons.map((person) => (
+            {remarkablePersons.map((person) => (
               <Card
                 key={person.id}
                 className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"

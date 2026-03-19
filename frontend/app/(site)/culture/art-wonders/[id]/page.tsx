@@ -3,7 +3,7 @@ import { API_BASE } from "@/lib/api"
 
 export async function generateStaticParams() {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/posts?label=local-cuisine&status=published`)
+    const res = await fetch(`${API_BASE}/api/v1/posts?label=crafts-artisan&status=published`)
     const json = await res.json()
     const data: { id: string | number }[] = json.data ?? json
     return data.map((p) => ({ id: String(p.id) }))
@@ -17,12 +17,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <CultureDetailClient
       id={id}
-      label="local-cuisine"
-      backHref="/culture/local-cuisine"
-      backLabel="Local Cuisine"
-      categoryLabel="Local Cuisine"
-      storyLabel="The Story Behind It"
-      hideGallery
+      label="crafts-artisan"
+      backHref="/culture/art-wonders"
+      backLabel="Art Wonders"
+      categoryLabel="Master Artisan"
+      highlightsLabel="Products & Works"
+      storyLabel="About the Artisan"
     />
   )
 }

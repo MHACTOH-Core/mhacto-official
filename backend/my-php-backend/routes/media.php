@@ -84,6 +84,15 @@ function _media_upload(): void
         Response::error('Category/label too long (max 50 chars).', 400);
     }
 
+    // Map CMS label keys to upload folder names where they differ
+    $labelFolderMap = [
+        'crafts-artisan' => 'art-wonders',
+        'local-cuisine'  => 'culinary-wonders',
+    ];
+    if ($label && isset($labelFolderMap[$label])) {
+        $label = $labelFolderMap[$label];
+    }
+
     if (!is_dir($imageDir)) mkdir($imageDir, 0755, true);
     if (!is_dir($videoDir)) mkdir($videoDir, 0755, true);
 

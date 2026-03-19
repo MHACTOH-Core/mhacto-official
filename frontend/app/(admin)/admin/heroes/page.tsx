@@ -407,6 +407,7 @@ export default function HeroesAdminPage() {
                   onChange={setFormImageUrl}
                   accept="image"
                   placeholder="Select from media library or paste URL"
+                  uploadCategory="heroes"
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Upload via media library or paste an external URL.
@@ -473,7 +474,7 @@ export default function HeroesAdminPage() {
                 <Input
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. Tourist Destinations"
+                  placeholder="e.g. Tourist Wonders"
                   maxLength={80}
                 />
               </div>

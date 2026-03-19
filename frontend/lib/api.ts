@@ -153,7 +153,7 @@ export function apiListMedia(type: "images" | "videos" | "all" = "all") {
 export async function apiUploadMedia(
   files: File[],
   type: "image" | "video" = "image",
-  options?: { category?: string; label?: string },
+  options?: { category?: string; label?: string; contentName?: string },
 ): Promise<MediaUploadResult> {
   const formData = new FormData()
   files.forEach((file) => formData.append("files[]", file))
@@ -161,6 +161,7 @@ export async function apiUploadMedia(
   const params = new URLSearchParams({ type })
   if (options?.category) params.set("category", options.category)
   if (options?.label) params.set("label", options.label)
+  if (options?.contentName) params.set("content_name", options.contentName)
 
   const uploadUrl = `${API_BASE}/api/v1/media?${params.toString()}`
   const uploadHeaders: Record<string, string> = {}

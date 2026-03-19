@@ -92,7 +92,7 @@ export default function DestinationsPage() {
         fallbackIcon="Landmark"
         fallbackAccentColor="amber-300"
         fallbackLabel="Bocaue Wonders"
-        fallbackTitle="Tourist Destinations"
+        fallbackTitle="Tourist Wonders"
         fallbackDescription="From heritage churches to riverside views — explore Bocaue's most iconic sites and sacred places."
       />
 

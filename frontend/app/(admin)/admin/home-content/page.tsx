@@ -433,6 +433,8 @@ export default function HomeContentPage() {
                           onChange={(url) => setHeroFormData({ ...heroFormData, videoUrl: url })}
                           accept="video"
                           placeholder="/videos/bocaue-hero.mp4 or browse..."
+                          uploadCategory="home"
+                          uploadLabel="hero"
                         />
                         <p className="text-xs text-muted-foreground">Background video for the hero section — browse existing or upload</p>
                       </div>
@@ -443,6 +445,8 @@ export default function HomeContentPage() {
                           onChange={(url) => setHeroFormData({ ...heroFormData, fallbackImage: url })}
                           accept="image"
                           placeholder="Browse or upload a fallback image..."
+                          uploadCategory="home"
+                          uploadLabel="hero"
                         />
                         <p className="text-xs text-muted-foreground">Shown if video cannot load — browse existing or upload</p>
                       </div>

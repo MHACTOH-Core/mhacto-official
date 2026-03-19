@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X } from "lucide-react"
 import { ROLE_LABELS } from "@/lib/data/admin-data"
 import { API_BASE } from "@/lib/api"
@@ -40,8 +40,6 @@ import {
 export default function SettingsPage() {
   const router = useRouter()
   const { isLoggedIn, isHydrated, settings, updateSettings, adminEmail, currentUser, updateProfile, changePassword, notificationPrefs, updateNotificationPrefs } = useAdmin()
-
-  const { toast } = useToast()
 
   const isSuperAdmin = currentUser?.role === "super_admin"
 
@@ -71,7 +69,7 @@ export default function SettingsPage() {
   } = usePasswordForm({
     changePassword,
     onSuccess: () => toast({ title: "Password changed", description: "Your password has been updated successfully." }),
-    onError: (msg) => toast({ title: "Password change failed", description: msg, variant: "destructive" }),
+    onError: () => toast({ title: "Something went wrong", variant: "destructive" }),
   })
 
   // Profile picture hook
@@ -86,7 +84,7 @@ export default function SettingsPage() {
   } = useProfilePicture({
     updateProfile,
     onSuccess: () => toast({ title: "Profile picture updated", description: "Your profile picture has been changed." }),
-    onError: () => toast({ title: "Upload failed", description: "Failed to upload profile picture.", variant: "destructive" }),
+    onError: () => toast({ title: "Something went wrong", variant: "destructive" }),
   })
 
   useEffect(() => {
@@ -303,7 +301,7 @@ export default function SettingsPage() {
                   onCheckedChange={async (checked) => {
                     const ok = await updateNotificationPrefs({ enableEmailNotifications: checked })
                     if (ok) toast({ title: "Preference saved", description: `Email notifications ${checked ? "enabled" : "disabled"}.` })
-                    else toast({ title: "Failed to save", description: "Could not update preferences.", variant: "destructive" })
+                    else toast({ title: "Something went wrong", variant: "destructive" })
                   }}
                 />
               </div>
@@ -322,7 +320,7 @@ export default function SettingsPage() {
                   onCheckedChange={async (checked) => {
                     const ok = await updateNotificationPrefs({ enableInquiryAlerts: checked })
                     if (ok) toast({ title: "Preference saved", description: `Inquiry alerts ${checked ? "enabled" : "disabled"}.` })
-                    else toast({ title: "Failed to save", description: "Could not update preferences.", variant: "destructive" })
+                    else toast({ title: "Something went wrong", variant: "destructive" })
                   }}
                 />
               </div>

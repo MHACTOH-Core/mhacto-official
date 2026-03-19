@@ -46,26 +46,26 @@ const navLinks: NavItem[] = [
     isHash: false,
     children: [
       {
-        label: "History",
+        label: "History Wonders",
         href: "/history",
         children: [
           { label: "Timeline of Events", href: "/history/timeline", isHash: false },
-          { label: "Remarkable Persons", href: "/history/notable-persons", isHash: false },
+          { label: "Remarkable Persons", href: "/history/remarkable-persons", isHash: false },
         ],
       },
       {
-        label: "Arts & Culture",
+        label: "Arts & Culture Wonders",
         href: "/culture",
         children: [
-          { label: "Culinary Wonders", href: "/culture/local-cuisine", isHash: false },
+          { label: "Culinary Wonders", href: "/culture/culinary-wonders", isHash: false },
           { label: "Festivals", href: "/culture/festivals-celebrations", isHash: false },
           { label: "Cultural Practices", href: "/culture/practices-traditions", isHash: false },
-          { label: "Art Wonders", href: "/culture/crafts-artisan", isHash: false },
+          { label: "Art Wonders", href: "/culture/art-wonders", isHash: false },
           { label: "People Wonders", href: "/culture/people-wonders", isHash: false },
         ],
       },
       {
-        label: "Tourist Destinations",
+        label: "Tourist Wonders",
         href: "/destinations",
         children: [
           { label: "Destinations", href: "/destinations", isHash: false },

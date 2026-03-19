@@ -174,9 +174,9 @@ export default function TimelinePage() {
           {/* Bottom nav */}
           <div className="mt-16 flex flex-col sm:flex-row gap-4 pt-8 border-t border-border">
             <Button variant="outline" asChild className="gap-2">
-              <Link href="/history/notable-persons">
+              <Link href="/history/remarkable-persons">
                 <BookOpen className="h-4 w-4" />
-                Notable Persons of Bocaue
+                Remarkable Persons of Bocaue
               </Link>
             </Button>
             <Button variant="outline" asChild className="gap-2">

@@ -93,7 +93,7 @@ export default function Home() {
       {/* 9. People Wonders */}
       <FeaturedPeopleWonders />
 
-      {/* 10. Crafts & Artisan */}
+      {/* 10. Art Wonders */}
       <CraftsSection />
 
       {/* 11. Featured News & Stories */}

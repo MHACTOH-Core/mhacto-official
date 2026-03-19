@@ -71,7 +71,7 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   return (
-    <Link href={`/culture/local-cuisine/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/culinary-wonders/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured
@@ -139,8 +139,8 @@ function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean
 }
 
 // ── Main page ────────────────────────────────────────────────────────
-export default function LocalCuisinePage() {
-  const [localCuisine, setLocalCuisine] = useState<CuisineItem[]>([])
+export default function CulinaryWondersPage() {
+  const [culinaryWonders, setCulinaryWonders] = useState<CuisineItem[]>([])
   const [restaurantList, setRestaurantList] = useState<Restaurant[]>([])
   const [activeType, setActiveType] = useState<TypeFilter>("all")
   const [featuredIndex, setFeaturedIndex] = useState(0)
@@ -148,11 +148,11 @@ export default function LocalCuisinePage() {
   const [isPlaying, setIsPlaying] = useState(true)
 
   const types: TypeFilter[] = ["all", "main", "snack", "dessert", "drink"]
-  const filtered = activeType === "all" ? localCuisine : localCuisine.filter((c) => c.type === activeType)
+  const filtered = activeType === "all" ? culinaryWonders : culinaryWonders.filter((c) => c.type === activeType)
 
   // Featured items for carousel (fall back to all if none marked)
-  const featuredItems = localCuisine.filter((c) => c.isFeatured)
-  const carouselItems = featuredItems.length > 0 ? featuredItems : localCuisine
+  const featuredItems = culinaryWonders.filter((c) => c.isFeatured)
+  const carouselItems = featuredItems.length > 0 ? featuredItems : culinaryWonders
   const canLoop = carouselItems.length >= 3
   const currentCarouselItem = carouselItems[featuredIndex] ?? carouselItems[0]
   const rest = filtered.filter((c) => c.id !== currentCarouselItem?.id)
@@ -185,7 +185,7 @@ export default function LocalCuisinePage() {
 
   useEffect(() => {
     apiFetchByLabel("local-cuisine")
-      .then((posts) => { if (posts?.length) setLocalCuisine(posts.map(cmsToCuisineItem)) })
+      .then((posts) => { if (posts?.length) setCulinaryWonders(posts.map(cmsToCuisineItem)) })
       .catch(() => {})
     apiFetchByLabel("restaurants")
       .then((posts) => { if (posts?.length) setRestaurantList(posts.map(cmsToRestaurant)) })
@@ -217,7 +217,7 @@ export default function LocalCuisinePage() {
     <main className="min-h-screen bg-background">
       {/* ── Hero ── */}
       <PageHero
-        pageSlug="local-cuisine"
+        pageSlug="culinary-wonders"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Utensils"
         fallbackAccentColor="amber-300"
@@ -277,7 +277,7 @@ export default function LocalCuisinePage() {
                         key={`${item.id}-${index}`}
                         className="basis-[85%] sm:basis-3/4 md:basis-[60%] lg:basis-[50%]"
                       >
-                        <Link href={`/culture/local-cuisine/${item.id}`} className="block h-full">
+                        <Link href={`/culture/culinary-wonders/${item.id}`} className="block h-full">
                           <div
                             className="transition-all duration-500 ease-out h-full"
                             style={{

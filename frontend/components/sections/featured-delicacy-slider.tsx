@@ -8,11 +8,11 @@ import type { CMSPost } from "@/lib/data/admin-data"
 const delicacySlides: SlideConfig[] = [
   {
     label: "local-cuisine",
-    fallbackTitle: "Local Cuisine",
+    fallbackTitle: "Culinary Wonders",
     fallbackDescription: "Savor Bocaue's finest — heritage recipes passed down for generations.",
     fallbackImage: asset("/images/defaults/no-image.svg"),
-    href: "/culture/local-cuisine",
-    categoryLabel: "Local Cuisine",
+    href: "/culture/culinary-wonders",
+    categoryLabel: "Culinary Wonders",
     ctaLabel: "Explore Cuisine",
     Icon: UtensilsCrossed,
     dot: "bg-orange-400",

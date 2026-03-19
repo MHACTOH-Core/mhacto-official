@@ -36,7 +36,7 @@ export function CraftsSection() {
             Artisan Heritage
           </span>
           <h2 className="mt-3 text-balance text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
-            Crafts &amp; Artisan
+            Art Wonders
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
             Master craftspeople of Bocaue who preserve traditional skills — from pandan weaving to sacred woodcarving.
@@ -46,7 +46,7 @@ export function CraftsSection() {
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item, idx) => (
-            <Link key={item.id} href={`/culture/crafts-artisan/${item.id}`} className={`block reveal-on-scroll reveal-delay-${idx + 1}`}>
+            <Link key={item.id} href={`/culture/art-wonders/${item.id}`} className={`block reveal-on-scroll reveal-delay-${idx + 1}`}>
             <Card
               className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer h-full"
             >
@@ -88,7 +88,7 @@ export function CraftsSection() {
         {/* CTA */}
         <div className="mt-10 text-center reveal-on-scroll">
           <Link
-            href="/culture/crafts-artisan"
+            href="/culture/art-wonders"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             See All Artisans

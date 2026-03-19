@@ -85,7 +85,7 @@ export function DestinationsCarouselSection() {
         <div ref={headingRef} className="reveal-on-scroll mb-10 text-center md:mb-14">
           <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-primary sm:text-sm">
             <Compass className="h-4 w-4" />
-            Tourist Destinations &amp; Travel Tours
+            Tourist Wonders &amp; Travel Tours
           </span>
           <h2 className="mt-3 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl font-heading">
             Discover Bocaue&apos;s Must-See Spots
