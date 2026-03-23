@@ -346,7 +346,7 @@ SET @place5 = (SELECT content_id FROM content WHERE title = 'Taal–Bocaue Footb
 SET @place6 = (SELECT content_id FROM content WHERE title = 'Bocaue Municipal Plaza' LIMIT 1);
 
 -- Place meta fields
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@place1, 'label_key', 'destinations'), (@place1, 'label_id', '10'), (@place1, 'is_featured', '1'),
 (@place1, 'location', 'Bocaue River, Bocaue, Bulacan'), (@place1, 'hours', 'Daily 6:00 AM – 5:00 PM'),
 (@place1, 'established', '1920'),
@@ -392,7 +392,7 @@ SET @news1 = (SELECT content_id FROM content WHERE title = 'Bocaue Launches New 
 SET @news2 = (SELECT content_id FROM content WHERE title = 'River Clean-Up Drive a Success' LIMIT 1);
 SET @news3 = (SELECT content_id FROM content WHERE title = 'Heritage Preservation Ordinance Approved' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@news1, 'label_key', 'news'), (@news1, 'label_id', '13'), (@news1, 'is_featured', '1'), (@news1, 'news_date', '2026-03-01'),
 (@news2, 'label_key', 'news'), (@news2, 'label_id', '13'), (@news2, 'is_featured', '0'), (@news2, 'news_date', '2026-02-20'),
 (@news3, 'label_key', 'news'), (@news3, 'label_id', '13'), (@news3, 'is_featured', '0'), (@news3, 'news_date', '2026-02-15');
@@ -417,7 +417,7 @@ SET @event1 = (SELECT content_id FROM content WHERE title = 'Pagoda Festival 202
 SET @event2 = (SELECT content_id FROM content WHERE title = 'Bocaue Heritage Week' LIMIT 1);
 SET @event3 = (SELECT content_id FROM content WHERE title = 'Pyrotechnics International Competition' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@event1, 'label_key', 'events'), (@event1, 'label_id', '12'), (@event1, 'is_featured', '1'), (@event1, 'news_date', '2026-07-01'),
 (@event1, 'location', 'Bocaue River, Bocaue, Bulacan'),
 (@event2, 'label_key', 'events'), (@event2, 'label_id', '12'), (@event2, 'is_featured', '1'), (@event2, 'news_date', '2026-05-15'),
@@ -445,7 +445,7 @@ SET @food1 = (SELECT content_id FROM content WHERE title = 'Chicharon ni Mang To
 SET @food2 = (SELECT content_id FROM content WHERE title = 'Kakanin sa Palengke' LIMIT 1);
 SET @food3 = (SELECT content_id FROM content WHERE title = 'Pancit Bocaue' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@food1, 'label_key', 'local-cuisine'), (@food1, 'label_id', '7'), (@food1, 'is_featured', '1'),
 (@food1, 'location', 'National Highway, Bocaue, Bulacan'),
 (@food2, 'label_key', 'local-cuisine'), (@food2, 'label_id', '7'), (@food2, 'is_featured', '1'),

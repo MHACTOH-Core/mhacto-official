@@ -35,7 +35,7 @@ function handle_heroes(string $method, ?string $slug): void
             case 'PUT':
             case 'POST':
             case 'PATCH':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 if (!$resolvedSlug) Response::error('Missing required slug.', 400);
 
                 $data = json_decode(file_get_contents('php://input'), true);

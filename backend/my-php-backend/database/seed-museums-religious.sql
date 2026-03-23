@@ -20,7 +20,7 @@ SET @place4 = (SELECT content_id FROM content WHERE title = 'Barangay Lolomboy H
 SET @place5 = (SELECT content_id FROM content WHERE title = 'Taal–Bocaue Footbridge' LIMIT 1);
 SET @place6 = (SELECT content_id FROM content WHERE title = 'Bocaue Municipal Plaza' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@place1, 'place_category', 'heritage'),
 (@place2, 'place_category', 'heritage'),
 (@place3, 'place_category', 'heritage'),
@@ -56,7 +56,7 @@ SET @mus1 = (SELECT content_id FROM content WHERE title = 'MHACTO Heritage Galle
 SET @mus2 = (SELECT content_id FROM content WHERE title = 'Pagoda Festival Museum' LIMIT 1);
 SET @mus3 = (SELECT content_id FROM content WHERE title = 'Philippine Arena Visitor Center' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@mus1, 'label_key', 'destinations'), (@mus1, 'label_id', '10'), (@mus1, 'is_featured', '1'),
 (@mus1, 'place_category', 'museum'),
 (@mus1, 'location', 'Municipal Hall, Poblacion, Bocaue, Bulacan'),
@@ -104,7 +104,7 @@ SET @rel1 = (SELECT content_id FROM content WHERE title = 'St. Martin of Tours P
 SET @rel2 = (SELECT content_id FROM content WHERE title = 'Iglesia Ni Cristo Central Temple – Bocaue' LIMIT 1);
 SET @rel3 = (SELECT content_id FROM content WHERE title = 'Shrine of the Holy Cross of Wawa' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@rel1, 'label_key', 'destinations'), (@rel1, 'label_id', '10'), (@rel1, 'is_featured', '1'),
 (@rel1, 'place_category', 'religious'),
 (@rel1, 'location', 'Poblacion, Bocaue, Bulacan'),

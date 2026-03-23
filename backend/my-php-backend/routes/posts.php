@@ -27,15 +27,15 @@ function handle_posts(string $method, ?string $id): void
                 _posts_read($post, $id);
                 break;
             case 'POST':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 _posts_create($post);
                 break;
             case 'PUT':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 _posts_update($post, $id, $db);
                 break;
             case 'DELETE':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 _posts_delete($post, $id);
                 break;
             default:

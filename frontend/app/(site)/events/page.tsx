@@ -4,22 +4,19 @@ import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ArrowLeft, CalendarDays, Loader2,
-  LayoutGrid, CalendarRange, ChevronDown, ChevronUp,
+  CalendarDays, Loader2,
+  LayoutGrid, CalendarRange, ChevronDown,
   Sparkles, TrendingUp, Star, Flame,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { asset } from "@/lib/utils"
 import { apiFetchPublishedEvents, type NewsArticleAPI } from "@/lib/api"
 
 const MONTHS = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December",
 ]
-
-const MONTH_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
 
 const QUARTER_LABELS = ["Q1 · First Quarter","Q2 · Second Quarter","Q3 · Third Quarter","Q4 · Fourth Quarter"]
 const QUARTER_COLORS = [

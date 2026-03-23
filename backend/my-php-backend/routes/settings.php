@@ -22,7 +22,7 @@ function handle_settings(string $method, ?string $param1): void
                 break;
 
             case 'PUT':
-                Auth::requireAuth();
+                Auth::requireRole('super_admin');
                 $data = json_decode(file_get_contents('php://input'), true);
                 if (!$data) Response::error('No data provided.', 400);
 

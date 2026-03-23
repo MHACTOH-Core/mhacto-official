@@ -33,7 +33,7 @@ SET @tl1 = (SELECT content_id FROM content WHERE title = 'Founding of Bocaue - 1
 SET @tl2 = (SELECT content_id FROM content WHERE title = 'Birth of the Fireworks Industry - 1860' LIMIT 1);
 SET @tl3 = (SELECT content_id FROM content WHERE title = 'Philippine Revolution in Bocaue - 1896' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tl1, 'label_key', 'timeline-of-events'), (@tl1, 'label_id', '5'), (@tl1, 'is_featured', '1'), (@tl1, 'year', '1580'),
 (@tl2, 'label_key', 'timeline-of-events'), (@tl2, 'label_id', '5'), (@tl2, 'is_featured', '1'), (@tl2, 'year', '1860'),
 (@tl3, 'label_key', 'timeline-of-events'), (@tl3, 'label_id', '5'), (@tl3, 'is_featured', '1'), (@tl3, 'year', '1896');
@@ -63,7 +63,7 @@ SET @fig1 = (SELECT content_id FROM content WHERE title = 'Gen. Emilio Jacinto' 
 SET @fig2 = (SELECT content_id FROM content WHERE title = 'Marcelo H. del Pilar' LIMIT 1);
 SET @fig3 = (SELECT content_id FROM content WHERE title = 'Lola Basyang of Bocaue' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@fig1, 'label_key', 'notable-figures'), (@fig1, 'label_id', '6'), (@fig1, 'is_featured', '1'),
 (@fig2, 'label_key', 'notable-figures'), (@fig2, 'label_id', '6'), (@fig2, 'is_featured', '1'),
 (@fig3, 'label_key', 'notable-figures'), (@fig3, 'label_id', '6'), (@fig3, 'is_featured', '0');
@@ -93,7 +93,7 @@ SET @cp1 = (SELECT content_id FROM content WHERE title = 'Pagoda River Processio
 SET @cp2 = (SELECT content_id FROM content WHERE title = 'Pamamanhikan Tradition' LIMIT 1);
 SET @cp3 = (SELECT content_id FROM content WHERE title = 'Pasko ng Nayon - Village Christmas' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@cp1, 'label_key', 'cultural-practices'), (@cp1, 'label_id', '9'), (@cp1, 'is_featured', '1'),
 (@cp2, 'label_key', 'cultural-practices'), (@cp2, 'label_id', '9'), (@cp2, 'is_featured', '1'),
 (@cp3, 'label_key', 'cultural-practices'), (@cp3, 'label_id', '9'), (@cp3, 'is_featured', '0');
@@ -123,7 +123,7 @@ SET @ca1 = (SELECT content_id FROM content WHERE title = 'Pyrotechnic Artistry' 
 SET @ca2 = (SELECT content_id FROM content WHERE title = 'Bamboo Weaving - Kawayan Craft' LIMIT 1);
 SET @ca3 = (SELECT content_id FROM content WHERE title = 'Tsinelas - Handcrafted Slippers' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@ca1, 'label_key', 'crafts-artisan'), (@ca1, 'label_id', '19'), (@ca1, 'is_featured', '1'),
 (@ca2, 'label_key', 'crafts-artisan'), (@ca2, 'label_id', '19'), (@ca2, 'is_featured', '1'),
 (@ca3, 'label_key', 'crafts-artisan'), (@ca3, 'label_id', '19'), (@ca3, 'is_featured', '0');
@@ -153,7 +153,7 @@ SET @pw1 = (SELECT content_id FROM content WHERE title = 'Mang Carding - The Fir
 SET @pw2 = (SELECT content_id FROM content WHERE title = 'Ate Nena - The Kakanin Queen' LIMIT 1);
 SET @pw3 = (SELECT content_id FROM content WHERE title = 'Dok Rudy - Keeper of History' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@pw1, 'label_key', 'people-wonders'), (@pw1, 'label_id', '20'), (@pw1, 'is_featured', '1'),
 (@pw2, 'label_key', 'people-wonders'), (@pw2, 'label_id', '20'), (@pw2, 'is_featured', '1'),
 (@pw3, 'label_key', 'people-wonders'), (@pw3, 'label_id', '20'), (@pw3, 'is_featured', '0');
@@ -183,7 +183,7 @@ SET @tt1 = (SELECT content_id FROM content WHERE title = 'Heritage Walking Tour'
 SET @tt2 = (SELECT content_id FROM content WHERE title = 'Bocaue River Cruise and Nature Tour' LIMIT 1);
 SET @tt3 = (SELECT content_id FROM content WHERE title = 'Fireworks Factory and Craft Tour' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tt1, 'label_key', 'travel-tours'), (@tt1, 'label_id', '11'), (@tt1, 'is_featured', '1'),
 (@tt1, 'duration', '2 hours'), (@tt1, 'price', 'Free - Donations welcome'),
 (@tt2, 'label_key', 'travel-tours'), (@tt2, 'label_id', '11'), (@tt2, 'is_featured', '1'),
@@ -216,7 +216,7 @@ SET @ev1 = (SELECT content_id FROM content WHERE title = 'Pagoda Festival 2025' 
 SET @ev2 = (SELECT content_id FROM content WHERE title = 'Bocaue Heritage Week 2025' LIMIT 1);
 SET @ev3 = (SELECT content_id FROM content WHERE title = 'Pyrotechnics Competition 2025' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@ev1, 'label_key', 'events'), (@ev1, 'label_id', '12'), (@ev1, 'is_featured', '1'),
 (@ev1, 'news_date', '2025-07-07'), (@ev1, 'location', 'Bocaue River, Bocaue, Bulacan'),
 (@ev2, 'label_key', 'events'), (@ev2, 'label_id', '12'), (@ev2, 'is_featured', '1'),
@@ -249,7 +249,7 @@ SET @sc1 = (SELECT content_id FROM content WHERE title = 'Bocaue Central School'
 SET @sc2 = (SELECT content_id FROM content WHERE title = 'Lolomboy Elementary School' LIMIT 1);
 SET @sc3 = (SELECT content_id FROM content WHERE title = 'Bocaue National High School' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@sc1, 'label_key', 'schools'), (@sc1, 'label_id', '15'), (@sc1, 'is_featured', '1'),
 (@sc1, 'location', 'Poblacion, Bocaue, Bulacan'),
 (@sc2, 'label_key', 'schools'), (@sc2, 'label_id', '15'), (@sc2, 'is_featured', '0'),
@@ -282,7 +282,7 @@ SET @hp1 = (SELECT content_id FROM content WHERE title = 'Bocaue District Hospit
 SET @hp2 = (SELECT content_id FROM content WHERE title = 'Bocaue Rural Health Unit' LIMIT 1);
 SET @hp3 = (SELECT content_id FROM content WHERE title = 'St. Anne Medical Clinic' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@hp1, 'label_key', 'hospitals'), (@hp1, 'label_id', '17'), (@hp1, 'is_featured', '1'),
 (@hp1, 'location', 'Poblacion, Bocaue, Bulacan'), (@hp1, 'hours', 'Open 24/7'),
 (@hp2, 'label_key', 'hospitals'), (@hp2, 'label_id', '17'), (@hp2, 'is_featured', '1'),
@@ -321,7 +321,7 @@ SET @rs1 = (SELECT content_id FROM content WHERE title = 'Ihaw-Ihaw ni Bong' LIM
 SET @rs2 = (SELECT content_id FROM content WHERE title = 'Lutong Probinsya Carinderia' LIMIT 1);
 SET @rs3 = (SELECT content_id FROM content WHERE title = 'Merienda Cafe sa Bocaue' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@rs1, 'label_key', 'restaurants'), (@rs1, 'label_id', CAST(@lbl_restaurants AS CHAR)), (@rs1, 'is_featured', '1'),
 (@rs1, 'location', 'Riverside, Bocaue, Bulacan'),
 (@rs2, 'label_key', 'restaurants'), (@rs2, 'label_id', CAST(@lbl_restaurants AS CHAR)), (@rs2, 'is_featured', '1'),
@@ -360,7 +360,7 @@ SET @tw1 = (SELECT content_id FROM content WHERE title = 'Holy Cross of Wawa Shr
 SET @tw2 = (SELECT content_id FROM content WHERE title = 'San Martin de Tours Parish Church' LIMIT 1);
 SET @tw3 = (SELECT content_id FROM content WHERE title = 'Bocaue Fireworks District' LIMIT 1);
 
-INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES
+INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@tw1, 'label_key', 'tourism-wonders'), (@tw1, 'label_id', CAST(@lbl_tw AS CHAR)), (@tw1, 'is_featured', '1'),
 (@tw1, 'location', 'Wawa, Bocaue, Bulacan'),
 (@tw2, 'label_key', 'tourism-wonders'), (@tw2, 'label_id', CAST(@lbl_tw AS CHAR)), (@tw2, 'is_featured', '1'),

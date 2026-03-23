@@ -21,9 +21,9 @@ use App\Core\Response;
 
 function handle_home(string $method, ?string $sub): void
 {
-    // Write operations on home content require authentication
+    // Write operations on home content require admin/content_manager role
     if ($method !== 'GET') {
-        Auth::requireAuth();
+        Auth::requireRole(['super_admin', 'admin', 'content_manager']);
     }
 
     try {

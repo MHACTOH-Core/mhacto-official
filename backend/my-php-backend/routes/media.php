@@ -11,8 +11,8 @@ use App\Core\Response;
 
 function handle_media(string $method, ?string $param1): void
 {
-    // All media operations require authentication
-    Auth::requireAuth();
+    // All media operations require authentication with admin/content_manager role
+    Auth::requireRole(['super_admin', 'admin', 'content_manager']);
 
     try {
         switch ($method) {
@@ -142,7 +142,15 @@ function _media_upload(): void
             continue;
         }
 
-        $ext       = pathinfo($file['name'], PATHINFO_EXTENSION);
+        // Derive the canonical extension from the detected MIME type
+        // (prevents double-extension attacks like "shell.php.jpg")
+        $mimeToExt = [
+            'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif',
+            'image/webp' => 'webp', 'image/svg+xml' => 'svg', 'image/avif' => 'avif',
+            'video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/ogg' => 'ogg',
+            'video/quicktime' => 'mov', 'video/x-msvideo' => 'avi',
+        ];
+        $ext       = $mimeToExt[$mime] ?? pathinfo($file['name'], PATHINFO_EXTENSION);
         $baseName  = pathinfo($file['name'], PATHINFO_FILENAME);
         $safeName  = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName));
         $unique    = time() . '_' . $safeName . '.' . strtolower($ext);

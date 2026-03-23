@@ -70,6 +70,25 @@ class Auth
     }
 
     /**
+     * Require the authenticated user to have one of the given roles.
+     * Calls requireAuth() first, then checks the role claim.
+     *
+     * @param string|string[] $roles  A single role or array of allowed roles
+     * @return array  The decoded JWT payload
+     */
+    public static function requireRole(string|array $roles): array
+    {
+        $user = self::requireAuth();
+        $allowed = is_array($roles) ? $roles : [$roles];
+
+        if (!in_array($user['role'] ?? '', $allowed, true)) {
+            Response::error('You do not have permission to perform this action.', 403);
+        }
+
+        return $user;
+    }
+
+    /**
      * Extract the Bearer token from the Authorization header.
      */
     private static function extractBearerToken(): ?string

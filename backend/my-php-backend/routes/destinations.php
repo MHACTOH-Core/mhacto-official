@@ -24,7 +24,7 @@ function handle_destinations(string $method, ?string $id): void
                 break;
 
             case 'POST':
-                $authUser = Auth::requireAuth();
+                $authUser = Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 $data = json_decode(file_get_contents('php://input'), true);
 
                 if (empty($data['title']) || empty($data['description']) || empty($data['location']) || empty($data['hours']) || empty($data['contact'])) {
