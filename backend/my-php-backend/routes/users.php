@@ -6,14 +6,18 @@ use App\Core\Response;
 /**
  * Route: /api/users
  *
- * GET    /api/users                    — list all active users
- * GET    /api/users?all=1              — list all users including archived
- * GET    /api/users/{id}               — single user
- * POST   /api/users                    — create new user
- * PUT    /api/users/{id}               — update user
- * PUT    /api/users/{id}/restore       — restore archived user
- * PUT    /api/users/{id}/change-password — change password (old + new)
- * DELETE /api/users/{id}               — archive (soft-delete) user
+ * GET    /api/users                              — list all active users
+ * GET    /api/users?all=1                        — list all users including archived
+ * GET    /api/users/{id}                         — single user
+ * GET    /api/users/archive-requests             — list archive requests (super_admin)
+ * POST   /api/users                              — create new user
+ * POST   /api/users/archive-requests             — create archive request (admin → super_admin)
+ * PUT    /api/users/{id}                         — update user
+ * PUT    /api/users/{id}/restore                 — restore archived user
+ * PUT    /api/users/{id}/change-password         — change password (old + new)
+ * PUT    /api/users/archive-requests/{id}/approve — approve archive request
+ * PUT    /api/users/archive-requests/{id}/deny    — deny archive request
+ * DELETE /api/users/{id}                         — archive (soft-delete) user
  */
 
 function handle_users(string $method, ?string $param1, ?string $param2): void
@@ -73,6 +77,73 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
                 Response::json(['message' => 'Password changed successfully.']);
             } else {
                 Response::error(is_string($result) ? $result : 'Failed to change password.', 400);
+            }
+            return;
+        }
+
+        // ── Archive Requests ──────────────────────────────────────────
+
+        // GET /api/users/archive-requests — list pending archive requests
+        if ($method === 'GET' && $param1 === 'archive-requests') {
+            $status = $_GET['status'] ?? 'pending';
+            Response::json($user->listArchiveRequests($status));
+            return;
+        }
+
+        // POST /api/users/archive-requests — admin creates request to archive a super_admin
+        if ($method === 'POST' && $param1 === 'archive-requests') {
+            $authUser = Auth::requireAuth();
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (empty($data['targetUserId'])) {
+                Response::error('Target user ID is required.', 400);
+            }
+            $targetId = (int) $data['targetUserId'];
+            if ($targetId === 1) {
+                Response::error('Cannot request archival of the primary super admin.', 403);
+            }
+            $requestId = $user->createArchiveRequest($targetId, (int) $authUser['user_id'], $data['reason'] ?? null);
+            if ($requestId) {
+                Response::json(['message' => 'Archive request submitted for approval.', 'requestId' => $requestId], 201);
+            } else {
+                Response::error('Failed to create request. A pending request may already exist.', 400);
+            }
+            return;
+        }
+
+        // PUT /api/users/archive-requests/approve  body: { requestId }
+        if ($method === 'PUT' && $param1 === 'archive-requests' && $param2 === 'approve') {
+            $authUser = Auth::requireAuth();
+            if ($authUser['role'] !== 'super_admin') {
+                Response::error('Only super admins can approve archive requests.', 403);
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $requestId = (int) ($data['requestId'] ?? 0);
+            if (!$requestId) {
+                Response::error('Request ID is required.', 400);
+            }
+            if ($user->approveArchiveRequest($requestId, (int) $authUser['user_id'])) {
+                Response::json(['message' => 'Archive request approved. User has been archived.']);
+            } else {
+                Response::error('Failed to approve request.', 400);
+            }
+            return;
+        }
+
+        // PUT /api/users/archive-requests/deny  body: { requestId }
+        if ($method === 'PUT' && $param1 === 'archive-requests' && $param2 === 'deny') {
+            $authUser = Auth::requireAuth();
+            if ($authUser['role'] !== 'super_admin') {
+                Response::error('Only super admins can deny archive requests.', 403);
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $requestId = (int) ($data['requestId'] ?? 0);
+            if (!$requestId) {
+                Response::error('Request ID is required.', 400);
+            }
+            if ($user->denyArchiveRequest($requestId, (int) $authUser['user_id'])) {
+                Response::json(['message' => 'Archive request denied.']);
+            } else {
+                Response::error('Failed to deny request.', 400);
             }
             return;
         }
@@ -154,11 +225,30 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
                     Response::error('Cannot archive the main super admin account.', 403);
                 }
 
-                $result = $user->archive($id);
-                if ($result) {
-                    Response::json(['message' => 'User archived successfully.']);
+                $authUser = Auth::requireAuth();
+
+                // Check if target is a super_admin
+                $targetUser = $user->findById($id);
+                if (!$targetUser) {
+                    Response::error('User not found.', 404);
+                }
+
+                if ($targetUser['role'] === 'super_admin' && $authUser['role'] !== 'super_admin') {
+                    // Admin trying to archive a super_admin → create approval request
+                    $requestId = $user->createArchiveRequest($id, (int) $authUser['user_id'], 'Requested via account management.');
+                    if ($requestId) {
+                        Response::json(['message' => 'Archive request submitted for super admin approval.', 'requiresApproval' => true, 'requestId' => $requestId], 202);
+                    } else {
+                        Response::error('Failed to create request. A pending request may already exist.', 400);
+                    }
                 } else {
-                    Response::error('Failed to archive user.', 400);
+                    // Super_admin archiving another super_admin, or archiving non-super_admin
+                    $result = $user->archive($id);
+                    if ($result) {
+                        Response::json(['message' => 'User archived successfully.']);
+                    } else {
+                        Response::error('Failed to archive user.', 400);
+                    }
                 }
                 break;
 

@@ -146,10 +146,12 @@ export default function SettingsPage() {
                 Manage your site configuration and preferences.
               </p>
             </div>
-            <Button onClick={handleSave} disabled={!hasChanges} className="gap-2">
-              <Save className="h-4 w-4" />
-              {saved ? "Saved!" : "Save Changes"}
-            </Button>
+            {isSuperAdmin && (
+              <Button onClick={handleSave} disabled={!hasChanges} className="gap-2">
+                <Save className="h-4 w-4" />
+                {saved ? "Saved!" : "Apply Changes"}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -479,8 +481,8 @@ export default function SettingsPage() {
 
               {/* Navbar Logo (Left - MHACTO) */}
               <div className="space-y-2">
-                <Label>Navbar Logo (Left — MHACTO)</Label>
-                <p className="text-xs text-muted-foreground">Primary logo shown on the left side of the navbar.</p>
+                <Label>MHACTO Bocaue Logo</Label>
+                <p className="text-xs text-muted-foreground">Main logo displayed on the left side of the navigation bar.</p>
                 <div className="flex items-center gap-3">
                   {form.navbarLogoUrl ? (
                     <div className="relative h-12 w-32 rounded-lg overflow-hidden border border-border bg-muted p-1">
@@ -512,8 +514,8 @@ export default function SettingsPage() {
 
               {/* Navbar Logo (Right - Bocaue) */}
               <div className="space-y-2">
-                <Label>Navbar Logo (Right — Bocaue)</Label>
-                <p className="text-xs text-muted-foreground">Secondary logo shown on the right side of the navbar.</p>
+                <Label>Bocaue Municipality Logo</Label>
+                <p className="text-xs text-muted-foreground">Municipality seal displayed on the right side of the navigation bar.</p>
                 <div className="flex items-center gap-3">
                   {form.navbarSecondaryLogoUrl ? (
                     <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-border bg-muted p-1">
@@ -659,7 +661,26 @@ export default function SettingsPage() {
           </Card>
           </>
           )}
+
+          {/* Bottom spacer for sticky bar */}
+          {isSuperAdmin && hasChanges && <div className="h-16" />}
         </div>
+
+        {/* Sticky Save Bar — visible only when super_admin has unsaved changes */}
+        {isSuperAdmin && hasChanges && (
+          <div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 px-6 py-3 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">You have unsaved changes</p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setForm(settings)}>
+                Discard
+              </Button>
+              <Button size="sm" className="gap-2" onClick={handleSave}>
+                <Save className="h-4 w-4" />
+                {saved ? "Saved!" : "Apply Changes"}
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Save Confirmation */}

@@ -7,6 +7,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Prevent Radix scroll-lock from hiding the page scrollbar */
+body[data-scroll-locked] {
+  overflow: auto !important;
+  padding-right: 0px !important;
+  margin-right: 0px !important;
+}
+
 /* ── Custom Fonts ── */
 @font-face {
   font-family: 'Barbara';

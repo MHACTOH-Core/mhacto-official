@@ -301,4 +301,110 @@ class User
             return false;
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Archive Requests (approval workflow for archiving super_admins)
+    // ─────────────────────────────────────────────────────────────────
+
+    /** Create an archive request (admin requests to archive a super_admin) */
+    public function createArchiveRequest(int $targetUserId, int $requestedBy, ?string $reason = null): int|false
+    {
+        // Don't allow requests against user_id 1
+        if ($targetUserId === 1) return false;
+
+        // Check for existing pending request
+        $check = $this->conn->prepare(
+            "SELECT request_id FROM archive_requests WHERE target_user_id = :tid AND status = 'pending' LIMIT 1"
+        );
+        $check->execute([':tid' => $targetUserId]);
+        if ($check->rowCount() > 0) return false;
+
+        $stmt = $this->conn->prepare(
+            "INSERT INTO archive_requests (target_user_id, requested_by, reason) VALUES (:tid, :rid, :reason)"
+        );
+        $stmt->execute([':tid' => $targetUserId, ':rid' => $requestedBy, ':reason' => $reason]);
+        return (int) $this->conn->lastInsertId();
+    }
+
+    /** List archive requests (optionally filtered by status) */
+    public function listArchiveRequests(?string $status = null): array
+    {
+        $sql = "SELECT ar.request_id, ar.target_user_id, ar.requested_by, ar.status,
+                       ar.reason, ar.reviewed_by, ar.created_at, ar.reviewed_at,
+                       tu.full_name AS target_name, tu.email AS target_email, tu.role AS target_role,
+                       ru.full_name AS requester_name, ru.email AS requester_email
+                FROM archive_requests ar
+                JOIN users tu ON ar.target_user_id = tu.user_id
+                JOIN users ru ON ar.requested_by = ru.user_id";
+        $params = [];
+        if ($status) {
+            $sql .= " WHERE ar.status = :status";
+            $params[':status'] = $status;
+        }
+        $sql .= " ORDER BY ar.created_at DESC";
+
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("User::listArchiveRequests error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /** Approve an archive request — archives the target user */
+    public function approveArchiveRequest(int $requestId, int $reviewedBy): bool
+    {
+        try {
+            $this->conn->beginTransaction();
+
+            // Get the request
+            $stmt = $this->conn->prepare("SELECT target_user_id FROM archive_requests WHERE request_id = :rid AND status = 'pending'");
+            $stmt->execute([':rid' => $requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$req) {
+                $this->conn->rollBack();
+                return false;
+            }
+
+            // Protect user_id 1
+            if ((int) $req['target_user_id'] === 1) {
+                $this->conn->rollBack();
+                return false;
+            }
+
+            // Archive the target user
+            $this->conn->prepare("UPDATE users SET status = 'archived' WHERE user_id = :id")
+                ->execute([':id' => $req['target_user_id']]);
+
+            // Update the request
+            $this->conn->prepare(
+                "UPDATE archive_requests SET status = 'approved', reviewed_by = :rb, reviewed_at = NOW() WHERE request_id = :rid"
+            )->execute([':rb' => $reviewedBy, ':rid' => $requestId]);
+
+            $this->conn->commit();
+            return true;
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            error_log("User::approveArchiveRequest error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /** Deny an archive request */
+    public function denyArchiveRequest(int $requestId, int $reviewedBy): bool
+    {
+        try {
+            $stmt = $this->conn->prepare(
+                "UPDATE archive_requests SET status = 'denied', reviewed_by = :rb, reviewed_at = NOW()
+                 WHERE request_id = :rid AND status = 'pending'"
+            );
+            $stmt->execute([':rb' => $reviewedBy, ':rid' => $requestId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("User::denyArchiveRequest error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

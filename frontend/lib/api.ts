@@ -469,9 +469,9 @@ export function apiUpdateUser(id: number, data: Record<string, unknown>) {
   })
 }
 
-/** Archive (soft-delete) a user account */
+/** Archive (soft-delete) a user account. Returns requiresApproval if admin tries to archive a super_admin. */
 export function apiArchiveUser(id: number) {
-  return apiFetch<{ message: string }>(`/api/users/${id}`, {
+  return apiFetch<{ message: string; requiresApproval?: boolean; requestId?: number }>(`/api/users/${id}`, {
     method: "DELETE",
   })
 }
@@ -509,6 +509,47 @@ export function apiUpdateUserPreferences(id: number, prefs: { enableEmailNotific
   return apiFetch<{ message: string; preferences: { enableEmailNotifications: boolean; enableInquiryAlerts: boolean } }>(`/api/users/${id}/preferences`, {
     method: "PUT",
     body: JSON.stringify(prefs),
+  })
+}
+
+// ─── Archive Requests (approval workflow for archiving super_admins) ──
+
+export interface ArchiveRequest {
+  request_id: number
+  target_user_id: number
+  requested_by: number
+  status: "pending" | "approved" | "denied"
+  reviewed_by: number | null
+  reason: string | null
+  created_at: string
+  reviewed_at: string | null
+  target_name: string
+  requester_name: string
+  reviewer_name: string | null
+}
+
+export function apiFetchArchiveRequests(status: string = "pending") {
+  return apiFetch<ArchiveRequest[]>(`/api/users/archive-requests?status=${status}`)
+}
+
+export function apiCreateArchiveRequest(targetUserId: number, reason?: string) {
+  return apiFetch<{ message: string; requestId: number }>("/api/users/archive-requests", {
+    method: "POST",
+    body: JSON.stringify({ targetUserId, reason }),
+  })
+}
+
+export function apiApproveArchiveRequest(requestId: number) {
+  return apiFetch<{ message: string }>("/api/users/archive-requests/approve", {
+    method: "PUT",
+    body: JSON.stringify({ requestId }),
+  })
+}
+
+export function apiDenyArchiveRequest(requestId: number) {
+  return apiFetch<{ message: string }>("/api/users/archive-requests/deny", {
+    method: "PUT",
+    body: JSON.stringify({ requestId }),
   })
 }
 

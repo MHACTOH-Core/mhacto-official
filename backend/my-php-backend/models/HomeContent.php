@@ -345,28 +345,17 @@ class HomeContent
 
     public function getMilestones($all = false)
     {
-        // JOIN with CMS content + content_fields to pull data from linked timeline posts.
-        // Falls back to milestone's own fields if no content_id is set (backward compat).
-        $sql = "SELECT m.milestone_id AS milestoneId,
-                       m.content_id AS contentId,
-                       COALESCE(cf_year.meta_value, m.year) AS year,
-                       COALESCE(c.title, m.title) AS title,
-                       COALESCE(c.description, m.description) AS description,
-                       COALESCE(cf_story.meta_value, m.detail) AS detail,
-                       m.side, m.sort_order AS sortOrder, m.is_active AS isActive,
-                       m.created_at AS createdAt, m.updated_at AS updatedAt
-                FROM milestone m
-                LEFT JOIN content c ON m.content_id = c.content_id
-                LEFT JOIN content_fields cf_year ON m.content_id = cf_year.content_id
-                    AND cf_year.meta_key = 'established'
-                LEFT JOIN content_fields cf_story ON m.content_id = cf_story.content_id
-                    AND cf_story.meta_key = 'story'";
+        $sql = "SELECT milestone_id AS milestoneId,
+                       year, title, description, detail,
+                       side, sort_order AS sortOrder, is_active AS isActive,
+                       created_at AS createdAt, updated_at AS updatedAt
+                FROM milestone";
 
         if (!$all) {
-            $sql .= " WHERE m.is_active = 1";
+            $sql .= " WHERE is_active = 1";
         }
 
-        $sql .= " ORDER BY m.sort_order ASC";
+        $sql .= " ORDER BY sort_order ASC";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
@@ -374,19 +363,17 @@ class HomeContent
 
         return array_map(function ($row) {
             $row['isActive'] = (bool) $row['isActive'];
-            $row['contentId'] = $row['contentId'] ? (string) $row['contentId'] : null;
             return $row;
         }, $results);
     }
 
     public function createMilestone($data)
     {
-        $sql = "INSERT INTO milestone (content_id, year, title, description, detail, side, sort_order, is_active)
-                VALUES (:contentId, :year, :title, :description, :detail, :side, :sortOrder, :isActive)";
+        $sql = "INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active)
+                VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([
-            ':contentId'   => !empty($data['contentId']) ? (int) $data['contentId'] : null,
             ':year'        => $data['year'] ?? null,
             ':title'       => $data['title'] ?? null,
             ':description' => $data['description'] ?? null,
@@ -405,7 +392,6 @@ class HomeContent
         $params = [':id' => $id];
 
         $fieldMap = [
-            'contentId'   => 'content_id',
             'year'        => 'year',
             'title'       => 'title',
             'description' => 'description',

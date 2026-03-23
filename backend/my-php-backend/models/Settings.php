@@ -165,6 +165,7 @@ class Settings
             'navbarLogoUrl'              => ['group' => 'general', 'key' => 'navbar_logo_url',    'type' => 'string'],
             'navbarSecondaryLogoUrl'     => ['group' => 'general', 'key' => 'navbar_secondary_logo_url', 'type' => 'string'],
             'navbarTitle'                => ['group' => 'general', 'key' => 'navbar_title',       'type' => 'string'],
+            'maintenanceMode'            => ['group' => 'general', 'key' => 'maintenance_mode',   'type' => 'boolean'],
             // Hero
             'heroSubtitle'               => ['group' => 'hero', 'key' => 'hero_subtitle',     'type' => 'string'],
             'heroTitle'                  => ['group' => 'hero', 'key' => 'hero_title',        'type' => 'string'],
@@ -190,7 +191,7 @@ class Settings
             'siteLogoUrl'                => $map['site_logo_url'] ?? null,
             'enableInquiryNotifications' => $map['notify_inquiries'] ?? true,
             'enableAnalytics'            => $map['enable_analytics'] ?? true,
-            'maintenanceMode'            => false,
+            'maintenanceMode'            => $map['maintenance_mode'] ?? false,
             // Social
             'facebookUrl'                => $map['facebook_url'] ?? '',
             'instagramUrl'               => $map['instagram_url'] ?? '',

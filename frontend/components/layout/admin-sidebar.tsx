@@ -32,9 +32,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const navItems: { href: string; label: string; icon: typeof LayoutDashboard; roles?: UserRole[] }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/home-content", label: "Home Content", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
-  { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
-  { href: "/admin/cms", label: "CMS", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/home-content", label: "Home Page", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/heroes", label: "Page Banners", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/cms", label: "Manage Content", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/pagoda", label: "Pagoda Festival", icon: Flame, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/accounts", label: "Accounts", icon: Users, roles: ["super_admin", "admin"] },

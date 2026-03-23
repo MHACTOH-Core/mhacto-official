@@ -176,12 +176,19 @@ export function Footer() {
             {/* Right side - STI and developers */}
             <div className="flex items-center gap-4 text-center sm:text-right">
               <div className="text-right">
-                <p className="text-foreground font-medium text-sm">Developed by</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Jayson Visnar &middot; Juan Miguel Borja<br />
-                  Juan Carlos Flores &middot; John Leonard Chingcuangco
-                </p>
-                <p className="text-xs text-muted-foreground/60 mt-0.5">STI College Balagtas</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-1.5">In partnership with STI College Balagtas</p>
+                <p className="text-foreground font-semibold text-sm mb-1">Developed by</p>
+                <div className="space-y-0.5">
+                  <p className="text-sm text-muted-foreground font-medium leading-snug">
+                    Jayson Visnar &middot; Juan Miguel Borja
+                  </p>
+                  <p className="text-sm text-muted-foreground font-medium leading-snug">
+                    Juan Carlos Flores &middot; John Leonard Chingcuangco
+                  </p>
+                  <p className="text-sm text-muted-foreground font-medium leading-snug">
+                    Christian Carr Tac-an
+                  </p>
+                </div>
               </div>
               <Image
                 src={resolveMediaUrl("/uploads/images/logos/sti-logo.jpg")}

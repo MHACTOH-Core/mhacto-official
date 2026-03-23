@@ -440,18 +440,18 @@ export default function AdminLoginPage() {
               This section is a permanent partnership acknowledgment.
               It must NEVER be removed, hidden, or modified by anyone.
           ════════════════════════════════════════════════════════════ */}
-          <div className="mt-6 flex flex-col items-center gap-2">
+          <div className="mt-6 flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <Image
                 src={resolveMediaUrl("/uploads/images/logos/sti-logo.jpg")}
                 alt="STI College Balagtas Logo"
-                width={48}
-                height={48}
-                className="h-10 w-10 rounded-md object-contain"
+                width={72}
+                height={72}
+                className="h-16 w-16 rounded-lg object-contain shadow-md shadow-black/20"
               />
             </div>
-            <p className="text-[10px] text-slate-400/70 text-center leading-relaxed">
-              In partnership with <span className="font-semibold text-slate-300/80">STI College Balagtas</span>
+            <p className="text-[11px] text-slate-400/80 text-center leading-relaxed">
+              In partnership with <span className="font-semibold text-slate-300/90">STI College Balagtas</span>
             </p>
           </div>
           {/* ═══════ END STI PARTNERSHIP — DO NOT REMOVE ═══════ */}

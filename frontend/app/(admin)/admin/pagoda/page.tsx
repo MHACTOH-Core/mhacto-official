@@ -1,22 +1,18 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
-import { contentLabels, type CMSPost, type ContentStatus } from "@/lib/data/admin-data"
-import { Card, CardContent } from "@/components/ui/card"
+import type { CMSPost } from "@/lib/data/admin-data"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { MediaPicker } from "@/components/ui/media-picker"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,150 +25,214 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
-  Plus,
-  Search,
-  Trash2,
-  Edit3,
-  Eye,
-  CheckCircle,
-  Archive,
+  Save,
   Flame,
+  ImageIcon,
+  LayoutDashboard,
+  Type,
+  GalleryHorizontalEnd,
+  Quote,
+  X,
+  Loader2,
 } from "lucide-react"
 import { resolveMediaUrl } from "@/lib/utils"
-import { format, parseISO } from "date-fns"
-import { type FormData, EMPTY_FORM, UNKNOWN_LABEL } from "../cms/_components/cms-types"
-import { CMSEditDialog } from "../cms/_components/cms-edit-dialog"
-import { CMSPreviewDialog } from "../cms/_components/cms-preview-dialog"
 
-const statusColor: Record<ContentStatus, string> = {
-  draft: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
-  published: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  archived: "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-300",
+/* ── Structured metadata stored in post.story as JSON ───────────── */
+interface SectionData {
+  title: string
+  description: string
 }
+
+interface GalleryItemData {
+  title: string
+  description: string
+  category: string
+}
+
+interface PagodaMetadata {
+  eventDate: string
+  badgeText: string
+  subtitle: string
+  sections: [SectionData, SectionData, SectionData]
+  gallery: GalleryItemData[]
+  quote: { text: string; attribution: string }
+}
+
+const DEFAULT_METADATA: PagodaMetadata = {
+  eventDate: "July 1st",
+  badgeText: "Bocaue River Festival",
+  subtitle: "A centuries-old river festival honoring the Holy Cross of Wawa",
+  sections: [
+    { title: "The Sacred Cross-River Procession", description: "" },
+    { title: "A Night of Fire & Light", description: "" },
+    { title: "Faith Rooted in Heritage", description: "" },
+  ],
+  gallery: Array.from({ length: 6 }, () => ({ title: "", description: "", category: "" })),
+  quote: {
+    text: "Where the river meets faith, the Pagoda sails — a living testament to centuries of devotion, fire, and the unbreakable spirit of Bocaue.",
+    attribution: "— Bocaue Heritage",
+  },
+}
+
+/* ── Image slot indices ──────────────────────────────────────────── */
+// images[0] = hero, images[1-3] = sections, images[4-9] = gallery
+const SLOT = { hero: 0, sec1: 1, sec2: 2, sec3: 3, gal: 4 } as const
+
+/* ── Image picker button ─────────────────────────────────────────── */
+function ImageSlot({
+  src,
+  label,
+  onPick,
+  onClear,
+  aspectClass = "aspect-video",
+}: {
+  src: string
+  label: string
+  onPick: () => void
+  onClear: () => void
+  aspectClass?: string
+}) {
+  const resolved = src ? resolveMediaUrl(src) : ""
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div
+        className={`relative ${aspectClass} rounded-lg border border-dashed border-border bg-muted/40 overflow-hidden group cursor-pointer`}
+        onClick={onPick}
+      >
+        {resolved ? (
+          <>
+            <Image src={resolved} alt={label} fill className="object-cover" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <span className="hidden group-hover:block text-white text-xs font-medium">Change Image</span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClear() }}
+              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-muted-foreground/60">
+            <ImageIcon className="h-8 w-8" />
+            <span className="text-xs">Click to select</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════════ */
 
 export default function PagodaPage() {
   const router = useRouter()
-  const { isLoggedIn, isHydrated, posts, createPost, updatePost, deletePost } = useAdmin()
-
-  const [search, setSearch] = useState("")
-  const [filterStatus, setFilterStatus] = useState<ContentStatus | "all">("all")
-
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingPost, setEditingPost] = useState<CMSPost | null>(null)
-  const [form, setForm] = useState<FormData>(EMPTY_FORM)
-  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<CMSPost | null>(null)
-  const [previewPost, setPreviewPost] = useState<CMSPost | null>(null)
-
+  const { isLoggedIn, isHydrated, posts, createPost, updatePost } = useAdmin()
   const { toast } = useToast()
+
+  // Find the single pagoda content post
+  const pagodaPost = posts.find((p) => p.label === "pagoda") ?? null
+
+  // Form state
+  const [overview, setOverview] = useState("")
+  const [images, setImages] = useState<string[]>(Array(10).fill(""))
+  const [meta, setMeta] = useState<PagodaMetadata>(DEFAULT_METADATA)
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+
+  // Media picker
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerTarget, setPickerTarget] = useState<number>(-1)
+
+  // Load existing data
+  useEffect(() => {
+    if (!pagodaPost) return
+    setOverview(pagodaPost.body ?? "")
+
+    // Populate images array (pad to 10)
+    const imgs = [...(pagodaPost.image ?? [])]
+    while (imgs.length < 10) imgs.push("")
+    setImages(imgs.slice(0, 10))
+
+    // Parse metadata from story
+    if (pagodaPost.story) {
+      try {
+        const parsed = JSON.parse(pagodaPost.story) as Partial<PagodaMetadata>
+        setMeta({ ...DEFAULT_METADATA, ...parsed })
+      } catch { /* keep defaults */ }
+    }
+  }, [pagodaPost])
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Filter only pagoda posts
-  const pagodaPosts = useMemo(() =>
-    posts.filter((p) => {
-      if (p.label !== "pagoda") return false
-      if (filterStatus !== "all" && p.status !== filterStatus) return false
-      if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false
-      return true
-    }),
-    [posts, filterStatus, search]
-  )
+  // Image helpers
+  const setImage = (idx: number, url: string) => {
+    setImages((prev) => { const next = [...prev]; next[idx] = url; return next })
+    setDirty(true)
+  }
+  const clearImage = (idx: number) => setImage(idx, "")
+  const openPicker = (idx: number) => { setPickerTarget(idx); setPickerOpen(true) }
 
-  const stats = useMemo(() => ({
-    total: posts.filter((p) => p.label === "pagoda").length,
-    published: posts.filter((p) => p.label === "pagoda" && p.status === "published").length,
-    drafts: posts.filter((p) => p.label === "pagoda" && p.status === "draft").length,
-  }), [posts])
-
-  // Handlers
-  const openCreate = () => {
-    setEditingPost(null)
-    setForm({
-      ...EMPTY_FORM,
-      postType: "place",
-      contentCategory: "arts-culture",
-      label: "pagoda",
+  // Metadata helpers
+  const updateSection = (idx: number, field: keyof SectionData, value: string) => {
+    setMeta((prev) => {
+      const sections = [...prev.sections] as [SectionData, SectionData, SectionData]
+      sections[idx] = { ...sections[idx], [field]: value }
+      return { ...prev, sections }
     })
-    setDialogOpen(true)
+    setDirty(true)
   }
-
-  const openEdit = (post: CMSPost) => {
-    setEditingPost(post)
-    setForm({
-      title: post.title,
-      body: post.body,
-      contentCategory: post.contentCategory ?? "arts-culture",
-      label: "pagoda",
-      postType: post.postType ?? "place",
-      status: post.status,
-      images: post.image,
-      location: post.location ?? "",
-      hours: post.hours ?? "",
-      contact: post.contact ?? "",
-      established: post.established ?? "",
-      category: post.category ?? "",
-      story: post.story ?? "",
-      highlights: post.highlights?.join("\n") ?? "",
-      newsDate: post.newsDate ?? "",
-      isFeatured: post.isFeatured ?? false,
-      author: post.author ?? "",
+  const updateGallery = (idx: number, field: keyof GalleryItemData, value: string) => {
+    setMeta((prev) => {
+      const gallery = [...prev.gallery]
+      gallery[idx] = { ...gallery[idx], [field]: value }
+      return { ...prev, gallery }
     })
-    setDialogOpen(true)
+    setDirty(true)
+  }
+  const updateQuote = (field: "text" | "attribution", value: string) => {
+    setMeta((prev) => ({ ...prev, quote: { ...prev.quote, [field]: value } }))
+    setDirty(true)
+  }
+  const updateField = (field: "eventDate" | "badgeText" | "subtitle", value: string) => {
+    setMeta((prev) => ({ ...prev, [field]: value }))
+    setDirty(true)
   }
 
-  const handleSave = () => {
-    if (!form.title.trim() || !form.body.trim()) return
-    setSaveConfirmOpen(true)
-  }
+  // Save handler
+  const handleSave = () => setSaveConfirmOpen(true)
 
   const executeSave = () => {
     setSaveConfirmOpen(false)
+    setSaving(true)
 
     const payload: Record<string, unknown> = {
-      title: form.title,
-      body: form.body,
+      title: "Pagoda sa Bocaue",
+      body: overview,
       contentCategory: "arts-culture",
       label: "pagoda",
       postType: "place",
-      status: form.status,
-      image: form.images,
-      isFeatured: form.isFeatured,
-      author: form.author || undefined,
-      location: form.location || undefined,
-      established: form.established || undefined,
-      story: form.story || undefined,
-      highlights: form.highlights.trim()
-        ? form.highlights.split("\n").map((h: string) => h.trim()).filter(Boolean)
-        : undefined,
+      status: "published",
+      image: images.filter(Boolean),
+      story: JSON.stringify(meta),
     }
 
-    if (editingPost) {
-      updatePost(editingPost.id, payload)
-      toast({ title: "Post updated", description: `"${form.title}" has been updated.` })
-    } else {
-      createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
-      toast({ title: "Post created", description: `"${form.title}" has been created.` })
-    }
-    setDialogOpen(false)
-  }
-
-  const handlePublish = (post: CMSPost) => {
-    updatePost(post.id, { ...post, status: "published" })
-    toast({ title: "Post published", description: `"${post.title}" is now live.` })
-  }
-
-  const handleArchive = (post: CMSPost) => {
-    updatePost(post.id, { ...post, status: "archived" })
-    toast({ title: "Post archived", description: `"${post.title}" has been archived.` })
-  }
-
-  const confirmDelete = () => {
-    if (deleteTarget) {
-      deletePost(deleteTarget.id)
-      toast({ title: "Post deleted", description: `"${deleteTarget.title}" has been deleted.`, variant: "destructive" })
-      setDeleteTarget(null)
+    try {
+      if (pagodaPost) {
+        updatePost(pagodaPost.id, payload)
+        toast({ title: "Pagoda content updated", description: "Your changes have been saved." })
+      } else {
+        createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
+        toast({ title: "Pagoda content created", description: "The pagoda page is now live." })
+      }
+      setDirty(false)
+    } catch {
+      toast({ title: "Save failed", description: "Something went wrong. Please try again.", variant: "destructive" })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -180,8 +240,9 @@ export default function PagodaPage() {
     <div className="flex h-screen bg-background">
       <AdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        {/* Header */}
-        <div className="border-b border-border bg-card px-6 py-5">
+
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div className="border-b border-border bg-card px-6 py-5 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/40">
@@ -190,208 +251,244 @@ export default function PagodaPage() {
               <div>
                 <h1 className="text-2xl font-bold text-card-foreground">Pagoda Festival</h1>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  Manage Pagoda sa Bocaue festival content
+                  Edit the Pagoda sa Bocaue page content
                 </p>
               </div>
             </div>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Post
-            </Button>
+            <div className="flex items-center gap-3">
+              {dirty && <Badge variant="outline" className="text-amber-600 border-amber-300">Unsaved changes</Badge>}
+              <Button onClick={handleSave} disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Changes
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Posts</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Published</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.published}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Drafts</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.drafts}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="p-6 space-y-8 max-w-5xl">
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search pagoda posts..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+          {/* ── 1. Hero Section ───────────────────────────────────── */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <LayoutDashboard className="h-5 w-5 text-sky-500" />
+                Hero Section
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ImageSlot
+                src={images[SLOT.hero]}
+                label="Hero Background Image"
+                onPick={() => openPicker(SLOT.hero)}
+                onClear={() => clearImage(SLOT.hero)}
+                aspectClass="aspect-[21/9]"
               />
-            </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label>Badge Text</Label>
+                  <Input
+                    value={meta.badgeText}
+                    onChange={(e) => updateField("badgeText", e.target.value)}
+                    placeholder="Bocaue River Festival"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Event Date</Label>
+                  <Input
+                    value={meta.eventDate}
+                    onChange={(e) => updateField("eventDate", e.target.value)}
+                    placeholder="July 1st"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Subtitle</Label>
+                  <Input
+                    value={meta.subtitle}
+                    onChange={(e) => updateField("subtitle", e.target.value)}
+                    placeholder="A centuries-old river festival..."
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Select
-              value={filterStatus}
-              onValueChange={(v) => setFilterStatus(v as ContentStatus | "all")}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* ── 2. Overview Section ───────────────────────────────── */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Type className="h-5 w-5 text-amber-500" />
+                Festival Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={overview}
+                onChange={(e) => { setOverview(e.target.value); setDirty(true) }}
+                placeholder="Write the festival overview description that appears after the stats..."
+                rows={5}
+                className="resize-y"
+              />
+            </CardContent>
+          </Card>
 
-            <p className="text-sm text-muted-foreground ml-auto">
-              {pagodaPosts.length} post{pagodaPosts.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-
-          {/* Posts grid */}
-          {pagodaPosts.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Flame className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-muted-foreground">No pagoda posts found</h3>
-                <p className="mt-1 text-sm text-muted-foreground/70">
-                  Create your first pagoda festival post to get started.
-                </p>
-                <Button onClick={openCreate} className="mt-4 gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Post
-                </Button>
+          {/* ── 4. Content Sections (1-3) ─────────────────────────── */}
+          {meta.sections.map((sec, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <span className="flex h-6 w-6 items-center justify-center rounded bg-sky-100 text-xs font-bold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  Content Section {i + 1}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ImageSlot
+                    src={images[SLOT.sec1 + i]}
+                    label="Section Image"
+                    onPick={() => openPicker(SLOT.sec1 + i)}
+                    onClear={() => clearImage(SLOT.sec1 + i)}
+                  />
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label>Section Title</Label>
+                      <Input
+                        value={sec.title}
+                        onChange={(e) => updateSection(i, "title", e.target.value)}
+                        placeholder="Section title..."
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Description</Label>
+                      <Textarea
+                        value={sec.description}
+                        onChange={(e) => updateSection(i, "description", e.target.value)}
+                        placeholder="Write the section description..."
+                        rows={5}
+                        className="resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {pagodaPosts.map((post) => (
-                <Card key={post.id} className="overflow-hidden group">
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video bg-muted overflow-hidden">
-                    {post.image?.[0] ? (
-                      <Image
-                        src={resolveMediaUrl(post.image[0])}
-                        alt={post.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+          ))}
+
+          {/* ── 5. Pull Quote ─────────────────────────────────────── */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Quote className="h-5 w-5 text-violet-500" />
+                Pull Quote
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Quote Text</Label>
+                <Textarea
+                  value={meta.quote.text}
+                  onChange={(e) => updateQuote("text", e.target.value)}
+                  placeholder="Where the river meets faith..."
+                  rows={3}
+                  className="resize-y italic"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Attribution</Label>
+                <Input
+                  value={meta.quote.attribution}
+                  onChange={(e) => updateQuote("attribution", e.target.value)}
+                  placeholder="— Bocaue Heritage"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── 6. Gallery Section ────────────────────────────────── */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <GalleryHorizontalEnd className="h-5 w-5 text-rose-500" />
+                Gallery — Moments on the River
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="space-y-2 rounded-lg border border-border p-3">
+                    <ImageSlot
+                      src={images[SLOT.gal + i]}
+                      label={`Gallery Image ${i + 1}`}
+                      onPick={() => openPicker(SLOT.gal + i)}
+                      onClear={() => clearImage(SLOT.gal + i)}
+                      aspectClass="aspect-[4/3]"
+                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Title</Label>
+                      <Input
+                        value={meta.gallery[i]?.title ?? ""}
+                        onChange={(e) => updateGallery(i, "title", e.target.value)}
+                        placeholder="Image title..."
+                        className="h-8 text-sm"
                       />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground/30">
-                        <Flame className="h-10 w-10" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className={`text-xs shadow-sm ${statusColor[post.status]}`}>
-                        {post.status}
-                      </Badge>
                     </div>
-                    {post.isFeatured && (
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-amber-100 text-amber-800 text-xs shadow-sm">Featured</Badge>
-                      </div>
-                    )}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Description</Label>
+                      <Textarea
+                        value={meta.gallery[i]?.description ?? ""}
+                        onChange={(e) => updateGallery(i, "description", e.target.value)}
+                        placeholder="Image description..."
+                        rows={2}
+                        className="text-sm resize-y"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Category</Label>
+                      <Input
+                        value={meta.gallery[i]?.category ?? ""}
+                        onChange={(e) => updateGallery(i, "category", e.target.value)}
+                        placeholder="e.g. Procession, Celebration..."
+                        className="h-8 text-sm"
+                      />
+                    </div>
                   </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-card-foreground line-clamp-1">{post.title}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{post.body}</p>
-                    <p className="mt-2 text-[10px] text-muted-foreground/60">
-                      {post.createdAt ? format(parseISO(post.createdAt), "MMM d, yyyy") : "—"}
-                    </p>
-
-                    {/* Actions */}
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewPost(post)} title="Preview">
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(post)} title="Edit">
-                        <Edit3 className="h-3.5 w-3.5" />
-                      </Button>
-                      {post.status === "draft" && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => handlePublish(post)} title="Publish">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {post.status === "published" && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleArchive(post)} title="Archive">
-                          <Archive className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-auto" onClick={() => setDeleteTarget(post)} title="Delete">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <div className="h-8" />
         </div>
       </main>
 
-      {/* Edit / Create Dialog */}
-      <CMSEditDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        editingPost={editingPost}
-        form={form}
-        setForm={setForm}
-        showTypeChooser={false}
-        onSelectPostType={() => {}}
-        onSave={handleSave}
+      {/* ── Media Picker Dialog ───────────────────────────────────── */}
+      <MediaPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        accept="image"
+        title="Select Image"
+        currentValue={pickerTarget >= 0 ? images[pickerTarget] : undefined}
+        uploadCategory="arts-culture"
+        uploadLabel="pagoda"
+        onSelect={(url) => {
+          if (pickerTarget >= 0) setImage(pickerTarget, url)
+          setPickerOpen(false)
+        }}
       />
 
-      {/* Preview Dialog */}
-      <CMSPreviewDialog
-        post={previewPost}
-        onClose={() => setPreviewPost(null)}
-      />
-
-      {/* Save Confirmation */}
+      {/* ── Save Confirmation ─────────────────────────────────────── */}
       <AlertDialog open={saveConfirmOpen} onOpenChange={setSaveConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save this post?</AlertDialogTitle>
+            <AlertDialogTitle>Save pagoda content?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will {editingPost ? "update" : "create"} the pagoda festival post.
+              This will {pagodaPost ? "update" : "publish"} the Pagoda sa Bocaue page with your changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={executeSave}>Save</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
-            <AlertDialogDescription>
-              &ldquo;{deleteTarget?.title}&rdquo; will be permanently deleted. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

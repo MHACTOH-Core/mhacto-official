@@ -53,6 +53,9 @@ import {
   Mail,
   Eye,
   EyeOff,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
 import { format, parseISO } from "date-fns"
 
@@ -84,6 +87,10 @@ export default function AccountsPage() {
     archiveUser,
     restoreUser,
     refreshUsers,
+    archiveRequests,
+    refreshArchiveRequests,
+    approveArchiveRequest,
+    denyArchiveRequest,
   } = useAdmin()
 
   const [search, setSearch] = useState("")
@@ -250,8 +257,16 @@ export default function AccountsPage() {
 
   const confirmArchive = async () => {
     if (archiveTarget) {
-      await archiveUser(archiveTarget.user_id)
-      toast({ title: "Account deactivated", description: `${archiveTarget.full_name}'s account has been deactivated.` })
+      const result = await archiveUser(archiveTarget.user_id)
+      if (result.requiresApproval) {
+        toast({
+          title: "Approval Requested",
+          description: `A request to archive ${archiveTarget.full_name || archiveTarget.email} has been sent to Super Admins for review.`,
+        })
+        refreshArchiveRequests()
+      } else if (result.success) {
+        toast({ title: "Account deactivated", description: `${archiveTarget.full_name}'s account has been deactivated.` })
+      }
       setArchiveTarget(null)
     }
   }
@@ -345,6 +360,65 @@ export default function AccountsPage() {
             })}
           </div>
 
+          {/* Pending Archive Requests (super_admin only) */}
+          {currentUser.role === "super_admin" && archiveRequests.length > 0 && (
+            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <h3 className="font-semibold text-card-foreground">
+                    Pending Archive Requests ({archiveRequests.length})
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {archiveRequests.map((req) => (
+                    <div
+                      key={req.request_id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-card-foreground">
+                          Archive <span className="text-orange-600 dark:text-orange-400">{req.target_name}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Requested by {req.requester_name} &middot;{" "}
+                          {req.created_at ? format(parseISO(req.created_at), "MMM d, yyyy h:mm a") : "N/A"}
+                        </p>
+                        {req.reason && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">&ldquo;{req.reason}&rdquo;</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                          onClick={async () => {
+                            const ok = await approveArchiveRequest(req.request_id)
+                            if (ok) toast({ title: "Request approved", description: `${req.target_name} has been archived.` })
+                          }}
+                        >
+                          <CheckCircle2 className="h-4 w-4" /> Approve
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                          onClick={async () => {
+                            const ok = await denyArchiveRequest(req.request_id)
+                            if (ok) toast({ title: "Request denied", description: `Archive request for ${req.target_name} was denied.` })
+                          }}
+                        >
+                          <XCircle className="h-4 w-4" /> Deny
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Users list */}
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -366,7 +440,9 @@ export default function AccountsPage() {
                 const canArchive =
                   !isMainSuperAdmin &&
                   !isCurrentUser &&
-                  (currentUser.role === "super_admin" || (currentUser.role === "admin" && u.role !== "super_admin"))
+                  (currentUser.role === "super_admin" || currentUser.role === "admin")
+                const needsApproval =
+                  currentUser.role !== "super_admin" && u.role === "super_admin"
 
                 return (
                   <Card key={u.user_id} className={`border-border transition-colors ${u.status === "archived" ? "opacity-60" : ""}`}>
@@ -425,11 +501,11 @@ export default function AccountsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-yellow-600 dark:text-yellow-400"
+                            className={`h-8 w-8 ${needsApproval ? "text-orange-600 dark:text-orange-400" : "text-yellow-600 dark:text-yellow-400"}`}
                             onClick={() => setArchiveTarget(u)}
-                            title="Archive"
+                            title={needsApproval ? "Request Archive Approval" : "Archive"}
                           >
-                            <Archive className="h-4 w-4" />
+                            {needsApproval ? <Clock className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                           </Button>
                         )}
                         {u.status === "archived" && currentUser.role === "super_admin" && (
@@ -543,16 +619,31 @@ export default function AccountsPage() {
         <AlertDialog open={!!archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Archive Account</AlertDialogTitle>
+              <AlertDialogTitle>
+                {archiveTarget?.role === "super_admin" && currentUser.role !== "super_admin"
+                  ? "Request Archive Approval"
+                  : "Archive Account"}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to archive <strong>{archiveTarget?.full_name || archiveTarget?.email}</strong>?
-                They will no longer be able to log in. This can be reversed by a Super Admin.
+                {archiveTarget?.role === "super_admin" && currentUser.role !== "super_admin" ? (
+                  <>
+                    <strong>{archiveTarget?.full_name || archiveTarget?.email}</strong> is a Super Admin.
+                    Your request will be sent to a Super Admin for approval.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to archive <strong>{archiveTarget?.full_name || archiveTarget?.email}</strong>?
+                    They will no longer be able to log in. This can be reversed by a Super Admin.
+                  </>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={confirmArchive} className="bg-yellow-600 hover:bg-yellow-700">
-                Archive
+                {archiveTarget?.role === "super_admin" && currentUser.role !== "super_admin"
+                  ? "Submit Request"
+                  : "Archive"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

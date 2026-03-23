@@ -34,7 +34,11 @@ import {
   apiUpdateUser,
   apiArchiveUser,
   apiRestoreUser,
+  apiFetchArchiveRequests,
+  apiApproveArchiveRequest,
+  apiDenyArchiveRequest,
 } from "@/lib/api"
+import type { ArchiveRequest } from "@/lib/api"
 import { useAuth } from "./auth-provider"
 
 // ─── Types ─────────────────────────────────────────────────────────
@@ -64,9 +68,15 @@ export interface CMSDataContextValue {
   users: AdminUser[]
   createUser: (data: { fullName: string; email: string; password: string; role: string }) => Promise<boolean>
   updateUser: (id: number, data: Record<string, unknown>) => Promise<boolean>
-  archiveUser: (id: number) => Promise<boolean>
+  archiveUser: (id: number) => Promise<{ success: boolean; requiresApproval?: boolean }>
   restoreUser: (id: number) => Promise<boolean>
   refreshUsers: () => Promise<void>
+
+  // Archive requests (approval workflow)
+  archiveRequests: ArchiveRequest[]
+  refreshArchiveRequests: () => Promise<void>
+  approveArchiveRequest: (requestId: number) => Promise<boolean>
+  denyArchiveRequest: (requestId: number) => Promise<boolean>
 
   // Loading / refresh
   loading: boolean
@@ -102,7 +112,7 @@ function saveJson<T>(key: string, value: T) {
 // ─── Provider ──────────────────────────────────────────────────────
 
 export function CMSDataProvider({ children }: { children: ReactNode }) {
-  const { isLoggedIn, isHydrated, adminEmail } = useAuth()
+  const { isLoggedIn, isHydrated, adminEmail, currentUser } = useAuth()
 
   const [posts, setPosts] = useState<CMSPost[]>([])
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
@@ -367,15 +377,19 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   )
 
   const archiveUserFn = useCallback(
-    async (id: number): Promise<boolean> => {
+    async (id: number): Promise<{ success: boolean; requiresApproval?: boolean }> => {
       try {
-        await apiArchiveUser(id)
+        const res = await apiArchiveUser(id)
+        if (res.requiresApproval) {
+          logActivityFn("update_settings", `Submitted archive request for user #${id}`)
+          return { success: true, requiresApproval: true }
+        }
         await refreshUsersFn()
         logActivityFn("update_settings", `Archived user account #${id}`)
-        return true
+        return { success: true }
       } catch (err) {
         console.error("archiveUser error:", err)
-        return false
+        return { success: false }
       }
     },
     [refreshUsersFn, logActivityFn],
@@ -395,6 +409,56 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
     },
     [refreshUsersFn, logActivityFn],
   )
+
+  // ── Archive requests ──
+  const [archiveRequests, setArchiveRequests] = useState<ArchiveRequest[]>([])
+
+  const refreshArchiveRequestsFn = useCallback(async () => {
+    try {
+      const reqs = await apiFetchArchiveRequests("pending")
+      setArchiveRequests(reqs)
+    } catch (err) {
+      console.error("refreshArchiveRequests failed:", err)
+    }
+  }, [])
+
+  const approveArchiveRequestFn = useCallback(
+    async (requestId: number): Promise<boolean> => {
+      try {
+        await apiApproveArchiveRequest(requestId)
+        await refreshArchiveRequestsFn()
+        await refreshUsersFn()
+        logActivityFn("update_settings", `Approved archive request #${requestId}`)
+        return true
+      } catch (err) {
+        console.error("approveArchiveRequest error:", err)
+        return false
+      }
+    },
+    [refreshArchiveRequestsFn, refreshUsersFn, logActivityFn],
+  )
+
+  const denyArchiveRequestFn = useCallback(
+    async (requestId: number): Promise<boolean> => {
+      try {
+        await apiDenyArchiveRequest(requestId)
+        await refreshArchiveRequestsFn()
+        logActivityFn("update_settings", `Denied archive request #${requestId}`)
+        return true
+      } catch (err) {
+        console.error("denyArchiveRequest error:", err)
+        return false
+      }
+    },
+    [refreshArchiveRequestsFn, logActivityFn],
+  )
+
+  // Fetch archive requests on mount (for super admins)
+  useEffect(() => {
+    if (currentUser?.role === "super_admin") {
+      refreshArchiveRequestsFn()
+    }
+  }, [currentUser?.role, refreshArchiveRequestsFn])
 
   return (
     <CMSDataContext.Provider
@@ -417,6 +481,10 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         archiveUser: archiveUserFn,
         restoreUser: restoreUserFn,
         refreshUsers: refreshUsersFn,
+        archiveRequests,
+        refreshArchiveRequests: refreshArchiveRequestsFn,
+        approveArchiveRequest: approveArchiveRequestFn,
+        denyArchiveRequest: denyArchiveRequestFn,
         loading: isLoadingBackendData,
         refreshPosts,
         refreshInquiries,

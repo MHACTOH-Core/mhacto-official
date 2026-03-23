@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion, useScroll, useTransform, useInView, type Variants } from "framer-motion"
+import { motion, useScroll, useTransform, type Variants } from "framer-motion"
 import { apiFetchByLabel } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { asset, resolveMediaUrl } from "@/lib/utils"
@@ -197,25 +197,6 @@ function WaveDivider({ colorTop, colorBottom }: { colorTop: string; colorBottom:
       </svg>
     </div>
   )
-}
-
-/* ── Animated Counter ─────────────────────────────────────────────── */
-function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true })
-  const [display, setDisplay] = useState(0)
-  useEffect(() => {
-    if (!isInView) return
-    let start = 0
-    const step = Math.max(1, Math.floor(value / 40))
-    const timer = setInterval(() => {
-      start += step
-      if (start >= value) { setDisplay(value); clearInterval(timer) }
-      else setDisplay(start)
-    }, 30)
-    return () => clearInterval(timer)
-  }, [isInView, value])
-  return <span ref={ref}>{display.toLocaleString()}{suffix}</span>
 }
 
 export default function PagodaPage() {
@@ -499,36 +480,6 @@ export default function PagodaPage() {
             <path d="M0,50 C360,15 720,60 1080,35 C1440,60 1800,15 2160,50 C2520,60 2700,25 2880,50 L2880,80 L0,80Z" fill={BG} />
           </svg>
         </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════
-          STATS BAR — Key festival facts with animated counters
-      ═══════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 -mt-1 pb-6">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
-          className="mx-auto max-w-5xl px-6"
-        >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 rounded-2xl border px-6 py-6 sm:px-10 sm:py-8 backdrop-blur-sm"
-            style={{ backgroundColor: `${BG_CARD}ee`, borderColor: `${GOLD}15` }}>
-            {[
-              { value: 400, suffix: "+", label: "Years of Tradition" },
-              { value: 50, suffix: "+", label: "Decorated Boats" },
-              { value: 100, suffix: "K+", label: "Devotees Yearly" },
-              { value: 1, suffix: "", label: "Holy Cross of Wawa" },
-            ].map((stat, i) => (
-              <motion.div key={i} variants={staggerChild} className="text-center">
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-black" style={{ color: GOLD, fontFamily: SERIF }}>
-                  <AnimatedNumber value={stat.value} suffix={stat.suffix} />
-                </p>
-                <p className="text-[10px] sm:text-xs mt-1 uppercase tracking-[0.15em]" style={{ color: TEXT_DIM }}>{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════

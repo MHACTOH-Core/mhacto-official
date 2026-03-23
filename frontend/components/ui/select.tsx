@@ -9,13 +9,6 @@
   type SelectProps = React.ComponentProps<typeof SelectPrimitive.Root> & { modal?: boolean }
 
   function Select({ children, ...props }: SelectProps) {
-    /* Prevent Radix from hiding the scrollbar and adding padding-right to body */
-    React.useEffect(() => {
-      const style = document.createElement('style')
-      style.textContent = 'body[data-scroll-locked] { overflow: auto !important; padding-right: 0px !important; margin-right: 0px !important; }'
-      document.head.appendChild(style)
-      return () => { document.head.removeChild(style) }
-    }, [])
     return <SelectPrimitive.Root {...props}>{children}</SelectPrimitive.Root>
   }
 
