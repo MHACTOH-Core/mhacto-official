@@ -162,6 +162,10 @@ export interface AdminSettings {
   enableInquiryNotifications: boolean
   enableAnalytics: boolean
   maintenanceMode: boolean
+  loginBackgroundImage: string
+  navbarLogoUrl: string
+  navbarSecondaryLogoUrl: string
+  navbarTitle: string
 }
 
 // ─── Label helpers ─────────────────────────────────────────────────
@@ -213,10 +217,24 @@ export function getLabelsByCategory(category: ContentCategory): [ContentLabel, {
   ) as [ContentLabel, { label: string; color: string; category: ContentCategory }][]
 }
 
-/** Get labels for place-type posts (everything except news and events) */
+/** Get labels for place-type posts (everything except news, events, and pagoda) */
 export function getPlaceLabels(): [ContentLabel, { label: string; color: string; category: ContentCategory }][] {
   return Object.entries(contentLabels).filter(
-    ([, v]) => v.category !== "news" && v.category !== "events"
+    ([k, v]) => v.category !== "news" && v.category !== "events" && k !== "pagoda"
+  ) as [ContentLabel, { label: string; color: string; category: ContentCategory }][]
+}
+
+/** Labels available in the CMS filter dropdown (excludes pagoda — it has its own tab) */
+export function getCmsFilterLabels(): [ContentLabel, { label: string; color: string; category: ContentCategory }][] {
+  return Object.entries(contentLabels).filter(
+    ([k]) => k !== "pagoda"
+  ) as [ContentLabel, { label: string; color: string; category: ContentCategory }][]
+}
+
+/** Labels for a specific category, excluding pagoda */
+export function getCmsLabelsByCategory(category: ContentCategory): [ContentLabel, { label: string; color: string; category: ContentCategory }][] {
+  return Object.entries(contentLabels).filter(
+    ([k, v]) => v.category === category && k !== "pagoda"
   ) as [ContentLabel, { label: string; color: string; category: ContentCategory }][]
 }
 
@@ -561,4 +579,8 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   enableInquiryNotifications: true,
   enableAnalytics: true,
   maintenanceMode: false,
+  loginBackgroundImage: "",
+  navbarLogoUrl: "",
+  navbarSecondaryLogoUrl: "",
+  navbarTitle: "",
 }

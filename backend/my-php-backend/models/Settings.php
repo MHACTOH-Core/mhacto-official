@@ -160,6 +160,11 @@ class Settings
             // Social
             'facebookUrl'                => ['group' => 'social',  'key' => 'facebook_url',       'type' => 'string'],
             'instagramUrl'               => ['group' => 'social',  'key' => 'instagram_url',      'type' => 'string'],
+            // Branding
+            'loginBackgroundImage'       => ['group' => 'general', 'key' => 'login_bg_image',     'type' => 'string'],
+            'navbarLogoUrl'              => ['group' => 'general', 'key' => 'navbar_logo_url',    'type' => 'string'],
+            'navbarSecondaryLogoUrl'     => ['group' => 'general', 'key' => 'navbar_secondary_logo_url', 'type' => 'string'],
+            'navbarTitle'                => ['group' => 'general', 'key' => 'navbar_title',       'type' => 'string'],
             // Hero
             'heroSubtitle'               => ['group' => 'hero', 'key' => 'hero_subtitle',     'type' => 'string'],
             'heroTitle'                  => ['group' => 'hero', 'key' => 'hero_title',        'type' => 'string'],
@@ -189,6 +194,11 @@ class Settings
             // Social
             'facebookUrl'                => $map['facebook_url'] ?? '',
             'instagramUrl'               => $map['instagram_url'] ?? '',
+            // Branding
+            'loginBackgroundImage'       => $map['login_bg_image'] ?? '',
+            'navbarLogoUrl'              => $map['navbar_logo_url'] ?? '',
+            'navbarSecondaryLogoUrl'     => $map['navbar_secondary_logo_url'] ?? '',
+            'navbarTitle'                => $map['navbar_title'] ?? '',
             // Hero
             'heroSubtitle'      => $map['hero_subtitle'] ?? '',
             'heroTitle'         => $map['hero_title'] ?? 'Explore The River',
@@ -231,6 +241,10 @@ class Settings
             'maintenanceMode'            => false,
             'facebookUrl'                => '',
             'instagramUrl'               => '',
+            'loginBackgroundImage'       => '',
+            'navbarLogoUrl'              => '',
+            'navbarSecondaryLogoUrl'     => '',
+            'navbarTitle'                => '',
         ], $this->heroDefaults());
     }
 

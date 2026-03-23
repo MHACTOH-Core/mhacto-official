@@ -7,7 +7,8 @@ import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   contentLabels,
   contentCategories,
-  getLabelsByCategory,
+  getCmsLabelsByCategory,
+  getCmsFilterLabels,
   type CMSPost,
   type ContentCategory,
   type ContentLabel,
@@ -94,6 +95,7 @@ export default function CMSPage() {
   // Memoized filtering
   const filtered = useMemo(() =>
     posts.filter((p) => {
+      if (p.label === "pagoda") return false
       if (filterCategory !== "all" && p.contentCategory !== filterCategory) return false
       if (filterLabel !== "all" && p.label !== filterLabel) return false
       if (filterStatus !== "all" && p.status !== filterStatus) return false
@@ -299,8 +301,8 @@ export default function CMSPage() {
                 <SelectContent>
                   <SelectItem value="all">All Labels</SelectItem>
                   {(filterCategory !== "all"
-                    ? getLabelsByCategory(filterCategory)
-                    : Object.entries(contentLabels)
+                    ? getCmsLabelsByCategory(filterCategory)
+                    : getCmsFilterLabels()
                   ).map(([key, { label }]) => (
                     <SelectItem key={key} value={key}>
                       {label}

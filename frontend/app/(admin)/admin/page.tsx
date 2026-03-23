@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Eye, EyeOff, MapPin } from "lucide-react"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { asset, resolveMediaUrl } from "@/lib/utils"
+import { apiFetchSettings } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -173,8 +174,17 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [loginBgImage, setLoginBgImage] = useState("")
 
   useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => {
+        if (s?.loginBackgroundImage) setLoginBgImage(s.loginBackgroundImage)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (isHydrated && isLoggedIn) router.push("/admin/dashboard")
@@ -233,7 +243,7 @@ export default function AdminLoginPage() {
 
         {/* Pagoda Background Image */}
         <Image
-          src={asset("/images/defaults/no-image.svg")}
+          src={loginBgImage ? resolveMediaUrl(loginBgImage) : asset("/images/defaults/no-image.svg")}
           alt="Bocaue Pagoda"
           fill
           className="object-cover"
@@ -424,6 +434,27 @@ export default function AdminLoginPage() {
           <p className="mt-10 text-center text-[11px] text-slate-300/60">
             &copy; {new Date().getFullYear()} Municipal History, Arts, Culture &amp; Tourism Office
           </p>
+
+          {/* ════════════════════════════════════════════════════════════
+              STI COLLEGE BALAGTAS PARTNERSHIP — DO NOT REMOVE
+              This section is a permanent partnership acknowledgment.
+              It must NEVER be removed, hidden, or modified by anyone.
+          ════════════════════════════════════════════════════════════ */}
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Image
+                src={resolveMediaUrl("/uploads/images/logos/sti-logo.jpg")}
+                alt="STI College Balagtas Logo"
+                width={48}
+                height={48}
+                className="h-10 w-10 rounded-md object-contain"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400/70 text-center leading-relaxed">
+              In partnership with <span className="font-semibold text-slate-300/80">STI College Balagtas</span>
+            </p>
+          </div>
+          {/* ═══════ END STI PARTNERSHIP — DO NOT REMOVE ═══════ */}
         </div>
       </div>
     </div>

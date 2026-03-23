@@ -145,7 +145,7 @@ export function FeaturedSpotlight() {
           alt={spotlightData.title}
           fill
           sizes="100vw"
-          className="object-cover transition-transform duration-[8000ms] ease-out will-change-transform group-hover:scale-110"
+          className="object-cover transition-transform duration-8000 ease-out will-change-transform group-hover:scale-110"
           priority
         />
 

@@ -630,7 +630,7 @@ export function apiReorderMilestones(order: number[]) {
 
 /** Fetch published CMS posts with label 'timeline-of-events' (for admin milestone picker) */
 export function apiFetchTimelinePosts() {
-  return apiFetch<CMSPost[]>("/api/home/timeline-posts.php")
+  return apiFetch<CMSPost[]>("/api/home/timeline-posts")
 }
 
 // ─── Public content fetches ───────────────────────────────────────

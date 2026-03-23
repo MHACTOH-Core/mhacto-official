@@ -19,6 +19,7 @@ import {
   Menu,
   ImageIcon,
   Users,
+  Flame,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState } from "react"
@@ -34,6 +35,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; rol
   { href: "/admin/home-content", label: "Home Content", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/heroes", label: "Page Heroes", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/cms", label: "CMS", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/pagoda", label: "Pagoda Festival", icon: Flame, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/accounts", label: "Accounts", icon: Users, roles: ["super_admin", "admin"] },
   { href: "/admin/settings", label: "Settings", icon: Settings },

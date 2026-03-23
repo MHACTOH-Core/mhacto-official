@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Menu, ChevronDown, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset, resolveMediaUrl } from "@/lib/utils"
+import { apiFetchSettings } from "@/lib/api"
 
 import {
   Sheet,
@@ -106,11 +107,24 @@ export function Navbar() {
   const [expandedMobileItems, setExpandedMobileItems] = useState<string[]>([])
   const [activeDesktopDropdown, setActiveDesktopDropdown] = useState<string | null>(null)
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+  const [navbarLogoUrl, setNavbarLogoUrl] = useState("")
+  const [navbarSecondaryLogoUrl, setNavbarSecondaryLogoUrl] = useState("")
+  const [navbarTitle, setNavbarTitle] = useState("")
   const dropdownCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollRafIdRef = useRef<number | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const isHomePage = pathname === "/"
+
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => {
+        if (s?.navbarLogoUrl) setNavbarLogoUrl(s.navbarLogoUrl)
+        if (s?.navbarSecondaryLogoUrl) setNavbarSecondaryLogoUrl(s.navbarSecondaryLogoUrl)
+        if (s?.navbarTitle) setNavbarTitle(s.navbarTitle)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -409,7 +423,7 @@ export function Navbar() {
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
-            src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
+            src={resolveMediaUrl(navbarLogoUrl || "/uploads/images/logos/MHACTO_LOGO.png")}
             alt="MHACTO Bocaue Logo"
             width={160}
             height={42}
@@ -443,14 +457,14 @@ export function Navbar() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link href="/" className="hidden md:flex shrink-0 items-center gap-1.5">
             <Image
-              src={resolveMediaUrl("/uploads/images/logos/Municipality_of_bocaue.png")}
+              src={resolveMediaUrl(navbarSecondaryLogoUrl || "/uploads/images/logos/Municipality_of_bocaue.png")}
               alt="Municipality of Bocaue Logo"
               width={52}
               height={52}
               className="h-10 w-10 lg:h-11 lg:w-11 object-contain"
             />
             <span className="hidden xl:block text-xs font-semibold leading-tight text-foreground">
-              Municipality<br />of Bocaue
+              {navbarTitle ? navbarTitle : <>Municipality<br />of Bocaue</>}
             </span>
           </Link>
 
@@ -471,7 +485,7 @@ export function Navbar() {
               {/* MHACTO logo in mobile menu */}
               <div className="mt-4 mb-4 flex justify-center">
                 <Image
-                  src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")}
+                  src={resolveMediaUrl(navbarLogoUrl || "/uploads/images/logos/MHACTO_LOGO.png")}
                   alt="MHACTO Bocaue Logo"
                   width={140}
                   height={36}

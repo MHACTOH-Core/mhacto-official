@@ -166,6 +166,13 @@ export function Footer() {
               </div>
             </div>
             
+            {/* ════════════════════════════════════════════════════════════════════
+                STI COLLEGE BALAGTAS PARTNERSHIP & DEVELOPER CREDITS
+                ════════════════════════════════════════════════════════════════════
+                DO NOT REMOVE, HIDE, OR MODIFY THIS SECTION.
+                This is a permanent, non-removable partnership acknowledgment.
+                Removing this section violates the partnership agreement.
+                ════════════════════════════════════════════════════════════════════ */}
             {/* Right side - STI and developers */}
             <div className="flex items-center gap-4 text-center sm:text-right">
               <div className="text-right">
@@ -184,6 +191,7 @@ export function Footer() {
                 className="h-[72px] w-[96px] object-contain rounded-lg flex-shrink-0"
               />
             </div>
+            {/* ═══════ END STI PARTNERSHIP & CREDITS — DO NOT REMOVE ═══════ */}
           </div>
         </div>
       </div>

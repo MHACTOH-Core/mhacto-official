@@ -67,6 +67,7 @@ export const LABEL_PLACE_TYPES: Record<string, string[]> = {
   "hospitals": ["Hospital", "Health Center", "Clinic", "Birthing Center"],
   "barangay": [],
   "local-business": ["Retail", "Food & Beverage", "Services", "Manufacturing", "Agriculture"],
+  "pagoda": ["Festival Grounds", "Arena & Events Venue"],
 }
 
 export type DetailField = "location" | "hours" | "contact" | "established" | "category" | "story" | "highlights"
@@ -87,6 +88,7 @@ export const LABEL_VISIBLE_FIELDS: Record<string, DetailField[]> = {
   "hospitals":           ["location", "hours", "contact", "category", "story"],
   "barangay":            ["location", "contact", "established", "story"],
   "local-business":      ["location", "hours", "contact", "category", "story"],
+  "pagoda":              ["location", "established", "story", "highlights"],
 }
 
 export const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { label: string; placeholder: string }>>> = {
@@ -124,5 +126,10 @@ export const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { la
   },
   "local-business": {
     story: { label: "About / Description", placeholder: "Describe the business, what it offers..." },
+  },
+  "pagoda": {
+    established: { label: "Year Started", placeholder: "e.g. 1787" },
+    story: { label: "Festival Story", placeholder: "Write the story behind the Pagoda Festival..." },
+    highlights: { label: "Festival Highlights", placeholder: "Grand fluvial parade\nFireworks display\nCross-river procession" },
   },
 }

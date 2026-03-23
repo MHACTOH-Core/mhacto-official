@@ -185,10 +185,13 @@ export default function HomeContentPage() {
     if (type === "milestone") {
       const mile = item as Milestone
       const linkedPost = mile.contentId ? cmsTimelinePosts.find(p => p.id === mile.contentId) : null
+      const yearFromMeta = linkedPost?.established || ""
+      const yearFromTitle = linkedPost?.title?.match(/\b(\d{4})\b/)?.[1] || ""
       setFormData({
         ...mile,
+        year: mile.year || yearFromMeta || yearFromTitle,
         _previewTitle: linkedPost?.title || mile.title || "",
-        _previewYear: linkedPost?.established || mile.year || "",
+        _previewYear: mile.year || yearFromMeta || yearFromTitle,
         _previewDescription: linkedPost?.body?.substring(0, 300) || mile.description || "",
       })
     } else {
@@ -202,7 +205,7 @@ export default function HomeContentPage() {
       case "spotlight":
         return { contentId: "", sortOrder: spotlights.length + 1, isActive: false }
       case "milestone":
-        return { contentId: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
+        return { contentId: "", year: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
       default:
         return {}
     }
@@ -783,11 +786,16 @@ export default function HomeContentPage() {
                     value={(formData.contentId as string) || ""}
                     onValueChange={(v) => {
                       const selectedPost = cmsTimelinePosts.find(p => p.id === v)
+                      // Try to extract year from established meta, or parse from title (e.g. "Founding - 1580")
+                      const yearFromMeta = selectedPost?.established || ""
+                      const yearFromTitle = selectedPost?.title?.match(/\b(\d{4})\b/)?.[1] || ""
+                      const autoYear = yearFromMeta || yearFromTitle
                       setFormData({
                         ...formData,
                         contentId: v,
+                        year: autoYear,
                         _previewTitle: selectedPost?.title || "",
-                        _previewYear: selectedPost?.established || "",
+                        _previewYear: autoYear,
                         _previewDescription: selectedPost?.body?.substring(0, 300) || "",
                       })
                     }}
@@ -836,6 +844,20 @@ export default function HomeContentPage() {
                     </CardContent>
                   </Card>
                 )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="year">Year</Label>
+                  <Input
+                    id="year"
+                    type="number"
+                    placeholder="e.g. 1580"
+                    value={(formData.year as string) || ""}
+                    onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The year shown on the timeline badge. Auto-filled from CMS when available.
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

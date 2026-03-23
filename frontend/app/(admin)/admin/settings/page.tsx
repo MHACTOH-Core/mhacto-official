@@ -14,10 +14,11 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
-import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X } from "lucide-react"
+import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X, Palette, Upload } from "lucide-react"
 import { ROLE_LABELS } from "@/lib/data/admin-data"
 import { API_BASE } from "@/lib/api"
 import { ProfilePictureCropDialog } from "@/components/ui/profile-picture-crop"
+import { MediaPicker } from "@/components/ui/media-picker"
 import { usePasswordForm, useProfilePicture } from "@/hooks/use-settings-forms"
 import {
   AlertDialog,
@@ -86,6 +87,9 @@ export default function SettingsPage() {
     onSuccess: () => toast({ title: "Profile picture updated", description: "Your profile picture has been changed." }),
     onError: () => toast({ title: "Something went wrong", variant: "destructive" }),
   })
+
+  // Branding media picker state
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<"loginBg" | "navLogo" | "navSecondaryLogo" | null>(null)
 
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
@@ -421,6 +425,151 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Branding — super_admin only */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/40">
+                  <Palette className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Branding</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Customize logos, images, and branding elements
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Login Background Image */}
+              <div className="space-y-2">
+                <Label>Login Background Image</Label>
+                <p className="text-xs text-muted-foreground">Image shown on the left panel of the admin login page.</p>
+                <div className="flex items-center gap-3">
+                  {form.loginBackgroundImage ? (
+                    <div className="relative h-20 w-32 rounded-lg overflow-hidden border border-border bg-muted">
+                      <Image
+                        src={resolveMediaUrl(form.loginBackgroundImage)}
+                        alt="Login background"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-20 w-32 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-muted-foreground/40">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <Button variant="outline" size="sm" onClick={() => setMediaPickerTarget("loginBg")}>
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      {form.loginBackgroundImage ? "Change" : "Upload"}
+                    </Button>
+                    {form.loginBackgroundImage && (
+                      <Button variant="ghost" size="sm" className="text-destructive h-7 px-2" onClick={() => setForm({ ...form, loginBackgroundImage: "" })}>
+                        <X className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Navbar Logo (Left - MHACTO) */}
+              <div className="space-y-2">
+                <Label>Navbar Logo (Left — MHACTO)</Label>
+                <p className="text-xs text-muted-foreground">Primary logo shown on the left side of the navbar.</p>
+                <div className="flex items-center gap-3">
+                  {form.navbarLogoUrl ? (
+                    <div className="relative h-12 w-32 rounded-lg overflow-hidden border border-border bg-muted p-1">
+                      <Image
+                        src={resolveMediaUrl(form.navbarLogoUrl)}
+                        alt="Navbar logo"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-32 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-muted-foreground/40">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <Button variant="outline" size="sm" onClick={() => setMediaPickerTarget("navLogo")}>
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      {form.navbarLogoUrl ? "Change" : "Upload"}
+                    </Button>
+                    {form.navbarLogoUrl && (
+                      <Button variant="ghost" size="sm" className="text-destructive h-7 px-2" onClick={() => setForm({ ...form, navbarLogoUrl: "" })}>
+                        <X className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Navbar Logo (Right - Bocaue) */}
+              <div className="space-y-2">
+                <Label>Navbar Logo (Right — Bocaue)</Label>
+                <p className="text-xs text-muted-foreground">Secondary logo shown on the right side of the navbar.</p>
+                <div className="flex items-center gap-3">
+                  {form.navbarSecondaryLogoUrl ? (
+                    <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-border bg-muted p-1">
+                      <Image
+                        src={resolveMediaUrl(form.navbarSecondaryLogoUrl)}
+                        alt="Secondary navbar logo"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-muted-foreground/40">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <Button variant="outline" size="sm" onClick={() => setMediaPickerTarget("navSecondaryLogo")}>
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      {form.navbarSecondaryLogoUrl ? "Change" : "Upload"}
+                    </Button>
+                    {form.navbarSecondaryLogoUrl && (
+                      <Button variant="ghost" size="sm" className="text-destructive h-7 px-2" onClick={() => setForm({ ...form, navbarSecondaryLogoUrl: "" })}>
+                        <X className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Navbar Title Text */}
+              <div className="space-y-2">
+                <Label>Navbar Title Text</Label>
+                <Input
+                  value={form.navbarTitle}
+                  onChange={(e) => setForm({ ...form, navbarTitle: e.target.value })}
+                  placeholder="Municipality of Bocaue"
+                />
+                <p className="text-xs text-muted-foreground">Text displayed next to the secondary (right) navbar logo.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Media Picker for branding uploads */}
+          <MediaPicker
+            open={!!mediaPickerTarget}
+            onOpenChange={(open) => { if (!open) setMediaPickerTarget(null) }}
+            accept="image"
+            onSelect={(url) => {
+              if (mediaPickerTarget === "loginBg") setForm({ ...form, loginBackgroundImage: url })
+              else if (mediaPickerTarget === "navLogo") setForm({ ...form, navbarLogoUrl: url })
+              else if (mediaPickerTarget === "navSecondaryLogo") setForm({ ...form, navbarSecondaryLogoUrl: url })
+              setMediaPickerTarget(null)
+            }}
+          />
 
           {/* Notifications — super_admin only */}
           <Card>

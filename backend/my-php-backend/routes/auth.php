@@ -45,29 +45,17 @@ function _auth_login(string $method): void
         $row = $user->findByEmail($data->email);
 
         if (!$row) {
-            Response::json([
-                'success'    => false,
-                'error_code' => 'user_not_found',
-                'message'    => 'No account found with this email.',
-            ], 401);
+            Response::error('No account found with this email.', 401);
             return;
         }
 
         if ($row['status'] !== 'active') {
-            Response::json([
-                'success'    => false,
-                'error_code' => 'account_disabled',
-                'message'    => 'This account has been deactivated.',
-            ], 401);
+            Response::error('This account has been deactivated.', 401);
             return;
         }
 
         if (!password_verify($data->password, $row['password_hash'])) {
-            Response::json([
-                'success'    => false,
-                'error_code' => 'wrong_password',
-                'message'    => 'Incorrect password.',
-            ], 401);
+            Response::error('Incorrect password.', 401);
             return;
         }
 
