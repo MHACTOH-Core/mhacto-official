@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset, resolveMediaUrl } from "@/lib/utils"
@@ -125,7 +124,6 @@ export function HeroSection() {
           loop
           muted
           playsInline
-          poster={asset("/images/defaults/no-image.svg")}
         />
 
         {/* Dynamic dark overlay — intensifies as user scrolls */}
