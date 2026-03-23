@@ -9,10 +9,6 @@ const DestinationsCarouselSection = dynamic(
   () => import("@/components/sections/destinations-carousel-section").then((m) => m.DestinationsCarouselSection),
   { loading: () => <SectionSkeleton /> }
 )
-const CulinarySection = dynamic(
-  () => import("@/components/sections/culinary-section").then((m) => m.CulinarySection),
-  { loading: () => <SectionSkeleton /> }
-)
 const CulturalPracticesSection = dynamic(
   () => import("@/components/sections/cultural-practices-section").then((m) => m.CulturalPracticesSection),
   { loading: () => <SectionSkeleton /> }
@@ -78,9 +74,7 @@ export default function Home() {
       {/* 5. Tourist Wonders Carousel (destinations) */}
       <DestinationsCarouselSection />
 
-      {/* 6. Culinary Wonders */}
-      <CulinarySection />
-      {/* 7. Restaurant Wonders */}
+      {/* 6. Restaurant Wonders */}
       <RestaurantSection />
       {/* 7b. Featured Delicacy Slider */}
       <FeaturedDelicacySlider />

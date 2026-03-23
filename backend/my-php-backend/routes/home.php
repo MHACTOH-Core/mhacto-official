@@ -62,7 +62,11 @@ function handle_home(string $method, ?string $sub): void
         }
     } catch (Exception $e) {
         error_log("home/{$sub} error: " . $e->getMessage());
-        Response::error('An internal error occurred.', 500);
+        $isDev = ($_ENV['APP_ENV'] ?? 'development') !== 'production';
+        $msg = $isDev
+            ? "home/{$sub}: " . $e->getMessage()
+            : 'An internal error occurred.';
+        Response::error($msg, 500);
     }
 }
 

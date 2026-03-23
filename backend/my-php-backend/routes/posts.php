@@ -131,6 +131,20 @@ function _posts_create(Post $post): void
         Response::error('Title is required.', 400);
     }
 
+    // Singleton labels — only one post allowed per label
+    $singletonLabels = ['pagoda'];
+    $label = $data['label'] ?? '';
+    if (in_array($label, $singletonLabels, true)) {
+        $db = $GLOBALS['db'];
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM content c JOIN content_labels cl ON c.label_id = cl.id WHERE cl.label_key = :lk'
+        );
+        $stmt->execute([':lk' => $label]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            Response::error("Only one \"{$label}\" entry is allowed. Please update the existing one instead.", 409);
+        }
+    }
+
     $mapped    = _posts_mapFrontendToDb($data);
     $contentId = $post->create($mapped);
     if (!$contentId) {
