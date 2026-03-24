@@ -282,8 +282,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           </div>
 
           {/* Footer hint */}
-          <div className="flex items-center gap-4 border-t border-border px-4 py-2.5 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">↑↓</kbd> Navigate</span>
+<div className="hidden md:flex items-center gap-4 border-t border-border px-4 py-2.5 text-[10px] text-muted-foreground">            <span className="flex items-center gap-1"><kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">↑↓</kbd> Navigate</span>
             <span className="flex items-center gap-1"><kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">↵</kbd> Open</span>
             <span className="flex items-center gap-1"><kbd className="rounded border border-border bg-muted px-1 py-0.5 text-[10px]">Esc</kbd> Close</span>
           </div>

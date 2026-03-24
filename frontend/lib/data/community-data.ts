@@ -55,15 +55,6 @@ export interface Hospital {
   emergency?: boolean
 }
 
-export interface MunicipalEvent {
-  id: string
-  title: string
-  date: string
-  description: string
-  location: string
-  category: string
-}
-
 export interface Barangay {
   id: string
   name: string

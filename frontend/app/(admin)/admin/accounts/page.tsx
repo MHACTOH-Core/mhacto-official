@@ -226,22 +226,22 @@ export default function AccountsPage() {
         if (form.password) {
           updateData.password = form.password
         }
-        const success = await updateUser(editingUser.user_id, updateData)
-        if (!success) {
-          setFormError("Failed to update. Email may already be in use.")
+        const result = await updateUser(editingUser.user_id, updateData)
+        if (!result.success) {
+          toast({ title: "Update failed", description: result.error ?? "Email may already be in use.", variant: "destructive" })
           setSaving(false)
           return
         }
         toast({ title: "Account updated", description: `${form.fullName}'s account has been updated.` })
       } else {
-        const success = await createUser({
+        const result = await createUser({
           fullName: form.fullName,
           email: form.email,
           password: form.password,
           role: form.role,
         })
-        if (!success) {
-          setFormError("Failed to create. Email may already be in use.")
+        if (!result.success) {
+          toast({ title: "Create failed", description: result.error ?? "Email may already be in use.", variant: "destructive" })
           setSaving(false)
           return
         }

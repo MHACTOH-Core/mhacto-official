@@ -34,6 +34,7 @@ import {
 import {
   Inbox,
   Archive,
+  CircleCheck,
   Search,
   ArrowLeft,
   MailOpen,
@@ -55,10 +56,19 @@ import {
   X,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns"
 import { cn } from "@/lib/utils"
 import { apiReplyInquiry } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+type VisitDateFilter = "all" | "this_week" | "this_month" | "this_year" | "custom_range"
 
 type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
 
@@ -67,7 +77,7 @@ const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{
   { key: "unread",      label: "Unread",      icon: Mail },
   { key: "in_progress", label: "In Progress", icon: Loader2 },
   { key: "assigned",    label: "Assigned",    icon: UserCheck },
-  { key: "archived",    label: "Archived",    icon: Archive },
+  { key: "archived",    label: "Completed",   icon: CircleCheck },
   { key: "spam",        label: "Spam",        icon: ShieldAlert },
   { key: "trash",       label: "Trash",       icon: Trash2 },
 ]
@@ -90,6 +100,10 @@ export default function InquiriesPage() {
   const [replyText, setReplyText] = useState("")
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [showReplyBox, setShowReplyBox] = useState(false)
+  // Visit date filter
+  const [visitDateFilter, setVisitDateFilter] = useState<VisitDateFilter>("all")
+  const [customDateFrom, setCustomDateFrom] = useState("")
+  const [customDateTo, setCustomDateTo] = useState("")
 
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
@@ -149,10 +163,35 @@ export default function InquiriesPage() {
           i.message.toLowerCase().includes(q),
       )
     }
+    // Visit date filter
+    if (visitDateFilter !== "all") {
+      const now = new Date()
+      list = list.filter((i) => {
+        if (!i.dateOfVisit) return false
+        try {
+          const visit = parseISO(i.dateOfVisit)
+          if (isNaN(visit.getTime())) return false
+          switch (visitDateFilter) {
+            case "this_week":
+              return isWithinInterval(visit, { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) })
+            case "this_month":
+              return isWithinInterval(visit, { start: startOfMonth(now), end: endOfMonth(now) })
+            case "this_year":
+              return isWithinInterval(visit, { start: startOfYear(now), end: endOfYear(now) })
+            case "custom_range": {
+              if (!customDateFrom && !customDateTo) return true
+              const from = customDateFrom ? parseISO(customDateFrom) : new Date(0)
+              const to = customDateTo ? parseISO(customDateTo) : new Date(9999, 11, 31)
+              return isWithinInterval(visit, { start: from, end: to })
+            }
+          }
+        } catch { return false }
+      })
+    }
     return list.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-  }, [inquiries, activeTab, search])
+  }, [inquiries, activeTab, search, visitDateFilter, customDateFrom, customDateTo])
 
   const unreadCount = tabCounts.unread
 
@@ -178,7 +217,7 @@ export default function InquiriesPage() {
 
   const handleArchive = (inq: Inquiry) => {
     handleStatusChange(inq, "archived")
-    toast({ title: "Archived", description: `Inquiry from ${inq.name} has been archived.` })
+    toast({ title: "Completed", description: `Inquiry from ${inq.name} has been completed.` })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
@@ -207,7 +246,7 @@ export default function InquiriesPage() {
 
   const bulkArchive = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "archived" }))
-    toast({ title: "Bulk archived", description: `${selectedIds.size} inquiries archived.` })
+    toast({ title: "Bulk completed", description: `${selectedIds.size} inquiries completed.` })
     setSelectedIds(new Set())
   }
 
@@ -340,7 +379,7 @@ export default function InquiriesPage() {
     unread:      { icon: Mail,       title: "All caught up!",            desc: "No unread inquiries." },
     in_progress: { icon: Loader2,    title: "Nothing in progress",       desc: "Inquiries being worked on appear here." },
     assigned:    { icon: UserCheck,  title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide appear here." },
-    archived:    { icon: Archive,    title: "Archive is empty",          desc: "Archived inquiries will show here." },
+    archived:    { icon: CircleCheck, title: "No completed inquiries",    desc: "Completed inquiries will show here." },
     spam:        { icon: ShieldAlert, title: "No spam",                  desc: "Inquiries marked as spam appear here." },
     trash:       { icon: Trash2,     title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
   }
@@ -429,9 +468,6 @@ export default function InquiriesPage() {
                 <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkAssign}>
                   <UserCheck className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Assign</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkArchive}>
-                  <Archive className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Archive</span>
-                </Button>
                 <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-xs px-2" onClick={bulkSpam}>
                   <ShieldAlert className="mr-1 h-3 w-3" /> <span className="hidden sm:inline">Spam</span>
                 </Button>
@@ -440,6 +476,50 @@ export default function InquiriesPage() {
                 </Button>
               </div>
             )}
+
+            {/* Visit date filter */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-2 sm:px-4 py-2">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <Select value={visitDateFilter} onValueChange={(v) => setVisitDateFilter(v as VisitDateFilter)}>
+                <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs gap-1 px-2">
+                  <SelectValue placeholder="Visit date" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All dates</SelectItem>
+                  <SelectItem value="this_week">This week</SelectItem>
+                  <SelectItem value="this_month">This month</SelectItem>
+                  <SelectItem value="this_year">This year</SelectItem>
+                  <SelectItem value="custom_range">Custom range</SelectItem>
+                </SelectContent>
+              </Select>
+              {visitDateFilter === "custom_range" && (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={customDateFrom}
+                    onChange={(e) => setCustomDateFrom(e.target.value)}
+                    className="h-7 w-auto text-xs px-1.5"
+                  />
+                  <span className="text-xs text-muted-foreground">—</span>
+                  <Input
+                    type="date"
+                    value={customDateTo}
+                    onChange={(e) => setCustomDateTo(e.target.value)}
+                    className="h-7 w-auto text-xs px-1.5"
+                  />
+                </div>
+              )}
+              {visitDateFilter !== "all" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] px-1.5 text-muted-foreground"
+                  onClick={() => { setVisitDateFilter("all"); setCustomDateFrom(""); setCustomDateTo("") }}
+                >
+                  <X className="h-3 w-3 mr-0.5" /> Clear
+                </Button>
+              )}
+            </div>
 
             {/* Select all */}
             <div className="flex items-center gap-2 border-b border-border px-2 sm:px-4 py-2">
@@ -554,12 +634,17 @@ export default function InquiriesPage() {
                       )}
 
                       {/* Visit date */}
-                      {inq.dateOfVisit && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                          <CalendarDays className="h-2.5 w-2.5" />
-                          {safeFormatDate(inq.dateOfVisit, "MMM d")}
-                        </span>
-                      )}
+                      {inq.dateOfVisit && (() => {
+                        const dateTo = inq.additionalDetails?.dateToVisit as string | undefined
+                        const hasRange = dateTo && dateTo !== inq.dateOfVisit
+                        return (
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                            <CalendarDays className="h-2.5 w-2.5" />
+                            {safeFormatDate(inq.dateOfVisit, "MMM d")}
+                            {hasRange && <> — {safeFormatDate(dateTo, "MMM d")}</>}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -652,7 +737,7 @@ export default function InquiriesPage() {
                               <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Archive</TooltipContent>
+                          <TooltipContent>Mark as completed</TooltipContent>
                         </Tooltip>
                       ) : (
                         <Tooltip>
@@ -760,19 +845,28 @@ export default function InquiriesPage() {
                           Visit Information
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {selectedInquiry.dateOfVisit && (
-                            <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
-                                <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                          {selectedInquiry.dateOfVisit && (() => {
+                            const dateTo = selectedInquiry.additionalDetails?.dateToVisit as string | undefined
+                            const hasRange = dateTo && dateTo !== selectedInquiry.dateOfVisit
+                            return (
+                              <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
+                                  <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">
+                                    {hasRange ? "Visit Date Range" : "Date of Visit"}
+                                  </p>
+                                  <p className="text-xs font-medium text-card-foreground">
+                                    {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
+                                    {hasRange && (
+                                      <> — {safeFormatDate(dateTo, "MMMM d, yyyy")}</>
+                                    )}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Date of Visit</p>
-                                <p className="text-xs font-medium text-card-foreground">
-                                  {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                            )
+                          })()}
                           {selectedInquiry.numberOfPax != null && (
                             <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
@@ -799,7 +893,7 @@ export default function InquiriesPage() {
                           Additional Details
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {Object.entries(selectedInquiry.additionalDetails!).map(([key, value]) => (
+                          {Object.entries(selectedInquiry.additionalDetails!).filter(([key]) => key !== "dateToVisit").map(([key, value]) => (
                             <div key={key} className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
                                 {getDetailIcon(key)}

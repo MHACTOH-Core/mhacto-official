@@ -253,7 +253,7 @@ export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: 
   read:        { label: "Read",        color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" },
   in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
   assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
-  archived:    { label: "Archived",    color: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300" },
+  archived:    { label: "Completed",   color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300" },
   spam:        { label: "Spam",        color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
   trash:       { label: "Trash",       color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
 }
@@ -273,7 +273,7 @@ export const activityLabels: Record<ActivityAction, string> = {
   publish_post: "Published a post",
   archive_post: "Archived a post",
   reply_inquiry: "Replied to an inquiry",
-  archive_inquiry: "Archived an inquiry",
+  archive_inquiry: "Completed an inquiry",
   delete_inquiry: "Deleted an inquiry",
   update_settings: "Updated settings",
 }

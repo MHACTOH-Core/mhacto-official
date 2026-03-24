@@ -270,6 +270,7 @@ class Post
             LEFT JOIN category cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'event' AND c.status = 'published'
+            GROUP BY c.content_id
             ORDER BY nd.meta_value DESC
         ";
         if ($limit !== null) { $q .= " LIMIT :_lim"; }

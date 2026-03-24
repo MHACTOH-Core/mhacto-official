@@ -180,10 +180,10 @@ export function Footer() {
                 <p className="text-foreground font-semibold text-sm mb-1">Developed by</p>
                 <div className="space-y-0.5">
                   <p className="text-sm text-muted-foreground font-medium leading-snug">
-                    Jayson Visnar &middot; Juan Miguel Borja
+                    Jayson Visnar &middot; John Leonard Chingcuangco
                   </p>
                   <p className="text-sm text-muted-foreground font-medium leading-snug">
-                    Juan Carlos Flores &middot; John Leonard Chingcuangco
+                    Juan Carlos Flores &middot; Juan Miguel Borja
                   </p>
                   <p className="text-sm text-muted-foreground font-medium leading-snug">
                     Christian Carr Tac-an

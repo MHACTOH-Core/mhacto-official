@@ -1,18 +1,13 @@
 ﻿"use client"
 
-"use client"
-
 import { useState, useMemo } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import {
   CalendarDays, Loader2,
-  LayoutGrid, CalendarRange, ChevronDown,
+  ChevronDown,
   Sparkles, TrendingUp, Star, Flame,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedEvents, type NewsArticleAPI } from "@/lib/api"
 import { useAPIData } from "@/hooks/use-api-data"
 
@@ -51,9 +46,9 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
 
   return (
     <div
-      className={`group relative rounded-2xl border-2 transition-all duration-500 overflow-hidden ${
+      className={`relative rounded-2xl border-2 transition-all duration-500 overflow-hidden ${
         hasEvents
-          ? "border-primary/20 bg-card shadow-sm hover:shadow-lg hover:shadow-primary/5 hover:border-primary/40 hover:-translate-y-0.5 cursor-pointer"
+          ? "border-primary/20 bg-card shadow-sm cursor-pointer"
           : "border-border/50 bg-muted/20"
       } ${isCurrentMonth && hasEvents ? "ring-2 ring-primary/30 ring-offset-2 ring-offset-background" : ""}`}
       onClick={() => hasEvents && setExpanded((v) => !v)}
@@ -69,7 +64,7 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
             {/* Month number badge */}
             <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-black transition-all duration-300 ${
               hasEvents
-                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/30"
+                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20"
                 : "bg-muted/60 text-muted-foreground/50"
             }`}>
               <span className="text-lg">{monthIndex + 1}</span>
@@ -112,7 +107,7 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
             {events.map((e) => (
               <span
                 key={e.id}
-                className={`h-1.5 flex-1 rounded-full ${quarterColor} transition-all group-hover:h-2`}
+                className={`h-1.5 flex-1 rounded-full ${quarterColor} transition-all`}
               />
             ))}
           </div>
@@ -158,19 +153,21 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
   )
 }
 
-type ViewMode = "grid" | "calendar"
-
 export default function EventsPage() {
   const { data: events = [], isLoading: loading, error } = useAPIData<NewsArticleAPI[]>(
     "published-events",
     () => apiFetchPublishedEvents(),
   )
-  const [viewMode, setViewMode] = useState<ViewMode>("calendar")
 
   const eventsByMonth = useMemo(() => {
     const map: Record<number, NewsArticleAPI[]> = {}
     for (let i = 0; i < 12; i++) map[i] = []
-    for (const ev of events) map[getEventMonth(ev)].push(ev)
+    const seen = new Set<string>()
+    for (const ev of events) {
+      if (seen.has(ev.id)) continue
+      seen.add(ev.id)
+      map[getEventMonth(ev)].push(ev)
+    }
     return map
   }, [events])
 
@@ -189,34 +186,6 @@ export default function EventsPage() {
         fallbackDescription="Festivals, civic programs, sports competitions, and cultural celebrations throughout the Bocaue calendar year."
         showBackButton
       />
-
-      {/* ── Controls bar ── */}
-      <section className="border-b border-border bg-muted/40 py-3 sticky top-0 z-30 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
-              <button
-                onClick={() => setViewMode("calendar")}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  viewMode === "calendar" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <CalendarRange className="h-3.5 w-3.5" />
-                Calendar
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  viewMode === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Grid
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Loading state */}
       {loading && (
@@ -243,7 +212,7 @@ export default function EventsPage() {
       )}
 
       {/* ── Calendar View ── */}
-      {!loading && events.length > 0 && viewMode === "calendar" && (
+      {!loading && events.length > 0 && (
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             {/* ── Header ── */}
@@ -321,56 +290,6 @@ export default function EventsPage() {
         </section>
       )}
 
-      {/* ── Grid View ── */}
-      {!loading && events.length > 0 && viewMode === "grid" && (
-        <section className="py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
-              {events.map((event) => {
-                const dateStr = event.newsDate ?? event.createdAt
-                return (
-                  <Link key={event.id} href={`/events/${event.id}`} target="_blank" rel="noopener noreferrer" className="block">
-                  <Card className="group overflow-hidden border-border transition-all duration-300 flex flex-col hover:border-primary/30 hover:shadow-md cursor-pointer">
-                    {/* Image */}
-                    {event.image.length > 0 && (
-                      <div className="relative h-48 overflow-hidden bg-muted">
-                        <Image
-                          src={event.image[0]}
-                          alt={event.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
-                          loading="lazy"
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                        {event.isFeatured && (
-                          <div className="absolute top-3 left-3">
-                            <Badge className="bg-red-500/90 text-white border-0 text-xs">Featured</Badge>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <CardContent className="p-5 flex flex-col flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
-                          Event
-                        </Badge>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3 w-3" />
-                          {formatDate(dateStr)}
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-black text-foreground mb-2 leading-snug">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">{event.body}</p>
-                    </CardContent>
-                  </Card>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
     </main>
   )
 }

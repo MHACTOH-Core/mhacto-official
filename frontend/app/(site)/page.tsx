@@ -29,10 +29,6 @@ const RestaurantSection = dynamic(
   () => import("@/components/sections/restaurant-section").then((m) => m.RestaurantSection),
   { loading: () => <SectionSkeleton /> }
 )
-const FeaturedDelicacySlider = dynamic(
-  () => import("@/components/sections/featured-delicacy-slider").then((m) => m.FeaturedDelicacySlider),
-  { loading: () => <SectionSkeleton /> }
-)
 const NewsSection = dynamic(
   () => import("@/components/sections/news-section").then((m) => m.NewsSection),
   { loading: () => <SectionSkeleton /> }
@@ -76,9 +72,8 @@ export default function Home() {
 
       {/* 6. Restaurant Wonders */}
       <RestaurantSection />
-      {/* 7b. Featured Delicacy Slider */}
-      <FeaturedDelicacySlider />
-      {/* 8. Cultural Practices */}
+
+      {/* 7. Cultural Practices */}
       <CulturalPracticesSection />
 
       {/* 8. History Milestones */}

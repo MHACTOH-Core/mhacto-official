@@ -31,9 +31,9 @@ function getTodayISO(): string {
  */
 function isValidPHPhoneNumber(phone: string): boolean {
   if (!phone) return true // optional field
-  const digitsOnly = phone.replace(/[\s\-()+ ]/g, "")
-  // Must be 639XXXXXXXXX (12 digits starting with 639)
-  return /^639\d{9}$/.test(digitsOnly)
+  const digitsOnly = phone.replace(/[\s\-()]/g, "")
+  // Must be 9XXXXXXXXX (10 digits starting with 9)
+  return /^9\d{9}$/.test(digitsOnly)
 }
 
 /**
@@ -102,11 +102,11 @@ export default function InquirePage() {
     }
   }
 
-  /** Validate PH phone number format on change — must start with +63 */
+  /** Validate PH phone number format on change — 10 digits starting with 9 */
   function handlePhoneChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
     if (value && !isValidPHPhoneNumber(value)) {
-      setPhoneWarning("Please enter a valid PH number starting with +63 (e.g. +639XXXXXXXXX).")
+      setPhoneWarning("Please enter a valid 10-digit mobile number starting with 9.")
     } else {
       setPhoneWarning(null)
     }
@@ -161,10 +161,13 @@ export default function InquirePage() {
     }
 
     if (contactNumber && !isValidPHPhoneNumber(contactNumber)) {
-      setError("Please enter a valid Philippine number starting with +63 (e.g. +639XXXXXXXXX).")
+      setError("Please enter a valid 10-digit mobile number starting with 9.")
       setSubmitting(false)
       return
     }
+
+    // Prepend +63 to the contact number for storage
+    const fullContactNumber = contactNumber ? `+63${contactNumber.replace(/[\s\-()]/g, "")}` : ""
 
     const paxValue = formData.get("pax") ? Number(formData.get("pax")) : 0
     if (paxValue > 20) {
@@ -218,7 +221,7 @@ export default function InquirePage() {
       await apiCreateInquiry({
         name,
         email,
-        contactNumber: contactNumber || undefined,
+        contactNumber: fullContactNumber || undefined,
         inquiryType: purposeToType[purpose] || "general_contact",
         purpose: purpose || undefined,
         dateOfVisit,
@@ -382,15 +385,21 @@ export default function InquirePage() {
                           <Label htmlFor="contact" className="text-sm font-semibold text-foreground">
                             Contact Number
                           </Label>
-                          <Input
-                            id="contact"
-                            name="contact"
-                            type="tel"
-                            placeholder="+639XXXXXXXXX"
-                            onChange={handlePhoneChange}
-                            className="rounded-xl"
-                          />
-                          <p className="text-[11px] text-muted-foreground">Must start with +63</p>
+                          <div className="flex">
+                            <span className="inline-flex items-center rounded-l-xl border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+                              +63
+                            </span>
+                            <Input
+                              id="contact"
+                              name="contact"
+                              type="tel"
+                              placeholder="9XXXXXXXXX"
+                              maxLength={10}
+                              onChange={handlePhoneChange}
+                              className="rounded-l-none rounded-r-xl"
+                            />
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">10-digit mobile number</p>
                           {phoneWarning && (
                             <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />{phoneWarning}
@@ -412,7 +421,7 @@ export default function InquirePage() {
                         {/* Date of Visit */}
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label className="text-sm font-semibold text-foreground">
-                            Date of Visit <span className="text-destructive">*</span>
+                            Date of Visit Range <span className="text-destructive">*</span>
                           </Label>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">

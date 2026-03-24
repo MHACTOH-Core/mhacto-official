@@ -66,8 +66,8 @@ export interface CMSDataContextValue {
 
   // Account management
   users: AdminUser[]
-  createUser: (data: { fullName: string; email: string; password: string; role: string }) => Promise<boolean>
-  updateUser: (id: number, data: Record<string, unknown>) => Promise<boolean>
+  createUser: (data: { fullName: string; email: string; password: string; role: string }) => Promise<{ success: boolean; error?: string }>
+  updateUser: (id: number, data: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>
   archiveUser: (id: number) => Promise<{ success: boolean; requiresApproval?: boolean }>
   restoreUser: (id: number) => Promise<boolean>
   refreshUsers: () => Promise<void>
@@ -347,30 +347,30 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createUserFn = useCallback(
-    async (data: { fullName: string; email: string; password: string; role: string }): Promise<boolean> => {
+    async (data: { fullName: string; email: string; password: string; role: string }): Promise<{ success: boolean; error?: string }> => {
       try {
         await apiCreateUser(data)
         await refreshUsersFn()
         logActivityFn("update_settings", `Created user account for ${data.email}`)
-        return true
+        return { success: true }
       } catch (err) {
-        console.error("createUser error:", err)
-        return false
+        const message = err instanceof Error ? err.message : "Failed to create user"
+        return { success: false, error: message }
       }
     },
     [refreshUsersFn, logActivityFn],
   )
 
   const updateUserFn = useCallback(
-    async (id: number, data: Record<string, unknown>): Promise<boolean> => {
+    async (id: number, data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> => {
       try {
         await apiUpdateUser(id, data)
         await refreshUsersFn()
         logActivityFn("update_settings", `Updated user account #${id}`)
-        return true
+        return { success: true }
       } catch (err) {
-        console.error("updateUser error:", err)
-        return false
+        const message = err instanceof Error ? err.message : "Failed to update user"
+        return { success: false, error: message }
       }
     },
     [refreshUsersFn, logActivityFn],
