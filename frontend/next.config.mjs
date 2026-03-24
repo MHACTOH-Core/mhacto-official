@@ -23,6 +23,22 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Proxy backend uploads through Next.js in dev so images are same-origin
+  // (required for canvas pixel access in the crop/enhance dialog).
+  // Not added in production — static export doesn't support rewrites.
+  ...(isDev
+    ? {
+        async rewrites() {
+          return [
+            {
+              source: '/uploads/:path*',
+              destination: 'http://localhost:8000/uploads/:path*',
+              basePath: false,
+            },
+          ]
+        },
+      }
+    : {}),
 }
 
 export default nextConfig

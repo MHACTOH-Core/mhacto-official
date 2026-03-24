@@ -7,8 +7,8 @@ import { CalendarDays, MapPin, Sparkles, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { apiFetchSpotlight, type Spotlight, type FeaturedContent } from "@/lib/api"
-import { asset } from "@/lib/utils"
+import { apiFetchSpotlight, apiFetchByLabel, type FeaturedContent } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/utils"
 
 /* ── Floating Sparkle Particles ── */
 function SparkleCanvas({ className }: { className?: string }) {
@@ -109,16 +109,21 @@ function SparkleCanvas({ className }: { className?: string }) {
 }
 
 export function FeaturedSpotlight() {
-  const [spotlightData, setSpotlightData] = useState<Spotlight | null>(null)
+  const [spotlightData, setSpotlightData] = useState<FeaturedContent | null>(null)
+  const [heroImage, setHeroImage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
-    apiFetchSpotlight()
-      .then((responseData) => {
-        if (responseData) {
-          setSpotlightData(responseData as unknown as Spotlight)
-        }
+    Promise.all([
+      apiFetchSpotlight(),
+      apiFetchByLabel("pagoda", 1),
+    ])
+      .then(([spotlight, pagodaPosts]) => {
+        if (spotlight) setSpotlightData(spotlight)
+        // Use the pagoda post's hero image (first image)
+        const pagoda = pagodaPosts?.[0]
+        if (pagoda?.image?.[0]) setHeroImage(pagoda.image[0])
       })
       .catch(() => {})
       .finally(() => setIsLoading(false))
@@ -126,9 +131,10 @@ export function FeaturedSpotlight() {
 
   if (!spotlightData) return null
 
-  const spotlightImageUrl = spotlightData.image
-    ? spotlightData.image.startsWith("/images") ? asset(spotlightData.image) : spotlightData.image
-    : asset("/images/defaults/no-image.svg")
+  // Prefer the pagoda page's hero image, fall back to spotlight's own image
+  const spotlightImageUrl = heroImage
+    ? resolveMediaUrl(heroImage)
+    : resolveMediaUrl(spotlightData.image)
 
   return (
     <section className="py-8 lg:py-12">

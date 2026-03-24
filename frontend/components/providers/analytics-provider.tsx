@@ -4,10 +4,16 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   type ReactNode,
 } from "react"
 import type { PageView, DailyVisit } from "@/lib/data/admin-data"
-import { MOCK_PAGE_VIEWS, MOCK_DAILY_VISITS } from "@/lib/data/admin-data"
+import {
+  apiFetchPageViews,
+  apiFetchDailyVisits,
+  apiFetchVisitorSummary,
+  type VisitorSummary,
+} from "@/lib/api"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -15,6 +21,7 @@ export interface AnalyticsContextValue {
   pageViews: PageView[]
   dailyVisits: DailyVisit[]
   totalViews: number
+  visitorSummary: VisitorSummary | null
 }
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null)
@@ -28,12 +35,26 @@ export function useAnalytics() {
 // ─── Provider ──────────────────────────────────────────────────────
 
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
-  const [pageViews] = useState<PageView[]>(MOCK_PAGE_VIEWS)
-  const [dailyVisits] = useState<DailyVisit[]>(MOCK_DAILY_VISITS)
+  const [pageViews, setPageViews] = useState<PageView[]>([])
+  const [dailyVisits, setDailyVisits] = useState<DailyVisit[]>([])
+  const [visitorSummary, setVisitorSummary] = useState<VisitorSummary | null>(null)
+
+  useEffect(() => {
+    Promise.allSettled([
+      apiFetchPageViews(),
+      apiFetchDailyVisits(),
+      apiFetchVisitorSummary(),
+    ]).then(([pvResult, dvResult, vsResult]) => {
+      if (pvResult.status === "fulfilled") setPageViews(pvResult.value)
+      if (dvResult.status === "fulfilled") setDailyVisits(dvResult.value)
+      if (vsResult.status === "fulfilled") setVisitorSummary(vsResult.value)
+    })
+  }, [])
+
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
 
   return (
-    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews }}>
+    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews, visitorSummary }}>
       {children}
     </AnalyticsContext.Provider>
   )

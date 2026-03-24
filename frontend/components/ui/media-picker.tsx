@@ -48,6 +48,7 @@ import {
   type MediaFile,
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog"
 
 export type MediaPickerAccept = "image" | "video" | "all"
 
@@ -68,6 +69,10 @@ interface MediaPickerProps {
   uploadCategory?: string
   /** Optional label for organizing uploads into subfolders */
   uploadLabel?: string
+  /** Show crop + enhance dialog when selecting an image (default: true for images) */
+  enableCrop?: boolean
+  /** Default aspect ratio for the crop dialog (e.g. 16/9). Free-form if omitted. */
+  cropAspect?: number
 }
 
 function formatFileSize(bytes: number): string {
@@ -97,6 +102,8 @@ export function MediaPicker({
   currentValue,
   uploadCategory,
   uploadLabel,
+  enableCrop,
+  cropAspect,
 }: MediaPickerProps) {
   const [tab, setTab] = useState<"existing" | "upload" | "url">("existing")
   const [loading, setLoading] = useState(false)
@@ -111,6 +118,13 @@ export function MediaPicker({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  // Crop dialog state
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [cropUploading, setCropUploading] = useState(false)
+
+  // Resolve whether crop is enabled (default: true for image-only pickers)
+  const cropEnabled = enableCrop ?? (accept === "image")
 
   const loadFiles = useCallback(async (retryCount = 0) => {
     setLoading(true)
@@ -145,6 +159,7 @@ export function MediaPicker({
       setError(null)
       setSelectedFolder(null)
       setExpandedFolders(new Set())
+      setCropSrc(null)
     }
   }, [open, loadFiles, currentValue])
 
@@ -200,11 +215,55 @@ export function MediaPicker({
 
   const handleConfirm = () => {
     if (tab === "url" && urlInput.trim()) {
-      onSelect(urlInput.trim())
+      const url = urlInput.trim()
+      // For URL tab: show crop dialog if it looks like an image
+      if (cropEnabled && /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(url)) {
+        setCropSrc(url)
+        return
+      }
+      onSelect(url)
       onOpenChange(false)
     } else if (selected) {
+      // For existing / uploaded: show crop dialog if it's an image
+      const isImage = /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(selected) || !selected.match(/\.(mp4|webm|ogg|mov|avi)$/i)
+      if (cropEnabled && isImage) {
+        // Use relative path so the image is served through the Next.js
+        // rewrite proxy (same-origin), which allows canvas pixel access.
+        setCropSrc(selected)
+        return
+      }
       onSelect(selected)
       onOpenChange(false)
+    }
+  }
+
+  /** After cropping, upload the new blob and return its URL */
+  const handleCropDone = async (blob: Blob) => {
+    setCropUploading(true)
+    try {
+      const ext = "jpg"
+      const fileName = `cropped_${Date.now()}.${ext}`
+      const file = new File([blob], fileName, { type: "image/jpeg" })
+      const result = await apiUploadMedia([file], "image", { category: uploadCategory, label: uploadLabel })
+      if (result.uploaded.length > 0) {
+        onSelect(result.uploaded[0].url)
+        setCropSrc(null)
+        onOpenChange(false)
+      } else {
+        toast({
+          title: "Upload failed",
+          description: result.errors.join("; ") || "Could not save the cropped image.",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Could not save the cropped image.",
+        variant: "destructive",
+      })
+    } finally {
+      setCropUploading(false)
     }
   }
 
@@ -585,6 +644,15 @@ export function MediaPicker({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ImageCropDialog
+      open={!!cropSrc}
+      onOpenChange={(v) => { if (!v) setCropSrc(null) }}
+      imageSrc={cropSrc ?? ""}
+      onCropComplete={handleCropDone}
+      aspect={cropAspect}
+      title="Crop & Enhance Image"
+    />
 
     <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
       <AlertDialogContent>

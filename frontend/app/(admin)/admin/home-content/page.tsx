@@ -94,7 +94,7 @@ export default function HomeContentPage() {
   const [pendingSave, setPendingSave] = useState<(() => Promise<void>) | null>(null)
 
   // Form state
-  const [formData, setFormData] = useState<Record<string, unknown>>({})
+  const [formData, setFormData] = useState<Record<string, string | number | boolean | null>>({})
 
   // Hero settings form state (separate from dialog formData)
   const [heroFormData, setHeroFormData] = useState<Partial<HeroSettings>>({})

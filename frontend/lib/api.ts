@@ -271,6 +271,33 @@ export function apiFetchDailyVisits(days = 30) {
   return apiFetch<DailyVisit[]>(`/api/analytics/visits?days=${days}`)
 }
 
+// ─── Visitor Summary ───────────────────────────────────────────────
+
+export interface VisitorSummaryTotals {
+  walkIns: number
+  bookingsCompleted: number
+  bookingsPending: number
+  guideAssigned: number
+}
+
+export interface VisitorDailyRow {
+  date: string
+  walkIns: number
+  bookingsCompleted: number
+  bookingsPending: number
+  guideAssigned: number
+}
+
+export interface VisitorSummary {
+  totals: VisitorSummaryTotals
+  daily: VisitorDailyRow[]
+}
+
+/** Fetch visitor engagement summary (walk-ins, bookings, assignments) */
+export function apiFetchVisitorSummary(days = 30) {
+  return apiFetch<VisitorSummary>(`/api/analytics/visitor-summary?days=${days}`)
+}
+
 /**
  * Log a destination click.
  * Called on the public site when a visitor navigates to a destination page.
@@ -560,6 +587,7 @@ export interface FeaturedContent {
   section: "spotlight" | "landmark"
   title: string
   description: string
+  image: string | null
   postType: string | null
   location: string | null
   category: string | null

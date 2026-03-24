@@ -23,13 +23,27 @@ interface ProfilePictureCropDialogProps {
 
 /** Crop an image to a 1:1 circle and return the result as a Blob. */
 async function getCroppedBlob(imageSrc: string, crop: Area): Promise<Blob> {
+  let objectUrl: string | null = null
+  try {
+    const resp = await fetch(imageSrc)
+    if (resp.ok) {
+      const imgBlob = await resp.blob()
+      objectUrl = URL.createObjectURL(imgBlob)
+    }
+  } catch {
+    // Fetch may fail for cross-origin; fall through to direct load
+  }
+
   const image = new window.Image()
-  image.crossOrigin = "anonymous"
+  if (!objectUrl) {
+    image.crossOrigin = "anonymous"
+  }
   await new Promise<void>((resolve, reject) => {
     image.onload = () => resolve()
-    image.onerror = reject
-    image.src = imageSrc
+    image.onerror = () => reject(new Error("Failed to load image for cropping"))
+    image.src = objectUrl ?? imageSrc
   })
+  if (objectUrl) URL.revokeObjectURL(objectUrl)
 
   const canvas = document.createElement("canvas")
   const size = Math.min(crop.width, crop.height)
