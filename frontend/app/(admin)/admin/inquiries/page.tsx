@@ -109,8 +109,6 @@ export default function InquiriesPage() {
     if (isHydrated && !isLoggedIn) router.push("/admin")
   }, [isHydrated, isLoggedIn, router])
 
-  if (!isHydrated || !isLoggedIn) return null
-
   // Memoized tab counts — single pass over inquiries
   const tabCounts = useMemo(() => {
     const counts: Record<MailboxTab, number> = {
@@ -194,6 +192,8 @@ export default function InquiriesPage() {
   }, [inquiries, activeTab, search, visitDateFilter, customDateFrom, customDateTo])
 
   const unreadCount = tabCounts.unread
+
+  if (!isHydrated || !isLoggedIn) return null
 
   // Open inquiry — mark as in_progress if unread; reset reply composer
   const openInquiry = (inq: Inquiry) => {

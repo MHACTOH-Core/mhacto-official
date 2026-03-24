@@ -66,6 +66,9 @@ export default function CMSPage() {
   const router = useRouter()
   const { isLoggedIn, isHydrated, posts, createPost, updatePost, deletePost } = useAdmin()
 
+  const resolvePostCategory = (post: CMSPost): ContentCategory =>
+    contentLabels[post.label]?.category ?? post.contentCategory ?? "history"
+
   const [search, setSearch] = useState("")
   const [filterCategory, setFilterCategory] = useState<ContentCategory | "all">("all")
   const [filterLabel, setFilterLabel] = useState<ContentLabel | "all">("all")
@@ -95,8 +98,9 @@ export default function CMSPage() {
   // Memoized filtering
   const filtered = useMemo(() =>
     posts.filter((p) => {
+      const resolvedCategory = resolvePostCategory(p)
       if (p.label === "pagoda") return false
-      if (filterCategory !== "all" && p.contentCategory !== filterCategory) return false
+      if (filterCategory !== "all" && resolvedCategory !== filterCategory) return false
       if (filterLabel !== "all" && p.label !== filterLabel) return false
       if (filterStatus !== "all" && p.status !== filterStatus) return false
       if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false
@@ -146,11 +150,12 @@ export default function CMSPage() {
   }
 
   const openEdit = (post: CMSPost) => {
+    const resolvedCategory = resolvePostCategory(post)
     setEditingPost(post)
     setForm({
       title: post.title,
       body: post.body,
-      contentCategory: post.contentCategory ?? "history",
+      contentCategory: resolvedCategory,
       label: post.label,
       postType: post.postType ?? "place",
       status: post.status,
@@ -387,9 +392,9 @@ export default function CMSPage() {
                         <Star className="h-3 w-3 mr-0.5 fill-amber-500" /> Featured
                       </Badge>
                     )}
-                    {post.contentCategory && contentCategories[post.contentCategory] && (
-                      <Badge className={`text-xs shadow-sm ${contentCategories[post.contentCategory].color}`}>
-                        {contentCategories[post.contentCategory].label}
+                    {contentCategories[resolvePostCategory(post)] && (
+                      <Badge className={`text-xs shadow-sm ${contentCategories[resolvePostCategory(post)].color}`}>
+                        {contentCategories[resolvePostCategory(post)].label}
                       </Badge>
                     )}
                     <Badge className={`text-xs shadow-sm ${(contentLabels[post.label] ?? UNKNOWN_LABEL).color}`}>

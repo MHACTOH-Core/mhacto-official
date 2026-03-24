@@ -274,9 +274,11 @@ function _posts_resolveCategoryId(string $key): ?int
     $map = [
         'history'              => 'History',
         'arts-culture'         => 'Arts & Culture',
+        'tourist-wonders'      => 'Tourist Destinations',
         'tourist-destinations' => 'Tourist Destinations',
-        'news'                 => 'News',
-        'events'               => 'Events',
+        'news'                 => 'News & Events',
+        'events'               => 'News & Events',
+        'community'            => 'Community',
     ];
     $name = $map[$key] ?? null;
     if (!$name) return null;

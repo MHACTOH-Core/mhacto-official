@@ -453,7 +453,7 @@ class Post
             'id'              => (string) $contentId,
             'title'           => $row['title'],
             'body'            => $row['description'] ?? '',
-            'contentCategory' => $this->mapCategoryKey($row['category_name'] ?? null),
+            'contentCategory' => $this->mapCategoryKey($row['category_name'] ?? null, $meta['label_key'] ?? null),
             'label'           => $meta['label_key'] ?? 'destinations',
             'postType'        => $postType,
             'status'          => strtolower($row['status']),
@@ -485,14 +485,14 @@ class Post
         return is_array($decoded) ? $decoded : [];
     }
 
-    private function mapCategoryKey(?string $name): string
+    private function mapCategoryKey(?string $name, ?string $labelKey = null): string
     {
         return match ($name) {
             'History'              => 'history',
             'Arts & Culture'       => 'arts-culture',
-            'Tourist Destinations' => 'tourist-destinations',
-            'News'                 => 'news',
-            'Events'               => 'events',
+            'Tourist Destinations' => 'tourist-wonders',
+            'News & Events'        => in_array($labelKey, ['events'], true) ? 'events' : 'news',
+            'Community'            => 'community',
             default                => 'history',
         };
     }

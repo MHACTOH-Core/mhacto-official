@@ -16,7 +16,7 @@ import type {
   ActivityAction,
   AdminUser,
 } from "@/lib/data/admin-data"
-import { DEFAULT_SETTINGS, generateId } from "@/lib/data/admin-data"
+import { DEFAULT_SETTINGS, contentLabels, generateId } from "@/lib/data/admin-data"
 import {
   apiFetchPosts,
   apiCreatePost,
@@ -109,6 +109,14 @@ function saveJson<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+function normalizeCMSPost(post: CMSPost): CMSPost {
+  const derivedCategory = contentLabels[post.label]?.category
+  if (!derivedCategory || post.contentCategory === derivedCategory) {
+    return post
+  }
+  return { ...post, contentCategory: derivedCategory }
+}
+
 // ─── Provider ──────────────────────────────────────────────────────
 
 export function CMSDataProvider({ children }: { children: ReactNode }) {
@@ -134,8 +142,9 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         apiFetchUsers(true),
       ])
       if (postsResult.status === "fulfilled") {
-        setPosts(postsResult.value)
-        saveJson("admin_posts", postsResult.value)
+        const normalizedPosts = postsResult.value.map(normalizeCMSPost)
+        setPosts(normalizedPosts)
+        saveJson("admin_posts", normalizedPosts)
       }
       if (inquiriesResult.status === "fulfilled") {
         setInquiries(inquiriesResult.value)
@@ -162,8 +171,9 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const refreshPosts = useCallback(async () => {
     try {
       const freshPosts = await apiFetchPosts()
-      setPosts(freshPosts)
-      saveJson("admin_posts", freshPosts)
+      const normalizedPosts = freshPosts.map(normalizeCMSPost)
+      setPosts(normalizedPosts)
+      saveJson("admin_posts", normalizedPosts)
     } catch (err) {
       console.error("refreshPosts failed:", err)
     }
@@ -181,7 +191,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage first
   useEffect(() => {
-    setPosts(loadJson("admin_posts", []))
+    setPosts(loadJson<CMSPost[]>("admin_posts", []).map(normalizeCMSPost))
     setInquiries(loadJson("admin_inquiries", []))
     setActivityLog(loadJson("admin_activity", []))
     setSettings(loadJson("admin_settings", DEFAULT_SETTINGS))
@@ -217,13 +227,14 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const createPost = useCallback(
     async (data: Omit<CMSPost, "id" | "createdAt" | "updatedAt">) => {
       const now = new Date().toISOString()
-      const tempPost: CMSPost = { ...data, id: generateId(), createdAt: now, updatedAt: now }
+      const tempPost = normalizeCMSPost({ ...data, id: generateId(), createdAt: now, updatedAt: now })
       setPosts((prev) => [tempPost, ...prev])
       logActivityFn("create_post", `Created "${data.title}"`)
       try {
         const createResult = await apiCreatePost(data as Record<string, unknown>)
         if (createResult?.post) {
-          setPosts((prev) => prev.map((p) => (p.id === tempPost.id ? createResult.post : p)))
+          const normalizedPost = normalizeCMSPost(createResult.post)
+          setPosts((prev) => prev.map((p) => (p.id === tempPost.id ? normalizedPost : p)))
         }
         await refreshPosts()
       } catch (err) {
