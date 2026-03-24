@@ -35,12 +35,14 @@ export function DestinationsCarouselSection() {
 
   // Fetch destinations + tours from API
   useEffect(() => {
+    let cancelled = false
     async function load() {
       try {
         const [destPosts, tourPosts] = await Promise.all([
           apiFetchFeaturedByLabel("destinations", 2).catch(() => apiFetchByLabel("destinations", 2)).catch(() => []),
           apiFetchFeaturedByLabel("travel-tours", 2).catch(() => apiFetchByLabel("travel-tours", 2)).catch(() => []),
         ])
+        if (cancelled) return
         const destSlides: SlideItem[] = (destPosts ?? []).slice(0, 2).map(
           (p) => ({ kind: "destination", data: cmsToHeritageSite(p), href: "/destinations" as const }),
         )
@@ -51,6 +53,7 @@ export function DestinationsCarouselSection() {
       } catch { /* silently fail */ }
     }
     load()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {

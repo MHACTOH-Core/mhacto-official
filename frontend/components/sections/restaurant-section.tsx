@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Store, ArrowRight } from "lucide-react"
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { Restaurant } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToRestaurant } from "@/lib/cms-mappers"
+import { useAPIData } from "@/hooks/use-api-data"
 
 const MAX_FEATURED = 3
 
@@ -29,15 +30,12 @@ const typeLabel: Record<Restaurant["type"], string> = {
 }
 
 export function RestaurantSection() {
-  const [items, setItems] = useState<Restaurant[]>([])
-
-  useEffect(() => {
-    apiFetchFeaturedByLabel("restaurants", MAX_FEATURED)
-      .then((posts) => {
-        if (posts?.length) setItems(posts.slice(0, MAX_FEATURED).map(cmsToRestaurant))
-      })
-      .catch(() => {})
-  }, [])
+  const { data: items = [] } = useAPIData<Restaurant[]>(
+    "featured-restaurants",
+    () => apiFetchFeaturedByLabel("restaurants", MAX_FEATURED).then((posts) =>
+      posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToRestaurant) : []
+    ),
+  )
 
   if (items.length === 0) return null
 

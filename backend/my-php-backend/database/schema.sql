@@ -111,7 +111,7 @@ CREATE TABLE content_fields (
   meta_key   VARCHAR(100) NOT NULL       COMMENT 'e.g., location, hours, news_date',
   meta_value TEXT         DEFAULT NULL   COMMENT 'Value or JSON for complex data',
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
-  INDEX idx_content_key (content_id, meta_key)
+  UNIQUE INDEX idx_content_key (content_id, meta_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

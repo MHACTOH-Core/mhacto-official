@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Scroll, ArrowRight, Star } from "lucide-react"
@@ -10,6 +9,7 @@ import type { CulturalPractice } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToCulturalPractice } from "@/lib/cms-mappers"
 import { asset } from "@/lib/utils"
+import { useAPIData } from "@/hooks/use-api-data"
 
 const MAX_FEATURED = 3
 
@@ -26,15 +26,12 @@ const statusLabel: Record<CulturalPractice["status"], string> = {
 }
 
 export function CulturalPracticesSection() {
-  const [items, setItems] = useState<CulturalPractice[]>([])
-
-  useEffect(() => {
-    apiFetchFeaturedByLabel("cultural-practices", MAX_FEATURED)
-      .then((posts) => {
-        if (posts?.length) setItems(posts.slice(0, MAX_FEATURED).map(cmsToCulturalPractice))
-      })
-      .catch(() => {})
-  }, [])
+  const { data: items = [] } = useAPIData<CulturalPractice[]>(
+    "featured-cultural-practices",
+    () => apiFetchFeaturedByLabel("cultural-practices", MAX_FEATURED).then((posts) =>
+      posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToCulturalPractice) : []
+    ),
+  )
 
   if (items.length === 0) return null
 

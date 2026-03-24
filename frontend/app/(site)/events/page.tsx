@@ -1,6 +1,8 @@
 ﻿"use client"
 
-import { useState, useEffect, useMemo } from "react"
+"use client"
+
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -12,6 +14,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedEvents, type NewsArticleAPI } from "@/lib/api"
+import { useAPIData } from "@/hooks/use-api-data"
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -158,18 +161,11 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
 type ViewMode = "grid" | "calendar"
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<NewsArticleAPI[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: events = [], isLoading: loading, error } = useAPIData<NewsArticleAPI[]>(
+    "published-events",
+    () => apiFetchPublishedEvents(),
+  )
   const [viewMode, setViewMode] = useState<ViewMode>("calendar")
-
-  // Sends GET /api/posts/read.php?type=events → PHP runs SQL SELECT on content WHERE post_type='event' → returns JSON
-  useEffect(() => {
-    apiFetchPublishedEvents()
-      .then((data) => setEvents(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
 
   const eventsByMonth = useMemo(() => {
     const map: Record<number, NewsArticleAPI[]> = {}

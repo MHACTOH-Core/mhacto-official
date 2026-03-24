@@ -137,9 +137,11 @@ function _posts_create(Post $post): void
     if (in_array($label, $singletonLabels, true)) {
         $db = $GLOBALS['db'];
         $stmt = $db->prepare(
-            'SELECT COUNT(*) FROM content c JOIN content_labels cl ON c.label_id = cl.id WHERE cl.label_key = :lk'
+            'SELECT COUNT(*) FROM content c
+             JOIN content_fields cf ON c.content_id = cf.content_id
+             WHERE cf.meta_key = :mk AND cf.meta_value = :lk'
         );
-        $stmt->execute([':lk' => $label]);
+        $stmt->execute([':mk' => 'label_key', ':lk' => $label]);
         if ((int) $stmt->fetchColumn() > 0) {
             Response::error("Only one \"{$label}\" entry is allowed. Please update the existing one instead.", 409);
         }

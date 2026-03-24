@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import { MediaPicker } from "@/components/ui/media-picker"
 import {
   AlertDialog,
@@ -32,6 +34,9 @@ import {
   Type,
   GalleryHorizontalEnd,
   Quote,
+  FileText,
+  Plus,
+  Trash2,
   X,
   Loader2,
 } from "lucide-react"
@@ -44,6 +49,7 @@ interface SectionData {
 }
 
 interface GalleryItemData {
+  image: string
   title: string
   description: string
   category: string
@@ -67,16 +73,16 @@ const DEFAULT_METADATA: PagodaMetadata = {
     { title: "A Night of Fire & Light", description: "" },
     { title: "Faith Rooted in Heritage", description: "" },
   ],
-  gallery: Array.from({ length: 6 }, () => ({ title: "", description: "", category: "" })),
+  gallery: [],
   quote: {
     text: "Where the river meets faith, the Pagoda sails — a living testament to centuries of devotion, fire, and the unbreakable spirit of Bocaue.",
     attribution: "— Bocaue Heritage",
   },
 }
 
-/* ── Image slot indices ──────────────────────────────────────────── */
-// images[0] = hero, images[1-3] = sections, images[4-9] = gallery
-const SLOT = { hero: 0, sec1: 1, sec2: 2, sec3: 3, gal: 4 } as const
+/* ── Image slot indices (hero + 3 sections only) ────────────────── */
+const SLOT = { hero: 0, sec1: 1, sec2: 2, sec3: 3 } as const
+const FIXED_IMAGE_COUNT = 4
 
 /* ── Image picker button ─────────────────────────────────────────── */
 function ImageSlot({
@@ -137,25 +143,26 @@ export default function PagodaPage() {
 
   // Form state
   const [overview, setOverview] = useState("")
-  const [images, setImages] = useState<string[]>(Array(10).fill(""))
+  const [images, setImages] = useState<string[]>(Array(FIXED_IMAGE_COUNT).fill(""))
   const [meta, setMeta] = useState<PagodaMetadata>(DEFAULT_METADATA)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
 
-  // Media picker
+  // Media picker — callback-based so it works for both fixed slots and gallery items
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerTarget, setPickerTarget] = useState<number>(-1)
+  const [pickerCallback, setPickerCallback] = useState<{ fn: (url: string) => void } | null>(null)
+  const [pickerCurrentValue, setPickerCurrentValue] = useState<string | undefined>(undefined)
 
   // Load existing data
   useEffect(() => {
     if (!pagodaPost) return
     setOverview(pagodaPost.body ?? "")
 
-    // Populate images array (pad to 10)
+    // Fixed images: hero + 3 sections
     const imgs = [...(pagodaPost.image ?? [])]
-    while (imgs.length < 10) imgs.push("")
-    setImages(imgs.slice(0, 10))
+    while (imgs.length < FIXED_IMAGE_COUNT) imgs.push("")
+    setImages(imgs.slice(0, FIXED_IMAGE_COUNT))
 
     // Parse metadata from story
     if (pagodaPost.story) {
@@ -168,13 +175,29 @@ export default function PagodaPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Image helpers
+  // Image helpers for fixed slots (hero + sections)
   const setImage = (idx: number, url: string) => {
     setImages((prev) => { const next = [...prev]; next[idx] = url; return next })
     setDirty(true)
   }
   const clearImage = (idx: number) => setImage(idx, "")
-  const openPicker = (idx: number) => { setPickerTarget(idx); setPickerOpen(true) }
+  const openFixedPicker = (idx: number) => {
+    setPickerCurrentValue(images[idx] || undefined)
+    setPickerCallback({ fn: (url: string) => setImage(idx, url) })
+    setPickerOpen(true)
+  }
+  const openGalleryPicker = (galIdx: number) => {
+    setPickerCurrentValue(meta.gallery[galIdx]?.image || undefined)
+    setPickerCallback({ fn: (url: string) => {
+      setMeta((prev) => {
+        const gallery = [...prev.gallery]
+        gallery[galIdx] = { ...gallery[galIdx], image: url }
+        return { ...prev, gallery }
+      })
+      setDirty(true)
+    } })
+    setPickerOpen(true)
+  }
 
   // Metadata helpers
   const updateSection = (idx: number, field: keyof SectionData, value: string) => {
@@ -193,6 +216,20 @@ export default function PagodaPage() {
     })
     setDirty(true)
   }
+  const addGalleryItem = () => {
+    setMeta((prev) => ({
+      ...prev,
+      gallery: [...prev.gallery, { image: "", title: "", description: "", category: "" }],
+    }))
+    setDirty(true)
+  }
+  const removeGalleryItem = (idx: number) => {
+    setMeta((prev) => ({
+      ...prev,
+      gallery: prev.gallery.filter((_, i) => i !== idx),
+    }))
+    setDirty(true)
+  }
   const updateQuote = (field: "text" | "attribution", value: string) => {
     setMeta((prev) => ({ ...prev, quote: { ...prev.quote, [field]: value } }))
     setDirty(true)
@@ -205,7 +242,7 @@ export default function PagodaPage() {
   // Save handler
   const handleSave = () => setSaveConfirmOpen(true)
 
-  const executeSave = () => {
+  const executeSave = async () => {
     setSaveConfirmOpen(false)
     setSaving(true)
 
@@ -216,16 +253,16 @@ export default function PagodaPage() {
       label: "pagoda",
       postType: "place",
       status: "published",
-      image: images.filter(Boolean),
+      image: images.slice(0, FIXED_IMAGE_COUNT).filter(Boolean),
       story: JSON.stringify(meta),
     }
 
     try {
       if (pagodaPost) {
-        updatePost(pagodaPost.id, payload)
+        await updatePost(pagodaPost.id, payload)
         toast({ title: "Pagoda content updated", description: "Your changes have been saved." })
       } else {
-        createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
+        await createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
         toast({ title: "Pagoda content created", description: "The pagoda page is now live." })
       }
       setDirty(false)
@@ -241,16 +278,16 @@ export default function PagodaPage() {
       <AdminSidebar />
       <main className="flex-1 overflow-y-auto">
 
-        {/* ── Header ─────────────────────────────────────────────── */}
-        <div className="border-b border-border bg-card px-6 py-5 sticky top-0 z-10">
+        {/* ── Sticky Header ──────────────────────────────────────── */}
+        <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/40">
-                <Flame className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/40">
+                <Flame className="h-5 w-5 text-orange-600 dark:text-orange-300" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-card-foreground">Pagoda Festival</h1>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <h1 className="text-xl font-bold text-card-foreground">Pagoda Festival</h1>
+                <p className="text-sm text-muted-foreground">
                   Edit the Pagoda sa Bocaue page content
                 </p>
               </div>
@@ -265,200 +302,282 @@ export default function PagodaPage() {
           </div>
         </div>
 
-        <div className="p-6 space-y-8 max-w-5xl">
+        {/* ── Tab Navigation ─────────────────────────────────────── */}
+        <div className="px-6 pt-5 pb-6">
+          <Tabs defaultValue="hero" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid lg:grid-cols-3 mb-5">
+              <TabsTrigger value="hero" className="gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Hero & Overview
+              </TabsTrigger>
+              <TabsTrigger value="sections" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Content Sections
+              </TabsTrigger>
+              <TabsTrigger value="gallery" className="gap-2">
+                <GalleryHorizontalEnd className="h-4 w-4" />
+                Gallery & Quote
+              </TabsTrigger>
+            </TabsList>
 
-          {/* ── 1. Hero Section ───────────────────────────────────── */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <LayoutDashboard className="h-5 w-5 text-sky-500" />
-                Hero Section
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ImageSlot
-                src={images[SLOT.hero]}
-                label="Hero Background Image"
-                onPick={() => openPicker(SLOT.hero)}
-                onClear={() => clearImage(SLOT.hero)}
-                aspectClass="aspect-[21/9]"
-              />
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label>Badge Text</Label>
-                  <Input
-                    value={meta.badgeText}
-                    onChange={(e) => updateField("badgeText", e.target.value)}
-                    placeholder="Bocaue River Festival"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Event Date</Label>
-                  <Input
-                    value={meta.eventDate}
-                    onChange={(e) => updateField("eventDate", e.target.value)}
-                    placeholder="July 1st"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Subtitle</Label>
-                  <Input
-                    value={meta.subtitle}
-                    onChange={(e) => updateField("subtitle", e.target.value)}
-                    placeholder="A centuries-old river festival..."
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ── 2. Overview Section ───────────────────────────────── */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Type className="h-5 w-5 text-amber-500" />
-                Festival Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={overview}
-                onChange={(e) => { setOverview(e.target.value); setDirty(true) }}
-                placeholder="Write the festival overview description that appears after the stats..."
-                rows={5}
-                className="resize-y"
-              />
-            </CardContent>
-          </Card>
-
-          {/* ── 4. Content Sections (1-3) ─────────────────────────── */}
-          {meta.sections.map((sec, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex h-6 w-6 items-center justify-center rounded bg-sky-100 text-xs font-bold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  Content Section {i + 1}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <ImageSlot
-                    src={images[SLOT.sec1 + i]}
-                    label="Section Image"
-                    onPick={() => openPicker(SLOT.sec1 + i)}
-                    onClear={() => clearImage(SLOT.sec1 + i)}
-                  />
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label>Section Title</Label>
-                      <Input
-                        value={sec.title}
-                        onChange={(e) => updateSection(i, "title", e.target.value)}
-                        placeholder="Section title..."
-                      />
+            {/* ═══ TAB 1 — Hero & Overview ════════════════════════ */}
+            <TabsContent value="hero" className="space-y-5 mt-0">
+              {/* Hero */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-100 dark:bg-sky-900/40">
+                      <LayoutDashboard className="h-4 w-4 text-sky-600 dark:text-sky-300" />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Description</Label>
-                      <Textarea
-                        value={sec.description}
-                        onChange={(e) => updateSection(i, "description", e.target.value)}
-                        placeholder="Write the section description..."
-                        rows={5}
-                        className="resize-y"
-                      />
+                    <div>
+                      <CardTitle className="text-base">Hero Section</CardTitle>
+                      <p className="text-xs text-muted-foreground">Background image and headline details</p>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* ── 5. Pull Quote ─────────────────────────────────────── */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Quote className="h-5 w-5 text-violet-500" />
-                Pull Quote
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1.5">
-                <Label>Quote Text</Label>
-                <Textarea
-                  value={meta.quote.text}
-                  onChange={(e) => updateQuote("text", e.target.value)}
-                  placeholder="Where the river meets faith..."
-                  rows={3}
-                  className="resize-y italic"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Attribution</Label>
-                <Input
-                  value={meta.quote.attribution}
-                  onChange={(e) => updateQuote("attribution", e.target.value)}
-                  placeholder="— Bocaue Heritage"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ── 6. Gallery Section ────────────────────────────────── */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <GalleryHorizontalEnd className="h-5 w-5 text-rose-500" />
-                Gallery — Moments on the River
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="space-y-2 rounded-lg border border-border p-3">
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-4">
+                  <div className="grid gap-5 lg:grid-cols-2">
                     <ImageSlot
-                      src={images[SLOT.gal + i]}
-                      label={`Gallery Image ${i + 1}`}
-                      onPick={() => openPicker(SLOT.gal + i)}
-                      onClear={() => clearImage(SLOT.gal + i)}
-                      aspectClass="aspect-[4/3]"
+                      src={images[SLOT.hero]}
+                      label="Hero Background Image"
+                      onPick={() => openFixedPicker(SLOT.hero)}
+                      onClear={() => clearImage(SLOT.hero)}
+                      aspectClass="aspect-[16/10]"
                     />
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Title</Label>
-                      <Input
-                        value={meta.gallery[i]?.title ?? ""}
-                        onChange={(e) => updateGallery(i, "title", e.target.value)}
-                        placeholder="Image title..."
-                        className="h-8 text-sm"
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label>Badge Text</Label>
+                        <Input
+                          value={meta.badgeText}
+                          onChange={(e) => updateField("badgeText", e.target.value)}
+                          placeholder="Bocaue River Festival"
+                        />
+                      </div>
+                      <div className="grid gap-4 grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label>Event Date</Label>
+                          <Input
+                            value={meta.eventDate}
+                            onChange={(e) => updateField("eventDate", e.target.value)}
+                            placeholder="July 1st"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Subtitle</Label>
+                          <Input
+                            value={meta.subtitle}
+                            onChange={(e) => updateField("subtitle", e.target.value)}
+                            placeholder="A centuries-old river festival..."
+                          />
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Overview */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/40">
+                      <Type className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Festival Overview</CardTitle>
+                      <p className="text-xs text-muted-foreground">Description shown after the statistics section</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-4">
+                  <Textarea
+                    value={overview}
+                    onChange={(e) => { setOverview(e.target.value); setDirty(true) }}
+                    placeholder="Write the festival overview description that appears after the stats..."
+                    rows={4}
+                    className="resize-y"
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ═══ TAB 2 — Content Sections ═══════════════════════ */}
+            <TabsContent value="sections" className="space-y-5 mt-0">
+              {meta.sections.map((sec, i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-100 dark:bg-sky-900/40">
+                        <span className="text-xs font-bold text-sky-700 dark:text-sky-300">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Content Section {i + 1}</CardTitle>
+                        <p className="text-xs text-muted-foreground">Image and text for story section {i + 1}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <Separator />
+                  <CardContent className="pt-4">
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      <ImageSlot
+                        src={images[SLOT.sec1 + i]}
+                        label="Section Image"
+                        onPick={() => openFixedPicker(SLOT.sec1 + i)}
+                        onClear={() => clearImage(SLOT.sec1 + i)}
+                      />
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label>Section Title</Label>
+                          <Input
+                            value={sec.title}
+                            onChange={(e) => updateSection(i, "title", e.target.value)}
+                            placeholder="Section title..."
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Description</Label>
+                          <Textarea
+                            value={sec.description}
+                            onChange={(e) => updateSection(i, "description", e.target.value)}
+                            placeholder="Write the section description..."
+                            rows={5}
+                            className="resize-y"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+
+            {/* ═══ TAB 3 — Gallery & Quote ════════════════════════ */}
+            <TabsContent value="gallery" className="space-y-5 mt-0">
+              {/* Pull Quote */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/40">
+                      <Quote className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Pull Quote</CardTitle>
+                      <p className="text-xs text-muted-foreground">Featured quote displayed on the page</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-4">
+                  <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Description</Label>
+                      <Label>Quote Text</Label>
                       <Textarea
-                        value={meta.gallery[i]?.description ?? ""}
-                        onChange={(e) => updateGallery(i, "description", e.target.value)}
-                        placeholder="Image description..."
-                        rows={2}
-                        className="text-sm resize-y"
+                        value={meta.quote.text}
+                        onChange={(e) => updateQuote("text", e.target.value)}
+                        placeholder="Where the river meets faith..."
+                        rows={3}
+                        className="resize-y italic"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Category</Label>
+                      <Label>Attribution</Label>
                       <Input
-                        value={meta.gallery[i]?.category ?? ""}
-                        onChange={(e) => updateGallery(i, "category", e.target.value)}
-                        placeholder="e.g. Procession, Celebration..."
-                        className="h-8 text-sm"
+                        value={meta.quote.attribution}
+                        onChange={(e) => updateQuote("attribution", e.target.value)}
+                        placeholder="— Bocaue Heritage"
                       />
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          <div className="h-8" />
+              {/* Gallery */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-rose-100 dark:bg-rose-900/40">
+                        <GalleryHorizontalEnd className="h-4 w-4 text-rose-600 dark:text-rose-300" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Gallery — Moments on the River</CardTitle>
+                        <p className="text-xs text-muted-foreground">{meta.gallery.length} photo{meta.gallery.length !== 1 ? "s" : ""} added</p>
+                      </div>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addGalleryItem}>
+                      <Plus className="h-4 w-4" />
+                      Add Photo
+                    </Button>
+                  </div>
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-4">
+                  {meta.gallery.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/60">
+                      <GalleryHorizontalEnd className="h-10 w-10 mb-2" />
+                      <p className="text-sm">No gallery photos yet</p>
+                      <p className="text-xs">Click "Add Photo" to start building your gallery</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {meta.gallery.map((item, i) => (
+                        <div key={i} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2.5 relative group">
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryItem(i)}
+                            className="absolute top-2 right-2 z-10 h-7 w-7 rounded-full bg-destructive/90 text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                            title="Remove photo"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                          <ImageSlot
+                            src={item.image}
+                            label={`Gallery Image ${i + 1}`}
+                            onPick={() => openGalleryPicker(i)}
+                            onClear={() => updateGallery(i, "image", "")}
+                            aspectClass="aspect-[4/3]"
+                          />
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Title</Label>
+                            <Input
+                              value={item.title}
+                              onChange={(e) => updateGallery(i, "title", e.target.value)}
+                              placeholder="Image title..."
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="grid gap-3 grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Category</Label>
+                              <Input
+                                value={item.category}
+                                onChange={(e) => updateGallery(i, "category", e.target.value)}
+                                placeholder="e.g. Procession"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Description</Label>
+                              <Input
+                                value={item.description}
+                                onChange={(e) => updateGallery(i, "description", e.target.value)}
+                                placeholder="Brief caption..."
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
@@ -468,11 +587,11 @@ export default function PagodaPage() {
         onOpenChange={setPickerOpen}
         accept="image"
         title="Select Image"
-        currentValue={pickerTarget >= 0 ? images[pickerTarget] : undefined}
+        currentValue={pickerCurrentValue}
         uploadCategory="arts-culture"
         uploadLabel="pagoda"
         onSelect={(url) => {
-          if (pickerTarget >= 0) setImage(pickerTarget, url)
+          pickerCallback?.fn(url)
           setPickerOpen(false)
         }}
       />

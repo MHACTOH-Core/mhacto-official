@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Hammer, ArrowRight, Star } from "lucide-react"
@@ -10,19 +9,17 @@ import type { Artisan } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToArtisan } from "@/lib/cms-mappers"
 import { asset } from "@/lib/utils"
+import { useAPIData } from "@/hooks/use-api-data"
 
 const MAX_FEATURED = 3
 
 export function CraftsSection() {
-  const [items, setItems] = useState<Artisan[]>([])
-
-  useEffect(() => {
-    apiFetchFeaturedByLabel("crafts-artisan", MAX_FEATURED)
-      .then((posts) => {
-        if (posts?.length) setItems(posts.slice(0, MAX_FEATURED).map(cmsToArtisan))
-      })
-      .catch(() => {})
-  }, [])
+  const { data: items = [] } = useAPIData<Artisan[]>(
+    "featured-crafts-artisan",
+    () => apiFetchFeaturedByLabel("crafts-artisan", MAX_FEATURED).then((posts) =>
+      posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToArtisan) : []
+    ),
+  )
 
   if (items.length === 0) return null
 

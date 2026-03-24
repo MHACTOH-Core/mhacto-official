@@ -96,7 +96,7 @@ export function MediaPicker({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
-  const loadFiles = useCallback(async () => {
+  const loadFiles = useCallback(async (retryCount = 0) => {
     setLoading(true)
     setError(null)
     try {
@@ -109,7 +109,12 @@ export function MediaPicker({
       setFiles(all)
     } catch (err) {
       console.error("Failed to load media:", err)
-      setError("Failed to load media library. Make sure the backend is running.")
+      // Auto-retry once after 2 seconds on failure
+      if (retryCount < 1) {
+        setTimeout(() => loadFiles(retryCount + 1), 2000)
+        return // keep loading state active
+      }
+      setError("Failed to load media library. Check your connection and try again.")
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Calendar, Megaphone, Clock, User, Loader2 } from "lucide-react"
@@ -9,19 +10,13 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
 import { resolveMediaUrl } from "@/lib/utils"
+import { useAPIData } from "@/hooks/use-api-data"
 
 export default function NewsPage() {
-  const [articles, setArticles] = useState<NewsArticleAPI[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Sends GET /api/posts/read.php?type=news → PHP runs SQL SELECT on content WHERE post_type='news' → returns JSON
-  useEffect(() => {
-    apiFetchPublishedNews()
-      .then((data) => setArticles(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: articles = [], isLoading: loading, error } = useAPIData<NewsArticleAPI[]>(
+    "published-news",
+    () => apiFetchPublishedNews(),
+  )
 
   const featuredArticles = articles.filter((a) => a.isFeatured)
   const regularArticles = articles.filter((a) => !a.isFeatured)
