@@ -148,7 +148,7 @@ export function HistoryArtSection() {
         {/* See Full Story CTA */}
         <div className="mt-12 text-center reveal-on-scroll">
           <Link
-            href="/history"
+            href="/history/timeline"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-105"
           >
             See Full Story
