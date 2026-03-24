@@ -45,7 +45,8 @@ class Response
     public static function preflight(): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            http_response_code(200);
+            header("Access-Control-Max-Age: 86400"); // cache preflight for 24h
+            http_response_code(204);
             exit();
         }
     }

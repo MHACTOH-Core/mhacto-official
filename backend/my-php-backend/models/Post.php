@@ -65,17 +65,10 @@ class Post
             return;
         }
 
-        // Check if exists
-        $stmt = $this->conn->prepare("SELECT meta_id FROM content_fields WHERE content_id = :id AND meta_key = :k LIMIT 1");
-        $stmt->execute([':id' => $contentId, ':k' => $key]);
-
-        if ($stmt->fetch()) {
-            $this->conn->prepare("UPDATE content_fields SET meta_value = :v WHERE content_id = :id AND meta_key = :k")
-                ->execute([':v' => $value, ':id' => $contentId, ':k' => $key]);
-        } else {
-            $this->conn->prepare("INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES (:id, :k, :v)")
-                ->execute([':id' => $contentId, ':k' => $key, ':v' => $value]);
-        }
+        $this->conn->prepare(
+            "INSERT INTO content_fields (content_id, meta_key, meta_value) VALUES (:id, :k, :v)
+             ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)"
+        )->execute([':id' => $contentId, ':k' => $key, ':v' => $value]);
     }
 
     /** Bulk set meta keys for a content item. */

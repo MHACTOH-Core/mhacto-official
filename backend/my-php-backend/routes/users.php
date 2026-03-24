@@ -23,9 +23,7 @@ use App\Core\Response;
 function handle_users(string $method, ?string $param1, ?string $param2): void
 {
     // All user management operations require authentication
-    if ($method !== 'GET') {
-        Auth::requireAuth();
-    }
+    Auth::requireAuth();
 
     try {
         $db = (new Database())->getConnection();
@@ -33,6 +31,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
 
         // Restore action: PUT /api/users/{id}/restore
         if ($method === 'PUT' && $param2 === 'restore' && $param1 && is_numeric($param1)) {
+            Auth::requireRole(['super_admin', 'admin']);
             $restored = $user->restore((int) $param1);
             if ($restored) {
                 Response::json(['message' => 'User restored successfully.']);
@@ -65,12 +64,20 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
 
         // Change password: PUT /api/users/{id}/change-password
         if ($method === 'PUT' && $param2 === 'change-password' && $param1 && is_numeric($param1)) {
+            $authUser = Auth::requireAuth();
+            $targetId = (int) $param1;
+
+            // Users can only change their own password unless super_admin
+            if ((int) $authUser['user_id'] !== $targetId && $authUser['role'] !== 'super_admin') {
+                Response::error('You can only change your own password.', 403);
+            }
+
             $data = json_decode(file_get_contents('php://input'), true);
             if (empty($data['oldPassword']) || empty($data['newPassword'])) {
                 Response::error('Current password and new password are required.', 400);
             }
-            if (strlen($data['newPassword']) < 6) {
-                Response::error('New password must be at least 6 characters.', 400);
+            if (strlen($data['newPassword']) < 8 || !preg_match('/[A-Za-z]/', $data['newPassword']) || !preg_match('/[0-9]/', $data['newPassword'])) {
+                Response::error('New password must be at least 8 characters and contain both letters and numbers.', 400);
             }
             $result = $user->changePassword((int) $param1, $data['oldPassword'], $data['newPassword']);
             if ($result === true) {
@@ -166,10 +173,15 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
                 break;
 
             case 'POST':
+                Auth::requireRole(['super_admin', 'admin']);
                 $data = Response::getJsonInput();
 
                 if (empty($data->email) || empty($data->password) || empty($data->fullName)) {
                     Response::error('Full name, email, and password are required.', 400);
+                }
+
+                if (strlen($data->password) < 8 || !preg_match('/[A-Za-z]/', $data->password) || !preg_match('/[0-9]/', $data->password)) {
+                    Response::error('Password must be at least 8 characters and contain both letters and numbers.', 400);
                 }
 
                 $role = $data->role ?? 'admin';

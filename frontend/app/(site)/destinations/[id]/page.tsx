@@ -1,6 +1,5 @@
 import DestinationDetailClient from "./destination-detail-client"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+import { API_BASE } from "@/lib/api"
 
 export async function generateStaticParams() {
   try {

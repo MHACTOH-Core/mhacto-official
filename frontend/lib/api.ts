@@ -60,11 +60,62 @@ export function getAuthToken(): string | null {
 
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
+const DEFAULT_TIMEOUT = 15_000 // 15 seconds
+const MAX_RETRIES = 2
+const RETRY_DELAY = 1_000 // 1 second
+const CACHE_TTL = 30_000 // 30 seconds for GET cache
+
+function isRetryable(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true
+  if (err instanceof TypeError) return true // network error
+  return false
+}
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ─── In-memory cache + request deduplication ──────────────────────
+
+interface CacheEntry<T = unknown> {
+  data: T
+  ts: number
+}
+
+const _cache = new Map<string, CacheEntry>()
+const _inflight = new Map<string, Promise<unknown>>()
+
+function getCacheKey(url: string): string {
+  // Strip cache-buster params like _t=
+  try {
+    const u = new URL(url)
+    u.searchParams.delete("_t")
+    return u.toString()
+  } catch {
+    return url.replace(/[?&]_t=\d+/g, "")
+  }
+}
+
+/** Clear the in-memory GET cache. Pass a substring to clear only matching entries. */
+export function invalidateCache(pattern?: string) {
+  if (!pattern) {
+    _cache.clear()
+    return
+  }
+  for (const key of _cache.keys()) {
+    if (key.includes(pattern)) _cache.delete(key)
+  }
+}
+
 /**
  * Centralised fetch wrapper. All backend calls go through here
  * for consistent URL resolution, JSON parsing, and error handling.
  * Automatically attaches the JWT Authorization header when a token is set.
  * Endpoints starting with /api/ are automatically versioned to /api/v1/.
+ * Includes a 15-second timeout and up to 2 retries on network errors.
+ *
+ * GET requests are cached in-memory for 30s and deduplicated so that
+ * multiple components requesting the same URL share a single network call.
  */
 export async function apiFetch<T>(
   endpoint: string,
@@ -75,6 +126,21 @@ export async function apiFetch<T>(
     ? `/api/v1/${endpoint.slice(5)}`
     : endpoint
   const url = `${API_BASE}${versioned}`
+
+  const method = (options.method ?? "GET").toUpperCase()
+  const isGet = method === "GET" && !options.body
+  const cacheKey = isGet ? getCacheKey(url) : ""
+
+  // ── Serve from cache for GET requests ──
+  if (isGet && !options.signal) {
+    const cached = _cache.get(cacheKey)
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return cached.data as T
+    }
+    // Deduplicate: if the same GET is already in-flight, share its promise
+    const existing = _inflight.get(cacheKey)
+    if (existing) return existing as Promise<T>
+  }
 
   // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
   // Omitting it on GET avoids unnecessary CORS preflight requests.
@@ -89,37 +155,86 @@ export async function apiFetch<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
-    ...options,
-    cache: 'no-store',
-    headers,
-  })
+  const doFetch = async (): Promise<T> => {
+    let lastError: unknown
 
-  // Try to parse JSON even for error responses
-  const rawText = await response.text()
-  let envelope: { success?: boolean; data?: T; error?: string; message?: string }
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT)
 
-  try {
-    envelope = rawText ? JSON.parse(rawText) : {}
-  } catch {
-    throw new Error(`Invalid JSON response from ${endpoint}`)
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers,
+          signal: options.signal ?? controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        // Try to parse JSON even for error responses
+        const rawText = await response.text()
+        let envelope: { success?: boolean; data?: T; error?: string; message?: string }
+
+        try {
+          envelope = rawText ? JSON.parse(rawText) : {}
+        } catch {
+          throw new Error(`Invalid JSON response from ${endpoint}`)
+        }
+
+        if (!response.ok) {
+          const errorMessage =
+            envelope.error ??
+            envelope.message ??
+            `Request failed (${response.status})`
+          throw new Error(errorMessage)
+        }
+
+        // Unwrap standard { success, data } envelope; fall back to raw response
+        // for any non-enveloped responses (e.g. third-party or upload endpoints).
+        let result: T
+        if (envelope.success !== undefined && 'data' in envelope) {
+          result = envelope.data as T
+        } else {
+          result = envelope as unknown as T
+        }
+
+        // Cache the result for GET requests
+        if (isGet) {
+          _cache.set(cacheKey, { data: result, ts: Date.now() })
+        }
+
+        return result
+      } catch (err) {
+        clearTimeout(timeoutId)
+        lastError = err
+
+        // Only retry on network/timeout errors, not on 4xx/5xx HTTP errors
+        if (attempt < MAX_RETRIES && isRetryable(err)) {
+          await sleep(RETRY_DELAY * (attempt + 1))
+          continue
+        }
+        throw err
+      }
+    }
+
+    throw lastError
   }
 
-  if (!response.ok) {
-    const errorMessage =
-      envelope.error ??
-      envelope.message ??
-      `Request failed (${response.status})`
-    throw new Error(errorMessage)
+  // Wrap in deduplication for GET requests
+  if (isGet && !options.signal) {
+    const promise = doFetch().finally(() => _inflight.delete(cacheKey))
+    _inflight.set(cacheKey, promise)
+    return promise
   }
 
-  // Unwrap standard { success, data } envelope; fall back to raw response
-  // for any non-enveloped responses (e.g. third-party or upload endpoints).
-  if (envelope.success !== undefined && 'data' in envelope) {
-    return envelope.data as T
+  // Mutations: invalidate related cache entries
+  if (!isGet) {
+    // Extract the path portion for targeted invalidation
+    const pathPart = versioned.split("?")[0]
+    invalidateCache(pathPart)
   }
 
-  return envelope as unknown as T
+  return doFetch()
 }
 
 // ─── Media Library ────────────────────────────────────────────────
@@ -164,20 +279,44 @@ export async function apiUploadMedia(
   if (options?.contentName) params.set("content_name", options.contentName)
 
   const uploadUrl = `${API_BASE}/api/v1/media?${params.toString()}`
+  // Do NOT set Content-Type — browser must set it with multipart boundary
   const uploadHeaders: Record<string, string> = {}
   const token = getAuthToken()
   if (token) uploadHeaders["Authorization"] = `Bearer ${token}`
 
-  const response = await fetch(uploadUrl, { method: "POST", body: formData, headers: uploadHeaders })
-  const rawText = await response.text()
-  const envelope: { success?: boolean; data?: MediaUploadResult; error?: string } = rawText
-    ? JSON.parse(rawText)
-    : {}
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 60_000) // 60s for uploads
 
-  if (!response.ok) {
-    throw new Error(envelope.error ?? "Upload failed")
+  try {
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+      headers: uploadHeaders,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    const rawText = await response.text()
+    let envelope: { success?: boolean; data?: MediaUploadResult; error?: string }
+
+    try {
+      envelope = rawText ? JSON.parse(rawText) : {}
+    } catch {
+      throw new Error("Invalid response from server during upload")
+    }
+
+    if (!response.ok) {
+      throw new Error(envelope.error ?? "Upload failed")
+    }
+    return (envelope.data ?? envelope) as MediaUploadResult
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Upload timed out. Please try again.")
+    }
+    throw err
   }
-  return (envelope.data ?? envelope) as MediaUploadResult
 }
 
 /** Delete an uploaded media file */
@@ -315,10 +454,10 @@ export function apiFetchAllPageHeroes() {
   return apiFetch<PageHeroData[]>("/api/heroes")
 }
 
-/** Fetch a single page hero by slug (with cache-busting timestamp) */
+/** Fetch a single page hero by slug */
 export function apiFetchPageHero(slug: string) {
   return apiFetch<PageHeroData>(
-    `/api/heroes?slug=${encodeURIComponent(slug)}&_t=${Date.now()}`,
+    `/api/heroes?slug=${encodeURIComponent(slug)}`,
   )
 }
 

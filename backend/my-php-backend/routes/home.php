@@ -21,9 +21,9 @@ use App\Core\Response;
 
 function handle_home(string $method, ?string $sub): void
 {
-    // Write operations on home content require authentication
+    // Write operations on home content require admin/content_manager role
     if ($method !== 'GET') {
-        Auth::requireAuth();
+        Auth::requireRole(['super_admin', 'admin', 'content_manager']);
     }
 
     try {
@@ -62,7 +62,11 @@ function handle_home(string $method, ?string $sub): void
         }
     } catch (Exception $e) {
         error_log("home/{$sub} error: " . $e->getMessage());
-        Response::error('An internal error occurred.', 500);
+        $isDev = ($_ENV['APP_ENV'] ?? 'development') !== 'production';
+        $msg = $isDev
+            ? "home/{$sub}: " . $e->getMessage()
+            : 'An internal error occurred.';
+        Response::error($msg, 500);
     }
 }
 

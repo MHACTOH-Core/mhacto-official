@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, Star, Users } from "lucide-react"
@@ -9,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { PeopleWonder } from "@/lib/data/culture-data"
 import { apiFetchFeaturedByLabel } from "@/lib/api"
 import { cmsToPeopleWonder } from "@/lib/cms-mappers"
+import { useAPIData } from "@/hooks/use-api-data"
 
 const MAX_FEATURED = 3
 
@@ -31,17 +31,12 @@ const categoryLabel: Record<PeopleWonder["category"], string> = {
 }
 
 export function FeaturedPeopleWonders() {
-  const [persons, setPersons] = useState<PeopleWonder[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    apiFetchFeaturedByLabel("people-wonders", MAX_FEATURED)
-      .then((posts) => {
-        if (posts?.length) setPersons(posts.slice(0, MAX_FEATURED).map(cmsToPeopleWonder))
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [])
+  const { data: persons = [], isLoading } = useAPIData<PeopleWonder[]>(
+    "featured-people-wonders",
+    () => apiFetchFeaturedByLabel("people-wonders", MAX_FEATURED).then((posts) =>
+      posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToPeopleWonder) : []
+    ),
+  )
 
   if (!isLoading && persons.length === 0) return null
 

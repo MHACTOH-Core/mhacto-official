@@ -98,8 +98,14 @@ export function PageHero({
 
   useEffect(() => {
     let cancelled = false
+    let lastFetchTime = 0
+    const THROTTLE_MS = 30_000 // Refetch at most once per 30s on focus
 
     const fetchHero = () => {
+      const now = Date.now()
+      if (now - lastFetchTime < THROTTLE_MS) return
+      lastFetchTime = now
+
       apiFetchPageHero(pageSlug)
         .then((data) => {
           if (!cancelled && data?.slug) setHero(data)
@@ -114,7 +120,7 @@ export function PageHero({
     fetchHero() // initial load
 
     // Re-fetch when the tab / window regains focus so admin edits
-    // show up immediately without a manual hard-refresh.
+    // show up without a manual hard-refresh (throttled to max once per 30s).
     const onFocus = () => fetchHero()
     window.addEventListener('focus', onFocus)
 

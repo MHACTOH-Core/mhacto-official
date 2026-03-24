@@ -27,15 +27,15 @@ function handle_posts(string $method, ?string $id): void
                 _posts_read($post, $id);
                 break;
             case 'POST':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 _posts_create($post);
                 break;
             case 'PUT':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 _posts_update($post, $id, $db);
                 break;
             case 'DELETE':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 _posts_delete($post, $id);
                 break;
             default:
@@ -129,6 +129,22 @@ function _posts_create(Post $post): void
     $data = json_decode(file_get_contents('php://input'), true);
     if (!$data || empty($data['title'])) {
         Response::error('Title is required.', 400);
+    }
+
+    // Singleton labels — only one post allowed per label
+    $singletonLabels = ['pagoda'];
+    $label = $data['label'] ?? '';
+    if (in_array($label, $singletonLabels, true)) {
+        $db = $GLOBALS['db'];
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM content c
+             JOIN content_fields cf ON c.content_id = cf.content_id
+             WHERE cf.meta_key = :mk AND cf.meta_value = :lk'
+        );
+        $stmt->execute([':mk' => 'label_key', ':lk' => $label]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            Response::error("Only one \"{$label}\" entry is allowed. Please update the existing one instead.", 409);
+        }
     }
 
     $mapped    = _posts_mapFrontendToDb($data);

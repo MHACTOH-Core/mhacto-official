@@ -22,14 +22,14 @@ function handle_analytics(string $method, ?string $action): void
         switch ($action) {
             case 'pageviews':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 $analytics = new Analytics($db);
                 Response::json($analytics->getPageViews());
                 break;
 
             case 'visits':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 $analytics = new Analytics($db);
                 $days = isset($_GET['days']) ? (int) $_GET['days'] : 30;
                 Response::json($analytics->getDailyVisits($days));
@@ -37,7 +37,7 @@ function handle_analytics(string $method, ?string $action): void
 
             case 'top-destinations':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 $pageView = new PageView($db);
                 $limit = isset($_GET['limit']) ? max(1, min((int) $_GET['limit'], 50)) : 10;
                 Response::json($pageView->getTopDestinations($limit));

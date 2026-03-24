@@ -22,7 +22,7 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
 
         // POST /api/inquiries/{id}/reply — admin action, requires auth
         if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'reply') {
-            Auth::requireAuth();
+            Auth::requireRole(['super_admin', 'admin']);
             _inquiries_reply($inquiry, (int) $idOrAction);
             return;
         }
@@ -34,7 +34,7 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
 
         switch ($method) {
             case 'GET':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 _inquiries_read($inquiry);
                 break;
             case 'POST':
@@ -43,12 +43,12 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
                 break;
             case 'PUT':
             case 'PATCH':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 if (!$id) Response::error('Missing inquiry ID.', 400);
                 _inquiries_update($inquiry, $id);
                 break;
             case 'DELETE':
-                Auth::requireAuth();
+                Auth::requireRole(['super_admin', 'admin']);
                 if (!$id) Response::error('Missing inquiry ID.', 400);
                 _inquiries_delete($inquiry, $id);
                 break;
@@ -185,10 +185,11 @@ function _inquiries_reply(Inquiry $inquiry, int $id): void
         Response::error('reply_text is required.', 400);
     }
 
+    $authUser = Auth::requireAuth(); // re-extract user info (role already verified by caller)
     $success = $inquiry->update($id, [
         'reply_text' => trim($data['reply_text']),
         'replied_at' => date('Y-m-d H:i:s'),
-        'replied_by' => $data['replied_by'] ?? 'Admin',
+        'replied_by' => $authUser['email'] ?? 'Admin',
     ]);
 
     if ($success) {

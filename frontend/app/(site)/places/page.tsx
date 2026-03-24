@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+"use client"
+
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, MapPin, Clock, Loader2 } from "lucide-react"
@@ -8,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRevealOnScroll } from "@/hooks/use-reveal"
 import { apiFetchPublishedPlaces, type CMSPost } from "@/lib/api"
+import { useAPIData } from "@/hooks/use-api-data"
 
 // Derive category labels from the category string
 function categoryLabel(cat?: string) {
@@ -19,19 +22,12 @@ function categoryLabel(cat?: string) {
 }
 
 export default function PlacesPage() {
-  const [places, setPlaces] = useState<CMSPost[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: places = [], isLoading: loading, error } = useAPIData<CMSPost[]>(
+    "published-places",
+    () => apiFetchPublishedPlaces(),
+  )
   const [activeCategory, setActiveCategory] = useState<string>("all")
   const [showAll, setShowAll] = useState(false)
-
-  // Sends GET /api/posts/read.php?type=places → PHP runs SQL SELECT on content WHERE post_type='place' → returns JSON
-  useEffect(() => {
-    apiFetchPublishedPlaces()
-      .then((data) => setPlaces(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
 
   // Derive unique categories from data
   const categories = useMemo(() => {

@@ -32,8 +32,10 @@ export function HeroSection() {
   // Fetch hero slides from the CMS backend
   // Sends GET /api/home/hero.php → PHP runs SQL SELECT on site_settings → returns JSON
   useEffect(() => {
+    let cancelled = false
     apiFetchHeroSlides()
       .then((slides) => {
+        if (cancelled) return
         if (slides && slides.length > 0) {
           // Normalise image paths — resolve /uploads/ via API, others via basePath
           const normalizedSlides = slides.map((slide) => ({
@@ -46,7 +48,8 @@ export function HeroSection() {
         }
       })
       .catch(() => {})
-      .finally(() => setIsDataLoaded(true))
+      .finally(() => { if (!cancelled) setIsDataLoaded(true) })
+    return () => { cancelled = true }
   }, [])
 
   // Throttled scroll tracking via requestAnimationFrame to avoid excessive re-renders

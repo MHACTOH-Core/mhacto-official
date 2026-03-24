@@ -42,10 +42,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Sparkles,
   Landmark,
-  Calendar,
-  MapPin,
   ChevronUp,
   ChevronDown,
   Save,
@@ -53,28 +50,19 @@ import {
 } from "lucide-react"
 import { MediaPickerInput } from "@/components/ui/media-picker"
 import {
-  apiFetchAllSpotlights,
   apiFetchAllMilestones,
   apiFetchHeroSettings,
-  apiCreateSpotlight,
-  apiUpdateSpotlight,
-  apiDeleteSpotlight,
   apiCreateMilestone,
   apiUpdateMilestone,
   apiDeleteMilestone,
   apiReorderMilestones,
   apiUpdateHeroSettings,
-  apiFetchPosts,
   apiFetchTimelinePosts,
-  type Spotlight,
   type Milestone,
   type HeroSettings,
-  type FeaturedContent,
 } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { useToast } from "@/hooks/use-toast"
-
-type ContentType = "spotlight" | "milestone"
 
 export default function HomeContentPage() {
   const router = useRouter()
@@ -84,7 +72,6 @@ export default function HomeContentPage() {
 
   // Data state
   const [heroSettings, setHeroSettings] = useState<HeroSettings | null>(null)
-  const [spotlights, setSpotlights] = useState<(FeaturedContent & Spotlight)[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -93,16 +80,14 @@ export default function HomeContentPage() {
   const [activeTab, setActiveTab] = useState("hero")
 
   // CMS posts for selection
-  const [cmsEvents, setCmsEvents] = useState<CMSPost[]>([])
   const [cmsTimelinePosts, setCmsTimelinePosts] = useState<CMSPost[]>([])
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [dialogType, setDialogType] = useState<ContentType>("spotlight")
-  const [editingItem, setEditingItem] = useState<(FeaturedContent & Spotlight) | Milestone | null>(null)
+  const [editingItem, setEditingItem] = useState<Milestone | null>(null)
 
   // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState<{ type: ContentType; id: number } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number } | null>(null)
 
   // Save confirmation
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
@@ -141,29 +126,20 @@ export default function HomeContentPage() {
 
   // Fetches ALL admin home-page content in parallel:
   //   1. GET /api/home/hero-settings.php          → PHP: SELECT from site_settings
-  //   2. GET /api/home/spotlight.php?all=1         → PHP: SELECT from featured_content WHERE section='spotlight'
-  //   3. GET /api/home/milestones.php?all=1        → PHP: SELECT from milestone
-  //   4. GET /api/posts/read.php?status=published  → PHP: SELECT from content WHERE status='published'
+  //   2. GET /api/home/milestones.php?all=1        → PHP: SELECT from milestone
+  //   3. GET /api/home/timeline-posts              → PHP: SELECT timeline posts
   const loadAllContent = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [settings, spots, miles, allPosts, timelinePosts] = await Promise.all([
+      const [settings, miles, timelinePosts] = await Promise.all([
         apiFetchHeroSettings().catch(() => null),
-        apiFetchAllSpotlights().catch(() => []),
         apiFetchAllMilestones().catch(() => []),
-        apiFetchPosts("published").catch(() => []),
         apiFetchTimelinePosts().catch(() => []),
       ])
       setHeroSettings(settings)
-      setSpotlights(Array.isArray(spots) ? spots : spots ? [spots] : [])
       setMilestones(miles)
       setCmsTimelinePosts(timelinePosts)
-      
-      // Filter CMS posts by type/category
-      const events = allPosts.filter((p: CMSPost) => p.postType === "event" || p.label === "events" || p.label === "festivals")
-      
-      setCmsEvents(events)
     } catch (err) {
       setError("Failed to load content. Make sure the backend is running.")
       console.error(err)
@@ -172,65 +148,42 @@ export default function HomeContentPage() {
     }
   }
 
-  const openCreateDialog = (type: ContentType) => {
-    setDialogType(type)
+  const openCreateDialog = () => {
     setEditingItem(null)
-    setFormData(getDefaultFormData(type))
+    setFormData({ contentId: "", year: "", side: "left", sortOrder: milestones.length + 1, isActive: true })
     setDialogOpen(true)
   }
 
-  const openEditDialog = (type: ContentType, item: (FeaturedContent & Spotlight) | Milestone) => {
-    setDialogType(type)
+  const openEditDialog = (item: Milestone) => {
     setEditingItem(item)
-    if (type === "milestone") {
-      const mile = item as Milestone
-      const linkedPost = mile.contentId ? cmsTimelinePosts.find(p => p.id === mile.contentId) : null
-      const yearFromMeta = linkedPost?.established || ""
-      const yearFromTitle = linkedPost?.title?.match(/\b(\d{4})\b/)?.[1] || ""
-      setFormData({
-        ...mile,
-        year: mile.year || yearFromMeta || yearFromTitle,
-        _previewTitle: linkedPost?.title || mile.title || "",
-        _previewYear: mile.year || yearFromMeta || yearFromTitle,
-        _previewDescription: linkedPost?.body?.substring(0, 300) || mile.description || "",
-      })
-    } else {
-      setFormData({ ...item })
-    }
+    const linkedPost = item.contentId ? cmsTimelinePosts.find(p => p.id === item.contentId) : null
+    const yearFromMeta = linkedPost?.established || ""
+    const yearFromTitle = linkedPost?.title?.match(/\b(\d{4})\b/)?.[1] || ""
+    setFormData({
+      ...item,
+      year: item.year || yearFromMeta || yearFromTitle,
+      _previewTitle: linkedPost?.title || item.title || "",
+      _previewYear: item.year || yearFromMeta || yearFromTitle,
+      _previewDescription: linkedPost?.body?.substring(0, 300) || item.description || "",
+    })
     setDialogOpen(true)
-  }
-
-  const getDefaultFormData = (type: ContentType): Record<string, unknown> => {
-    switch (type) {
-      case "spotlight":
-        return { contentId: "", sortOrder: spotlights.length + 1, isActive: false }
-      case "milestone":
-        return { contentId: "", year: "", side: "left", sortOrder: milestones.length + 1, isActive: true }
-      default:
-        return {}
-    }
   }
 
   const handleSave = async () => {
     try {
-      if (dialogType === "spotlight") {
-        if (editingItem) {
-          await apiUpdateSpotlight((editingItem as FeaturedContent).featuredId, formData as Partial<Spotlight>)
-        } else {
-          await apiCreateSpotlight(formData as Partial<Spotlight>)
-        }
-      } else if (dialogType === "milestone") {
-        // Strip preview-only fields before sending to API
-        const { _previewTitle, _previewYear, _previewDescription, ...milestoneData } = formData
-        if (editingItem) {
-          await apiUpdateMilestone((editingItem as Milestone).milestoneId, milestoneData as Partial<Milestone>)
-        } else {
-          await apiCreateMilestone(milestoneData as Partial<Milestone>)
-        }
+      // Strip preview-only fields before sending to API, but map them
+      // to actual columns when the user hasn't provided explicit values
+      const { _previewTitle, _previewYear, _previewDescription, ...milestoneData } = formData
+      if (!milestoneData.title && _previewTitle) milestoneData.title = _previewTitle
+      if (!milestoneData.description && _previewDescription) milestoneData.description = _previewDescription
+      if (editingItem) {
+        await apiUpdateMilestone(editingItem.milestoneId, milestoneData as Partial<Milestone>)
+      } else {
+        await apiCreateMilestone(milestoneData as Partial<Milestone>)
       }
       setDialogOpen(false)
       loadAllContent()
-      toast({ title: editingItem ? "Content updated" : "Content created", description: `${dialogType === "spotlight" ? "Spotlight" : "Milestone"} has been ${editingItem ? "updated" : "created"}.` })
+      toast({ title: editingItem ? "Content updated" : "Content created", description: `Milestone has been ${editingItem ? "updated" : "created"}.` })
     } catch (err) {
       console.error("Save failed:", err)
       setError("Failed to save. Please try again.")
@@ -241,14 +194,10 @@ export default function HomeContentPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return
     try {
-      if (deleteTarget.type === "spotlight") {
-        await apiDeleteSpotlight(deleteTarget.id)
-      } else if (deleteTarget.type === "milestone") {
-        await apiDeleteMilestone(deleteTarget.id)
-      }
+      await apiDeleteMilestone(deleteTarget.id)
       setDeleteTarget(null)
       loadAllContent()
-      toast({ title: "Content deleted", description: `${deleteTarget.type === "spotlight" ? "Spotlight" : "Milestone"} has been deleted.` })
+      toast({ title: "Content deleted", description: "Milestone has been deleted." })
     } catch (err) {
       console.error("Delete failed:", err)
       setError("Failed to delete. Please try again.")
@@ -256,40 +205,34 @@ export default function HomeContentPage() {
     }
   }
 
-  const toggleActive = async (type: ContentType, id: number, currentState: boolean) => {
+  const toggleActive = async (id: number, currentState: boolean) => {
     try {
-      if (type === "spotlight") {
-        await apiUpdateSpotlight(id, { isActive: !currentState })
-      } else if (type === "milestone") {
-        await apiUpdateMilestone(id, { isActive: !currentState })
-      }
+      await apiUpdateMilestone(id, { isActive: !currentState })
       loadAllContent()
-      toast({ title: "Status toggled", description: `${type === "spotlight" ? "Spotlight" : "Milestone"} has been ${currentState ? "deactivated" : "activated"}.` })
+      toast({ title: "Status toggled", description: `Milestone has been ${currentState ? "deactivated" : "activated"}.` })
     } catch (err) {
       console.error("Toggle failed:", err)
       toast({ title: "Toggle failed", description: "Failed to toggle status.", variant: "destructive" })
     }
   }
 
-  const moveItem = async (type: ContentType, index: number, direction: "up" | "down") => {
-    if (type === "milestone") {
-      const newMilestones = [...milestones]
-      const swapIndex = direction === "up" ? index - 1 : index + 1
-      if (swapIndex < 0 || swapIndex >= newMilestones.length) return
-      ;[newMilestones[index], newMilestones[swapIndex]] = [newMilestones[swapIndex], newMilestones[index]]
-      // Optimistic update — apply locally first so there is no full page reload/redirect
-      setMilestones(newMilestones)
-      const order = newMilestones.map(m => m.milestoneId)
-      try {
-        await apiReorderMilestones(order)
-        toast({ title: "Order updated", description: "Milestones have been reordered." })
-      } catch (err) {
+  const moveItem = async (index: number, direction: "up" | "down") => {
+    const newMilestones = [...milestones]
+    const swapIndex = direction === "up" ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= newMilestones.length) return
+    ;[newMilestones[index], newMilestones[swapIndex]] = [newMilestones[swapIndex], newMilestones[index]]
+    // Optimistic update — apply locally first so there is no full page reload/redirect
+    setMilestones(newMilestones)
+    const order = newMilestones.map(m => m.milestoneId)
+    try {
+      await apiReorderMilestones(order)
+      toast({ title: "Order updated", description: "Milestones have been reordered." })
+    } catch (err) {
         console.error("Reorder failed:", err)
         // Revert on failure
         setMilestones(milestones)
         toast({ title: "Reorder failed", description: "Failed to reorder milestones.", variant: "destructive" })
       }
-    }
   }
 
   // Handler for saving hero settings (single hero)
@@ -355,14 +298,10 @@ export default function HomeContentPage() {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:w-auto lg:inline-grid">
+              <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
                 <TabsTrigger value="hero" className="gap-2">
                   <Video className="h-4 w-4" />
                   <span className="hidden sm:inline">Hero</span>
-                </TabsTrigger>
-                <TabsTrigger value="spotlight" className="gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline">Spotlight</span>
                 </TabsTrigger>
                 <TabsTrigger value="milestone" className="gap-2">
                   <Landmark className="h-4 w-4" />
@@ -454,26 +393,7 @@ export default function HomeContentPage() {
                         <p className="text-xs text-muted-foreground">Shown if video cannot load — browse existing or upload</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="heroCtaText">Button Text</Label>
-                        <Input
-                          id="heroCtaText"
-                          value={heroFormData.ctaText ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, ctaText: e.target.value })}
-                          placeholder="Explore Now"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="heroCtaLink">Button Link</Label>
-                        <Input
-                          id="heroCtaLink"
-                          value={heroFormData.ctaLink ?? ""}
-                          onChange={(e) => setHeroFormData({ ...heroFormData, ctaLink: e.target.value })}
-                          placeholder="/destinations"
-                        />
-                      </div>
-                    </div>
+
                     <div className="flex justify-end pt-4">
                       <Button onClick={() => confirmSave(handleSaveHeroSettings)} className="gap-2">
                         <Save className="h-4 w-4" />
@@ -482,92 +402,6 @@ export default function HomeContentPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              {/* Spotlight Tab */}
-              <TabsContent value="spotlight" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Featured Spotlight</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Highlight a featured event like the Pagoda Festival. Only one can be active.
-                    </p>
-                  </div>
-                  <Button onClick={() => openCreateDialog("spotlight")} className="gap-2">
-                    <Plus className="h-4 w-4" /> Add Spotlight
-                  </Button>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {spotlights.length === 0 ? (
-                    <Card className="border-dashed col-span-full">
-                      <CardContent className="flex flex-col items-center justify-center py-10">
-                        <Sparkles className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No spotlight events yet.</p>
-                        <Button variant="outline" size="sm" className="mt-4" onClick={() => openCreateDialog("spotlight")}>
-                          Add First Spotlight
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    spotlights.map((spot) => (
-                      <Card key={spot.featuredId} className={`transition-all ${spot.isActive ? "ring-2 ring-primary" : "opacity-60"}`}>
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="text-lg">{spot.title}</CardTitle>
-                              {spot.isActive && (
-                                <Badge className="mt-1 bg-primary">Active</Badge>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleActive("spotlight", spot.featuredId, spot.isActive ?? false)}
-                                title={spot.isActive ? "Deactivate" : "Set as active"}
-                              >
-                                {spot.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditDialog("spotlight", spot)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget({ type: "spotlight", id: spot.featuredId })}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{spot.description}</p>
-                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                            {spot.date && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(spot.date).toLocaleDateString()}
-                              </span>
-                            )}
-                            {spot.location && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {spot.location}
-                              </span>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
               </TabsContent>
 
               {/* Milestones Tab */}
@@ -579,7 +413,7 @@ export default function HomeContentPage() {
                       The Story of Bocaue milestones. Drag to reorder.
                     </p>
                   </div>
-                  <Button onClick={() => openCreateDialog("milestone")} className="gap-2">
+                  <Button onClick={() => openCreateDialog()} className="gap-2">
                     <Plus className="h-4 w-4" /> Add Milestone
                   </Button>
                 </div>
@@ -590,7 +424,7 @@ export default function HomeContentPage() {
                       <CardContent className="flex flex-col items-center justify-center py-10">
                         <Landmark className="h-10 w-10 text-muted-foreground mb-2" />
                         <p className="text-muted-foreground">No milestones yet.</p>
-                        <Button variant="outline" size="sm" className="mt-4" onClick={() => openCreateDialog("milestone")}>
+                        <Button variant="outline" size="sm" className="mt-4" onClick={() => openCreateDialog()}>
                           Add First Milestone
                         </Button>
                       </CardContent>
@@ -605,7 +439,7 @@ export default function HomeContentPage() {
                               size="icon"
                               className="h-6 w-6"
                               disabled={index === 0}
-                              onClick={() => moveItem("milestone", index, "up")}
+                              onClick={() => moveItem(index, "up")}
                             >
                               <ChevronUp className="h-4 w-4" />
                             </Button>
@@ -614,7 +448,7 @@ export default function HomeContentPage() {
                               size="icon"
                               className="h-6 w-6"
                               disabled={index === milestones.length - 1}
-                              onClick={() => moveItem("milestone", index, "down")}
+                              onClick={() => moveItem(index, "down")}
                             >
                               <ChevronDown className="h-4 w-4" />
                             </Button>
@@ -636,14 +470,14 @@ export default function HomeContentPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => toggleActive("milestone", mile.milestoneId, mile.isActive ?? true)}
+                              onClick={() => toggleActive(mile.milestoneId, mile.isActive ?? true)}
                             >
                               {mile.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => openEditDialog("milestone", mile)}
+                              onClick={() => openEditDialog(mile)}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -651,7 +485,7 @@ export default function HomeContentPage() {
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ type: "milestone", id: mile.milestoneId })}
+                              onClick={() => setDeleteTarget({ id: mile.milestoneId })}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -672,114 +506,12 @@ export default function HomeContentPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Edit" : "Create"}{" "}
-              {dialogType === "spotlight" && "Spotlight"}
-              {dialogType === "milestone" && "Milestone"}
+              {editingItem ? "Edit" : "Create"} Milestone
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Spotlight Form */}
-            {dialogType === "spotlight" && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="contentId">Select Event from CMS</Label>
-                  <Select
-                    value={(formData.contentId as string) || ""}
-                    onValueChange={(v) => {
-                      const selectedEvent = cmsEvents.find(e => e.id === v)
-                      setFormData({
-                        ...formData,
-                        contentId: v,
-                        title: selectedEvent?.title || "",
-                        description: selectedEvent?.body?.substring(0, 300) || "",
-                        image: selectedEvent?.image?.[0] || "",
-                        date: selectedEvent?.newsDate || "",
-                        location: selectedEvent?.location || "",
-                      })
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an event..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cmsEvents.length === 0 ? (
-                        <p className="p-2 text-sm text-muted-foreground">No published events found. Create events in CMS first.</p>
-                      ) : (
-                        cmsEvents.map((event) => (
-                          <SelectItem key={event.id} value={event.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{event.title}</span>
-                              {event.newsDate && (
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(event.newsDate).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Spotlight events are linked to CMS content. Data is pulled automatically.
-                  </p>
-                </div>
-                
-                {/* Preview of selected event */}
-                {formData.contentId && (
-                  <Card className="bg-muted/50">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Selected Event Preview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        {(formData.image as string) && (
-                          <div className="h-12 w-16 rounded bg-muted overflow-hidden flex-shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={formData.image as string} alt="" className="h-full w-full object-cover" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium">{formData.title as string}</p>
-                          <div className="flex gap-2 text-xs text-muted-foreground">
-                            {(formData.date as string) && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(formData.date as string).toLocaleDateString()}
-                              </span>
-                            )}
-                            {(formData.location as string) && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {formData.location as string}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{formData.description as string}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="isActive"
-                    checked={(formData.isActive as boolean) ?? false}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                  />
-                  <Label htmlFor="isActive">Set as Active Spotlight</Label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Only one spotlight can be active at a time. Activating this will deactivate others.
-                </p>
-              </>
-            )}
-
             {/* Milestone Form */}
-            {dialogType === "milestone" && (
-              <>
                 <div className="space-y-2">
                   <Label htmlFor="contentId">Select Timeline Event from CMS</Label>
                   <Select
@@ -893,8 +625,6 @@ export default function HomeContentPage() {
                   />
                   <Label htmlFor="isActive">Active</Label>
                 </div>
-              </>
-            )}
           </div>
 
           <DialogFooter>

@@ -48,13 +48,13 @@ export default function DestinationsPage() {
   const [mapDest, setMapDest] = useState<MapDestination | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     apiFetchByLabel("destinations")
       .then((posts: CMSPost[]) => {
-        if (!posts?.length) return
+        if (controller.signal.aborted || !posts?.length) return
         const heritage = posts.filter(p => (p.category ?? "").toLowerCase().includes("heritage"))
         const museum = posts.filter(p => (p.category ?? "").toLowerCase().includes("museum"))
         const religious = posts.filter(p => (p.category ?? "").toLowerCase().includes("religious"))
-        // Fallback: if no sub-category matches, show all posts as heritage sites
         if (!heritage.length && !museum.length && !religious.length) {
           setHeritageSites(posts.map(cmsToHeritageSite))
         } else {
@@ -64,6 +64,7 @@ export default function DestinationsPage() {
         }
       })
       .catch(() => {})
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
