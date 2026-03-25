@@ -1,3 +1,9 @@
+-- ========================================================================
+-- LEGACY: This content is now included in seed-test-data.sql.
+-- Kept for upgrading databases created before the consolidation.
+-- Safe to re-run — uses INSERT IGNORE for content_fields.
+-- ========================================================================
+
 -- MHACTO Missing Label Seed Data
 -- Adds published content for every label_key that currently returns 404.
 -- post_type ENUM only allows: 'place', 'news', 'event'

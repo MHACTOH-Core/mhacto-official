@@ -1,5 +1,8 @@
--- Migration: Connect milestone table to CMS content (timeline-of-events)
--- Run this against the database to add content_id FK to milestone table.
+-- ========================================================================
+-- LEGACY MIGRATION: Connect milestone table to CMS content.
+-- schema.sql v3 already includes content_id column.
+-- Only run this on databases created BEFORE schema v3.
+-- ========================================================================
 
 -- 1. Add content_id column (nullable, references content)
 ALTER TABLE milestone

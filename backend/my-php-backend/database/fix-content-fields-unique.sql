@@ -1,5 +1,9 @@
--- Fix content_fields index: change INDEX to UNIQUE INDEX
--- so that ON DUPLICATE KEY UPDATE in setMeta() works correctly.
+-- ========================================================================
+-- LEGACY MIGRATION: Fix content_fields index to UNIQUE.
+-- schema.sql v3 already creates UNIQUE INDEX.
+-- Only run this on databases created BEFORE schema v3.
+-- ========================================================================
+
 -- First, deduplicate any existing rows (keep latest per content_id+meta_key).
 
 DELETE cf1 FROM content_fields cf1
