@@ -177,7 +177,7 @@ export default function ArtWondersPage() {
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Hammer"
         fallbackAccentColor="amber-300"
-        fallbackLabel="Arts & Culture"
+        fallbackLabel="Arts & Culture Wonders"
         fallbackTitle="Art Wonders"
         fallbackDescription="Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists who keep centuries-old traditions alive with their hands and their hearts."
         showBackButton

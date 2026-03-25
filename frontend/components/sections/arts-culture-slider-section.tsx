@@ -85,7 +85,7 @@ export function ArtsCultureSliderSection() {
   return (
     <FeaturedSlider
       headerIcon={Sparkles}
-      headerLabel="Arts & Culture"
+      headerLabel="Arts & Culture Wonders"
       headerTitle="The Living Culture of Bocaue"
       headerDescription="From celebrated cuisine to living artisans — explore five facets of Bocaue's cultural identity."
       slides={artsCultureSlides}

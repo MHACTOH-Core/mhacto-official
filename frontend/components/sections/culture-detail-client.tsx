@@ -139,7 +139,7 @@ export default function CultureDetailClient({
       }
       breadcrumbs={[
         { label: "Home", href: "/" },
-        { label: "Arts & Culture", href: "/culture" },
+        { label: "Arts & Culture Wonders", href: "/culture" },
         { label: backLabel, href: backHref },
         { label: item.title },
       ]}

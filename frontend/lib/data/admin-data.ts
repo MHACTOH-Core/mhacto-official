@@ -173,8 +173,8 @@ export interface AdminSettings {
 // ─── Category helpers ──────────────────────────────────────────────
 
 export const contentCategories: Record<ContentCategory, { label: string; color: string }> = {
-  "history": { label: "History", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
-  "arts-culture": { label: "Arts & Culture", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
+  "history": { label: "History Wonders", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
+  "arts-culture": { label: "Arts & Culture Wonders", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
   "tourist-wonders": { label: "Tourist Wonders", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   "news": { label: "News", color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
   "events": { label: "Events", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
@@ -186,7 +186,7 @@ export const contentCategories: Record<ContentCategory, { label: string; color: 
 export const contentLabels: Record<ContentLabel, { label: string; color: string; category: ContentCategory }> = {
   // History
   "timeline-of-events": { label: "Timeline of Events", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", category: "history" },
-  "notable-figures": { label: "Notable Figures", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "history" },
+  "notable-figures": { label: "Remarkable Persons", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", category: "history" },
   // Arts & Culture
   "local-cuisine": { label: "Culinary Wonders", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300", category: "arts-culture" },
   "festivals": { label: "Festivals", color: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/40 dark:text-fuchsia-300", category: "arts-culture" },

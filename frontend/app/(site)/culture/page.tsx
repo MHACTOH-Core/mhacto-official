@@ -93,7 +93,7 @@ export default function CulturePage() {
         fallbackIcon="Sparkles"
         fallbackAccentColor="amber-300"
         fallbackLabel="Bocaue Wonders"
-        fallbackTitle="Arts & Culture"
+        fallbackTitle="Arts & Culture Wonders"
         fallbackDescription="Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan."
       />
 

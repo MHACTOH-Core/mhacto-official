@@ -41,7 +41,7 @@ export default function TimelinePage() {
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Clock"
         fallbackAccentColor="amber-300"
-        fallbackLabel="History"
+        fallbackLabel="History Wonders"
         fallbackTitle="Historical Roadmap of Bocaue"
         fallbackDescription="Trace Bocaue's journey from pre-colonial river settlements to a world-record-holding modern municipality — a living roadmap through over 1,000 years of heritage."
         showBackButton

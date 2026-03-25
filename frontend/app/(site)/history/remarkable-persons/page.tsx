@@ -38,7 +38,7 @@ export default function RemarkablePersonsPage() {
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="purple-300"
-        fallbackLabel="History"
+        fallbackLabel="History Wonders"
         fallbackTitle="Remarkable Persons"
         fallbackDescription="The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of the municipality."
         showBackButton

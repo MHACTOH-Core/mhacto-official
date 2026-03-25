@@ -124,14 +124,14 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* ── Notable Figures ── */}
+      {/* ── Remarkable Persons ── */}
       {!loading && !error && (
       <section id="notable-figures" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex items-center gap-3 mb-10">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
             <div>
-              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Notable Figures</h2>
+              <h2 className="text-2xl font-black text-foreground sm:text-3xl">Remarkable Persons</h2>
               <p className="text-muted-foreground">Remarkable people who shaped Bocaue&apos;s identity</p>
             </div>
           </div>

@@ -17,21 +17,21 @@ class PageHero
     /** All supported page slugs with their default values */
     private const PAGES = [
         'destinations' => [
-            'displayName'  => 'Tourist Destinations',
+            'displayName'  => 'Tourist Wonders',
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Landmark',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
-            'title'        => 'Tourist Destinations',
+            'title'        => 'Tourist Wonders',
             'description'  => 'From heritage churches to riverside views — explore Bocaue\'s most iconic sites and sacred places.',
         ],
         'culture' => [
-            'displayName'  => 'Arts & Culture',
+            'displayName'  => 'Arts & Culture Wonders',
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Sparkles',
             'accentColor'  => 'amber-300',
             'label'        => 'Bocaue Wonders',
-            'title'        => 'Arts & Culture',
+            'title'        => 'Arts & Culture Wonders',
             'description'  => 'Immerse yourself in the rich heritage, living traditions, and vibrant festivals that make Bocaue a cultural treasure of Bulacan.',
         ],
 
@@ -102,7 +102,7 @@ class PageHero
         // ── Child / sub-pages ──────────────────────────────────────
 
         'local-cuisine' => [
-            'displayName'  => 'Local Cuisine',
+            'displayName'  => 'Culinary Wonders',
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Utensils',
             'accentColor'  => 'amber-300',
@@ -133,7 +133,7 @@ class PageHero
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Hammer',
             'accentColor'  => 'amber-300',
-            'label'        => 'Arts & Culture',
+            'label'        => 'Arts & Culture Wonders',
             'title'        => 'Crafts & Artisan',
             'description'  => 'Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists who keep centuries-old traditions alive with their hands and their hearts.',
         ],
@@ -142,7 +142,7 @@ class PageHero
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Users',
             'accentColor'  => 'pink-300',
-            'label'        => 'Arts & Culture',
+            'label'        => 'Arts & Culture Wonders',
             'title'        => 'People Wonders',
             'description'  => 'Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, award-winning artists, civic heroes, and achievers who carry the pride of the town to the world.',
         ],
@@ -151,17 +151,17 @@ class PageHero
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Clock',
             'accentColor'  => 'amber-300',
-            'label'        => 'History',
+            'label'        => 'History Wonders',
             'title'        => 'Timeline of Events',
             'description'  => 'From pre-colonial settlements to modern milestones — a chronological journey through the rich history of Bocaue, Bulacan.',
         ],
         'notable-persons' => [
-            'displayName'  => 'Notable Persons',
+            'displayName'  => 'Remarkable Persons',
             'imageUrl'     => '/images/defaults/no-image.svg',
             'iconName'     => 'Users',
             'accentColor'  => 'purple-300',
-            'label'        => 'History',
-            'title'        => 'Notable Persons',
+            'label'        => 'History Wonders',
+            'title'        => 'Remarkable Persons',
             'description'  => 'The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of the municipality.',
         ],
         'local-business' => [

@@ -244,9 +244,9 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 
     if (isset($data['contentCategory'])) {
         $catMap = [
-            'history'              => 'History',
-            'arts-culture'         => 'Arts & Culture',
-            'tourist-destinations' => 'Tourist Destinations',
+            'history'              => 'History Wonders',
+            'arts-culture'         => 'Arts & Culture Wonders',
+            'tourist-destinations' => 'Tourist Wonders',
             'news'                 => 'News',
             'events'               => 'Events',
         ];
@@ -272,10 +272,10 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 function _posts_resolveCategoryId(string $key): ?int
 {
     $map = [
-        'history'              => 'History',
-        'arts-culture'         => 'Arts & Culture',
-        'tourist-wonders'      => 'Tourist Destinations',
-        'tourist-destinations' => 'Tourist Destinations',
+        'history'              => 'History Wonders',
+        'arts-culture'         => 'Arts & Culture Wonders',
+        'tourist-wonders'      => 'Tourist Wonders',
+        'tourist-destinations' => 'Tourist Wonders',
         'news'                 => 'News & Events',
         'events'               => 'News & Events',
         'community'            => 'Community',

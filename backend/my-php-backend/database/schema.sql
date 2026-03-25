@@ -246,16 +246,16 @@ INSERT INTO users (username, full_name, email, password_hash, role, status) VALU
 
 -- Categories (broad groups)
 INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES
-('category', NULL, 'History',               '#3b82f6', 1),
-('category', NULL, 'Arts & Culture',        '#10b981', 1),
-('category', NULL, 'Tourist Destinations',  '#f59e0b', 1),
+('category', NULL, 'History Wonders',               '#3b82f6', 1),
+('category', NULL, 'Arts & Culture Wonders',        '#10b981', 1),
+('category', NULL, 'Tourist Wonders',  '#f59e0b', 1),
 ('category', NULL, 'News & Events',         '#ef4444', 1);
 
 -- Labels (sub-labels, linked to parent category)
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
 (1, 'label', 'timeline-of-events',  'Timeline of Events',  1),
-(1, 'label', 'notable-figures',     'Notable Figures',     1),
-(2, 'label', 'local-cuisine',       'Local Cuisine',       1),
+(1, 'label', 'notable-figures',     'Remarkable Persons',     1),
+(2, 'label', 'local-cuisine',       'Culinary Wonders',       1),
 (2, 'label', 'festivals',           'Festivals',           1),
 (2, 'label', 'cultural-practices',  'Cultural Practices',  1),
 (3, 'label', 'destinations',        'Destinations',        1),

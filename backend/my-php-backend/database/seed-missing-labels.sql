@@ -15,7 +15,7 @@ SET @cat_tourism_wonders = (SELECT category_id FROM category WHERE label_key = '
 
 -- ----------------------------------------------------------------
 -- STEP 2: TIMELINE OF EVENTS
--- category_id 1 = History, label_id 5
+-- category_id 1 = History Wonders, label_id 5
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -45,7 +45,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ----------------------------------------------------------------
 -- STEP 3: NOTABLE FIGURES
--- category_id 1 = History, label_id 6
+-- category_id 1 = History Wonders, label_id 6
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -75,7 +75,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ----------------------------------------------------------------
 -- STEP 4: CULTURAL PRACTICES & TRADITIONS
--- category_id 2 = Arts & Culture, label_id 9
+-- category_id 2 = Arts & Culture Wonders, label_id 9
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -105,7 +105,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ----------------------------------------------------------------
 -- STEP 5: CRAFTS & ARTISAN
--- category_id 2 = Arts & Culture, label_id 19
+-- category_id 2 = Arts & Culture Wonders, label_id 19
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -135,7 +135,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ----------------------------------------------------------------
 -- STEP 6: PEOPLE & WONDERS
--- category_id 2 = Arts & Culture, label_id 20
+-- category_id 2 = Arts & Culture Wonders, label_id 20
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -165,7 +165,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ----------------------------------------------------------------
 -- STEP 7: TRAVEL TOURS
--- category_id 3 = Tourist Destinations, label_id 11
+-- category_id 3 = Tourist Wonders, label_id 11
 -- ----------------------------------------------------------------
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES

@@ -12,8 +12,8 @@ export const searchIndex: SearchResult[] = [
 
   // ── Pages / Sections ───────────────────────────────────────────────
   { id: "page-home",           title: "Home",                  subtitle: "MHACTO Bocaue homepage",               href: "/",                              category: "Page", keywords: "home mhacto bocaue" },
-  { id: "page-history",        title: "History",               subtitle: "Bocaue history overview",              href: "/history",                       category: "Page", keywords: "history bocaue overview" },
-  { id: "page-culture",        title: "Arts & Culture",        subtitle: "Culture overview page",                href: "/culture",                       category: "Page", keywords: "arts culture bocaue" },
+  { id: "page-history",        title: "History Wonders",               subtitle: "Bocaue history overview",              href: "/history",                       category: "Page", keywords: "history bocaue overview wonders" },
+  { id: "page-culture",        title: "Arts & Culture Wonders",        subtitle: "Culture overview page",                href: "/culture",                       category: "Page", keywords: "arts culture bocaue wonders" },
   { id: "page-destinations",   title: "Tourist Wonders",       subtitle: "Places to visit in Bocaue",           href: "/destinations",                  category: "Page", keywords: "destinations tourist wonders places visit" },
   { id: "page-travel",         title: "Travel & Tours",        subtitle: "Tour packages in Bocaue",             href: "/travel-tours",                  category: "Page", keywords: "travel tours packages" },
   { id: "page-schools",        title: "Schools",               subtitle: "Schools in Bocaue",                   href: "/community/schools",             category: "Page", keywords: "schools education community" },

@@ -188,7 +188,7 @@ export default function PeopleWondersPage() {
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="pink-300"
-        fallbackLabel="Arts & Culture"
+        fallbackLabel="Arts & Culture Wonders"
         fallbackTitle="People Wonders"
         fallbackDescription="Celebrating the remarkable living individuals of Bocaue — pageant queens, champion athletes, award-winning artists, civic heroes, and achievers who carry the pride of the town to the world."
         showBackButton

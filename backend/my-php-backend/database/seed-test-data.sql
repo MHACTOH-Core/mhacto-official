@@ -7,7 +7,7 @@
 
 -- ────────────────────────────────────────────────────────────────
 -- PLACES (post_type = 'place')
--- category_id 3 = Tourist Destinations, label 10 = destinations
+-- category_id 3 = Tourist Wonders, label 10 = destinations
 -- ────────────────────────────────────────────────────────────────
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -114,7 +114,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ────────────────────────────────────────────────────────────────
 -- LOCAL CUISINE (post_type = 'place', label = local-cuisine)
--- category_id 2 = Arts & Culture, label 7 = local-cuisine
+-- category_id 2 = Arts & Culture Wonders, label 7 = local-cuisine
 -- ────────────────────────────────────────────────────────────────
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -271,7 +271,7 @@ INSERT INTO page_views (content_id, visitor_session_id) VALUES
 
 -- ────────────────────────────────────────────────────────────────
 -- TOUR PACKAGES (post_type = 'place', label = travel-tours)
--- category_id 3 = Tourist Destinations, label = travel-tours
+-- category_id 3 = Tourist Wonders, label = travel-tours
 -- ────────────────────────────────────────────────────────────────
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES

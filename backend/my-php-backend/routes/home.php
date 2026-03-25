@@ -307,7 +307,7 @@ function _home_culinary(string $method, PDO $db): void
         SELECT
             c.content_id, c.title, c.description,
             c.status, c.created_at,
-            COALESCE(lbl.label_name, 'Local Cuisine') AS tag,
+            COALESCE(lbl.label_name, 'Culinary Wonders') AS tag,
             (SELECT ci.image_url FROM content_images ci
              WHERE ci.content_id = c.content_id
              ORDER BY ci.is_thumbnail DESC, ci.sort_order ASC, ci.image_id ASC
@@ -332,7 +332,7 @@ function _home_culinary(string $method, PDO $db): void
         'title'       => $row['title'] ?? '',
         'description' => $row['description'] ?? '',
         'image'       => $row['image'] ?? '',
-        'tag'         => $row['tag'] ?? 'Local Cuisine',
+        'tag'         => $row['tag'] ?? 'Culinary Wonders',
         'sortOrder'   => 0,
         'isActive'    => ($row['status'] ?? '') === 'published',
     ], $rows);

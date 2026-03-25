@@ -124,9 +124,9 @@ class Post
     public function readByCategory(string $categoryKey, ?string $status = null, ?int $limit = null): array
     {
         $catName = match ($categoryKey) {
-            'history'              => 'History',
-            'arts-culture'         => 'Arts & Culture',
-            'tourist-destinations' => 'Tourist Destinations',
+            'history'              => 'History Wonders',
+            'arts-culture'         => 'Arts & Culture Wonders',
+            'tourist-destinations' => 'Tourist Wonders',
             'news'                 => 'News',
             'events'               => 'Events',
             'community'            => 'Community',
@@ -220,9 +220,9 @@ class Post
         $params = [];
         if ($categoryKey) {
             $catName = match ($categoryKey) {
-                'history' => 'History',
-                'arts-culture' => 'Arts & Culture',
-                'tourist-destinations' => 'Tourist Destinations',
+                'history' => 'History Wonders',
+                'arts-culture' => 'Arts & Culture Wonders',
+                'tourist-destinations' => 'Tourist Wonders',
                 'news' => 'News',
                 'events' => 'Events',
                 default => $categoryKey,
@@ -488,9 +488,9 @@ class Post
     private function mapCategoryKey(?string $name, ?string $labelKey = null): string
     {
         return match ($name) {
-            'History'              => 'history',
-            'Arts & Culture'       => 'arts-culture',
-            'Tourist Destinations' => 'tourist-wonders',
+            'History Wonders'              => 'history',
+            'Arts & Culture Wonders'       => 'arts-culture',
+            'Tourist Wonders' => 'tourist-wonders',
             'News & Events'        => in_array($labelKey, ['events'], true) ? 'events' : 'news',
             'Community'            => 'community',
             default                => 'history',

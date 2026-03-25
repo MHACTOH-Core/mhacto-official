@@ -247,9 +247,9 @@ INSERT INTO users (username, email, password_hash) VALUES
 -- ── Categories (IDs 1–4) ──────────────────────────────────────
 
 INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES
-('category', NULL, 'History',               '#3b82f6', 1),
-('category', NULL, 'Arts & Culture',        '#10b981', 1),
-('category', NULL, 'Tourist Destinations',  '#f59e0b', 1),
+('category', NULL, 'History Wonders',               '#3b82f6', 1),
+('category', NULL, 'Arts & Culture Wonders',        '#10b981', 1),
+('category', NULL, 'Tourist Wonders',  '#f59e0b', 1),
 ('category', NULL, 'News & Events',         '#ef4444', 1);
 
 
@@ -257,8 +257,8 @@ INSERT INTO category (category_type, label_key, label_name, color_code, is_activ
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
 (1, 'label', 'timeline-of-events',  'Timeline of Events',  1),
-(1, 'label', 'notable-figures',     'Notable Figures',     1),
-(2, 'label', 'local-cuisine',       'Local Cuisine',       1),
+(1, 'label', 'notable-figures',     'Remarkable Persons',     1),
+(2, 'label', 'local-cuisine',       'Culinary Wonders',       1),
 (2, 'label', 'festivals',           'Festivals',           1),
 (2, 'label', 'cultural-practices',  'Cultural Practices',  1),
 (3, 'label', 'destinations',        'Destinations',        1),
@@ -327,7 +327,7 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 
 -- ────────────────────────────────────────────────────────────────
 -- PLACES (post_type = 'place')
--- category_id 3 = Tourist Destinations, label 10 = destinations
+-- category_id 3 = Tourist Wonders, label 10 = destinations
 -- ────────────────────────────────────────────────────────────────
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
@@ -433,7 +433,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 
 -- ────────────────────────────────────────────────────────────────
 -- LOCAL CUISINE (post_type = 'place', label = local-cuisine)
--- category_id 2 = Arts & Culture, label 7 = local-cuisine
+-- category_id 2 = Arts & Culture Wonders, label 7 = local-cuisine
 -- ────────────────────────────────────────────────────────────────
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
