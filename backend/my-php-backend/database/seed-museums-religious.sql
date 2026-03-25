@@ -1,4 +1,10 @@
 -- ========================================================================
+-- LEGACY: Museums & religious sites are now included in seed-test-data.sql.
+-- Kept for upgrading databases created before the consolidation.
+-- Safe to re-run — uses INSERT IGNORE for content_fields.
+-- ========================================================================
+
+-- ========================================================================
 -- MHACTO Supplemental Seed — Museums, Religious Sites & place_category fix
 -- Run AFTER seed-test-data.sql:
 --   mysql -u root -p mhacto_db < seed-museums-religious.sql
