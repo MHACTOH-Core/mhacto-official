@@ -6,7 +6,6 @@ import { useEffect } from "react"
 import { useAdmin } from "@/components/providers/admin-provider"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
-  Eye,
   Users,
   FileText,
   MessageSquare,
@@ -16,7 +15,16 @@ import {
   CalendarCheck,
   ClockAlert,
   UserCheck,
+  Mail,
+  MapPin,
+  Handshake,
 } from "lucide-react"
+import {
+  inquiryStatusLabels,
+  inquiryTypeLabels,
+  type InquiryStatus,
+  type InquiryType,
+} from "@/lib/data/admin-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -56,6 +64,27 @@ export default function DashboardPage() {
   const publishedPosts = posts.filter((p) => p.status === "published").length
   const unreadInquiries = inquiries.filter((i) => i.status === "unread").length
   const topPages = [...pageViews].sort((a, b) => b.views - a.views)
+
+  // Inquiry summary — exclude spam/trash from active count
+  const activeInquiries = inquiries.filter((i) => i.status !== "spam" && i.status !== "trash")
+  const totalActiveInquiries = activeInquiries.length
+
+  const inquiryTypeIcon: Record<string, React.ElementType> = {
+    general_contact: Mail,
+    tour_booking: MapPin,
+    partnership: Handshake,
+  }
+
+  const inquiryByType = (["general_contact", "tour_booking", "partnership"] as InquiryType[]).map((type) => {
+    const count = activeInquiries.filter((i) => i.inquiryType === type).length
+    return { type, count, ...inquiryTypeLabels[type] }
+  })
+
+  const displayStatuses: InquiryStatus[] = ["unread", "in_progress", "assigned", "archived"]
+  const inquiryByStatus = displayStatuses.map((status) => {
+    const count = inquiries.filter((i) => i.status === status).length
+    return { status, count, ...inquiryStatusLabels[status] }
+  })
 
   // Chart data: daily visits last 30 days
   const visitChartData = dailyVisits.map((d) => ({
@@ -206,9 +235,12 @@ export default function DashboardPage() {
                                 borderRadius: 10,
                                 border: "1px solid hsl(var(--border))",
                                 background: "hsl(var(--card))",
+                                color: "hsl(var(--card-foreground))",
                                 fontSize: 13,
                                 boxShadow: "0 8px 30px rgba(0,0,0,.12)",
                               }}
+                              itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                              labelStyle={{ color: "hsl(var(--card-foreground))" }}
                               formatter={(value: number, name: string) => [
                                 `${value} (${pieTotal > 0 ? Math.round((value / pieTotal) * 100) : 0}%)`,
                                 name,
@@ -305,9 +337,12 @@ export default function DashboardPage() {
                             borderRadius: 10,
                             border: "1px solid hsl(var(--border))",
                             background: "hsl(var(--card))",
+                            color: "hsl(var(--card-foreground))",
                             fontSize: 13,
                             boxShadow: "0 8px 30px rgba(0,0,0,.12)",
                           }}
+                          itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                          labelStyle={{ color: "hsl(var(--card-foreground))" }}
                           formatter={(value: number) => [`${value.toLocaleString()} views`, "Page Views"]}
                         />
                         <Bar
@@ -333,50 +368,75 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Bottom row: page ranking + recent activity */}
+          {/* Bottom row: inquiry summary + recent activity */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
-            {/* Page Popularity Ranking */}
+            {/* Inquiry Summary */}
             <Card className="lg:col-span-3">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold sm:text-base">
-                  Page Popularity Ranking
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold sm:text-base">
+                    Inquiry Summary
+                  </CardTitle>
+                  <Link
+                    href="/admin/inquiries"
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    View all <ArrowUpRight className="h-3 w-3" />
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="px-3 sm:px-6">
-                <div className="space-y-1">
-                  {topPages.map((page, idx) => (
-                    <div
-                      key={page.page}
-                      className="flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent sm:gap-3 sm:px-3 sm:py-2.5"
-                    >
-                      <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold sm:h-7 sm:w-7 sm:text-xs ${
-                          idx === 0
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300"
-                            : idx === 1
-                              ? "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300"
-                              : idx === 2
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                                : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-card-foreground sm:text-sm">
-                          {page.title}
-                        </p>
-                        <p className="hidden truncate text-xs text-muted-foreground sm:block">
-                          {page.page}
-                        </p>
+                {/* Total count */}
+                <div className="mb-4 flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-card-foreground">{totalActiveInquiries}</p>
+                    <p className="text-[11px] text-muted-foreground">Total Inquiries</p>
+                  </div>
+                </div>
+
+                {/* By inquiry type */}
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  By Type
+                </p>
+                <div className="mb-4 space-y-2">
+                  {inquiryByType.map((t) => {
+                    const pct = totalActiveInquiries > 0 ? (t.count / totalActiveInquiries) * 100 : 0
+                    const Icon = inquiryTypeIcon[t.type] ?? Mail
+                    return (
+                      <div key={t.type} className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent sm:gap-3 sm:px-3">
+                        <Badge className={`shrink-0 gap-1 text-[10px] sm:text-xs ${t.color}`}>
+                          <Icon className="h-3 w-3" />
+                          {t.label}
+                        </Badge>
+                        <div className="mx-1 h-1.5 flex-1 overflow-hidden rounded-full bg-border/40">
+                          <div
+                            className="h-full rounded-full bg-primary/60 transition-all duration-700"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold text-card-foreground sm:text-sm">
+                          {t.count}
+                        </span>
                       </div>
-                      <Badge variant="secondary" className="hidden shrink-0 text-xs sm:inline-flex">
-                        {page.category}
-                      </Badge>
-                      <span className="shrink-0 text-xs font-semibold text-card-foreground sm:text-sm">
-                        {page.views.toLocaleString()}
-                      </span>
-                      <Eye className="h-3 w-3 shrink-0 text-muted-foreground sm:h-3.5 sm:w-3.5" />
+                    )
+                  })}
+                </div>
+
+                {/* By status */}
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  By Status
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {inquiryByStatus.map((s) => (
+                    <div
+                      key={s.status}
+                      className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2 transition-all hover:border-border hover:bg-muted/60"
+                    >
+                      <Badge className={`text-[10px] sm:text-xs ${s.color}`}>{s.label}</Badge>
+                      <span className="text-sm font-bold text-card-foreground">{s.count}</span>
                     </div>
                   ))}
                 </div>
