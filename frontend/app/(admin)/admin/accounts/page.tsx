@@ -232,7 +232,7 @@ export default function AccountsPage() {
           setSaving(false)
           return
         }
-        toast({ title: "Account updated", description: `${form.fullName}'s account has been updated.` })
+        toast({ title: "Account updated", description: `${form.fullName}'s account has been updated.`, variant: "success" })
       } else {
         const result = await createUser({
           fullName: form.fullName,
@@ -245,7 +245,7 @@ export default function AccountsPage() {
           setSaving(false)
           return
         }
-        toast({ title: "Account created", description: `Account for ${form.fullName} has been created.` })
+        toast({ title: "Account created", description: `Account for ${form.fullName} has been created.`, variant: "success" })
       }
       setDialogOpen(false)
     } catch {

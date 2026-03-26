@@ -217,7 +217,7 @@ export default function InquiriesPage() {
 
   const handleArchive = (inq: Inquiry) => {
     handleStatusChange(inq, "archived")
-    toast({ title: "Completed", description: `Inquiry from ${inq.name} has been completed.` })
+    toast({ title: "Completed", description: `Inquiry from ${inq.name} has been completed.`, variant: "success" })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
@@ -246,25 +246,25 @@ export default function InquiriesPage() {
 
   const bulkArchive = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "archived" }))
-    toast({ title: "Bulk completed", description: `${selectedIds.size} inquiries completed.` })
+    toast({ title: "Bulk completed", description: `${selectedIds.size} inquiries completed.`, variant: "success" })
     setSelectedIds(new Set())
   }
 
   const bulkAssign = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "assigned" }))
-    toast({ title: "Bulk assigned", description: `${selectedIds.size} inquiries assigned.` })
+    toast({ title: "Bulk assigned", description: `${selectedIds.size} inquiries assigned.`, variant: "success" })
     setSelectedIds(new Set())
   }
 
   const bulkSpam = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "spam" }))
-    toast({ title: "Marked as spam", description: `${selectedIds.size} inquiries marked as spam.` })
+    toast({ title: "Marked as spam", description: `${selectedIds.size} inquiries marked as spam.`, variant: "success" })
     setSelectedIds(new Set())
   }
 
   const bulkTrash = () => {
     selectedIds.forEach((id) => updateInquiry(id, { status: "trash" }))
-    toast({ title: "Moved to trash", description: `${selectedIds.size} inquiries moved to trash.` })
+    toast({ title: "Moved to trash", description: `${selectedIds.size} inquiries moved to trash.`, variant: "success" })
     setSelectedIds(new Set())
   }
 
@@ -319,7 +319,7 @@ export default function InquiriesPage() {
 
   const handleMarkSpam = (inq: Inquiry) => {
     handleStatusChange(inq, "spam")
-    toast({ title: "Marked as spam", description: `Inquiry from ${inq.name} marked as spam.` })
+    toast({ title: "Marked as spam", description: `Inquiry from ${inq.name} marked as spam.`, variant: "success" })
     if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 

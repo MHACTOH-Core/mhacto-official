@@ -122,7 +122,7 @@ export function RevealObserver() {
       // Debounced to avoid thrashing on rapid DOM changes.
       domMutationObserver = new MutationObserver(() => {
         if (mutationDebounceTimer) clearTimeout(mutationDebounceTimer)
-        mutationDebounceTimer = setTimeout(observeUnrevealedElements, 100)
+        mutationDebounceTimer = setTimeout(observeUnrevealedElements, 200)
       })
       domMutationObserver.observe(document.body, {
         childList: true,

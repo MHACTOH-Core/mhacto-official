@@ -348,8 +348,27 @@ export default function PagodaPage() {
           <div className="absolute inset-0" style={{ background: `${BG}55` }} />
           {/* Strong bottom fade — image dissolves into background */}
           <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, ${BG}ee 12%, ${BG}99 35%, transparent 60%)` }} />
-          {/* Left fade for text area */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${BG}dd 0%, ${BG}aa 18%, ${BG}55 35%, transparent 55%)` }} />
+          {/* ── Left-to-right hero gradient ────────────────────────────────
+              Exactly 50/50: left half is dark, right half is clear/visible. ── */}
+          <div className="absolute inset-0" style={{
+            background: `linear-gradient(
+              to right,
+              ${BG}f5 0%,
+              ${BG}ee 15%,
+              ${BG}cc 30%,
+              ${BG}66 45%,
+              transparent 50%
+            )`
+          }} />
+          {/* Cool blue river-light wash over the dark left panel */}
+          <div className="absolute inset-0" style={{
+            background: `linear-gradient(
+              to right,
+              rgba(15,30,75,0.50) 0%,
+              rgba(15,30,75,0.22) 30%,
+              transparent 50%
+            )`
+          }} />
           {/* Top vignette */}
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}88 0%, transparent 22%)` }} />
           {/* Soft right edge fade */}

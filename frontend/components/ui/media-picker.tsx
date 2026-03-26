@@ -48,7 +48,7 @@ import {
   type MediaFile,
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import { ImageCropDialog } from "@/components/ui/image-crop-dialog"
+import { ImageCropDialog, type CropSaveMode } from "@/components/ui/image-crop-dialog"
 
 export type MediaPickerAccept = "image" | "video" | "all"
 
@@ -237,10 +237,18 @@ export function MediaPicker({
     }
   }
 
-  /** After cropping, upload the new blob and return its URL */
-  const handleCropDone = async (blob: Blob) => {
+  /** After cropping, upload the new blob (and optionally delete the original) */
+  const handleCropDone = async (blob: Blob, mode: CropSaveMode) => {
     setCropUploading(true)
     try {
+      // If replacing, delete the original first
+      if (mode === "replace" && cropSrc) {
+        try {
+          await apiDeleteMedia(cropSrc)
+        } catch {
+          // Non-fatal — original may already be gone or be a URL not managed by us
+        }
+      }
       const ext = "jpg"
       const fileName = `cropped_${Date.now()}.${ext}`
       const file = new File([blob], fileName, { type: "image/jpeg" })
@@ -652,6 +660,7 @@ export function MediaPicker({
       onCropComplete={handleCropDone}
       aspect={cropAspect}
       title="Crop & Enhance Image"
+      allowReplace={!!(cropSrc && /^\/uploads\//.test(cropSrc))}
     />
 
     <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

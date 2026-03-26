@@ -9,6 +9,7 @@ const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -28,6 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preconnect to API backend to reduce latency on first fetch */}
+        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} />
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} crossOrigin="anonymous" />
+        {/* Preload the custom Barbara font to avoid FOUT */}
+        <link rel="preload" href="/MHACTO-PROJECT/fonts/BARABARA-final.otf" as="font" type="font/otf" crossOrigin="anonymous" />
+      </head>
       <body className={`${poppins.variable} font-sans antialiased overflow-x-hidden`}>
         <RevealObserverWrapper />
         {children}

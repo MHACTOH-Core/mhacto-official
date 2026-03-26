@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 
+// ─── Simple client-side cache shared across hook instances ────────
+// Returns cached data immediately so the UI doesn't flash loading states
+// when navigating back to a page that was already fetched.
+const _hookCache = new Map<string, unknown>()
+
 /**
  * Lightweight SWR-style hook for public site data fetching.
  *
@@ -21,22 +26,26 @@ export function useAPIData<T>(
   options?: { enabled?: boolean },
 ) {
   const enabled = options?.enabled ?? true
-  const [data, setData] = useState<T | undefined>(undefined)
+  const cachedData = _hookCache.get(key) as T | undefined
+  const [data, setData] = useState<T | undefined>(cachedData)
   const [error, setError] = useState<string | undefined>(undefined)
-  const [isLoading, setIsLoading] = useState(enabled)
+  const [isLoading, setIsLoading] = useState(enabled && cachedData === undefined)
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
 
   const refetch = useCallback(() => {
     const controller = new AbortController()
+    const hasCachedData = _hookCache.has(key)
 
-    setIsLoading(true)
+    // Only show loading state if there's no cached data to display
+    if (!hasCachedData) setIsLoading(true)
     setError(undefined)
 
     fetcherRef
       .current(controller.signal)
       .then((result) => {
         if (!controller.signal.aborted) {
+          _hookCache.set(key, result)
           setData(result)
           setIsLoading(false)
         }
@@ -54,7 +63,7 @@ export function useAPIData<T>(
       })
 
     return controller
-  }, [])
+  }, [key])
 
   useEffect(() => {
     if (!enabled) {

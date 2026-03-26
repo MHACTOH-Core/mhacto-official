@@ -11,6 +11,42 @@
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 
+// ─── Lightweight in-memory cache for public GET requests ─────────
+// Prevents re-fetching the same data on SPA navigation (stale-while-revalidate).
+// Only caches unauthenticated GET requests. Mutations bypass the cache.
+
+interface CacheEntry<T = unknown> {
+  data: T
+  timestamp: number
+}
+
+const _apiCache = new Map<string, CacheEntry>()
+/** Default TTL: 60 seconds — stale data is served while revalidating */
+const CACHE_TTL_MS = 60_000
+
+/** Return cached data if fresh, otherwise undefined */
+function getCached<T>(key: string): T | undefined {
+  const entry = _apiCache.get(key)
+  if (!entry) return undefined
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) return undefined
+  return entry.data as T
+}
+
+/** Store data in the cache */
+function setCache<T>(key: string, data: T): void {
+  _apiCache.set(key, { data, timestamp: Date.now() })
+  // Cap cache size to prevent memory leaks on long sessions
+  if (_apiCache.size > 200) {
+    const firstKey = _apiCache.keys().next().value
+    if (firstKey) _apiCache.delete(firstKey)
+  }
+}
+
+/** Invalidate all cached entries (call after mutations if needed) */
+export function clearApiCache(): void {
+  _apiCache.clear()
+}
+
 // ─── Pagination types ─────────────────────────────────────────────
 
 export interface PaginationMeta {
@@ -28,6 +64,14 @@ export interface PaginatedResponse<T> {
 // ─── Auth token management ────────────────────────────────────────
 
 let _authToken: string | null = null
+let _onAuthError: (() => void) | null = null
+// Holds a single in-flight refresh Promise so concurrent 401s share one refresh request
+let _isRefreshing: Promise<boolean> | null = null
+
+/** Register a callback invoked when a 401 (token expired/invalid) is received. */
+export function onAuthError(cb: (() => void) | null) {
+  _onAuthError = cb
+}
 
 /** Store the JWT token (called after login) */
 export function setAuthToken(token: string | null) {
@@ -58,6 +102,30 @@ export function getAuthToken(): string | null {
   return _authToken
 }
 
+/** Attempt to silently refresh the JWT. Returns true if refreshed. */
+async function tryRefreshToken(): Promise<boolean> {
+  const token = getAuthToken()
+  if (!token) return false
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    if (!res.ok) return false
+    const body = await res.json()
+    if (body.success && body.data?.token) {
+      setAuthToken(body.data.token)
+      return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
 /**
@@ -76,6 +144,17 @@ export async function apiFetch<T>(
     : endpoint
   const url = `${API_BASE}${versioned}`
 
+  // Determine if this is a cacheable public GET (no body, no auth token)
+  const method = (options.method ?? "GET").toUpperCase()
+  const token = getAuthToken()
+  const isCacheableGet = method === "GET" && !token && !options.body
+
+  // Return cached data for public GETs when available
+  if (isCacheableGet) {
+    const cached = getCached<T>(url)
+    if (cached !== undefined) return cached
+  }
+
   // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
   // Omitting it on GET avoids unnecessary CORS preflight requests.
   const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
@@ -84,7 +163,6 @@ export async function apiFetch<T>(
   }
 
   // Attach JWT token if available
-  const token = getAuthToken()
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
   }
@@ -106,6 +184,24 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    // On 401, attempt a silent token refresh then retry once
+    if (response.status === 401) {
+      const currentToken = getAuthToken()
+      if (currentToken) {
+        // Deduplicate: if a refresh is already running, await that same promise rather than issuing a second one
+        if (!_isRefreshing) _isRefreshing = tryRefreshToken()
+        const refreshed = await _isRefreshing
+        _isRefreshing = null
+        if (refreshed) {
+          // Retry the original request with the new token
+          return apiFetch<T>(endpoint, options)
+        }
+        // Refresh failed — clear token and notify
+        setAuthToken(null)
+      }
+      // No token (or refresh failed) — always notify so the UI can redirect to login
+      _onAuthError?.()
+    }
     const errorMessage =
       envelope.error ??
       envelope.message ??
@@ -116,10 +212,14 @@ export async function apiFetch<T>(
   // Unwrap standard { success, data } envelope; fall back to raw response
   // for any non-enveloped responses (e.g. third-party or upload endpoints).
   if (envelope.success !== undefined && 'data' in envelope) {
-    return envelope.data as T
+    const result = envelope.data as T
+    if (isCacheableGet) setCache(url, result)
+    return result
   }
 
-  return envelope as unknown as T
+  const result = envelope as unknown as T
+  if (isCacheableGet) setCache(url, result)
+  return result
 }
 
 // ─── Media Library ────────────────────────────────────────────────
@@ -174,6 +274,21 @@ export async function apiUploadMedia(
     : {}
 
   if (!response.ok) {
+    // On 401, attempt a silent token refresh then retry once (mirrors apiFetch logic)
+    if (response.status === 401) {
+      const currentToken = getAuthToken()
+      if (currentToken) {
+        // Deduplicate: if a refresh is already running, await that same promise rather than issuing a second one
+        if (!_isRefreshing) _isRefreshing = tryRefreshToken()
+        const refreshed = await _isRefreshing
+        _isRefreshing = null
+        if (refreshed) {
+          return apiUploadMedia(files, type, options)
+        }
+        setAuthToken(null)
+      }
+      _onAuthError?.()
+    }
     throw new Error(envelope.error ?? "Upload failed")
   }
   return (envelope.data ?? envelope) as MediaUploadResult
@@ -393,9 +508,9 @@ export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
   if (inquiryData.repliedAt !== undefined) payload.replied_at = inquiryData.repliedAt
   if (inquiryData.repliedBy !== undefined) payload.replied_by = inquiryData.repliedBy
 
-  // If the only fields are reply-related (already saved via apiReplyInquiry), skip the API call
-  const hasNonReplyField = payload.status !== undefined || payload.assigned_to !== undefined
-  if (!hasNonReplyField) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
+  // If the only fields are reply-related (already saved via apiReplyInquiry), skip the API PATCH entirely
+  const isReplyOnlyUpdate = payload.status === undefined && payload.assigned_to === undefined
+  if (isReplyOnlyUpdate) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
 
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries?id=${id}`, {
     method: "PUT",

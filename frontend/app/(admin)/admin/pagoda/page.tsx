@@ -260,10 +260,10 @@ export default function PagodaPage() {
     try {
       if (pagodaPost) {
         await updatePost(pagodaPost.id, payload)
-        toast({ title: "Pagoda content updated", description: "Your changes have been saved." })
+        toast({ title: "Pagoda content updated", description: "Your changes have been saved.", variant: "success" })
       } else {
         await createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
-        toast({ title: "Pagoda content created", description: "The pagoda page is now live." })
+        toast({ title: "Pagoda content created", description: "The pagoda page is now live.", variant: "success" })
       }
       setDirty(false)
     } catch {

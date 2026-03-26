@@ -20,6 +20,27 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Strip console.log in production (keep warnings/errors)
+  compiler: {
+    ...(!isDev ? { removeConsole: { exclude: ['error', 'warn'] } } : {}),
+  },
+  // Tree-shake barrel-export packages to reduce bundle size
+  optimizePackageImports: [
+    'lucide-react',
+    'date-fns',
+    'recharts',
+    '@radix-ui/react-accordion',
+    '@radix-ui/react-alert-dialog',
+    '@radix-ui/react-dialog',
+    '@radix-ui/react-dropdown-menu',
+    '@radix-ui/react-popover',
+    '@radix-ui/react-select',
+    '@radix-ui/react-tabs',
+    '@radix-ui/react-toast',
+    '@radix-ui/react-tooltip',
+  ],
+  // Disable the X-Powered-By header (less overhead, better security)
+  poweredByHeader: false,
   turbopack: {
     root: __dirname,
   },

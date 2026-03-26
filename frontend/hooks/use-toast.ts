@@ -6,6 +6,8 @@ import * as React from 'react'
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
 const TOAST_LIMIT = 1
+// Toasts are not auto-dismissed — this large value just satisfies the Radix
+// scheduler API. Users close toasts manually via the × button.
 const TOAST_REMOVE_DELAY = 1000000
 
 type ToasterToast = ToastProps & {
@@ -22,11 +24,12 @@ const actionTypes = {
   REMOVE_TOAST: 'REMOVE_TOAST',
 } as const
 
-let count = 0
+// Module-level counter for generating unique toast IDs
+let toastIdCounter = 0
 
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
+function generateToastId() {
+  toastIdCounter += 1
+  return toastIdCounter.toString()
 }
 
 type ActionType = typeof actionTypes
@@ -90,8 +93,7 @@ export const reducer = (state: State, action: Action): State => {
     case 'DISMISS_TOAST': {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Queue the toast for removal after the close animation finishes
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -140,7 +142,7 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, 'id'>
 
 function toast({ ...props }: Toast) {
-  const id = genId()
+  const id = generateToastId()
 
   const update = (props: ToasterToast) =>
     dispatch({

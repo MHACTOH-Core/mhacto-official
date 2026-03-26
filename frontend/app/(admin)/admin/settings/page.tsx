@@ -69,7 +69,7 @@ export default function SettingsPage() {
     submit: submitPasswordChange,
   } = usePasswordForm({
     changePassword,
-    onSuccess: () => toast({ title: "Password changed", description: "Your password has been updated successfully." }),
+    onSuccess: () => toast({ title: "Password changed", description: "Your password has been updated successfully.", variant: "success" }),
     onError: () => toast({ title: "Something went wrong", variant: "destructive" }),
   })
 
@@ -84,7 +84,7 @@ export default function SettingsPage() {
     handleCroppedUpload,
   } = useProfilePicture({
     updateProfile,
-    onSuccess: () => toast({ title: "Profile picture updated", description: "Your profile picture has been changed." }),
+    onSuccess: () => toast({ title: "Profile picture updated", description: "Your profile picture has been changed.", variant: "success" }),
     onError: () => toast({ title: "Something went wrong", variant: "destructive" }),
   })
 
@@ -109,7 +109,7 @@ export default function SettingsPage() {
     setSaveConfirmOpen(false)
     updateSettings(form)
     setSaved(true)
-    toast({ title: "Settings saved", description: "Website settings have been updated." })
+    toast({ title: "Settings saved", description: "Website settings have been updated.", variant: "success" })
     setTimeout(() => setSaved(false), 2500)
   }
 
@@ -126,7 +126,7 @@ export default function SettingsPage() {
     await updateProfile({ full_name: nameValue.trim() })
     setNameSaving(false)
     setEditingName(false)
-    toast({ title: "Profile updated", description: "Your name has been updated." })
+    toast({ title: "Profile updated", description: "Your name has been updated.", variant: "success" })
   }
 
   const profilePicSrc = currentUser?.profilePicture
@@ -306,7 +306,7 @@ export default function SettingsPage() {
                   checked={notificationPrefs.enableEmailNotifications}
                   onCheckedChange={async (checked) => {
                     const ok = await updateNotificationPrefs({ enableEmailNotifications: checked })
-                    if (ok) toast({ title: "Preference saved", description: `Email notifications ${checked ? "enabled" : "disabled"}.` })
+                    if (ok) toast({ title: "Preference saved", description: `Email notifications ${checked ? "enabled" : "disabled"}.`, variant: "success" })
                     else toast({ title: "Something went wrong", variant: "destructive" })
                   }}
                 />
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                   checked={notificationPrefs.enableInquiryAlerts}
                   onCheckedChange={async (checked) => {
                     const ok = await updateNotificationPrefs({ enableInquiryAlerts: checked })
-                    if (ok) toast({ title: "Preference saved", description: `Inquiry alerts ${checked ? "enabled" : "disabled"}.` })
+                    if (ok) toast({ title: "Preference saved", description: `Inquiry alerts ${checked ? "enabled" : "disabled"}.`, variant: "success" })
                     else toast({ title: "Something went wrong", variant: "destructive" })
                   }}
                 />

@@ -183,7 +183,7 @@ export default function HomeContentPage() {
       }
       setDialogOpen(false)
       loadAllContent()
-      toast({ title: editingItem ? "Content updated" : "Content created", description: `Milestone has been ${editingItem ? "updated" : "created"}.` })
+      toast({ title: editingItem ? "Content updated" : "Content created", description: `Milestone has been ${editingItem ? "updated" : "created"}.`, variant: "success" })
     } catch (err) {
       console.error("Save failed:", err)
       setError("Failed to save. Please try again.")
@@ -197,7 +197,7 @@ export default function HomeContentPage() {
       await apiDeleteMilestone(deleteTarget.id)
       setDeleteTarget(null)
       loadAllContent()
-      toast({ title: "Content deleted", description: "Milestone has been deleted." })
+      toast({ title: "Content deleted", description: "Milestone has been deleted.", variant: "success" })
     } catch (err) {
       console.error("Delete failed:", err)
       setError("Failed to delete. Please try again.")
@@ -209,7 +209,7 @@ export default function HomeContentPage() {
     try {
       await apiUpdateMilestone(id, { isActive: !currentState })
       loadAllContent()
-      toast({ title: "Status toggled", description: `Milestone has been ${currentState ? "deactivated" : "activated"}.` })
+      toast({ title: "Status toggled", description: `Milestone has been ${currentState ? "deactivated" : "activated"}.`, variant: "success" })
     } catch (err) {
       console.error("Toggle failed:", err)
       toast({ title: "Toggle failed", description: "Failed to toggle status.", variant: "destructive" })
@@ -226,7 +226,7 @@ export default function HomeContentPage() {
     const order = newMilestones.map(m => m.milestoneId)
     try {
       await apiReorderMilestones(order)
-      toast({ title: "Order updated", description: "Milestones have been reordered." })
+      toast({ title: "Order updated", description: "Milestones have been reordered.", variant: "success" })
     } catch (err) {
         console.error("Reorder failed:", err)
         // Revert on failure
@@ -241,7 +241,7 @@ export default function HomeContentPage() {
       await apiUpdateHeroSettings(heroFormData)
       loadAllContent()
       setError(null)
-      toast({ title: "Hero settings saved", description: "Hero section settings have been updated." })
+      toast({ title: "Hero settings saved", description: "Hero section settings have been updated.", variant: "success" })
     } catch (err) {
       console.error("Save hero settings failed:", err)
       setError("Failed to save hero settings. Please try again.")

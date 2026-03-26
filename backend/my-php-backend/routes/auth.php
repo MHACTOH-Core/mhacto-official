@@ -19,6 +19,9 @@ function handle_auth(string $method, ?string $action): void
         case 'me':
             _auth_me($method);
             break;
+        case 'refresh':
+            _auth_refresh($method);
+            break;
         default:
             Response::error('Not found.', 404);
     }
@@ -122,6 +125,47 @@ function _auth_me(string $method): void
         ]);
     } catch (Exception $e) {
         error_log("auth/me error: " . $e->getMessage());
+        Response::error('Internal server error.', 500);
+    }
+}
+
+// ── Refresh token ───────────────────────────────────────────────
+
+function _auth_refresh(string $method): void
+{
+    if ($method !== 'POST') {
+        Response::error('Method not allowed. Use POST.', 405);
+    }
+
+    // Allow tokens that expired up to 1 hour ago
+    $payload = Auth::decodeWithGrace(3600);
+
+    if (!$payload) {
+        Response::error('Token cannot be refreshed.', 401);
+    }
+
+    try {
+        $db   = (new Database())->getConnection();
+        $stmt = $db->prepare(
+            "SELECT user_id, email, role FROM users WHERE user_id = :id AND status = 'active' LIMIT 1"
+        );
+        $stmt->bindParam(':id', $payload['sub'], PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            Response::error('User not found or deactivated.', 401);
+        }
+
+        $newToken = Auth::generateToken([
+            'id'    => (int) $row['user_id'],
+            'email' => $row['email'],
+            'role'  => $row['role'],
+        ]);
+
+        Response::json(['token' => $newToken]);
+    } catch (Exception $e) {
+        error_log("auth/refresh error: " . $e->getMessage());
         Response::error('Internal server error.', 500);
     }
 }

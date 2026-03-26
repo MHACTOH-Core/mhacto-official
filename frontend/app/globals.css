@@ -186,10 +186,12 @@ body[data-scroll-locked] {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 .reveal-on-scroll.revealed {
   opacity: 1;
   transform: translateY(0);
+  will-change: auto;
 }
 
 /* Reveal variant: slide from left */
@@ -303,4 +305,26 @@ body[data-scroll-locked] {
 @keyframes site-curtain {
   from { clip-path: inset(0 0 100% 0); opacity: 0; }
   to   { clip-path: inset(0 0 0% 0);   opacity: 1; }
+}
+
+/* ── Performance: lazy-render off-screen sections ────────────────── */
+/* content-visibility: auto lets the browser skip rendering sections that
+   are far off-screen, dramatically reducing initial paint work.
+   contain-intrinsic-size provides height estimates to prevent layout shifts. */
+main > section:not(:first-child),
+main > div > section:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
+/* GPU-promote elements that will animate transforms/opacity */
+.ken-burns-1,
+.ken-burns-2,
+.ken-burns-3,
+.animate-fade-in-up,
+.animate-fade-in-down,
+.animate-fade-in-left,
+.animate-fade-in-right {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }

@@ -1,5 +1,10 @@
 import { useState, useRef } from "react"
 import { apiUploadMedia } from "@/lib/api"
+import type { CropSaveMode } from "@/components/ui/image-crop-dialog"
+
+const MIN_PASSWORD_LENGTH = 6
+// Delay before auto-closing the success dialog so the user sees the confirmation
+const SUCCESS_CLOSE_DELAY_MS = 1500
 
 interface UsePasswordFormOptions {
   changePassword: (oldPassword: string, newPassword: string) => Promise<string | true>
@@ -31,7 +36,7 @@ export function usePasswordForm({ changePassword, onSuccess, onError }: UsePassw
 
   const submit = async () => {
     setError("")
-    if (newPassword.length < 6) { setError("New password must be at least 6 characters."); return }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) { setError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`); return }
     if (newPassword !== confirmPassword) { setError("New passwords do not match."); return }
     setSaving(true)
     const result = await changePassword(oldPassword, newPassword)
@@ -39,7 +44,7 @@ export function usePasswordForm({ changePassword, onSuccess, onError }: UsePassw
     if (result === true) {
       setSuccess(true)
       onSuccess?.()
-      setTimeout(() => setDialogOpen(false), 1500)
+      setTimeout(() => setDialogOpen(false), SUCCESS_CLOSE_DELAY_MS)
     } else {
       setError(result)
       onError?.(result)
@@ -86,7 +91,8 @@ export function useProfilePicture({ updateProfile, onSuccess, onError }: UseProf
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  const handleCroppedUpload = async (blob: Blob) => {
+  // _mode is ignored here: profile pictures always create a new upload, never replace
+  const handleCroppedUpload = async (blob: Blob, _mode?: CropSaveMode) => {
     setCropDialogOpen(false)
     setCropSrc(null)
     setUploading(true)

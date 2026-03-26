@@ -70,6 +70,30 @@ class Auth
     }
 
     /**
+     * Decode the Bearer token, allowing up to $graceSeconds past expiry.
+     * Returns the decoded payload or null if the token is missing/invalid/too old.
+     *
+     * @param int $graceSeconds  How many seconds past exp to still accept
+     * @return array|null
+     */
+    public static function decodeWithGrace(int $graceSeconds = 3600): ?array
+    {
+        $token = self::extractBearerToken();
+        if (!$token) return null;
+
+        try {
+            // Accept tokens up to $graceSeconds past expiry
+            JWT::$leeway = $graceSeconds;
+            $decoded = JWT::decode($token, new Key(self::getSecret(), 'HS256'));
+            JWT::$leeway = 0;
+            return (array) $decoded;
+        } catch (\Exception $e) {
+            JWT::$leeway = 0;
+            return null;
+        }
+    }
+
+    /**
      * Require the authenticated user to have one of the given roles.
      * Calls requireAuth() first, then checks the role claim.
      *
@@ -90,12 +114,25 @@ class Auth
 
     /**
      * Extract the Bearer token from the Authorization header.
+     * Tries multiple sources to handle Apache CGI, FastCGI, and PHP CLI server
+     * environments where HTTP_AUTHORIZATION may not be in $_SERVER.
      */
     private static function extractBearerToken(): ?string
     {
         $header = $_SERVER['HTTP_AUTHORIZATION']
             ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
             ?? '';
+
+        // Fallback: some environments (Apache CGI/FastCGI) strip HTTP_AUTHORIZATION
+        // from $_SERVER. getallheaders() reads directly from the request headers.
+        if (!$header && function_exists('getallheaders')) {
+            foreach (getallheaders() as $name => $value) {
+                if (strtolower($name) === 'authorization') {
+                    $header = $value;
+                    break;
+                }
+            }
+        }
 
         if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
             return $matches[1];

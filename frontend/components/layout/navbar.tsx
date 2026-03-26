@@ -59,7 +59,7 @@ const navLinks: NavItem[] = [
         href: "/culture",
         children: [
           { label: "Culinary Wonders", href: "/culture/culinary-wonders", isHash: false },
-          { label: "Festivals", href: "/culture/festivals-celebrations", isHash: false },
+          { label: "Bocaue Festival", href: "/culture/festivals-celebrations", isHash: false },
           { label: "Cultural Practices", href: "/culture/practices-traditions", isHash: false },
           { label: "Art Wonders", href: "/culture/art-wonders", isHash: false },
           { label: "People Wonders", href: "/culture/people-wonders", isHash: false },
@@ -89,7 +89,7 @@ const navLinks: NavItem[] = [
   { label: "News", href: "/news", isHash: false },
   { label: "Events", href: "/events", isHash: false },
   {
-    label: "Tourism Office",
+    label: "MHACTO Office",
     href: "/tourism-office",
     isHash: false,
     children: [
@@ -101,10 +101,15 @@ const navLinks: NavItem[] = [
   { label: "Pagoda", href: "/pagoda", isHash: false },
 ]
 
+// Pixels scrolled before the navbar switches to the scrolled style
+const SCROLL_THRESHOLD_PX = 20
+// Delay (ms) between closing the mobile menu and opening search, allowing the menu close animation to finish
+const MOBILE_SEARCH_OPEN_DELAY_MS = 150
+
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [expandedMobileItems, setExpandedMobileItems] = useState<string[]>([])
+  const [expandedMobileLabels, setExpandedMobileLabels] = useState<string[]>([])
   const [activeDesktopDropdown, setActiveDesktopDropdown] = useState<string | null>(null)
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const [navbarLogoUrl, setNavbarLogoUrl] = useState("")
@@ -128,9 +133,10 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
+      // Skip: an animation frame read is already queued
       if (scrollRafIdRef.current != null) return
       scrollRafIdRef.current = requestAnimationFrame(() => {
-        setIsScrolled(window.scrollY > 20)
+        setIsScrolled(window.scrollY > SCROLL_THRESHOLD_PX)
         scrollRafIdRef.current = null
       })
     }
@@ -210,11 +216,17 @@ export function Navbar() {
 
   /** Toggle a mobile menu item's expanded/collapsed state */
   const toggleMobileExpanded = (label: string) => {
-    setExpandedMobileItems((previousItems) =>
-      previousItems.includes(label)
-        ? previousItems.filter((item) => item !== label)
-        : [...previousItems, label]
+    setExpandedMobileLabels((previousLabels) =>
+      previousLabels.includes(label)
+        ? previousLabels.filter((l) => l !== label)
+        : [...previousLabels, label]
     )
+  }
+
+  /** Close mobile menu then open search overlay (with a brief delay for the close animation) */
+  const handleMobileSearchOpen = () => {
+    setIsMobileMenuOpen(false)
+    setTimeout(() => setIsSearchOverlayOpen(true), MOBILE_SEARCH_OPEN_DELAY_MS)
   }
 
   // Render desktop dropdown
@@ -378,43 +390,121 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-white/80 backdrop-blur-md shadow-sm">
-      {/* Animated river shimmer — behind all content */}
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-blue-200/50 bg-white/80 backdrop-blur-md shadow-sm">
+      {/* ═══════════════════ Azure Horizon Water System ═══════════════
+          Layer order (bottom → top):
+            0. bg-white/80 backdrop-blur-md  (header base)
+            1. Sky-light bloom               (static radial from top-center)
+            2. Depth gradient                (static, top→bottom deepens)
+            3. Diagonal refraction wash      (static, angular color shift)
+            4. Edge ambient glows            (static, left + right radials)
+            5. Breathing shimmer             (1 animation, 26s alternate)
+            6. Wave body                     (2 wave fills, fills bottom ~48%)
+      ════════════════════════════════════════════════════════════════ */}
       <style>{`
-        @keyframes navShimmer {
-          0%   { background-position: -200% 0 }
-          100% { background-position: 200% 0 }
+        @keyframes navFloat {
+          0%   { transform: translateX(-5%) }
+          100% { transform: translateX(5%)  }
         }
-        @keyframes navWaveFlow {
-          0%   { transform: translateX(0) }
-          100% { transform: translateX(-50%) }
+        @keyframes navWave {
+          from { transform: translateX(0) }
+          to   { transform: translateX(-50%) }
         }
       `}</style>
 
-      {/* Subtle water-light caustic band that glides across the header */}
+      {/* ── 1. Sky-light bloom: large soft radial from above ───────── */}
       <div
         className="absolute inset-0 pointer-events-none z-0"
         aria-hidden
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, transparent 35%, rgba(45,212,191,0.06) 45%, rgba(45,212,191,0.10) 50%, rgba(45,212,191,0.06) 55%, transparent 65%, transparent 100%)',
-          backgroundSize: '200% 100%',
-          animation: 'navShimmer 6s ease-in-out infinite',
+          background:
+            'radial-gradient(ellipse 90% 240% at 50% -15%, rgba(186,230,253,0.30) 0%, rgba(219,234,254,0.10) 55%, transparent 80%)',
         }}
       />
 
-      {/* Flowing wave accent at the very bottom of the navbar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] pointer-events-none z-[1] overflow-hidden" aria-hidden>
+      {/* ── 2. Depth gradient: water deepens toward bottom ──────────── */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        aria-hidden
+        style={{
+          background:
+            'linear-gradient(180deg, transparent 0%, rgba(186,230,253,0.07) 38%, rgba(96,165,250,0.17) 100%)',
+        }}
+      />
+
+      {/* ── 3. Diagonal refraction wash: angular split of cool light ── */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        aria-hidden
+        style={{
+          background:
+            'linear-gradient(114deg, rgba(219,234,254,0.24) 0%, transparent 44%, rgba(186,230,253,0.18) 100%)',
+        }}
+      />
+
+      {/* ── 4. Edge ambient glows: soft blue columns at each side ───── */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        aria-hidden
+        style={{
+          background: [
+            'radial-gradient(ellipse 26% 130% at 0% 50%, rgba(147,197,253,0.15) 0%, transparent 100%)',
+            'radial-gradient(ellipse 26% 130% at 100% 50%, rgba(147,197,253,0.13) 0%, transparent 100%)',
+          ].join(', '),
+        }}
+      />
+
+      {/* ── 5. Breathing shimmer: one slow diagonal light drift ──────── */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden>
+        <div
+          style={{
+            position: 'absolute',
+            inset: '-6px',
+            background:
+              'linear-gradient(108deg, transparent 20%, rgba(147,197,253,0.10) 50%, transparent 80%)',
+            animation: 'navFloat 26s ease-in-out infinite alternate',
+          }}
+        />
+      </div>
+
+      {/* ── 6. Wave body: fills bottom ~48% of the navbar ────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 h-[28px] pointer-events-none z-[1] overflow-hidden" aria-hidden>
+        {/* Soft glow bloom behind the wave fills */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(180deg, transparent 0%, rgba(59,130,246,0.07) 100%)',
+          }}
+        />
+
+        {/* Wave A — back layer, deep blue fill, very slow */}
         <svg
-          className="absolute bottom-0 h-[2px]"
-          style={{ width: '200%', animation: 'navWaveFlow 8s linear infinite' }}
-          viewBox="0 0 2880 4"
+          style={{ position: 'absolute', bottom: 0, width: '200%', height: '28px', animation: 'navWave 28s linear infinite' }}
+          viewBox="0 0 2880 28"
           preserveAspectRatio="none"
         >
           <path
-            d="M0,2 C120,0 240,4 360,2 C480,0 600,4 720,2 C840,0 960,4 1080,2 C1200,0 1320,4 1440,2 C1560,0 1680,4 1800,2 C1920,0 2040,4 2160,2 C2280,0 2400,4 2520,2 C2640,0 2760,4 2880,2"
-            fill="none"
-            stroke="rgba(45,212,191,0.45)"
-            strokeWidth="2"
+            d="M0,14 C360,3 720,3 1080,14 C1440,25 1800,25 2160,14 C2520,3 2880,3 2880,14 L2880,28 L0,28 Z"
+            fill="rgba(37,99,235,0.11)"
+          />
+        </svg>
+
+        {/* Wave B — front layer, lighter fill, inverted swell, offset start */}
+        <svg
+          style={{ position: 'absolute', bottom: 0, width: '200%', height: '22px', animation: 'navWave 19s linear infinite', animationDelay: '-7s' }}
+          viewBox="0 0 2880 22"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="navWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stopColor="rgba(59,130,246,0.12)" />
+              <stop offset="100%" stopColor="rgba(37,99,235,0.22)" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0,11 C360,20 720,20 1080,11 C1440,2 1800,2 2160,11 C2520,20 2880,20 2880,11 L2880,22 L0,22 Z"
+            fill="url(#navWaveFill)"
           />
         </svg>
       </div>
@@ -494,7 +584,7 @@ export function Navbar() {
               </div>
               {/* Mobile search button */}
               <button
-                onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsSearchOverlayOpen(true), 150) }}
+                onClick={handleMobileSearchOpen}
                 className="mb-5 flex w-full items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
                 <Search className="h-4 w-4 shrink-0" />
@@ -508,7 +598,7 @@ export function Navbar() {
                         <button
                           onClick={() => toggleMobileExpanded(item.label)}
                           className={`w-full text-left text-lg font-medium transition-colors flex items-center justify-between hover:text-primary ${
-                            hasActiveChild(item) || expandedMobileItems.includes(item.label)
+                            hasActiveChild(item) || expandedMobileLabels.includes(item.label)
                               ? "text-primary"
                               : "text-foreground"
                           }`}
@@ -516,11 +606,11 @@ export function Navbar() {
                           {item.label}
                           <ChevronDown
                             className={`h-5 w-5 transition-transform ${
-                              expandedMobileItems.includes(item.label) ? "rotate-180" : ""
+                              expandedMobileLabels.includes(item.label) ? "rotate-180" : ""
                             }`}
                           />
                         </button>
-                        {expandedMobileItems.includes(item.label) && (
+                        {expandedMobileLabels.includes(item.label) && (
                           <div className="pl-4 mt-2 space-y-3 border-l-2 border-primary/20">
                             {item.children.map((child) => (
                               <div key={child.label}>
@@ -531,20 +621,20 @@ export function Navbar() {
                                         <Link
                                           href={child.href}
                                           className={`flex-1 text-base font-medium transition-colors hover:text-primary ${
-                                            expandedMobileItems.includes(child.label)
+                                            expandedMobileLabels.includes(child.label)
                                               ? "text-primary"
                                               : "text-foreground"
                                           }`}
                                           onClick={() => {
                                             setIsMobileMenuOpen(false)
-                                            setExpandedMobileItems([])
+                                            setExpandedMobileLabels([])
                                           }}
                                         >
                                           {child.label}
                                         </Link>
                                       ) : (
                                         <span className={`flex-1 text-base font-medium ${
-                                          expandedMobileItems.includes(child.label) ? "text-primary" : "text-foreground"
+                                          expandedMobileLabels.includes(child.label) ? "text-primary" : "text-foreground"
                                         }`}>
                                           {child.label}
                                         </span>
@@ -555,12 +645,12 @@ export function Navbar() {
                                       >
                                         <ChevronDown
                                           className={`h-4 w-4 transition-transform ${
-                                            expandedMobileItems.includes(child.label) ? "rotate-180" : ""
+                                            expandedMobileLabels.includes(child.label) ? "rotate-180" : ""
                                           }`}
                                         />
                                       </button>
                                     </div>
-                                    {expandedMobileItems.includes(child.label) && (
+                                    {expandedMobileLabels.includes(child.label) && (
                                       <div className="pl-4 mt-2 space-y-2 border-l-2 border-primary/10">
                                         {child.children.map((subchild) => (
                                           <Link
@@ -573,7 +663,7 @@ export function Navbar() {
                                             }`}
                                             onClick={() => {
                                               setIsMobileMenuOpen(false)
-                                              setExpandedMobileItems([])
+                                              setExpandedMobileLabels([])
                                             }}
                                           >
                                             {subchild.label}
@@ -592,7 +682,7 @@ export function Navbar() {
                                     }`}
                                     onClick={() => {
                                       setIsMobileMenuOpen(false)
-                                      setExpandedMobileItems([])
+                                      setExpandedMobileLabels([])
                                     }}
                                   >
                                     {child.label}

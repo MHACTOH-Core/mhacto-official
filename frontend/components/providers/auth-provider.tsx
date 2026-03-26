@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import type { UserRole } from "@/lib/data/admin-data"
-import { apiLogin, apiUpdateProfile, apiChangePassword, setAuthToken, apiFetchUserPreferences, apiUpdateUserPreferences } from "@/lib/api"
+import { apiLogin, apiUpdateProfile, apiChangePassword, setAuthToken, apiFetchUserPreferences, apiUpdateUserPreferences, onAuthError, apiVerifyAuth } from "@/lib/api"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -72,12 +72,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage
   useEffect(() => {
-    setIsLoggedIn(loadJson("admin_logged_in", false))
+    const loggedIn = loadJson("admin_logged_in", false)
+    const storedToken = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null
+
+    // Guard: if state says logged-in but token is gone (cleared by a prior silent
+    // expiry), force a clean logout so the UI doesn't get stuck in an
+    // authenticated-looking state with no ability to make API calls.
+    if (loggedIn && !storedToken) {
+      saveJson("admin_logged_in", false)
+      saveJson("admin_email", "")
+      saveJson("admin_current_user", null)
+      setIsHydrated(true)
+      return
+    }
+
+    setIsLoggedIn(loggedIn)
     setAdminEmail(loadJson("admin_email", ""))
     setCurrentUser(loadJson("admin_current_user", null))
-    const storedToken = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null
-    if (storedToken) setAuthToken(storedToken)
-    setIsHydrated(true)
+
+    if (storedToken) {
+      setAuthToken(storedToken)
+      // Validate the token with the backend — logout if expired/invalid
+      apiVerifyAuth().then((user) => {
+        if (!user) {
+          // Token is no longer valid
+          setIsLoggedIn(false)
+          setAdminEmail("")
+          setCurrentUser(null)
+          saveJson("admin_logged_in", false)
+          saveJson("admin_email", "")
+          saveJson("admin_current_user", null)
+        }
+        setIsHydrated(true)
+      })
+    } else {
+      setIsHydrated(true)
+    }
   }, [])
 
   // Fetch notification preferences when user is known
@@ -85,19 +115,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isHydrated || !isLoggedIn || !currentUser) return
     apiFetchUserPreferences(currentUser.id)
       .then((prefs) => setNotificationPrefs(prefs))
-      .catch(() => {})
+      .catch((err) => console.warn("Failed to fetch notification prefs:", err))
   }, [isHydrated, isLoggedIn, currentUser])
 
   const login = useCallback(async (email: string, password: string): Promise<true | string> => {
     try {
       const resp = await apiLogin(email, password)
       setAuthToken(resp.token)
+      // Validate the role string against known values; fall back to "admin" if unrecognised
+      const VALID_ROLES: UserRole[] = ["super_admin", "admin", "content_manager"]
+      const role: UserRole = VALID_ROLES.includes(resp.user.role as UserRole)
+        ? (resp.user.role as UserRole)
+        : "admin"
       const userObj: AuthUser = {
         id: resp.user.id,
         username: resp.user.username,
         fullName: resp.user.fullName || resp.user.username,
         email: resp.user.email,
-        role: (resp.user.role || "admin") as UserRole,
+        role,
         profilePicture: resp.user.profilePicture ?? null,
       }
       setIsLoggedIn(true)
@@ -122,6 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveJson("admin_email", "")
     saveJson("admin_current_user", null)
   }, [])
+
+  // Auto-logout when the backend returns a 401 (token expired after refresh fails)
+  useEffect(() => {
+    onAuthError(() => logout())
+    return () => onAuthError(null)
+  }, [logout])
 
   const updateProfile = useCallback(
     async (data: { full_name?: string; profile_picture?: string | null }): Promise<boolean> => {

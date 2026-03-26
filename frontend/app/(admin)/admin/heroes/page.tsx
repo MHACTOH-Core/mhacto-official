@@ -240,7 +240,7 @@ export default function HeroesAdminPage() {
         prev.map((h) => (h.slug === editing.slug ? result.hero : h)),
       )
       setSaveSuccess(true)
-      toast({ title: "Hero updated", description: `"${formTitle}" page hero has been saved.` })
+      toast({ title: "Hero updated", description: `"${formTitle}" page hero has been saved.`, variant: "success" })
       setTimeout(() => {
         setEditing(null)
         setSaveSuccess(false)

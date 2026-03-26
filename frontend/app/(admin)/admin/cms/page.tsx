@@ -214,22 +214,22 @@ export default function CMSPage() {
 
     if (editingPost) {
       updatePost(editingPost.id, payload)
-      toast({ title: "Post updated", description: `"${form.title}" has been updated.` })
+      toast({ title: "Post updated", description: `"${form.title}" has been updated.`, variant: "success" })
     } else {
       createPost(payload as Omit<CMSPost, "id" | "createdAt" | "updatedAt">)
-      toast({ title: "Post created", description: `"${form.title}" has been created.` })
+      toast({ title: "Post created", description: `"${form.title}" has been created.`, variant: "success" })
     }
     setDialogOpen(false)
   }
 
   const handlePublish = (post: CMSPost) => {
     updatePost(post.id, { ...post, status: "published" })
-    toast({ title: "Post published", description: `"${post.title}" is now live.` })
+    toast({ title: "Post published", description: `"${post.title}" is now live.`, variant: "success" })
   }
 
   const handleArchive = (post: CMSPost) => {
     updatePost(post.id, { ...post, status: "archived" })
-    toast({ title: "Post archived", description: `"${post.title}" has been archived.` })
+    toast({ title: "Post archived", description: `"${post.title}" has been archived.`, variant: "success" })
   }
 
   const confirmDelete = () => {
