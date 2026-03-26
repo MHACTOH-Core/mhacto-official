@@ -270,8 +270,8 @@ export function ImageCropDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Crop area */}
-        <div className="relative mx-auto h-[26rem] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border">
+        {/* Crop area — responsive height: fluid between 16rem (small screens) and 22rem (large screens) */}
+        <div className="relative mx-auto w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border" style={{ height: 'clamp(16rem, 40vw, 22rem)' }}>
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -292,7 +292,7 @@ export function ImageCropDialog({
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto max-h-[40vh] sm:max-h-none pr-1">
           {/* Left column – sliders & aspect */}
           <div className="space-y-4">
             {/* Aspect ratio presets */}

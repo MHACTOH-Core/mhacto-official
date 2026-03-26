@@ -108,7 +108,8 @@ export function ProfilePictureCropDialog({
           <DialogTitle>Crop Profile Picture</DialogTitle>
         </DialogHeader>
 
-        <div className="relative mx-auto h-72 w-72 overflow-hidden rounded-xl bg-muted">
+        {/* Responsive square crop area: fills available width up to 18rem */}
+        <div className="relative mx-auto w-full max-w-[18rem] overflow-hidden rounded-xl bg-muted" style={{ aspectRatio: '1 / 1' }}>
           <Cropper
             image={imageSrc}
             crop={crop}

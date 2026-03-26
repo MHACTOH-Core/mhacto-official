@@ -99,6 +99,12 @@ export function HistoryArtSection() {
             detail: milestone.detail,
             side: milestone.side ?? (idx % 2 === 0 ? "left" : "right"),
           }))
+          // Sort ascending by year
+          mappedMilestones.sort((a, b) => {
+            const yearA = parseInt(a.year.replace(/\D/g, "")) || 0
+            const yearB = parseInt(b.year.replace(/\D/g, "")) || 0
+            return yearA - yearB
+          })
           setTimelineMilestones(mappedMilestones)
         }
       })

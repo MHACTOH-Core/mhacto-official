@@ -1,16 +1,26 @@
 -- ========================================================================
--- MHACTO Complete Database — Bocaue, Bulacan
--- Updated: matches current application code (all models & routes)
+-- MHACTO Database Schema — mhacto_db
+-- Bocaue, Bulacan — Municipal History, Arts, Culture & Tourism Office
 --
--- This file creates the database, all 12 tables, and seeds default
--- config, categories, labels, and admin user. Import on any fresh
--- MySQL/MariaDB instance to get a working copy.
+-- Usage (fresh install):
+--   mysql -u root -p < database-schema.sql
 --
--- Usage:
---   mysql -u root -p < database.sql
+-- After import, run seed.sql to populate test / sample data:
+--   mysql -u root -p mhacto_db < seed.sql
 --
--- For test content (places, news, events, tours, inquiries, etc.)
--- run seed-test-data.sql AFTER this file.
+-- Tables (12):
+--   1.  users
+--   2.  archive_requests
+--   3.  config
+--   4.  category
+--   5.  content
+--   6.  content_fields
+--   7.  content_images
+--   8.  featured_content
+--   9.  inquiries
+--   10. activity_logs
+--   11. milestone
+--   12. page_views
 -- ========================================================================
 
 -- ────────────────────────────────────────────────────────────────
@@ -23,7 +33,6 @@ CREATE DATABASE IF NOT EXISTS mhacto_db
 
 USE mhacto_db;
 
--- Disable FK checks so we can drop/create in any order
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ────────────────────────────────────────────────────────────────
@@ -47,7 +56,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 
 -- ========================================================================
--- TABLE DEFINITIONS (12 tables)
+-- TABLE DEFINITIONS
 -- ========================================================================
 
 
@@ -63,8 +72,8 @@ CREATE TABLE users (
   password_hash      VARCHAR(100) DEFAULT NULL,
   role               ENUM('super_admin','admin','content_manager') DEFAULT 'admin',
   status             ENUM('active','archived') DEFAULT 'active',
-  notification_prefs JSON DEFAULT NULL               COMMENT 'Per-user notification preferences',
-  created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  notification_prefs JSON         DEFAULT NULL       COMMENT 'Per-user notification preferences',
+  created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -74,13 +83,13 @@ CREATE TABLE users (
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE archive_requests (
   request_id     INT AUTO_INCREMENT PRIMARY KEY,
-  target_user_id INT          NOT NULL           COMMENT 'User being archived',
-  requested_by   INT          NOT NULL           COMMENT 'Admin who requested the archive',
+  target_user_id INT       NOT NULL           COMMENT 'User being archived',
+  requested_by   INT       NOT NULL           COMMENT 'Admin who requested the archive',
   status         ENUM('pending','approved','denied') DEFAULT 'pending',
-  reason         TEXT         DEFAULT NULL,
-  reviewed_by    INT          DEFAULT NULL       COMMENT 'Super-admin who reviewed',
-  created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  reviewed_at    TIMESTAMP    DEFAULT NULL,
+  reason         TEXT      DEFAULT NULL,
+  reviewed_by    INT       DEFAULT NULL       COMMENT 'Super-admin who reviewed',
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at    TIMESTAMP DEFAULT NULL,
   FOREIGN KEY (target_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
   FOREIGN KEY (requested_by)   REFERENCES users(user_id) ON DELETE CASCADE,
   FOREIGN KEY (reviewed_by)    REFERENCES users(user_id) ON DELETE SET NULL,
@@ -106,16 +115,16 @@ CREATE TABLE config (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 4. CATEGORY
+-- 4. CATEGORY  (broad category groups + sub-labels)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE category (
   category_id   INT AUTO_INCREMENT PRIMARY KEY,
-  parent_id     INT          DEFAULT NULL   COMMENT 'FK to parent category (for labels)',
+  parent_id     INT         DEFAULT NULL   COMMENT 'FK to parent category (for labels)',
   category_type ENUM('category','label') DEFAULT 'category',
-  label_key     VARCHAR(50)  DEFAULT NULL   COMMENT 'URL-safe key (labels only)',
-  label_name    VARCHAR(50)  NOT NULL       COMMENT 'Display name',
-  color_code    VARCHAR(50)  DEFAULT NULL   COMMENT 'Badge colour (categories only)',
-  is_active     TINYINT(1)   DEFAULT 1,
+  label_key     VARCHAR(50) DEFAULT NULL   COMMENT 'URL-safe key (labels only)',
+  label_name    VARCHAR(50) NOT NULL       COMMENT 'Display name',
+  color_code    VARCHAR(50) DEFAULT NULL   COMMENT 'Badge colour (categories only)',
+  is_active     TINYINT(1)  DEFAULT 1,
   FOREIGN KEY (parent_id) REFERENCES category(category_id) ON DELETE SET NULL,
   INDEX idx_type      (category_type),
   INDEX idx_label_key (label_key)
@@ -123,7 +132,7 @@ CREATE TABLE category (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 5. CONTENT
+-- 5. CONTENT  (CMS posts — place / news / event)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE content (
   content_id  INT AUTO_INCREMENT PRIMARY KEY,
@@ -143,13 +152,15 @@ CREATE TABLE content (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 6. CONTENT_FIELDS  (UNIQUE index required for ON DUPLICATE KEY)
+-- 6. CONTENT_FIELDS  (dynamic key-value metadata per content)
+--    UNIQUE index on (content_id, meta_key) so ON DUPLICATE KEY
+--    UPDATE in PHP setMeta() works correctly.
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE content_fields (
   meta_id    INT AUTO_INCREMENT PRIMARY KEY,
   content_id INT          NOT NULL,
-  meta_key   VARCHAR(100) NOT NULL       COMMENT 'e.g., location, hours, news_date, label_key',
-  meta_value TEXT         DEFAULT NULL   COMMENT 'Value or JSON for complex data',
+  meta_key   VARCHAR(100) NOT NULL  COMMENT 'e.g., location, hours, news_date, label_key',
+  meta_value TEXT         DEFAULT NULL COMMENT 'Value or JSON for complex data',
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
   UNIQUE INDEX idx_content_key (content_id, meta_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -160,67 +171,73 @@ CREATE TABLE content_fields (
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE content_images (
   image_id     INT AUTO_INCREMENT PRIMARY KEY,
-  content_id   INT          DEFAULT NULL,
+  content_id   INT         DEFAULT NULL,
   image_url    VARCHAR(255) DEFAULT NULL,
-  is_thumbnail TINYINT(1)   DEFAULT 0,
-  sort_order   INT          DEFAULT 0,
-  created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  is_thumbnail TINYINT(1)  DEFAULT 0,
+  sort_order   INT         DEFAULT 0,
+  created_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
   INDEX idx_content (content_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 8. FEATURED_CONTENT
+-- 8. FEATURED_CONTENT  (homepage spotlight + landmarks carousel)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE featured_content (
   featured_id INT AUTO_INCREMENT PRIMARY KEY,
-  content_id  INT          DEFAULT NULL  COMMENT 'FK → content.content_id',
+  content_id  INT         DEFAULT NULL  COMMENT 'FK → content.content_id',
   section     ENUM('spotlight','landmark') NOT NULL,
-  sort_order  INT          DEFAULT 0,
-  is_active   TINYINT(1)   DEFAULT 1,
-  created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  sort_order  INT         DEFAULT 0,
+  is_active   TINYINT(1)  DEFAULT 1,
+  created_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
   INDEX idx_section_active (section, is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 9. INQUIRIES
+-- 9. INQUIRIES  (visitor forms — general, tour, walk-in, partnership)
+--    inquiry_type is VARCHAR so new types can be added without migration.
+--    Current types: general_contact | tour_booking | partnership | walk_in
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE inquiries (
   inquiry_id         INT AUTO_INCREMENT PRIMARY KEY,
   inquiry_type       VARCHAR(50)  DEFAULT 'general_contact' COMMENT 'general_contact | tour_booking | partnership | walk_in',
   full_name          VARCHAR(255) NOT NULL,
   email_address      VARCHAR(255) NOT NULL,
-  contact_number     VARCHAR(20)  DEFAULT NULL,
-  date_of_visit      DATE         DEFAULT NULL,
-  number_of_pax      INT          DEFAULT NULL,
+  contact_number     VARCHAR(20)  DEFAULT NULL  COMMENT 'Supports country codes e.g. +63…',
+  date_of_visit      DATE         DEFAULT NULL  COMMENT 'Sortable by upcoming visits',
+  number_of_pax      INT          DEFAULT NULL  COMMENT 'Aggregatable crowd volume',
   message            TEXT         DEFAULT NULL,
-  additional_details JSON         DEFAULT NULL,
+  additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, etc.',
   status             ENUM('unread','read','in_progress','assigned','archived','spam','trash') DEFAULT 'unread',
   assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name/ID',
-  reply_text         TEXT         DEFAULT NULL,
+  reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply for in-app thread',
   replied_at         TIMESTAMP    DEFAULT NULL,
-  replied_by         VARCHAR(100) DEFAULT NULL,
+  replied_by         VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who replied',
   created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_status    (status),
-  INDEX idx_type      (inquiry_type),
-  INDEX idx_visit     (date_of_visit)
+  INDEX idx_status (status),
+  INDEX idx_type   (inquiry_type),
+  INDEX idx_visit  (date_of_visit)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 10. ACTIVITY_LOGS  (VARCHAR action for flexible action strings)
+-- 10. ACTIVITY_LOGS
+--     action VARCHAR(50) supports flexible action strings:
+--     login, logout, page_view, create_post, update_post,
+--     delete_post, publish_post, archive_post, reply_inquiry,
+--     archive_inquiry, update_settings, etc.
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE activity_logs (
   log_id     INT AUTO_INCREMENT PRIMARY KEY,
   user_id    INT          DEFAULT NULL  COMMENT 'NULL for public page_view events',
   content_id INT          DEFAULT NULL  COMMENT 'Related CMS content (optional)',
-  action     VARCHAR(50)  DEFAULT NULL  COMMENT 'login, create_post, reply_inquiry, etc.',
-  details    JSON         DEFAULT NULL,
-  page_path  VARCHAR(255) DEFAULT NULL,
+  action     VARCHAR(50)  DEFAULT NULL  COMMENT 'Action type: login, create_post, reply_inquiry, etc.',
+  details    JSON         DEFAULT NULL  COMMENT 'Dynamic payload for action context',
+  page_path  VARCHAR(255) DEFAULT NULL  COMMENT 'URL path (page_view events)',
   ip_address VARCHAR(45)  DEFAULT NULL,
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -230,7 +247,9 @@ CREATE TABLE activity_logs (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 11. MILESTONE  (heritage timeline, optionally linked to CMS)
+-- 11. MILESTONE  (heritage timeline, optionally linked to CMS content)
+--     content_id links to a CMS post with label = timeline-of-events.
+--     year and title are nullable (pulled from CMS when content_id set).
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE milestone (
   milestone_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -239,7 +258,7 @@ CREATE TABLE milestone (
   title        VARCHAR(255) DEFAULT NULL,
   description  TEXT         DEFAULT NULL,
   detail       TEXT         DEFAULT NULL,
-  side         ENUM('left','right') DEFAULT 'left',
+  side         ENUM('left','right') DEFAULT 'left' COMMENT 'Timeline side: alternates left/right',
   sort_order   VARCHAR(50)  DEFAULT '0',
   is_active    TINYINT(1)   DEFAULT 1,
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -250,25 +269,28 @@ CREATE TABLE milestone (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 12. PAGE_VIEWS
+-- 12. PAGE_VIEWS  (per-destination click analytics)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE page_views (
   view_id            INT AUTO_INCREMENT PRIMARY KEY,
   content_id         INT          NOT NULL          COMMENT 'FK → content (post_type = place)',
-  visitor_session_id VARCHAR(100) DEFAULT NULL,
+  visitor_session_id VARCHAR(100) DEFAULT NULL       COMMENT 'Optional client-generated session token',
   clicked_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
-  INDEX idx_content  (content_id),
-  INDEX idx_clicked  (clicked_at)
+  INDEX idx_content (content_id),
+  INDEX idx_clicked (clicked_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ========================================================================
--- SEED DATA — Admin user, categories, labels, config
+-- BASE SEED DATA
+-- Admin users, categories, labels, and site config required for the app
+-- to function. Run seed.sql afterwards for test / sample content.
 -- ========================================================================
 
 
--- ── Default admin user (password: admin123) ────────────────────
+-- ── Admin users ───────────────────────────────────────────────
+-- Passwords (bcrypt $2y$12$): admin123 / admin123 / admin123
 
 INSERT INTO users (username, full_name, email, password_hash, role, status) VALUES
 ('admin', 'MHACTO Super Admin', 'mhacto.municipalityofbocaue@gmail.com',
@@ -289,72 +311,72 @@ INSERT INTO users (username, full_name, email, password_hash, role, status) VALU
 -- ── Categories (IDs 1–5) ──────────────────────────────────────
 
 INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES
-('category', NULL, 'History Wonders',               '#3b82f6', 1),
-('category', NULL, 'Arts & Culture Wonders',        '#10b981', 1),
-('category', NULL, 'Tourist Wonders',               '#f59e0b', 1),
-('category', NULL, 'News & Events',                 '#ef4444', 1),
-('category', NULL, 'Community',                     '#6366f1', 1);
+('category', NULL, 'History Wonders',        '#3b82f6', 1),
+('category', NULL, 'Arts & Culture Wonders', '#10b981', 1),
+('category', NULL, 'Tourist Wonders',        '#f59e0b', 1),
+('category', NULL, 'News & Events',          '#ef4444', 1),
+('category', NULL, 'Community',              '#6366f1', 1);
 
 
 -- ── Labels under History (parent_id = 1) ──────────────────────
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
-(1, 'label', 'timeline-of-events',  'Timeline of Events',  1),
-(1, 'label', 'notable-figures',     'Remarkable Persons',     1);
+(1, 'label', 'timeline-of-events', 'Timeline of Events', 1),
+(1, 'label', 'notable-figures',    'Remarkable Persons',  1);
 
 
 -- ── Labels under Arts & Culture (parent_id = 2) ──────────────
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
-(2, 'label', 'local-cuisine',       'Culinary Wonders',       1),
-(2, 'label', 'festivals',           'Festivals',           1),
-(2, 'label', 'cultural-practices',  'Cultural Practices',  1),
-(2, 'label', 'crafts-artisan',      'Crafts & Artisan',    1),
-(2, 'label', 'people-wonders',      'People & Wonders',    1),
-(2, 'label', 'restaurants',         'Restaurants & Eateries', 1),
-(2, 'label', 'local-business',      'Local Business',      1);
+(2, 'label', 'local-cuisine',      'Culinary Wonders',       1),
+(2, 'label', 'festivals',          'Festivals',              1),
+(2, 'label', 'cultural-practices', 'Cultural Practices',     1),
+(2, 'label', 'crafts-artisan',     'Crafts & Artisan',       1),
+(2, 'label', 'people-wonders',     'People & Wonders',       1),
+(2, 'label', 'restaurants',        'Restaurants & Eateries', 1),
+(2, 'label', 'local-business',     'Local Business',         1);
 
 
 -- ── Labels under Tourist Destinations (parent_id = 3) ─────────
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
-(3, 'label', 'destinations',        'Destinations',        1),
-(3, 'label', 'travel-tours',        'Travel Tours',        1),
-(3, 'label', 'tourism-wonders',     'Tourism Wonders',     1);
+(3, 'label', 'destinations',    'Destinations',    1),
+(3, 'label', 'travel-tours',    'Travel Tours',    1),
+(3, 'label', 'tourism-wonders', 'Tourism Wonders', 1);
 
 
 -- ── Labels under News & Events (parent_id = 4) ───────────────
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
-(4, 'label', 'events',              'Events',              1),
-(4, 'label', 'news',                'News',                1);
+(4, 'label', 'events', 'Events', 1),
+(4, 'label', 'news',   'News',   1);
 
 
 -- ── Labels under Community (parent_id = 5) ────────────────────
 
 INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
-(5, 'label', 'schools',     'Schools',     1),
-(5, 'label', 'colleges',    'Colleges',    1),
-(5, 'label', 'hospitals',   'Hospitals',   1),
-(5, 'label', 'bocauenos',   'Bocauenos',   1);
+(5, 'label', 'schools',   'Schools',   1),
+(5, 'label', 'colleges',  'Colleges',  1),
+(5, 'label', 'hospitals', 'Hospitals', 1),
+(5, 'label', 'bocauenos', 'Bocauenos', 1);
 
 
 -- ── Config: General settings ──────────────────────────────────
 
 INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
-('general', 'site_name',                  '"MHACTO Bocaue"', 'string'),
-('general', 'site_description',           '"Municipal History, Arts, Culture & Tourism Office — Bocaue, Bulacan"', 'string'),
-('general', 'contact_email',              '"mhacto@bocaue.gov.ph"', 'string'),
-('general', 'contact_phone',              '"(044) 123-4567"', 'string'),
-('general', 'office_address',             '"Municipal Hall, Bocaue, Bulacan 3018"', 'string'),
-('general', 'site_logo_url',              'null', 'string'),
-('general', 'notify_inquiries',           'true', 'boolean'),
-('general', 'enable_analytics',           'true', 'boolean'),
-('general', 'maintenance_mode',           'false', 'boolean'),
-('general', 'login_bg_image',             '""', 'string'),
-('general', 'navbar_logo_url',            '""', 'string'),
-('general', 'navbar_secondary_logo_url',  '""', 'string'),
-('general', 'navbar_title',               '""', 'string');
+('general', 'site_name',                 '"MHACTO Bocaue"',                          'string'),
+('general', 'site_description',          '"Municipal History, Arts, Culture & Tourism Office — Bocaue, Bulacan"', 'string'),
+('general', 'contact_email',             '"mhacto@bocaue.gov.ph"',                   'string'),
+('general', 'contact_phone',             '"(044) 123-4567"',                          'string'),
+('general', 'office_address',            '"Municipal Hall, Bocaue, Bulacan 3018"',    'string'),
+('general', 'site_logo_url',             'null',                                      'string'),
+('general', 'notify_inquiries',          'true',                                      'boolean'),
+('general', 'enable_analytics',          'true',                                      'boolean'),
+('general', 'maintenance_mode',          'false',                                     'boolean'),
+('general', 'login_bg_image',            '""',                                        'string'),
+('general', 'navbar_logo_url',           '""',                                        'string'),
+('general', 'navbar_secondary_logo_url', '""',                                        'string'),
+('general', 'navbar_title',              '""',                                        'string');
 
 
 -- ── Config: Social links ──────────────────────────────────────
@@ -367,17 +389,17 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 -- ── Config: Hero settings ─────────────────────────────────────
 
 INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
-('hero', 'hero_subtitle',     '"Bocaue, Bulacan"', 'string'),
-('hero', 'hero_title',        '"Explore The River"', 'string'),
-('hero', 'hero_highlight',    '"Town Wonders"', 'string'),
+('hero', 'hero_subtitle',     '"Bocaue, Bulacan"',                              'string'),
+('hero', 'hero_title',        '"Explore The River"',                            'string'),
+('hero', 'hero_highlight',    '"Town Wonders"',                                 'string'),
 ('hero', 'hero_description',  '"Where rich heritage meets vibrant culture — explore centuries of tradition, lively festivals, and the warm hospitality of Bocaue."', 'string'),
-('hero', 'hero_video_url',    '"/videos/bocaue-hero.mp4"', 'string'),
-('hero', 'hero_fallback_img', '"/images/defaults/no-image.svg"', 'string'),
-('hero', 'hero_cta_text',     '"Explore Now"', 'string'),
-('hero', 'hero_cta_link',     '"/destinations"', 'string');
+('hero', 'hero_video_url',    '"/videos/bocaue-hero.mp4"',                      'string'),
+('hero', 'hero_fallback_img', '"/images/defaults/no-image.svg"',                'string'),
+('hero', 'hero_cta_text',     '"Explore Now"',                                  'string'),
+('hero', 'hero_cta_link',     '"/destinations"',                                'string');
 
 
 -- ========================================================================
--- DONE — Run seed-test-data.sql next for sample content.
+-- DONE — Run seed.sql next to import sample content.
 -- ========================================================================
-SELECT 'MHACTO database created and seeded successfully!' AS result;
+SELECT 'MHACTO database schema created and base data seeded successfully!' AS result;

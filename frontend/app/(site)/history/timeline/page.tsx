@@ -26,7 +26,18 @@ export default function TimelinePage() {
   // Sends GET /api/posts/read.php?label=timeline-of-events&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
     apiFetchByLabel("timeline-of-events")
-      .then((posts) => { if (posts?.length) setTimelineEvents(posts.map(cmsToTimelineEvent)) })
+      .then((posts) => {
+        if (posts?.length) {
+          const events = posts.map(cmsToTimelineEvent)
+          // Sort ascending by year (handles "c. 900", "1521", "1900s", etc.)
+          events.sort((a, b) => {
+            const yearA = parseInt(a.year.replace(/\D/g, "")) || 0
+            const yearB = parseInt(b.year.replace(/\D/g, "")) || 0
+            return yearA - yearB
+          })
+          setTimelineEvents(events)
+        }
+      })
       .catch(() => {})
   }, [])
 

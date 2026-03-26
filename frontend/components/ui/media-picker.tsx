@@ -331,7 +331,7 @@ export function MediaPicker({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[85vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {accept === "video" ? <Film className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
@@ -368,9 +368,9 @@ export function MediaPicker({
             </div>
 
             <div className="flex flex-1 min-h-0 gap-3">
-              {/* Folder Sidebar */}
+              {/* Folder Sidebar — hidden on very small screens */}
               {!loading && files.length > 0 && (
-                <div className="w-44 shrink-0">
+                <div className="hidden sm:block w-36 md:w-44 shrink-0">
                   <ScrollArea className="max-h-[400px]">
                     <div className="space-y-0.5 py-1">
                       <button
@@ -439,7 +439,7 @@ export function MediaPicker({
               )}
 
               {/* File Grid */}
-              <div className="flex-1 min-w-0 flex flex-col">
+              <div className="flex-1 min-w-0 flex flex-col min-w-0">
                 {loading ? (
                   <div className="flex flex-1 items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -452,7 +452,7 @@ export function MediaPicker({
                   </div>
                 ) : (
                   <ScrollArea className="flex-1 max-h-[400px]">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-1">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-1">
                       {filteredFiles.map((file) => {
                         const isSelected = selected === file.url
                         const isVideo = file.type === "video"
