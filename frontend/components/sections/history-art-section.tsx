@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight } from "lucide-react"
 import { apiFetchMilestones, type Milestone } from "@/lib/api"
 
 /** Milestone data shape used by the timeline UI */
@@ -17,30 +17,49 @@ interface TimelineMilestone {
 
 function TimelineItem({ event, index }: { event: TimelineMilestone; index: number }) {
   const isLeft = event.side === "left"
-  const href = event.milestoneId ? `/story/${event.milestoneId}` : "#"
+  const [expanded, setExpanded] = useState(false)
+
+  const cardContent = (
+    <>
+      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
+        {event.year}
+      </span>
+      <h3 className="text-lg font-bold text-foreground mb-2">
+        {event.title}
+      </h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {event.description}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:gap-2 transition-all cursor-pointer"
+      >
+        {expanded ? "Hide details" : "Read full story"}
+        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          expanded ? "max-h-96 opacity-100 mt-3" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="border-t border-border pt-3">
+          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            {event.detail || event.description}
+          </p>
+        </div>
+      </div>
+    </>
+  )
 
   return (
     <div className="relative flex items-start gap-0 md:gap-8">
       {/* Left content (visible on md+ for left-side items) */}
       <div className={`hidden md:block md:w-1/2 ${isLeft ? "" : "md:order-last"}`}>
         <div className={`reveal-on-scroll ${isLeft ? "text-right pr-8" : "text-left pl-8"}`}>
-          <Link href={href} className="block group">
-            <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/30 ${isLeft ? "text-right" : "text-left"}`}>
-              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
-                {event.year}
-              </span>
-              <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                {event.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {event.description}
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
-                Read full story
-                <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-          </Link>
+          <div className={`rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/30 ${isLeft ? "text-right" : "text-left"}`}>
+            {cardContent}
+          </div>
         </div>
       </div>
 
@@ -58,23 +77,9 @@ function TimelineItem({ event, index }: { event: TimelineMilestone; index: numbe
       {/* Mobile content (visible below md) */}
       <div className="md:hidden pl-12 pb-2 w-full">
         <div className="reveal-on-scroll">
-          <Link href={href} className="block group">
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/30">
-              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
-                {event.year}
-              </span>
-              <h3 className="text-base font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
-                {event.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {event.description}
-              </p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
-                Read full story
-                <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-          </Link>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/30">
+            {cardContent}
+          </div>
         </div>
       </div>
     </div>
@@ -91,20 +96,15 @@ export function HistoryArtSection() {
       .then((milestones) => {
         if (milestones && milestones.length > 0) {
           // Convert API Milestone shape to the timeline UI format
+          // Respect backend sort_order (set by admin drag-and-drop)
           const mappedMilestones: TimelineMilestone[] = milestones.map((milestone, idx) => ({
             milestoneId: milestone.milestoneId,
-            year: milestone.year,
+            year: String(milestone.year),
             title: milestone.title,
             description: milestone.description,
             detail: milestone.detail,
             side: milestone.side ?? (idx % 2 === 0 ? "left" : "right"),
           }))
-          // Sort ascending by year
-          mappedMilestones.sort((a, b) => {
-            const yearA = parseInt(a.year.replace(/\D/g, "")) || 0
-            const yearB = parseInt(b.year.replace(/\D/g, "")) || 0
-            return yearA - yearB
-          })
           setTimelineMilestones(mappedMilestones)
         }
       })
@@ -121,7 +121,7 @@ export function HistoryArtSection() {
         {/* Header */}
         <div className="mb-16 text-center reveal-on-scroll">
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-            Heritage &amp; Culture
+            History &amp; Culture
           </span>
           <h2 className="mt-2 text-balance text-3xl font-bold text-foreground md:text-4xl lg:text-5xl font-heading">
             The Story of Bocaue

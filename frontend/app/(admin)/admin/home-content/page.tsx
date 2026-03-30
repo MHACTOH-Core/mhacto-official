@@ -42,8 +42,7 @@ import {
   Eye,
   EyeOff,
   Landmark,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
   Save,
   Video,
 } from "lucide-react"
@@ -106,6 +105,10 @@ export default function HomeContentPage() {
 
   // Hero settings form state (separate from dialog formData)
   const [heroFormData, setHeroFormData] = useState<Partial<HeroSettings>>({})
+
+  // Drag-and-drop state
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
     if (!isHydrated) return
@@ -256,6 +259,25 @@ export default function HomeContentPage() {
         setMilestones(milestones)
         toast({ title: "Reorder failed", description: "Failed to reorder milestones.", variant: "destructive" })
       }
+  }
+
+  const handleDragEnd = async (fromIndex: number, toIndex: number) => {
+    setDragIndex(null)
+    setDragOverIndex(null)
+    if (fromIndex === toIndex) return
+    const newMilestones = [...milestones]
+    const [moved] = newMilestones.splice(fromIndex, 1)
+    newMilestones.splice(toIndex, 0, moved)
+    setMilestones(newMilestones)
+    const order = newMilestones.map(m => m.milestoneId)
+    try {
+      await apiReorderMilestones(order)
+      toast({ title: "Order updated", description: "Milestones have been reordered.", variant: "success" })
+    } catch (err) {
+      console.error("Reorder failed:", err)
+      setMilestones(milestones)
+      toast({ title: "Reorder failed", description: "Failed to reorder milestones.", variant: "destructive" })
+    }
   }
 
   // Handler for saving hero settings (single hero)
@@ -430,7 +452,7 @@ export default function HomeContentPage() {
               <TabsContent value="milestone" className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">Heritage & Culture Timeline</h2>
+                    <h2 className="text-lg font-semibold">History & Culture Timeline</h2>
                     <p className="text-sm text-muted-foreground">
                       The Story of Bocaue milestones. Drag to reorder.
                     </p>
@@ -453,28 +475,20 @@ export default function HomeContentPage() {
                     </Card>
                   ) : (
                     milestones.map((mile, index) => (
-                      <Card key={mile.milestoneId} className={`transition-opacity ${!mile.isActive ? "opacity-60" : ""}`}>
+                      <Card
+                        key={mile.milestoneId}
+                        draggable
+                        onDragStart={() => setDragIndex(index)}
+                        onDragOver={(e) => { e.preventDefault(); setDragOverIndex(index) }}
+                        onDragEnd={() => { if (dragIndex !== null && dragOverIndex !== null) handleDragEnd(dragIndex, dragOverIndex) }}
+                        className={`transition-all cursor-grab active:cursor-grabbing ${
+                          !mile.isActive ? "opacity-60" : ""
+                        } ${dragIndex === index ? "opacity-40 scale-[0.98]" : ""} ${
+                          dragOverIndex === index && dragIndex !== index ? "border-primary border-2 shadow-md" : ""
+                        }`}
+                      >
                         <CardContent className="flex items-center gap-4 p-4">
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              disabled={index === 0}
-                              onClick={() => moveItem(index, "up")}
-                            >
-                              <ChevronUp className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              disabled={index === milestones.length - 1}
-                              onClick={() => moveItem(index, "down")}
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                           <div className="flex-shrink-0 w-16 text-center">
                             <Badge variant="outline" className="font-bold">{mile.year}</Badge>
                             <div className="text-xs text-muted-foreground mt-1 capitalize">{mile.side}</div>
