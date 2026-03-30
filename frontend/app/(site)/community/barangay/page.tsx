@@ -12,6 +12,7 @@ import { asset } from "@/lib/utils"
 
 export default function BarangayPage() {
   const [barangays, setBarangays] = useState<Barangay[]>(fallbackBarangays)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     apiFetchByLabel("barangay")
@@ -19,6 +20,7 @@ export default function BarangayPage() {
         if (posts?.length) setBarangays(posts.map(cmsToBarangay))
       })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -50,6 +52,13 @@ export default function BarangayPage() {
       {/* Blog-style card grid */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {barangays.map((brgy) => (
               <a
@@ -110,6 +119,7 @@ export default function BarangayPage() {
               </a>
             ))}
           </div>
+          )}
         </div>
       </section>
     </main>

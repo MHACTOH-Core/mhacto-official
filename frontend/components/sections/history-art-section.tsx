@@ -141,7 +141,7 @@ export function HistoryArtSection() {
 
           <div className="space-y-12 md:space-y-16">
             {timelineMilestones.slice(0, 3).map((milestone, milestoneIndex) => (
-              <TimelineItem key={milestone.year} event={milestone} index={milestoneIndex} />
+              <TimelineItem key={milestone.milestoneId ?? `milestone-${milestoneIndex}`} event={milestone} index={milestoneIndex} />
             ))}
           </div>
 

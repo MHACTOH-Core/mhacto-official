@@ -44,7 +44,7 @@ function BlueWaveParticles() {
     const H = () => canvas.offsetHeight
 
     const spawn = () => {
-      const count = Math.min(Math.floor(W() / 14), 60)
+      const count = Math.min(Math.floor(W() / 28), 30)
       while (particles.length < count) {
         particles.push({
           x: Math.random() * W(),
@@ -64,7 +64,7 @@ function BlueWaveParticles() {
       // Wave 1 — back
       ctx.beginPath()
       ctx.moveTo(0, h)
-      for (let x = 0; x <= w; x += 4) {
+      for (let x = 0; x <= w; x += 8) {
         const y = h * 0.72 + Math.sin(x * 0.008 + time * 0.6) * 18 + Math.sin(x * 0.004 + time * 0.3) * 10
         ctx.lineTo(x, y)
       }
@@ -79,7 +79,7 @@ function BlueWaveParticles() {
       // Wave 2 — mid
       ctx.beginPath()
       ctx.moveTo(0, h)
-      for (let x = 0; x <= w; x += 4) {
+      for (let x = 0; x <= w; x += 8) {
         const y = h * 0.78 + Math.sin(x * 0.006 - time * 0.5) * 14 + Math.cos(x * 0.01 + time * 0.4) * 8
         ctx.lineTo(x, y)
       }
@@ -94,7 +94,7 @@ function BlueWaveParticles() {
       // Wave 3 — front
       ctx.beginPath()
       ctx.moveTo(0, h)
-      for (let x = 0; x <= w; x += 4) {
+      for (let x = 0; x <= w; x += 8) {
         const y = h * 0.85 + Math.sin(x * 0.01 + time * 0.7) * 10 + Math.sin(x * 0.005 - time * 0.35) * 6
         ctx.lineTo(x, y)
       }
@@ -107,11 +107,16 @@ function BlueWaveParticles() {
       ctx.fill()
     }
 
-    const loop = () => {
+    const FRAME_MS = 1000 / 30 // ~30 fps cap
+    let lastTime = 0
+
+    const loop = (now: number) => {
+      animId = requestAnimationFrame(loop)
+      if (now - lastTime < FRAME_MS) return
+      lastTime = now
+
       time += 0.02
       ctx.clearRect(0, 0, W(), H())
-
-      // Draw waves
       drawWaves()
 
       // Draw particles
@@ -126,15 +131,6 @@ function BlueWaveParticles() {
         const alpha = progress < 0.15 ? progress / 0.15 : progress > 0.6 ? (1 - progress) / 0.4 : 1
         const r = p.r * (1 - progress * 0.4)
 
-        // glow
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4)
-        grad.addColorStop(0, p.color + (alpha * 0.25).toFixed(2) + ")")
-        grad.addColorStop(1, p.color + "0)")
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, r * 4, 0, Math.PI * 2)
-        ctx.fillStyle = grad
-        ctx.fill()
-
         // core
         ctx.beginPath()
         ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
@@ -145,7 +141,7 @@ function BlueWaveParticles() {
       }
       animId = requestAnimationFrame(loop)
     }
-    loop()
+    loop(0)
 
     return () => {
       window.removeEventListener("resize", resize)
@@ -212,7 +208,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="relative flex h-dvh overflow-hidden">
+    <div className="relative flex h-dvh w-screen overflow-hidden">
 
       <style>{`
         @keyframes adm-fadeIn {
@@ -282,7 +278,7 @@ export default function AdminLoginPage() {
       {/* ════════════════════════════════════════════════════
           RIGHT — Login Panel (Dark Blue)
       ════════════════════════════════════════════════════ */}
-      <div className="relative flex w-full flex-col items-center justify-center px-6 py-10 lg:w-[500px] xl:w-[540px] shrink-0 overflow-hidden"
+      <div className="relative flex w-full flex-col items-center justify-center px-6 py-10 lg:w-[500px] xl:w-[540px] shrink-0 overflow-y-auto min-h-dvh lg:min-h-0"
         style={{ background: "linear-gradient(165deg, #1e3a5f 0%, #1a2d47 25%, #162640 50%, #1e3a5f 75%, #24466b 100%)" }}>
 
         {/* Animated glow orbs */}

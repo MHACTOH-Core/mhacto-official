@@ -22,7 +22,7 @@ import {
   Flame,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useAdmin } from "@/components/providers/admin-provider"
 import type { UserRole } from "@/lib/data/admin-data"
@@ -51,6 +51,8 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
   const pathname = usePathname()
   const { logout, inquiries, currentUser } = useAdmin()
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const unreadCount = inquiries.filter((i) => i.status === "unread").length
   const userRole = currentUser?.role ?? "content_manager"
@@ -63,15 +65,27 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
     return item.roles.includes(userRole)
   })
 
+  const roleLabels: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin: "Admin",
+    content_manager: "Content Manager",
+  }
+
   return (
     <>
-      {/* Brand */}
+      {/* User Profile */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
-        <Image src={resolveMediaUrl("/uploads/images/logos/MHACTO_LOGO.png")} alt="MHACTO" width={36} height={36} className="shrink-0" />
+        {currentUser?.profilePicture ? (
+          <Image src={resolveMediaUrl(currentUser.profilePicture)} alt={currentUser.fullName ?? "User"} width={36} height={36} className="shrink-0 rounded-full object-cover h-9 w-9" />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+            {(currentUser?.fullName ?? "U").charAt(0).toUpperCase()}
+          </div>
+        )}
         {showLabels && (
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-card-foreground">MHACTO</p>
-            <p className="truncate text-[10px] text-muted-foreground">Admin Panel</p>
+            <p className="truncate text-sm font-bold text-card-foreground">{currentUser?.fullName ?? "User"}</p>
+            <p className="truncate text-[10px] text-muted-foreground">{roleLabels[userRole] ?? userRole}</p>
           </div>
         )}
       </div>
@@ -125,13 +139,12 @@ function SidebarContent({ collapsed, setCollapsed, isMobile, onLinkClick }: {
           )}
           title={!showLabels ? "Toggle dark mode" : undefined}
         >
-          {theme === "dark" ? (
+          {mounted && theme === "dark" ? (
             <Sun className="h-4 w-4 shrink-0" />
           ) : (
             <Moon className="h-4 w-4 shrink-0" />
           )}
-          {showLabels && <span className="text-xs">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
-        </Button>
+          {showLabels && mounted && <span className="text-xs">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}        </Button>
         {!isMobile && (
           <Button
             variant="ghost"

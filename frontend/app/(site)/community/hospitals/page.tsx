@@ -31,6 +31,7 @@ const typeLabels: Record<Hospital["type"], string> = {
 
 export default function HospitalsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [loading, setLoading] = useState(true)
 
   // Sends GET /api/posts/read.php?label=hospitals&status=published → PHP runs SQL SELECT → returns JSON
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function HospitalsPage() {
         }
       })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -80,6 +82,19 @@ export default function HospitalsPage() {
             </div>
           </div>
 
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 items-start">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-64 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : hospitals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Activity className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground">No health facilities listed yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Check back soon for health facility listings.</p>
+            </div>
+          ) : (
           <div className="grid gap-6 sm:grid-cols-2 items-start">
             {hospitals.map((hospital) => (
               <Card key={hospital.id} className={`border-border flex flex-col`}>
@@ -139,6 +154,7 @@ export default function HospitalsPage() {
               </Card>
             ))}
           </div>
+          )}
         </div>
       </section>
     </main>

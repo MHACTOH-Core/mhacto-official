@@ -128,6 +128,11 @@ async function tryRefreshToken(): Promise<boolean> {
 
 // ─── Generic fetch wrapper ────────────────────────────────────────
 
+export interface ApiFetchOptions extends RequestInit {
+  /** When true, skip attaching the JWT Authorization header (for public endpoints). */
+  skipAuth?: boolean
+}
+
 /**
  * Centralised fetch wrapper. All backend calls go through here
  * for consistent URL resolution, JSON parsing, and error handling.
@@ -136,7 +141,7 @@ async function tryRefreshToken(): Promise<boolean> {
  */
 export async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiFetchOptions = {},
 ): Promise<T> {
   // Auto-version: /api/posts → /api/v1/posts
   const versioned = endpoint.startsWith("/api/") && !endpoint.startsWith("/api/v1/")
@@ -146,7 +151,8 @@ export async function apiFetch<T>(
 
   // Determine if this is a cacheable public GET (no body, no auth token)
   const method = (options.method ?? "GET").toUpperCase()
-  const token = getAuthToken()
+  const { skipAuth, ...fetchOptions } = options
+  const token = skipAuth ? null : getAuthToken()
   const isCacheableGet = method === "GET" && !token && !options.body
 
   // Return cached data for public GETs when available
@@ -162,13 +168,13 @@ export async function apiFetch<T>(
     headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
   }
 
-  // Attach JWT token if available
+  // Attach JWT token if available (unless skipAuth is set)
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
   }
 
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     cache: 'no-store',
     headers,
   })
@@ -184,8 +190,8 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    // On 401, attempt a silent token refresh then retry once
-    if (response.status === 401) {
+    // On 401, attempt a silent token refresh then retry once (only when auth is in use)
+    if (response.status === 401 && !skipAuth) {
       const currentToken = getAuthToken()
       if (currentToken) {
         // Deduplicate: if a refresh is already running, await that same promise rather than issuing a second one
@@ -373,7 +379,7 @@ export function apiFetchActivityLog(limit = 100) {
 
 /** Fetch site-wide settings (general + hero configuration) */
 export function apiFetchSettings() {
-  return apiFetch<AdminSettings>("/api/settings")
+  return apiFetch<AdminSettings>("/api/settings", { skipAuth: true })
 }
 
 /** Fetch page-level view counts for the analytics dashboard */

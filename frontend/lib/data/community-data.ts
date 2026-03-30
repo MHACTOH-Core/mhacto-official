@@ -11,6 +11,7 @@ export interface SchoolEntry {
   yearEstablished?: string
   contact?: string
   website?: string
+  isFeatured?: boolean
 }
 
 export interface College {

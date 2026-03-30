@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   activityLabels,
   type ActivityAction,
@@ -96,9 +95,7 @@ export default function ActivityLogPage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-6 py-5">
           <div className="flex items-center gap-3">
@@ -206,7 +203,6 @@ export default function ActivityLogPage() {
             </div>
           ))}
         </div>
-      </main>
-    </div>
+    </main>
   )
 }

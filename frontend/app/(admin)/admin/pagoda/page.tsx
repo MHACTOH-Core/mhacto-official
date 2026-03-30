@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -274,9 +273,8 @@ export default function PagodaPage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <>
+    <main className="flex-1 overflow-y-auto">
 
         {/* ── Sticky Header ──────────────────────────────────────── */}
         <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-10">
@@ -611,6 +609,6 @@ export default function PagodaPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

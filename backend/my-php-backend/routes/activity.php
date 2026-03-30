@@ -13,7 +13,7 @@ use App\Core\Response;
 function handle_activity(string $method, ?string $param1): void
 {
     // All activity log operations require authentication
-    Auth::requireAuth();
+    $authUser = Auth::requireAuth();
 
     try {
         $db  = (new Database())->getConnection();
@@ -22,7 +22,13 @@ function handle_activity(string $method, ?string $param1): void
         switch ($method) {
             case 'GET':
                 $limit = isset($_GET['limit']) ? max(1, min((int) $_GET['limit'], 500)) : 100;
-                Response::json($log->readAll($limit));
+                $role  = $authUser['role'] ?? 'admin';
+                if ($role === 'super_admin') {
+                    Response::json($log->readAll($limit));
+                } else {
+                    $userId = (int) $authUser['sub'];
+                    Response::json($log->readByUser($userId, $limit));
+                }
                 break;
 
             case 'POST':

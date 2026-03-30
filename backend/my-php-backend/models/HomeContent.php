@@ -369,6 +369,17 @@ class HomeContent
 
     public function createMilestone($data)
     {
+        // Check for duplicate (same year + title)
+        if (!empty($data['year']) && !empty($data['title'])) {
+            $check = $this->conn->prepare(
+                "SELECT milestone_id FROM milestone WHERE year = :year AND title = :title LIMIT 1"
+            );
+            $check->execute([':year' => $data['year'], ':title' => $data['title']]);
+            if ($check->fetch()) {
+                return ['error' => 'duplicate', 'message' => 'A milestone with the same year and title already exists.'];
+            }
+        }
+
         $sql = "INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active)
                 VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 

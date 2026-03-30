@@ -358,6 +358,7 @@ INSERT INTO category (parent_id, category_type, label_key, label_name, is_active
 (5, 'label', 'schools',   'Schools',   1),
 (5, 'label', 'colleges',  'Colleges',  1),
 (5, 'label', 'hospitals', 'Hospitals', 1),
+(5, 'label', 'barangay',  'Barangay',  1),
 (5, 'label', 'bocauenos', 'Bocauenos', 1);
 
 

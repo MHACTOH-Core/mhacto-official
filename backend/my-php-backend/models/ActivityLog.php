@@ -39,6 +39,28 @@ class ActivityLog
         return array_map([$this, 'formatRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /** Fetch activity log entries for a specific user only, newest first. */
+    public function readByUser(int $userId, int $limit = 100): array
+    {
+        $query = "
+            SELECT al.log_id, al.user_id, al.content_id, al.action,
+                   al.details, al.page_path, al.ip_address, al.created_at,
+                   u.email, u.username
+            FROM activity_logs al
+            LEFT JOIN users u ON al.user_id = u.user_id
+            WHERE al.action != 'page_view'
+              AND al.user_id = :user_id
+            ORDER BY al.created_at DESC
+            LIMIT :limit
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return array_map([$this, 'formatRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     /** Log a new activity entry. Details is stored as JSON. */
     public function log(string $action, string $details, ?int $userId = null, ?string $ip = null, ?int $contentId = null, ?string $pagePath = null): array|false
     {

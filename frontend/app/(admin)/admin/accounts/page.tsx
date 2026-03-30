@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   type AdminUser,
   type UserRole,
@@ -122,16 +121,13 @@ export default function AccountsPage() {
   // Only super_admin and admin can access accounts
   if (currentUser.role === "content_manager") {
     return (
-      <div className="flex h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex-1 flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
             <h2 className="mt-4 text-xl font-semibold">Access Restricted</h2>
             <p className="mt-2 text-muted-foreground">You don&apos;t have permission to manage accounts.</p>
           </div>
         </main>
-      </div>
     )
   }
 
@@ -298,9 +294,7 @@ export default function AccountsPage() {
       : ["admin", "content_manager"]
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -665,7 +659,6 @@ export default function AccountsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </main>
   )
 }

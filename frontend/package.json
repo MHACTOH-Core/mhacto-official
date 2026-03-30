@@ -7,7 +7,7 @@
     "pnpm": ">=9"
   },
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "NODE_OPTIONS='--max-old-space-size=1024' next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

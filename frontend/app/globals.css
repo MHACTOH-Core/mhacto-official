@@ -298,7 +298,7 @@ body[data-scroll-locked] {
 }
 
 /* Only animate the main content area, not the sidebar */
-.admin-page-transition > * > main {
+.admin-page-transition > main {
   animation: admin-fade-in 0.3s cubic-bezier(0.25,0.1,0.25,1) both;
 }
 

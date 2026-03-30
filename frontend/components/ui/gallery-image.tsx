@@ -55,7 +55,7 @@ export function GalleryImage({
         <div className="flex gap-1.5 p-1.5 bg-muted/30 flex-shrink-0">
           {thumbs.map((img, i) => (
             <button
-              key={img}
+              key={`${img}-${i}`}
               onClick={(e) => { e.stopPropagation(); setSelected(img) }}
               className={`relative h-12 flex-1 overflow-hidden rounded border-2 transition-all duration-200 ${
                 selected === img

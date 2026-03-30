@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   Users,
   FileText,
@@ -153,9 +152,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">
           <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
@@ -478,7 +475,6 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   )
 }

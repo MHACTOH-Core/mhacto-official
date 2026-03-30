@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   contentLabels,
   contentCategories,
@@ -241,9 +240,7 @@ export default function CMSPage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -543,7 +540,6 @@ export default function CMSPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </main>
   )
 }

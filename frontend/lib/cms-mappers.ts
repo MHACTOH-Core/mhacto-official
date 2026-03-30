@@ -237,6 +237,7 @@ export function cmsToLocalBusiness(post: CMSPost): LocalBusiness {
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
     image: resolveImage(post),
+    isFeatured: post.isFeatured ?? false,
   }
 }
 
@@ -314,6 +315,7 @@ export function cmsToSchoolEntry(post: CMSPost): SchoolEntry {
     enrollment: post.established ?? undefined,
     yearEstablished: post.contact ?? undefined,
     logo: post.image?.[0] || undefined,
+    isFeatured: post.isFeatured ?? false,
   }
 }
 

@@ -53,6 +53,7 @@ export interface LocalBusiness {
   contact?: string
   yearEstablished?: string
   image?: string
+  isFeatured?: boolean
 }
 
 // ── People Wonders ──────────────────────────────────────────────────

@@ -28,11 +28,13 @@ const typeColor: Record<LocalBusiness["type"], string> = {
 
 export default function LocalBusinessPage() {
   const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     apiFetchByLabel("local-business")
       .then((posts) => { if (posts?.length) setLocalBusinesses(posts.map(cmsToLocalBusiness)) })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -61,6 +63,19 @@ export default function LocalBusinessPage() {
             </div>
           </div>
 
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 items-start">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-64 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : localBusinesses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Store className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground">No businesses listed yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Check back soon for local business listings.</p>
+            </div>
+          ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 items-start">
             {localBusinesses.map((biz) => (
               <Card key={biz.id} className="group overflow-hidden border-border transition-all duration-300">
@@ -68,18 +83,26 @@ export default function LocalBusinessPage() {
                   <div className="relative h-36 overflow-hidden">
                     <Image src={biz.image} alt={biz.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    <div className="absolute bottom-3 left-4">
+                    <div className="absolute bottom-3 left-4 flex items-center gap-2">
                       <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>
                         {typeLabels[biz.type]}
                       </Badge>
+                      {biz.isFeatured && (
+                        <Badge className="text-xs bg-amber-500 text-white border-0">Featured</Badge>
+                      )}
                     </div>
                   </div>
                 )}
                 <CardContent className="p-5">
                   {!biz.image && (
-                    <Badge variant="outline" className={`text-xs mb-3 ${typeColor[biz.type]}`}>
-                      {typeLabels[biz.type]}
-                    </Badge>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>
+                        {typeLabels[biz.type]}
+                      </Badge>
+                      {biz.isFeatured && (
+                        <Badge className="text-xs bg-amber-500 text-white border-0">Featured</Badge>
+                      )}
+                    </div>
                   )}
                   <h3 className="text-lg font-black text-foreground mb-2">{biz.name}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">{biz.description}</p>
@@ -115,6 +138,7 @@ export default function LocalBusinessPage() {
               </Card>
             ))}
           </div>
+          )}
         </div>
       </section>
     </main>

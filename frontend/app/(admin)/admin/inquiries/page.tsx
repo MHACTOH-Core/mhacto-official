@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import {
   inquiryStatusLabels,
   inquiryTypeLabels,
@@ -386,9 +385,7 @@ export default function InquiriesPage() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden w-full">
 
           {/* ─── LEFT: Mailbox sidebar ─────────────────────────── */}
           <div className={cn(
@@ -1064,8 +1061,7 @@ export default function InquiriesPage() {
             </AlertDialogContent>
           </AlertDialog>
 
-        </main>
-      </div>
+      </main>
     </TooltipProvider>
   )
 }

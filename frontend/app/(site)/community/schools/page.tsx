@@ -91,6 +91,7 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
 // ── Main page ────────────────────────────────────────────────────────
 export default function SchoolsPage() {
   const [schools, setSchools] = useState<SchoolEntry[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
   const [search, setSearch] = useState("")
@@ -106,6 +107,7 @@ export default function SchoolsPage() {
         }
       })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -270,6 +272,23 @@ export default function SchoolsPage() {
 
       {/* School cards */}
       <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-16">
+        {loading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : displayedSchools.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <School className="h-12 w-12 text-muted-foreground/40 mb-4" />
+            <p className="text-lg font-semibold text-muted-foreground">
+              {schools.length === 0 ? "No schools listed yet" : "No schools match your filter"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {schools.length === 0 ? "Check back soon for school listings." : "Try adjusting your search or filter."}
+            </p>
+          </div>
+        ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {displayedSchools.map((school) => (
             <div
@@ -306,6 +325,11 @@ export default function SchoolsPage() {
                     >
                       {school.ownership === "public" ? "Public" : "Private"}
                     </Badge>
+                    {school.isFeatured && (
+                      <Badge className="text-xs w-fit bg-amber-500 text-white border-0">
+                        Featured
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -364,6 +388,7 @@ export default function SchoolsPage() {
             </div>
           ))}
         </div>
+        )}
       </section>
     </main>
   )

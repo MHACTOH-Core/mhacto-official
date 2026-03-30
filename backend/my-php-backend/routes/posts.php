@@ -264,6 +264,7 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
         $stmt->execute([':k' => $data['label']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) $mapped['label_id'] = (int) $row['category_id'];
+        $mapped['label_key'] = $data['label'];
     }
 
     return $mapped;

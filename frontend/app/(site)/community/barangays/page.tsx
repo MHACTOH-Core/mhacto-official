@@ -111,7 +111,7 @@ export default function BarangaysPage() {
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    apiFetchByLabel("barangays")
+    apiFetchByLabel("barangay")
       .then((posts) => {
         if (posts && posts.length > 0) {
           setBarangayList(

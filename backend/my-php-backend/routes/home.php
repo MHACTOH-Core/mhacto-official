@@ -240,6 +240,9 @@ function _home_milestones(string $method, PDO $db): void
                 Response::error('Either contentId or title+year is required.', 400);
             }
             $milestoneId = $homeContent->createMilestone($data);
+            if (is_array($milestoneId) && isset($milestoneId['error'])) {
+                Response::error($milestoneId['message'], 409);
+            }
             Response::json(['message' => 'Milestone created successfully.', 'milestoneId' => (int) $milestoneId], 201);
             break;
 

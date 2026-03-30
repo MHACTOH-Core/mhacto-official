@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
-import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +65,7 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function HomeContentPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isLoggedIn, isHydrated } = useAdmin()
 
   const { toast } = useToast()
@@ -76,8 +76,16 @@ export default function HomeContentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Active tab state (persists across re-renders after save)
-  const [activeTab, setActiveTab] = useState("hero")
+  // Active tab state — persisted via URL search params so it survives refresh
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "hero")
+
+  // Sync tab to URL without full navigation
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", tab)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }
 
   // CMS posts for selection
   const [cmsTimelinePosts, setCmsTimelinePosts] = useState<CMSPost[]>([])
@@ -176,6 +184,20 @@ export default function HomeContentPage() {
       const { _previewTitle, _previewYear, _previewDescription, ...milestoneData } = formData
       if (!milestoneData.title && _previewTitle) milestoneData.title = _previewTitle
       if (!milestoneData.description && _previewDescription) milestoneData.description = _previewDescription
+
+      // Client-side duplicate check for new milestones
+      if (!editingItem) {
+        const effectiveTitle = (milestoneData.title as string) || ""
+        const effectiveYear = (milestoneData.year as string) || ""
+        const duplicate = milestones.find(
+          (m) => m.year === effectiveYear && m.title === effectiveTitle
+        )
+        if (duplicate) {
+          toast({ title: "Duplicate milestone", description: "A milestone with the same year and title already exists. Please change the year or title.", variant: "destructive" })
+          return
+        }
+      }
+
       if (editingItem) {
         await apiUpdateMilestone(editingItem.milestoneId, milestoneData as Partial<Milestone>)
       } else {
@@ -184,10 +206,11 @@ export default function HomeContentPage() {
       setDialogOpen(false)
       loadAllContent()
       toast({ title: editingItem ? "Content updated" : "Content created", description: `Milestone has been ${editingItem ? "updated" : "created"}.`, variant: "success" })
-    } catch (err) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save. Please try again."
+      const isDuplicate = message.toLowerCase().includes("already exists")
       console.error("Save failed:", err)
-      setError("Failed to save. Please try again.")
-      toast({ title: "Save failed", description: "Failed to save. Please try again.", variant: "destructive" })
+      toast({ title: isDuplicate ? "Duplicate milestone" : "Save failed", description: message, variant: "destructive" })
     }
   }
 
@@ -265,9 +288,8 @@ export default function HomeContentPage() {
   if (!isHydrated || !isLoggedIn) return null
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+    <>
+    <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -297,7 +319,7 @@ export default function HomeContentPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
                 <TabsTrigger value="hero" className="gap-2">
                   <Video className="h-4 w-4" />
@@ -673,6 +695,6 @@ export default function HomeContentPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }
