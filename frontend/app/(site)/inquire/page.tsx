@@ -191,10 +191,10 @@ export default function InquirePage() {
     }
 
     // Send only the start date as dateOfVisit (DB column is DATE).
-    // If the user picked an end date, store it in additionalDetails.
+    // Always store the end date in additionalDetails so the admin sees the full range.
     const dateOfVisit = dateFrom || undefined
     const additionalDetails: Record<string, unknown> = {}
-    if (dateTo && dateTo !== dateFrom) {
+    if (dateTo) {
       additionalDetails.dateToVisit = dateTo
     }
     if (purpose) {

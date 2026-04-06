@@ -102,9 +102,6 @@ export default function InquiriesPage() {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
-  // Assign dialog
-  const [assignTarget, setAssignTarget] = useState<Inquiry | null>(null)
-  const [assignGuideName, setAssignGuideName] = useState("")
   // Confirm tour dialog
   const [confirmTarget, setConfirmTarget] = useState<Inquiry | null>(null)
   const [confirmDate, setConfirmDate] = useState("")
@@ -366,17 +363,6 @@ export default function InquiriesPage() {
   const handleRestoreFromTrash = (inq: Inquiry) => {
     handleStatusChange(inq, "unread")
     toast({ title: "Restored", description: `Inquiry from ${inq.name} has been restored.` })
-  }
-
-  const confirmAssign = () => {
-    if (!assignTarget || !assignGuideName) return
-    updateInquiry(assignTarget.id, { status: "assigned", assignedTo: assignGuideName })
-    if (selectedInquiry?.id === assignTarget.id) {
-      setSelectedInquiry({ ...assignTarget, status: "assigned", assignedTo: assignGuideName })
-    }
-    toast({ title: "Assigned", description: `Inquiry from ${assignTarget.name} assigned to ${assignGuideName}.`, variant: "success" })
-    setAssignTarget(null)
-    setAssignGuideName("")
   }
 
   const openConfirmDialog = (inq: Inquiry) => {
@@ -847,18 +833,7 @@ export default function InquiriesPage() {
                       </Tooltip>
                     )}
 
-                    {/* Assign button — not shown when in trash/spam */}
-                    {selectedInquiry.status !== "assigned" && selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName(selectedInquiry.assignedTo ?? "") }}>
-                            <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                            <span className="hidden sm:inline">Assign</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Assign to a tourist guide</TooltipContent>
-                      </Tooltip>
-                    )}
+
 
                     {/* Complete / Cancel — shown for confirmed tours */}
                     {selectedInquiry.status === "confirmed" && (
@@ -1013,7 +988,7 @@ export default function InquiriesPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {selectedInquiry.dateOfVisit && (() => {
                             const dateTo = selectedInquiry.additionalDetails?.dateToVisit as string | undefined
-                            const hasRange = dateTo && dateTo !== selectedInquiry.dateOfVisit
+                            const hasRange = !!dateTo
                             if (hasRange) {
                               return (
                                 <>
@@ -1048,7 +1023,7 @@ export default function InquiriesPage() {
                                   <CalendarDays className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Date of Visit</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Available From</p>
                                   <p className="text-xs font-medium text-card-foreground">
                                     {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
                                   </p>
@@ -1251,7 +1226,7 @@ export default function InquiriesPage() {
               <div className="space-y-3 px-0 py-2">
                 {confirmTarget?.dateOfVisit && (() => {
                   const dateTo = confirmTarget.additionalDetails?.dateToVisit as string | undefined
-                  const hasRange = dateTo && dateTo !== confirmTarget.dateOfVisit
+                  const hasRange = !!dateTo
                   return (
                     <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 text-xs">
                       <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Visitor&apos;s Availability Window</p>
@@ -1355,49 +1330,6 @@ export default function InquiriesPage() {
                 >
                   {isLoggingWalkIn ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                   Log Walk-in
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* ─── Assign Dialog ────────────────────────────────── */}
-          <AlertDialog open={!!assignTarget} onOpenChange={() => { setAssignTarget(null); setAssignGuideName("") }}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Select a tourist guide to assign the inquiry from &quot;{assignTarget?.name}&quot;.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="px-0 py-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Tourist Guide <span className="text-destructive">*</span></label>
-                  <Select value={assignGuideName || "__none__"} onValueChange={(v) => setAssignGuideName(v === "__none__" ? "" : v)}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select a guide" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__" disabled>Select a guide</SelectItem>
-                      {tourGuides.filter((g) => g.isActive).map((g) => (
-                        <SelectItem key={g.id} value={g.fullName}>
-                          {g.fullName}
-                          {g.availability !== "available" && (
-                            <span className="ml-1.5 text-[10px] text-muted-foreground">({g.availability.replace("_", " ")})</span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={confirmAssign}
-                  disabled={!assignGuideName}
-                  className="bg-primary text-primary-foreground"
-                >
-                  Assign
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -294,7 +294,7 @@ function parseList(text: string | undefined | null): string[] {
 export function cmsToSchoolEntry(post: CMSPost): SchoolEntry {
   const ownershipRaw = (post.category ?? "public").toLowerCase()
   const ownership: SchoolEntry["ownership"] = ownershipRaw.includes("private") ? "private" : "public"
-  const levelRaw = (post.postType ?? "elementary").toLowerCase()
+  const levelRaw = (post.hours ?? "").toLowerCase()
   const level: SchoolEntry["level"] = (
     levelRaw.includes("college") ? "college"
     : levelRaw.includes("senior") ? "senior-high"

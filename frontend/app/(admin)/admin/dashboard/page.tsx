@@ -52,8 +52,6 @@ export default function DashboardPage() {
     currentUser,
     pageViews,
     dailyVisits,
-    totalViews,
-    posts,
     inquiries,
     activityLog,
     visitorSummary,
@@ -84,8 +82,6 @@ export default function DashboardPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  const publishedPosts = posts.filter((p) => p.status === "published").length
-  const unreadInquiries = inquiries.filter((i) => i.status === "unread").length
   const topPages = [...pageViews].sort((a, b) => b.views - a.views)
 
   // Inquiry summary — exclude spam/trash from active count

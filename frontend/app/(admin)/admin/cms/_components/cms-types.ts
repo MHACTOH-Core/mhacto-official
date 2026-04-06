@@ -84,7 +84,7 @@ export const LABEL_VISIBLE_FIELDS: Record<string, DetailField[]> = {
   "destinations":       ["location", "hours", "contact", "established", "category", "story", "highlights"],
   "travel-tours":       ["contact", "category", "story", "highlights"],
   "events":             ["location", "story", "highlights"],
-  "schools":             ["location", "established", "contact", "category", "story"],
+  "schools":             ["location", "hours", "established", "contact", "category", "story"],
   "hospitals":           ["location", "hours", "contact", "established", "category", "story"],
   "barangay":            ["location", "established", "story"],
   "local-business":      ["location", "hours", "contact", "established", "category", "story", "highlights"],
@@ -115,6 +115,7 @@ export const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { la
   },
   "schools": {
     location: { label: "Barangay / Location", placeholder: "e.g. Brgy. Lolomboy, Bocaue" },
+    hours: { label: "School Level", placeholder: "e.g. Elementary, Junior High, Senior High, College, Technical-Vocational" },
     established: { label: "Enrollment / Student Count", placeholder: "e.g. 1,200 students" },
     contact: { label: "Year Founded", placeholder: "e.g. 1952" },
     story: { label: "Programs Offered", placeholder: "Science & Technology\nHumss\nGeneral Academic Strand" },
