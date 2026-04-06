@@ -151,7 +151,7 @@ export default function SchoolsPage() {
     })
 
     return list
-  }, [filter, sort, search])
+  }, [filter, sort, search, schools])
 
   const counts = useMemo(() => ({
     all: schools.length,

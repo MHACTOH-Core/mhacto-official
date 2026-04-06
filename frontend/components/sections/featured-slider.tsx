@@ -107,7 +107,7 @@ export function FeaturedSlider({
   // Fetch one featured post per slide
   useEffect(() => {
     slideConfigs.forEach((cfg, idx) => {
-      apiFetchFeaturedByLabel(cfg.label, 1)
+      apiFetchFeaturedByLabel(cfg.label)
         .then((posts) => {
           if (posts?.length) {
             setHasRealContent(true)

@@ -16,7 +16,7 @@ const MAX_FEATURED = 3
 export function CraftsSection() {
   const { data: items = [] } = useAPIData<Artisan[]>(
     "featured-crafts-artisan",
-    () => apiFetchFeaturedByLabel("crafts-artisan", MAX_FEATURED).then((posts) =>
+    () => apiFetchFeaturedByLabel("crafts-artisan").then((posts) =>
       posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToArtisan) : []
     ),
   )
