@@ -28,7 +28,7 @@ const statusLabel: Record<CulturalPractice["status"], string> = {
 export function CulturalPracticesSection() {
   const { data: items = [] } = useAPIData<CulturalPractice[]>(
     "featured-cultural-practices",
-    () => apiFetchFeaturedByLabel("cultural-practices", MAX_FEATURED).then((posts) =>
+    () => apiFetchFeaturedByLabel("cultural-practices").then((posts) =>
       posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToCulturalPractice) : []
     ),
   )

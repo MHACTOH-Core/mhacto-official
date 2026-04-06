@@ -24,6 +24,13 @@ const _apiCache = new Map<string, CacheEntry>()
 /** Default TTL: 60 seconds — stale data is served while revalidating */
 const CACHE_TTL_MS = 60_000
 
+// ─── In-flight request deduplication ────────────────────────────
+// When multiple components simultaneously request the same public URL
+// (e.g. the slider AND a section both asking for featured cultural-practices)
+// they share a single in-flight Promise instead of making separate requests.
+// The promise is removed from the map once it settles.
+const _inflight = new Map<string, Promise<unknown>>()
+
 /** Return cached data if fresh, otherwise undefined */
 function getCached<T>(key: string): T | undefined {
   const entry = _apiCache.get(key)
@@ -159,6 +166,11 @@ export async function apiFetch<T>(
   if (isCacheableGet) {
     const cached = getCached<T>(url)
     if (cached !== undefined) return cached
+
+    // If an identical request is already in-flight, share its promise
+    // rather than opening a second connection to the PHP server.
+    const existing = _inflight.get(url)
+    if (existing) return existing as Promise<T>
   }
 
   // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
@@ -171,6 +183,40 @@ export async function apiFetch<T>(
   // Attach JWT token if available (unless skipAuth is set)
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
+  }
+
+  // Register this request as in-flight so simultaneous duplicate calls share it
+  let inflightPromise: Promise<T> | null = null
+  if (isCacheableGet) {
+    inflightPromise = (async () => {
+      try {
+        const res = await fetch(url, { ...fetchOptions, cache: 'no-store', headers })
+        const text = await res.text()
+        let env: { success?: boolean; data?: T; error?: string; message?: string }
+        try { env = text ? JSON.parse(text) : {} } catch { throw new Error(`Invalid JSON response from ${endpoint}`) }
+        if (!res.ok) {
+          if (res.status === 401 && !skipAuth) {
+            const tok = getAuthToken()
+            if (tok) {
+              if (!_isRefreshing) _isRefreshing = tryRefreshToken()
+              const refreshed = await _isRefreshing
+              _isRefreshing = null
+              if (refreshed) { _inflight.delete(url); return apiFetch<T>(endpoint, options) }
+              setAuthToken(null)
+            }
+            _onAuthError?.()
+          }
+          throw new Error(env.error ?? env.message ?? `Request failed (${res.status})`)
+        }
+        const result = (env.success !== undefined && 'data' in env ? env.data : env) as T
+        setCache(url, result)
+        return result
+      } finally {
+        _inflight.delete(url)
+      }
+    })()
+    _inflight.set(url, inflightPromise as Promise<unknown>)
+    return inflightPromise
   }
 
   const response = await fetch(url, {
