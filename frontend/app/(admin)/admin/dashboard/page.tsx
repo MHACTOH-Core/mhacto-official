@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { createPortal } from "react-dom"
 import { useAdmin } from "@/components/providers/admin-provider"
+import DashboardPrintReport from "@/components/admin/dashboard-print-report"
 import {
   Users,
   FileText,
@@ -17,6 +19,7 @@ import {
   Mail,
   MapPin,
   Handshake,
+  Printer,
 } from "lucide-react"
 import {
   inquiryStatusLabels,
@@ -26,6 +29,7 @@ import {
 } from "@/lib/data/admin-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   BarChart,
   Bar,
@@ -45,6 +49,7 @@ export default function DashboardPage() {
   const {
     isLoggedIn,
     isHydrated,
+    currentUser,
     pageViews,
     dailyVisits,
     totalViews,
@@ -57,6 +62,25 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
   }, [isHydrated, isLoggedIn, router])
+
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+
+  useEffect(() => {
+    let el = document.getElementById("print-portal")
+    if (!el) {
+      el = document.createElement("div")
+      el.id = "print-portal"
+      document.body.appendChild(el)
+    }
+    setPortalContainer(el)
+    return () => {
+      if (el && el.parentNode) el.parentNode.removeChild(el)
+    }
+  }, [])
+
+  const handleExport = useCallback(() => {
+    window.print()
+  }, [])
 
   if (!isHydrated || !isLoggedIn) return null
 
@@ -155,10 +179,23 @@ export default function DashboardPage() {
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">
-          <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Welcome back — here&apos;s what&apos;s happening on your website.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                Welcome back — here&apos;s what&apos;s happening on your website.
+              </p>
+            </div>
+            {currentUser?.role === "super_admin" && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+              >
+                <Printer className="h-4 w-4" /> Export Summary
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
@@ -475,6 +512,23 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Print-only report (rendered into a portal outside the app shell) */}
+        {portalContainer &&
+          createPortal(
+            <DashboardPrintReport
+              statCards={statCards}
+              pieData={pieData}
+              pieTotal={pieTotal}
+              topPages={topPages}
+              inquiryByType={inquiryByType}
+              inquiryByStatus={inquiryByStatus}
+              totalActiveInquiries={totalActiveInquiries}
+              recentActivity={recentActivity}
+              generatedBy={currentUser?.fullName || currentUser?.email || "Super Admin"}
+            />,
+            portalContainer,
+          )}
     </main>
   )
 }

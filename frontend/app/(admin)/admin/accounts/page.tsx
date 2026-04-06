@@ -524,7 +524,7 @@ export default function AccountsPage() {
 
         {/* Create / Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>{editingUser ? "Edit Account" : "Create New Account"}</DialogTitle>
             </DialogHeader>
