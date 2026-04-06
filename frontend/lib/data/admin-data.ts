@@ -69,13 +69,25 @@ export interface CMSPost {
   updatedAt: string // ISO
 }
 
-export type InquiryStatus = "unread" | "read" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
+export type InquiryStatus =
+  | "unread"
+  | "read"
+  | "in_progress"
+  | "assigned"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "expired"
+  | "archived"
+  | "spam"
+  | "trash"
 
-export type InquiryType = "general_contact" | "tour_booking" | "partnership"
+export type InquiryType = "general_contact" | "tour_booking" | "partnership" | "walk_in"
 
 export interface Inquiry {
   id: string
   name: string
+  touristName?: string | null
   email: string
   contactNumber?: string
   dateOfVisit?: string
@@ -85,10 +97,24 @@ export interface Inquiry {
   inquiryType: InquiryType
   additionalDetails?: Record<string, unknown>
   assignedTo?: string | null
+  confirmedDate?: string | null
+  confirmedBy?: string | null
   replyText?: string | null
   repliedAt?: string | null
   repliedBy?: string | null
   createdAt: string
+}
+
+export type GuideAvailability = "available" | "unavailable" | "on_tour"
+
+export interface TourGuide {
+  id: string
+  fullName: string
+  phoneNumber?: string | null
+  availability: GuideAvailability
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export type ActivityAction =
@@ -253,8 +279,12 @@ export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: 
   read:        { label: "Read",        color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" },
   in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
   assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
-  archived:    { label: "Completed",   color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300" },
-  spam:        { label: "Spam",        color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  confirmed:   { label: "Confirmed",   color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300" },
+  completed:   { label: "Completed",   color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  cancelled:   { label: "Cancelled",   color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  expired:     { label: "Expired",     color: "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400" },
+  archived:    { label: "Archived",    color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400" },
+  spam:        { label: "Spam",        color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
   trash:       { label: "Trash",       color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300" },
 }
 
@@ -262,6 +292,7 @@ export const inquiryTypeLabels: Record<InquiryType, { label: string; color: stri
   general_contact: { label: "General Contact", color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300", icon: "mail" },
   tour_booking: { label: "Tour Booking", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", icon: "map-pin" },
   partnership: { label: "Partnership", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", icon: "handshake" },
+  walk_in: { label: "Walk-in", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300", icon: "footprints" },
 }
 
 export const activityLabels: Record<ActivityAction, string> = {

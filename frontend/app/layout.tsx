@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Poppins } from 'next/font/google'
+import { Poppins, Inter } from 'next/font/google'
 
 import './globals.css'
 import { RevealObserverWrapper } from '@/components/reveal-observer-wrapper'
@@ -9,6 +9,13 @@ const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
+  display: 'swap',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -33,10 +40,8 @@ export default function RootLayout({
         {/* Preconnect to API backend to reduce latency on first fetch */}
         <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} />
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} crossOrigin="anonymous" />
-        {/* Preload the custom Barbara font to avoid FOUT */}
-        <link rel="preload" href="/MHACTO-PROJECT/fonts/BARABARA-final.otf" as="font" type="font/otf" crossOrigin="anonymous" />
       </head>
-      <body className={`${poppins.variable} font-sans antialiased overflow-x-hidden`}>
+      <body className={`${poppins.variable} ${inter.variable} font-sans antialiased overflow-x-hidden`}>
         <RevealObserverWrapper />
         {children}
         <Toaster />

@@ -220,6 +220,7 @@ export default function InquirePage() {
     try {
       await apiCreateInquiry({
         name,
+        touristName: (formData.get("tourist-name") as string)?.trim() || undefined,
         email,
         contactNumber: fullContactNumber || undefined,
         inquiryType: purposeToType[purpose] || "general_contact",
@@ -338,7 +339,7 @@ export default function InquirePage() {
                         {/* Full Name */}
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label htmlFor="name" className="text-sm font-semibold text-foreground">
-                            Full Name <span className="text-destructive">*</span>
+                            Your Full Name <span className="text-destructive">*</span>
                           </Label>
                           <Input
                             id="name"
@@ -356,6 +357,23 @@ export default function InquirePage() {
                               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />{nameWarning}
                             </p>
                           )}
+                        </div>
+
+                        {/* Tourist / Attendee Name (optional) */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label htmlFor="tourist-name" className="text-sm font-semibold text-foreground">
+                            Attendee / Tourist Name
+                          </Label>
+                          <Input
+                            id="tourist-name"
+                            name="tourist-name"
+                            placeholder="Name of the actual visitor (if different from above)"
+                            maxLength={200}
+                            className="rounded-xl"
+                          />
+                          <p className="text-[11px] text-muted-foreground">
+                            Fill this in if you are booking on behalf of someone else (e.g. a group, student, or family member).
+                          </p>
                         </div>
 
                         {/* Email */}

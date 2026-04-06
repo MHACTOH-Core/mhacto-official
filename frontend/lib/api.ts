@@ -353,6 +353,7 @@ import type {
   PageView,
   DailyVisit,
   TopDestination,
+  TourGuide,
 } from "@/lib/data/admin-data"
 
 export type { CMSPost } from "@/lib/data/admin-data"
@@ -510,12 +511,13 @@ export function apiUpdateInquiry(id: string, inquiryData: Partial<Inquiry>) {
   const payload: Record<string, unknown> = {}
   if (inquiryData.status !== undefined) payload.status = inquiryData.status
   if (inquiryData.assignedTo !== undefined) payload.assigned_to = inquiryData.assignedTo
+  if (inquiryData.touristName !== undefined) payload.tourist_name = inquiryData.touristName
   if (inquiryData.replyText !== undefined) payload.reply_text = inquiryData.replyText
   if (inquiryData.repliedAt !== undefined) payload.replied_at = inquiryData.repliedAt
   if (inquiryData.repliedBy !== undefined) payload.replied_by = inquiryData.repliedBy
 
   // If the only fields are reply-related (already saved via apiReplyInquiry), skip the API PATCH entirely
-  const isReplyOnlyUpdate = payload.status === undefined && payload.assigned_to === undefined
+  const isReplyOnlyUpdate = payload.status === undefined && payload.assigned_to === undefined && payload.tourist_name === undefined
   if (isReplyOnlyUpdate) return Promise.resolve({ message: "Local update only", inquiry: {} as Inquiry })
 
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries?id=${id}`, {
@@ -542,8 +544,40 @@ export function apiReplyInquiry(id: string, replyText: string, repliedBy?: strin
 /** Assign an inquiry to a tourist guide — sets status to 'assigned' and saves guide name */
 export function apiAssignInquiry(id: string, assignedTo: string) {
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries?id=${id}`, {
-    method: "POST",
+    method: "PUT",
     body: JSON.stringify({ status: "assigned", assigned_to: assignedTo }),
+  })
+}
+
+/** Confirm a tour — sets confirmed_date, optional guide assignment, status → 'confirmed' */
+export function apiConfirmTour(
+  id: string,
+  confirmedDate: string,
+  opts?: { assignedTo?: string; touristName?: string }
+) {
+  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/${id}/confirm`, {
+    method: "POST",
+    body: JSON.stringify({
+      confirmed_date: confirmedDate,
+      assigned_to: opts?.assignedTo ?? undefined,
+      tourist_name: opts?.touristName ?? undefined,
+    }),
+  })
+}
+
+/** Log a walk-in visitor from the admin panel */
+export function apiLogWalkIn(walkInData: {
+  name: string
+  touristName?: string
+  email?: string
+  contactNumber?: string
+  dateOfVisit?: string
+  numberOfPax?: number
+  message?: string
+}) {
+  return apiFetch<{ message: string }>("/api/inquiries/walkin", {
+    method: "POST",
+    body: JSON.stringify(walkInData),
   })
 }
 
@@ -551,6 +585,7 @@ export function apiAssignInquiry(id: string, assignedTo: string) {
 
 export interface CreateInquiryPayload {
   name: string
+  touristName?: string
   email: string
   contactNumber?: string
   inquiryType?: string
@@ -567,6 +602,44 @@ export function apiCreateInquiry(inquiryData: CreateInquiryPayload) {
   return apiFetch<{ message: string }>("/api/inquiries", {
     method: "POST",
     body: JSON.stringify(inquiryData),
+  })
+}
+
+// ─── Tour Guides CRUD ─────────────────────────────────────────────
+
+/** Fetch all tour guides (?active=1 for available-only) */
+export function apiFetchTourGuides(activeOnly = false) {
+  const query = activeOnly ? "?active=1" : ""
+  return apiFetch<TourGuide[]>(`/api/tour_guides${query}`)
+}
+
+/** Create a new tour guide */
+export function apiCreateTourGuide(data: {
+  fullName: string
+  phoneNumber?: string
+  availability?: "available" | "unavailable" | "on_tour"
+}) {
+  return apiFetch<{ message: string; guide: TourGuide }>("/api/tour_guides", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+/** Update an existing tour guide */
+export function apiUpdateTourGuide(
+  id: string,
+  data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>
+) {
+  return apiFetch<{ message: string; guide: TourGuide }>(`/api/tour_guides?id=${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  })
+}
+
+/** Permanently delete a tour guide */
+export function apiDeleteTourGuide(id: string) {
+  return apiFetch<{ message: string }>(`/api/tour_guides?id=${id}`, {
+    method: "DELETE",
   })
 }
 

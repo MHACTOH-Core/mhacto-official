@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/tooltip"
 import {
   Inbox,
-  Archive,
   CircleCheck,
   Search,
   ArrowLeft,
@@ -43,6 +42,7 @@ import {
   Trash2,
   Phone,
   CalendarDays,
+  CalendarCheck,
   Users,
   School,
   MapPin,
@@ -52,7 +52,12 @@ import {
   ShieldAlert,
   RotateCcw,
   Send,
+  Save,
   X,
+  Plus,
+  CheckCircle2,
+  XCircle,
+  TimerOff,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns"
@@ -69,21 +74,26 @@ import {
 
 type VisitDateFilter = "all" | "this_week" | "this_month" | "this_year" | "custom_range"
 
-type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "archived" | "spam" | "trash"
+const DRAFT_KEY = (id: string) => `inquiry_draft_reply_${id}`
+
+type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "confirmed" | "completed" | "cancelled" | "expired" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all",         label: "All Mail",    icon: Inbox },
   { key: "unread",      label: "Unread",      icon: Mail },
   { key: "in_progress", label: "In Progress", icon: Loader2 },
   { key: "assigned",    label: "Assigned",    icon: UserCheck },
-  { key: "archived",    label: "Completed",   icon: CircleCheck },
+  { key: "confirmed",   label: "Confirmed",   icon: CalendarCheck },
+  { key: "completed",   label: "Completed",   icon: CheckCircle2 },
+  { key: "cancelled",   label: "Cancelled",   icon: XCircle },
+  { key: "expired",     label: "Expired",     icon: TimerOff },
   { key: "spam",        label: "Spam",        icon: ShieldAlert },
   { key: "trash",       label: "Trash",       icon: Trash2 },
 ]
 
 export default function InquiriesPage() {
   const router = useRouter()
-  const { isLoggedIn, isHydrated, inquiries, updateInquiry, deleteInquiry, permanentDeleteInquiry } = useAdmin()
+  const { isLoggedIn, isHydrated, inquiries, updateInquiry, permanentDeleteInquiry, confirmTour, logWalkIn, tourGuides } = useAdmin()
 
   const { toast } = useToast()
 
@@ -95,10 +105,26 @@ export default function InquiriesPage() {
   // Assign dialog
   const [assignTarget, setAssignTarget] = useState<Inquiry | null>(null)
   const [assignGuideName, setAssignGuideName] = useState("")
+  // Confirm tour dialog
+  const [confirmTarget, setConfirmTarget] = useState<Inquiry | null>(null)
+  const [confirmDate, setConfirmDate] = useState("")
+  const [confirmGuideName, setConfirmGuideName] = useState("")
+  const [confirmTouristName, setConfirmTouristName] = useState("")
+  const [isConfirming, setIsConfirming] = useState(false)
+  // Walk-in dialog
+  const [showWalkInDialog, setShowWalkInDialog] = useState(false)
+  const [walkInName, setWalkInName] = useState("")
+  const [walkInTouristName, setWalkInTouristName] = useState("")
+  const [walkInContact, setWalkInContact] = useState("")
+  const [walkInPax, setWalkInPax] = useState("")
+  const [walkInDate, setWalkInDate] = useState("")
+  const [walkInNote, setWalkInNote] = useState("")
+  const [isLoggingWalkIn, setIsLoggingWalkIn] = useState(false)
   // Reply composer
   const [replyText, setReplyText] = useState("")
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [showReplyBox, setShowReplyBox] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
   // Visit date filter
   const [visitDateFilter, setVisitDateFilter] = useState<VisitDateFilter>("all")
   const [customDateFrom, setCustomDateFrom] = useState("")
@@ -111,14 +137,18 @@ export default function InquiriesPage() {
   // Memoized tab counts — single pass over inquiries
   const tabCounts = useMemo(() => {
     const counts: Record<MailboxTab, number> = {
-      all: 0, unread: 0, in_progress: 0, assigned: 0, archived: 0, spam: 0, trash: 0,
+      all: 0, unread: 0, in_progress: 0, assigned: 0, confirmed: 0, completed: 0,
+      cancelled: 0, expired: 0, spam: 0, trash: 0,
     }
     for (const i of inquiries) {
       if (i.status !== "spam" && i.status !== "trash") counts.all++
       if (i.status === "unread") counts.unread++
       else if (i.status === "in_progress") counts.in_progress++
       else if (i.status === "assigned") counts.assigned++
-      else if (i.status === "archived") counts.archived++
+      else if (i.status === "confirmed") counts.confirmed++
+      else if (i.status === "completed") counts.completed++
+      else if (i.status === "cancelled") counts.cancelled++
+      else if (i.status === "expired") counts.expired++
       else if (i.status === "spam") counts.spam++
       else if (i.status === "trash") counts.trash++
     }
@@ -141,8 +171,17 @@ export default function InquiriesPage() {
       case "assigned":
         list = inquiries.filter((i) => i.status === "assigned")
         break
-      case "archived":
-        list = inquiries.filter((i) => i.status === "archived")
+      case "confirmed":
+        list = inquiries.filter((i) => i.status === "confirmed")
+        break
+      case "completed":
+        list = inquiries.filter((i) => i.status === "completed")
+        break
+      case "cancelled":
+        list = inquiries.filter((i) => i.status === "cancelled")
+        break
+      case "expired":
+        list = inquiries.filter((i) => i.status === "expired")
         break
       case "spam":
         list = inquiries.filter((i) => i.status === "spam")
@@ -194,10 +233,18 @@ export default function InquiriesPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Open inquiry — mark as in_progress if unread; reset reply composer
+  // Open inquiry — mark as in_progress if unread; restore draft if any
   const openInquiry = (inq: Inquiry) => {
-    setShowReplyBox(false)
-    setReplyText("")
+    const saved = localStorage.getItem(DRAFT_KEY(inq.id))
+    if (saved) {
+      setReplyText(saved)
+      setShowReplyBox(true)
+      setDraftSaved(true)
+    } else {
+      setShowReplyBox(false)
+      setReplyText("")
+      setDraftSaved(false)
+    }
     if (inq.status === "unread") {
       const updated = { ...inq, status: "in_progress" as InquiryStatus }
       setSelectedInquiry(updated)
@@ -212,12 +259,6 @@ export default function InquiriesPage() {
     if (selectedInquiry?.id === inq.id) {
       setSelectedInquiry({ ...inq, status })
     }
-  }
-
-  const handleArchive = (inq: Inquiry) => {
-    handleStatusChange(inq, "archived")
-    toast({ title: "Completed", description: `Inquiry from ${inq.name} has been completed.`, variant: "success" })
-    if (selectedInquiry?.id === inq.id) setSelectedInquiry(null)
   }
 
   const handleDelete = (inq: Inquiry) => {
@@ -241,12 +282,6 @@ export default function InquiriesPage() {
       else next.add(id)
       return next
     })
-  }
-
-  const bulkArchive = () => {
-    selectedIds.forEach((id) => updateInquiry(id, { status: "archived" }))
-    toast({ title: "Bulk completed", description: `${selectedIds.size} inquiries completed.`, variant: "success" })
-    setSelectedIds(new Set())
   }
 
   const bulkAssign = () => {
@@ -334,17 +369,73 @@ export default function InquiriesPage() {
   }
 
   const confirmAssign = () => {
-    if (!assignTarget) return
-    updateInquiry(assignTarget.id, { status: "assigned" })
+    if (!assignTarget || !assignGuideName) return
+    updateInquiry(assignTarget.id, { status: "assigned", assignedTo: assignGuideName })
     if (selectedInquiry?.id === assignTarget.id) {
-      setSelectedInquiry({ ...assignTarget, status: "assigned" })
+      setSelectedInquiry({ ...assignTarget, status: "assigned", assignedTo: assignGuideName })
     }
-    toast({ title: "Assigned", description: `Inquiry from ${assignTarget.name} has been assigned.` })
+    toast({ title: "Assigned", description: `Inquiry from ${assignTarget.name} assigned to ${assignGuideName}.`, variant: "success" })
     setAssignTarget(null)
     setAssignGuideName("")
   }
 
-  const handleSendReply = async (openEmail: boolean) => {
+  const openConfirmDialog = (inq: Inquiry) => {
+    setConfirmTarget(inq)
+    setConfirmDate(inq.confirmedDate ?? "")
+    setConfirmGuideName(inq.assignedTo ?? "")
+    setConfirmTouristName(inq.touristName ?? "")
+  }
+
+  const handleConfirmTour = async () => {
+    if (!confirmTarget || !confirmDate) return
+    setIsConfirming(true)
+    try {
+      await confirmTour(confirmTarget.id, confirmDate, {
+        assignedTo: confirmGuideName || undefined,
+        touristName: confirmTouristName || undefined,
+      })
+      if (selectedInquiry?.id === confirmTarget.id) {
+        setSelectedInquiry((prev) => prev ? {
+          ...prev,
+          status: "confirmed",
+          confirmedDate: confirmDate,
+          assignedTo: confirmGuideName || prev.assignedTo,
+          touristName: confirmTouristName || prev.touristName,
+        } : prev)
+      }
+      toast({ title: "Tour confirmed", description: `Tour for ${confirmTarget.name} confirmed on ${confirmDate}.`, variant: "success" })
+      setConfirmTarget(null)
+    } catch {
+      toast({ title: "Error", description: "Failed to confirm tour.", variant: "destructive" })
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
+  const handleLogWalkIn = async () => {
+    if (!walkInName.trim()) return
+    setIsLoggingWalkIn(true)
+    try {
+      await logWalkIn({
+        name: walkInName.trim(),
+        touristName: walkInTouristName.trim() || undefined,
+        contactNumber: walkInContact.trim() || undefined,
+        dateOfVisit: walkInDate || undefined,
+        numberOfPax: walkInPax ? parseInt(walkInPax, 10) : undefined,
+        message: walkInNote.trim() || undefined,
+      })
+      toast({ title: "Walk-in logged", description: `Walk-in visitor "${walkInName}" recorded.`, variant: "success" })
+      setShowWalkInDialog(false)
+      setWalkInName(""); setWalkInTouristName(""); setWalkInContact("")
+      setWalkInPax(""); setWalkInDate(""); setWalkInNote("")
+    } catch {
+      toast({ title: "Error", description: "Failed to log walk-in.", variant: "destructive" })
+    } finally {
+      setIsLoggingWalkIn(false)
+    }
+  }
+
+  const handleSendReply = async () => {
     if (!selectedInquiry || !replyText.trim()) return
     setIsSendingReply(true)
     try {
@@ -352,18 +443,11 @@ export default function InquiriesPage() {
       const updated = { ...selectedInquiry, replyText: replyText.trim(), repliedAt: new Date().toISOString(), repliedBy: "Admin" }
       updateInquiry(selectedInquiry.id, { replyText: replyText.trim(), repliedAt: new Date().toISOString(), repliedBy: "Admin" })
       setSelectedInquiry(updated)
+      localStorage.removeItem(DRAFT_KEY(selectedInquiry.id))
       setReplyText("")
       setShowReplyBox(false)
+      setDraftSaved(false)
       toast({ title: "Reply sent", description: `Reply to ${selectedInquiry.name} has been saved.` })
-      if (openEmail) {
-        const subject = encodeURIComponent(
-          `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
-        )
-        const body = encodeURIComponent(
-          `Dear ${selectedInquiry.name},\n\nThank you for reaching out to the Municipal Heritage, Arts, Culture and Tourism Office (MHACTO) of Bocaue.\n\n${replyText.trim()}\n\nBest regards,\nMHACTO Bocaue Tourism Office`
-        )
-        window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
-      }
     } catch {
       toast({ title: "Reply failed", description: "Failed to save reply. Please try again.", variant: "destructive" })
     } finally {
@@ -371,16 +455,37 @@ export default function InquiriesPage() {
     }
   }
 
+  const handleOpenGmail = () => {
+    if (!selectedInquiry || !replyText.trim()) return
+    const subject = encodeURIComponent(
+      `Re: Your Inquiry — ${inquiryTypeLabels[selectedInquiry.inquiryType]?.label ?? "General"} | MHACTO Bocaue`
+    )
+    const body = encodeURIComponent(
+      `Dear ${selectedInquiry.name},\n\nThank you for reaching out to the Municipal Heritage, Arts, Culture and Tourism Office (MHACTO) of Bocaue.\n\n${replyText.trim()}\n\nBest regards,\nMHACTO Bocaue Tourism Office`
+    )
+    window.open(`mailto:${selectedInquiry.email}?subject=${subject}&body=${body}`, "_blank")
+  }
+
+  const handleSaveDraft = () => {
+    if (!selectedInquiry) return
+    localStorage.setItem(DRAFT_KEY(selectedInquiry.id), replyText)
+    setDraftSaved(true)
+    toast({ title: "Draft saved", description: "Your draft has been saved locally." })
+  }
+
   // ── Empty‑state messages ───────────────────────────────────────
 
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
-    all:         { icon: Inbox,      title: "No inquiries yet",          desc: "New inquiries will appear here." },
-    unread:      { icon: Mail,       title: "All caught up!",            desc: "No unread inquiries." },
-    in_progress: { icon: Loader2,    title: "Nothing in progress",       desc: "Inquiries being worked on appear here." },
-    assigned:    { icon: UserCheck,  title: "No assigned inquiries",     desc: "Inquiries assigned to a tourist guide appear here." },
-    archived:    { icon: CircleCheck, title: "No completed inquiries",    desc: "Completed inquiries will show here." },
-    spam:        { icon: ShieldAlert, title: "No spam",                  desc: "Inquiries marked as spam appear here." },
-    trash:       { icon: Trash2,     title: "Trash is empty",            desc: "Deleted inquiries can be restored from here." },
+    all:         { icon: Inbox,        title: "No inquiries yet",           desc: "New inquiries will appear here." },
+    unread:      { icon: Mail,         title: "All caught up!",             desc: "No unread inquiries." },
+    in_progress: { icon: Loader2,      title: "Nothing in progress",        desc: "Inquiries being worked on appear here." },
+    assigned:    { icon: UserCheck,    title: "No assigned inquiries",      desc: "Inquiries assigned to a tourist guide appear here." },
+    confirmed:   { icon: CalendarCheck, title: "No confirmed tours",        desc: "Confirmed tour bookings will appear here." },
+    completed:   { icon: CheckCircle2, title: "No completed tours",         desc: "Tours marked as completed will appear here." },
+    cancelled:   { icon: XCircle,      title: "No cancelled inquiries",     desc: "Cancelled inquiries will appear here." },
+    expired:     { icon: TimerOff,     title: "No expired bookings",        desc: "Automatically expired past-date confirmed tours appear here." },
+    spam:        { icon: ShieldAlert,  title: "No spam",                    desc: "Inquiries marked as spam appear here." },
+    trash:       { icon: Trash2,       title: "Trash is empty",             desc: "Deleted inquiries can be restored from here." },
   }
 
   return (
@@ -395,12 +500,30 @@ export default function InquiriesPage() {
           )}>
             {/* Header */}
             <div className="border-b border-border px-3 sm:px-4 py-3 sm:py-4">
-              <h1 className="text-lg sm:text-xl font-bold text-card-foreground">Inquiries</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {unreadCount > 0
-                  ? `${unreadCount} unread message${unreadCount !== 1 ? "s" : ""}`
-                  : "All caught up"}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h1 className="text-lg sm:text-xl font-bold text-card-foreground">Inquiries</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {unreadCount > 0
+                      ? `${unreadCount} unread message${unreadCount !== 1 ? "s" : ""}`
+                      : "All caught up"}
+                  </p>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs px-2 shrink-0"
+                      onClick={() => setShowWalkInDialog(true)}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Walk-in</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Log a walk-in visitor</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
             {/* Nav tabs */}
@@ -694,22 +817,91 @@ export default function InquiriesPage() {
                       {" · "}
                       {safeFormatDate(selectedInquiry.createdAt, "MMMM d, yyyy")}
                     </p>
+                    {selectedInquiry.touristName && selectedInquiry.touristName !== selectedInquiry.name && (
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        Tourist:{" "}
+                        <span className="font-medium text-card-foreground">{selectedInquiry.touristName}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Action buttons */}
                   <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 
+                    {/* Confirm Tour button — shown for tour_booking / walk_in not yet confirmed */}
+                    {(selectedInquiry.inquiryType === "tour_booking" || selectedInquiry.inquiryType === "walk_in") &&
+                      selectedInquiry.status !== "confirmed" &&
+                      selectedInquiry.status !== "completed" &&
+                      selectedInquiry.status !== "cancelled" &&
+                      selectedInquiry.status !== "expired" &&
+                      selectedInquiry.status !== "spam" &&
+                      selectedInquiry.status !== "trash" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3 border-teal-400 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40" onClick={() => openConfirmDialog(selectedInquiry)}>
+                            <CalendarCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                            <span className="hidden sm:inline">Confirm Tour</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Set tour date and confirm booking</TooltipContent>
+                      </Tooltip>
+                    )}
+
                     {/* Assign button — not shown when in trash/spam */}
                     {selectedInquiry.status !== "assigned" && selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName("") }}>
+                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName(selectedInquiry.assignedTo ?? "") }}>
                             <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                             <span className="hidden sm:inline">Assign</span>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Assign to a tourist guide</TooltipContent>
                       </Tooltip>
+                    )}
+
+                    {/* Complete / Cancel — shown for confirmed tours */}
+                    {selectedInquiry.status === "confirmed" && (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-emerald-400 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              onClick={() => {
+                                if (!selectedInquiry) return
+                                updateInquiry(selectedInquiry.id, { status: "completed" })
+                                setSelectedInquiry((prev) => prev ? { ...prev, status: "completed" as const } : prev)
+                                toast({ title: "Tour completed", description: `Tour for ${selectedInquiry.name} marked as completed.` })
+                              }}
+                            >
+                              <CheckCircle2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Complete</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Mark tour as completed</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-orange-400 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/40"
+                              onClick={() => {
+                                if (!selectedInquiry) return
+                                updateInquiry(selectedInquiry.id, { status: "cancelled" })
+                                setSelectedInquiry((prev) => prev ? { ...prev, status: "cancelled" as const } : prev)
+                                toast({ title: "Tour cancelled", description: `Tour for ${selectedInquiry.name} has been cancelled.` })
+                              }}
+                            >
+                              <XCircle className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Cancel</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Cancel this tour booking</TooltipContent>
+                        </Tooltip>
+                      </>
                     )}
 
                     {/* Restore (only in trash) */}
@@ -723,29 +915,6 @@ export default function InquiriesPage() {
                         </TooltipTrigger>
                         <TooltipContent>Restore to inbox</TooltipContent>
                       </Tooltip>
-                    )}
-
-                    {/* Archive toggle — not shown in spam/trash */}
-                    {selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
-                      selectedInquiry.status !== "archived" ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleArchive(selectedInquiry)}>
-                              <Archive className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Mark as completed</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleStatusChange(selectedInquiry, "unread")}>
-                              <Inbox className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Move to inbox</TooltipContent>
-                        </Tooltip>
-                      )
                     )}
 
                     {/* Spam */}
@@ -845,20 +1014,43 @@ export default function InquiriesPage() {
                           {selectedInquiry.dateOfVisit && (() => {
                             const dateTo = selectedInquiry.additionalDetails?.dateToVisit as string | undefined
                             const hasRange = dateTo && dateTo !== selectedInquiry.dateOfVisit
+                            if (hasRange) {
+                              return (
+                                <>
+                                  <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
+                                      <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Available From</p>
+                                      <p className="text-xs font-medium text-card-foreground">
+                                        {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
+                                      <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Available Until</p>
+                                      <p className="text-xs font-medium text-card-foreground">
+                                        {safeFormatDate(dateTo, "MMMM d, yyyy")}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </>
+                              )
+                            }
                             return (
                               <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2.5">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background shrink-0">
                                   <CalendarDays className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                                    {hasRange ? "Visit Date Range" : "Date of Visit"}
-                                  </p>
+                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Date of Visit</p>
                                   <p className="text-xs font-medium text-card-foreground">
                                     {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
-                                    {hasRange && (
-                                      <> — {safeFormatDate(dateTo, "MMMM d, yyyy")}</>
-                                    )}
                                   </p>
                                 </div>
                               </div>
@@ -916,15 +1108,35 @@ export default function InquiriesPage() {
                   </Card>
 
                   {/* Assigned guide info */}
-                  {selectedInquiry.status === "assigned" && selectedInquiry.assignedTo && (
+                  {(selectedInquiry.status === "assigned" || selectedInquiry.status === "confirmed") && selectedInquiry.assignedTo && (
                     <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
                       <CardContent className="p-3 sm:p-4 flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40 shrink-0">
                           <UserCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Assigned to Tourist Guide</p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Assigned Tourist Guide</p>
                           <p className="text-sm font-semibold text-card-foreground">{selectedInquiry.assignedTo}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Confirmed tour date */}
+                  {selectedInquiry.confirmedDate && (
+                    <Card className="border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-950/20">
+                      <CardContent className="p-3 sm:p-4 flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/40 shrink-0">
+                          <CalendarCheck className="h-4 w-4 text-teal-700 dark:text-teal-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Confirmed Tour Date</p>
+                          <p className="text-sm font-semibold text-card-foreground">
+                            {safeFormatDate(selectedInquiry.confirmedDate, "MMMM d, yyyy")}
+                          </p>
+                          {selectedInquiry.confirmedBy && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Confirmed by {selectedInquiry.confirmedBy}</p>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -991,23 +1203,31 @@ export default function InquiriesPage() {
                                 size="sm"
                                 className="gap-1.5"
                                 disabled={!replyText.trim() || isSendingReply}
-                                onClick={() => handleSendReply(true)}
+                                onClick={handleSendReply}
                               >
                                 {isSendingReply ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                                Send & Open Gmail
+                                Send Reply
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="gap-1.5"
-                                disabled={!replyText.trim() || isSendingReply}
-                                onClick={() => handleSendReply(false)}
+                                disabled={!replyText.trim()}
+                                onClick={handleOpenGmail}
                               >
-                                Save Reply Only
+                                <Mail className="h-3.5 w-3.5" />
+                                Open in Gmail
                               </Button>
-                              <span className="text-[10px] text-muted-foreground">
-                                "Send & Open Gmail" saves the reply and opens your email client
-                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5"
+                                disabled={!replyText.trim()}
+                                onClick={handleSaveDraft}
+                              >
+                                {draftSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <Save className="h-3.5 w-3.5" />}
+                                {draftSaved ? "Draft Saved" : "Save Draft"}
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -1019,19 +1239,162 @@ export default function InquiriesPage() {
             )}
           </div>
 
+          {/* ─── Confirm Tour Dialog ──────────────────────────── */}
+          <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) { setConfirmTarget(null) } }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Tour Booking</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Set the confirmed tour date for &quot;{confirmTarget?.name}&quot;.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-3 px-0 py-2">
+                {confirmTarget?.dateOfVisit && (() => {
+                  const dateTo = confirmTarget.additionalDetails?.dateToVisit as string | undefined
+                  const hasRange = dateTo && dateTo !== confirmTarget.dateOfVisit
+                  return (
+                    <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 text-xs">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Visitor&apos;s Availability Window</p>
+                      {hasRange ? (
+                        <p className="text-card-foreground font-medium">
+                          {safeFormatDate(confirmTarget.dateOfVisit, "MMMM d, yyyy")} — {safeFormatDate(dateTo, "MMMM d, yyyy")}
+                        </p>
+                      ) : (
+                        <p className="text-card-foreground font-medium">
+                          {safeFormatDate(confirmTarget.dateOfVisit, "MMMM d, yyyy")}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Confirmed Tour Date <span className="text-destructive">*</span></label>
+                  <Input type="date" value={confirmDate} onChange={(e) => setConfirmDate(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Tourist Name (if different from submitter)</label>
+                  <Input placeholder="e.g. Juan dela Cruz" value={confirmTouristName} onChange={(e) => setConfirmTouristName(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Assign Tourist Guide</label>
+                  <Select value={confirmGuideName || "__none__"} onValueChange={(v) => setConfirmGuideName(v === "__none__" ? "" : v)}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select a guide (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {tourGuides.filter((g) => g.isActive).map((g) => (
+                        <SelectItem key={g.id} value={g.fullName}>
+                          {g.fullName}
+                          {g.availability !== "available" && (
+                            <span className="ml-1.5 text-[10px] text-muted-foreground">({g.availability.replace("_", " ")})</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={!confirmDate || isConfirming}
+                  onClick={handleConfirmTour}
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  {isConfirming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <CalendarCheck className="h-3.5 w-3.5 mr-1.5" />}
+                  Confirm Tour
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* ─── Log Walk-in Dialog ───────────────────────────── */}
+          <AlertDialog open={showWalkInDialog} onOpenChange={setShowWalkInDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Log Walk-in Visitor</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Record a visitor who came directly to the tourism office.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Name / Group Name <span className="text-destructive">*</span></label>
+                  <Input placeholder="e.g. Dela Cruz Family" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Tourist Name (if different)</label>
+                  <Input placeholder="e.g. Juan dela Cruz" value={walkInTouristName} onChange={(e) => setWalkInTouristName(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Contact Number</label>
+                    <Input placeholder="+63…" value={walkInContact} onChange={(e) => setWalkInContact(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Number of People</label>
+                    <Input type="number" min={1} placeholder="1" value={walkInPax} onChange={(e) => setWalkInPax(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Visit Date</label>
+                  <Input type="date" value={walkInDate} onChange={(e) => setWalkInDate(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Notes (optional)</label>
+                  <Textarea placeholder="e.g. School field trip, 50 students…" value={walkInNote} onChange={(e) => setWalkInNote(e.target.value)} className="min-h-[80px] text-sm resize-none" />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={!walkInName.trim() || isLoggingWalkIn}
+                  onClick={handleLogWalkIn}
+                  className="bg-primary text-primary-foreground"
+                >
+                  {isLoggingWalkIn ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                  Log Walk-in
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* ─── Assign Dialog ────────────────────────────────── */}
           <AlertDialog open={!!assignTarget} onOpenChange={() => { setAssignTarget(null); setAssignGuideName("") }}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Mark the inquiry from &quot;{assignTarget?.name}&quot; as assigned to a tourist guide?
+                  Select a tourist guide to assign the inquiry from &quot;{assignTarget?.name}&quot;.
                 </AlertDialogDescription>
               </AlertDialogHeader>
+              <div className="px-0 py-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Tourist Guide <span className="text-destructive">*</span></label>
+                  <Select value={assignGuideName || "__none__"} onValueChange={(v) => setAssignGuideName(v === "__none__" ? "" : v)}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select a guide" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__" disabled>Select a guide</SelectItem>
+                      {tourGuides.filter((g) => g.isActive).map((g) => (
+                        <SelectItem key={g.id} value={g.fullName}>
+                          {g.fullName}
+                          {g.availability !== "available" && (
+                            <span className="ml-1.5 text-[10px] text-muted-foreground">({g.availability.replace("_", " ")})</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={confirmAssign}
+                  disabled={!assignGuideName}
                   className="bg-primary text-primary-foreground"
                 >
                   Assign

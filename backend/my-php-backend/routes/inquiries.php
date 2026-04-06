@@ -7,11 +7,13 @@ use App\Core\Response;
 /**
  * Route: /api/inquiries
  *
- * GET    /api/inquiries          — list (optional ?status=)
- * POST   /api/inquiries          — create (public form submission)
- * PUT    /api/inquiries/{id}     — update status
- * POST   /api/inquiries/{id}/reply — save admin reply
- * DELETE /api/inquiries/{id}     — permanently delete
+ * GET    /api/inquiries              — list (optional ?status=)
+ * POST   /api/inquiries              — create (public form submission)
+ * POST   /api/inquiries/walkin       — log a walk-in from admin panel (auth required)
+ * PUT    /api/inquiries/{id}         — update status / assignment
+ * POST   /api/inquiries/{id}/reply   — save admin reply
+ * POST   /api/inquiries/{id}/confirm — set confirmed_date + assigned_to
+ * DELETE /api/inquiries/{id}         — permanently delete
  */
 
 function handle_inquiries(string $method, ?string $idOrAction, ?string $subAction): void
@@ -20,10 +22,24 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
         $db = (new Database())->getConnection();
         $inquiry = new Inquiry($db);
 
-        // POST /api/inquiries/{id}/reply — admin action, requires auth
+        // POST /api/inquiries/{id}/reply — admin reply
         if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'reply') {
             Auth::requireRole(['super_admin', 'admin']);
             _inquiries_reply($inquiry, (int) $idOrAction);
+            return;
+        }
+
+        // POST /api/inquiries/{id}/confirm — set confirmed_date + guide
+        if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'confirm') {
+            Auth::requireRole(['super_admin', 'admin']);
+            _inquiries_confirm($inquiry, (int) $idOrAction);
+            return;
+        }
+
+        // POST /api/inquiries/walkin — log a walk-in (admin only)
+        if ($method === 'POST' && $idOrAction === 'walkin' && !$subAction) {
+            Auth::requireRole(['super_admin', 'admin']);
+            _inquiries_walkin($inquiry);
             return;
         }
 
@@ -35,6 +51,7 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
         switch ($method) {
             case 'GET':
                 Auth::requireRole(['super_admin', 'admin']);
+                $inquiry->autoExpire();
                 _inquiries_read($inquiry);
                 break;
             case 'POST':
@@ -124,6 +141,7 @@ function _inquiries_create(Inquiry $inquiry): void
     $success = $inquiry->create([
         'name'              => $data['name'],
         'email'             => $data['email'],
+        'touristName'       => $data['touristName'] ?? null,
         'contactNumber'     => $data['contactNumber'] ?? null,
         'inquiryType'       => $data['inquiryType'] ?? $data['purpose'] ?? 'general_contact',
         'dateOfVisit'       => $data['dateOfVisit'] ?? null,
@@ -149,7 +167,7 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
     $payload = [];
 
     if (isset($data['status'])) {
-        $allowed = ['unread', 'read', 'in_progress', 'assigned', 'archived', 'spam', 'trash'];
+        $allowed = ['unread', 'read', 'in_progress', 'assigned', 'confirmed', 'completed', 'cancelled', 'expired', 'archived', 'spam', 'trash'];
         if (!in_array($data['status'], $allowed, true)) {
             Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
         }
@@ -160,8 +178,12 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
         $payload['assigned_to'] = $data['assigned_to'] ? trim($data['assigned_to']) : null;
     }
 
+    if (array_key_exists('tourist_name', $data)) {
+        $payload['tourist_name'] = $data['tourist_name'] ? trim($data['tourist_name']) : null;
+    }
+
     if (empty($payload)) {
-        Response::error('No updatable fields provided (status, assigned_to).', 400);
+        Response::error('No updatable fields provided (status, assigned_to, tourist_name).', 400);
     }
 
     $success = $inquiry->update($id, $payload);
@@ -212,5 +234,82 @@ function _inquiries_delete(Inquiry $inquiry, int $id): void
         Response::json(['message' => 'Inquiry deleted successfully.']);
     } else {
         Response::error('Failed to delete inquiry.', 500);
+    }
+}
+// ── POST confirm ──────────────────────────────────────────
+
+function _inquiries_confirm(Inquiry $inquiry, int $id): void
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!$data) Response::error('Request body is required.', 400);
+
+    if (empty($data['confirmed_date'])) {
+        Response::error('confirmed_date (YYYY-MM-DD) is required.', 400);
+    }
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['confirmed_date'])) {
+        Response::error('confirmed_date must be YYYY-MM-DD.', 400);
+    }
+
+    $authUser = Auth::requireAuth();
+
+    $payload = [
+        'status'         => 'confirmed',
+        'confirmed_date' => $data['confirmed_date'],
+        'confirmed_by'   => $authUser['email'] ?? 'Admin',
+    ];
+
+    if (!empty($data['assigned_to'])) {
+        $payload['assigned_to'] = trim($data['assigned_to']);
+    }
+
+    if (!empty($data['tourist_name'])) {
+        $payload['tourist_name'] = trim($data['tourist_name']);
+    }
+
+    $success = $inquiry->update($id, $payload);
+    if ($success) {
+        $updated = $inquiry->readOne($id);
+        Response::json([
+            'message' => 'Tour confirmed successfully.',
+            'inquiry' => $updated,
+        ]);
+    } else {
+        Response::error('Failed to confirm inquiry.', 500);
+    }
+}
+
+// ── POST walkin ─────────────────────────────────────────────
+
+function _inquiries_walkin(Inquiry $inquiry): void
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!$data) Response::error('Request body is required.', 400);
+
+    $errors = Validator::validate($data, [
+        'name'         => 'required|string|min:2|max:200',
+        'numberOfPax'  => 'integer|min:1|max:500',
+    ]);
+
+    if ($errors) {
+        Response::error(implode(' ', $errors), 400);
+    }
+
+    $success = $inquiry->create([
+        'name'              => trim($data['name']),
+        'touristName'       => isset($data['touristName']) ? trim($data['touristName']) : null,
+        'email'             => $data['email'] ?? 'walkin@noemail.local',
+        'contactNumber'     => $data['contactNumber'] ?? null,
+        'inquiryType'       => 'walk_in',
+        'dateOfVisit'       => $data['dateOfVisit'] ?? date('Y-m-d'),
+        'numberOfPax'       => $data['numberOfPax'] ?? null,
+        'message'           => $data['message'] ?? null,
+        'additionalDetails' => $data['additionalDetails'] ?? null,
+    ]);
+
+    if ($success) {
+        Response::json(['message' => 'Walk-in logged successfully.'], 201);
+    } else {
+        Response::error('Failed to log walk-in.', 500);
     }
 }

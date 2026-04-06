@@ -186,7 +186,12 @@ export default function AdminLoginPage() {
     if (isHydrated && isLoggedIn) router.push("/admin/dashboard")
   }, [isHydrated, isLoggedIn, router])
 
-  if (!isHydrated || isLoggedIn) return null
+  if (!isHydrated) return (
+    <div className="flex h-dvh w-screen items-center justify-center bg-slate-950">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+    </div>
+  )
+  if (isLoggedIn) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

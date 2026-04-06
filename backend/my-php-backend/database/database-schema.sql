@@ -8,19 +8,19 @@
 -- After import, run seed.sql to populate test / sample data:
 --   mysql -u root -p mhacto_db < seed.sql
 --
--- Tables (12):
+-- Tables (12 — confirmed plural naming convention):
 --   1.  users
---   2.  archive_requests
---   3.  config
---   4.  category
---   5.  content
---   6.  content_fields
---   7.  content_images
---   8.  featured_content
---   9.  inquiries
---   10. activity_logs
---   11. milestone
---   12. page_views
+--   2.  config
+--   3.  categories
+--   4.  content
+--   5.  content_fields
+--   6.  content_images
+--   7.  featured_content
+--   8.  inquiries
+--   9.  activity_logs
+--   10. milestones
+--   11. page_views
+--   12. tour_guides
 -- ========================================================================
 
 -- ────────────────────────────────────────────────────────────────
@@ -41,15 +41,15 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS page_views;
 DROP TABLE IF EXISTS activity_logs;
-DROP TABLE IF EXISTS milestone;
+DROP TABLE IF EXISTS milestones;
+DROP TABLE IF EXISTS tour_guides;
 DROP TABLE IF EXISTS inquiries;
 DROP TABLE IF EXISTS featured_content;
 DROP TABLE IF EXISTS content_images;
 DROP TABLE IF EXISTS content_fields;
 DROP TABLE IF EXISTS content;
-DROP TABLE IF EXISTS category;
+DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS config;
-DROP TABLE IF EXISTS archive_requests;
 DROP TABLE IF EXISTS users;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -79,26 +79,7 @@ CREATE TABLE users (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 2. ARCHIVE_REQUESTS  (user archive approval workflow)
--- ────────────────────────────────────────────────────────────────
-CREATE TABLE archive_requests (
-  request_id     INT AUTO_INCREMENT PRIMARY KEY,
-  target_user_id INT       NOT NULL           COMMENT 'User being archived',
-  requested_by   INT       NOT NULL           COMMENT 'Admin who requested the archive',
-  status         ENUM('pending','approved','denied') DEFAULT 'pending',
-  reason         TEXT      DEFAULT NULL,
-  reviewed_by    INT       DEFAULT NULL       COMMENT 'Super-admin who reviewed',
-  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  reviewed_at    TIMESTAMP DEFAULT NULL,
-  FOREIGN KEY (target_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (requested_by)   REFERENCES users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (reviewed_by)    REFERENCES users(user_id) ON DELETE SET NULL,
-  INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- ────────────────────────────────────────────────────────────────
--- 3. CONFIG  (flexible key-value store for site settings)
+-- 2. CONFIG  (flexible key-value store for site settings)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE config (
   config_id    INT AUTO_INCREMENT PRIMARY KEY,
@@ -115,9 +96,9 @@ CREATE TABLE config (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 4. CATEGORY  (broad category groups + sub-labels)
+-- 3. CATEGORIES  (broad category groups + sub-labels)
 -- ────────────────────────────────────────────────────────────────
-CREATE TABLE category (
+CREATE TABLE categories (
   category_id   INT AUTO_INCREMENT PRIMARY KEY,
   parent_id     INT         DEFAULT NULL   COMMENT 'FK to parent category (for labels)',
   category_type ENUM('category','label') DEFAULT 'category',
@@ -125,14 +106,14 @@ CREATE TABLE category (
   label_name    VARCHAR(50) NOT NULL       COMMENT 'Display name',
   color_code    VARCHAR(50) DEFAULT NULL   COMMENT 'Badge colour (categories only)',
   is_active     TINYINT(1)  DEFAULT 1,
-  FOREIGN KEY (parent_id) REFERENCES category(category_id) ON DELETE SET NULL,
+  FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL,
   INDEX idx_type      (category_type),
   INDEX idx_label_key (label_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 5. CONTENT  (CMS posts — place / news / event)
+-- 4. CONTENT  (CMS posts — place / news / event)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE content (
   content_id  INT AUTO_INCREMENT PRIMARY KEY,
@@ -145,14 +126,14 @@ CREATE TABLE content (
   created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id)     REFERENCES users(user_id)        ON DELETE SET NULL,
-  FOREIGN KEY (category_id) REFERENCES category(category_id) ON DELETE SET NULL,
+  FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
   INDEX idx_status    (status),
   INDEX idx_post_type (post_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 6. CONTENT_FIELDS  (dynamic key-value metadata per content)
+-- 5. CONTENT_FIELDS  (dynamic key-value metadata per content)
 --    UNIQUE index on (content_id, meta_key) so ON DUPLICATE KEY
 --    UPDATE in PHP setMeta() works correctly.
 -- ────────────────────────────────────────────────────────────────
@@ -167,7 +148,7 @@ CREATE TABLE content_fields (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 7. CONTENT_IMAGES
+-- 6. CONTENT_IMAGES
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE content_images (
   image_id     INT AUTO_INCREMENT PRIMARY KEY,
@@ -182,7 +163,7 @@ CREATE TABLE content_images (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 8. FEATURED_CONTENT  (homepage spotlight + landmarks carousel)
+-- 7. FEATURED_CONTENT  (homepage spotlight + landmarks carousel)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE featured_content (
   featured_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,7 +179,7 @@ CREATE TABLE featured_content (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 9. INQUIRIES  (visitor forms — general, tour, walk-in, partnership)
+-- 8. INQUIRIES  (visitor forms — general, tour, walk-in, partnership)
 --    inquiry_type is VARCHAR so new types can be added without migration.
 --    Current types: general_contact | tour_booking | partnership | walk_in
 -- ────────────────────────────────────────────────────────────────
@@ -206,21 +187,40 @@ CREATE TABLE inquiries (
   inquiry_id         INT AUTO_INCREMENT PRIMARY KEY,
   inquiry_type       VARCHAR(50)  DEFAULT 'general_contact' COMMENT 'general_contact | tour_booking | partnership | walk_in',
   full_name          VARCHAR(255) NOT NULL,
+  tourist_name       VARCHAR(255) DEFAULT NULL  COMMENT 'Actual tour attendee if different from submitter',
   email_address      VARCHAR(255) NOT NULL,
   contact_number     VARCHAR(20)  DEFAULT NULL  COMMENT 'Supports country codes e.g. +63…',
-  date_of_visit      DATE         DEFAULT NULL  COMMENT 'Sortable by upcoming visits',
+  date_of_visit      DATE         DEFAULT NULL  COMMENT 'Visitor availability start (sortable)',
   number_of_pax      INT          DEFAULT NULL  COMMENT 'Aggregatable crowd volume',
   message            TEXT         DEFAULT NULL,
-  additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, etc.',
-  status             ENUM('unread','read','in_progress','assigned','archived','spam','trash') DEFAULT 'unread',
-  assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name/ID',
+  additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, dateToVisit, etc.',
+  status             ENUM('unread','read','in_progress','assigned','confirmed','completed','cancelled','expired','archived','spam','trash') DEFAULT 'unread',
+  assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name',
+  confirmed_date     DATE         DEFAULT NULL  COMMENT 'Actual confirmed tour date set by admin',
+  confirmed_by       VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who confirmed the tour',
   reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply for in-app thread',
   replied_at         TIMESTAMP    DEFAULT NULL,
   replied_by         VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who replied',
   created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_status (status),
   INDEX idx_type   (inquiry_type),
-  INDEX idx_visit  (date_of_visit)
+  INDEX idx_visit  (date_of_visit),
+  INDEX idx_confirmed (confirmed_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ────────────────────────────────────────────────────────────────
+-- 9. TOUR_GUIDES  (non-account tourist guide roster)
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE tour_guides (
+  guide_id     INT AUTO_INCREMENT PRIMARY KEY,
+  full_name    VARCHAR(200) NOT NULL,
+  phone_number VARCHAR(20)  DEFAULT NULL,
+  availability ENUM('available','unavailable','on_tour') DEFAULT 'available',
+  is_active    TINYINT(1)   DEFAULT 1,
+  created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_availability (availability, is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -247,11 +247,11 @@ CREATE TABLE activity_logs (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 11. MILESTONE  (heritage timeline, optionally linked to CMS content)
+-- 10. MILESTONES  (heritage timeline, optionally linked to CMS content)
 --     content_id links to a CMS post with label = timeline-of-events.
 --     year and title are nullable (pulled from CMS when content_id set).
 -- ────────────────────────────────────────────────────────────────
-CREATE TABLE milestone (
+CREATE TABLE milestones (
   milestone_id INT AUTO_INCREMENT PRIMARY KEY,
   content_id   INT          DEFAULT NULL   COMMENT 'FK → content (timeline-of-events posts)',
   year         INT          DEFAULT NULL,
@@ -259,7 +259,7 @@ CREATE TABLE milestone (
   description  TEXT         DEFAULT NULL,
   detail       TEXT         DEFAULT NULL,
   side         ENUM('left','right') DEFAULT 'left' COMMENT 'Timeline side: alternates left/right',
-  sort_order   VARCHAR(50)  DEFAULT '0',
+  sort_order   INT          DEFAULT 0,
   is_active    TINYINT(1)   DEFAULT 1,
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -269,7 +269,7 @@ CREATE TABLE milestone (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 12. PAGE_VIEWS  (per-destination click analytics)
+-- 11. PAGE_VIEWS  (per-destination click analytics)
 -- ────────────────────────────────────────────────────────────────
 CREATE TABLE page_views (
   view_id            INT AUTO_INCREMENT PRIMARY KEY,

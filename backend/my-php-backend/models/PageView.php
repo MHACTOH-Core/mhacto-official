@@ -77,7 +77,7 @@ class PageView
                 COUNT(pv.view_id)                        AS total_clicks
             FROM page_views pv
             INNER JOIN content  c   ON pv.content_id  = c.content_id
-            LEFT  JOIN category cat ON c.category_id  = cat.category_id
+            LEFT  JOIN categories cat ON c.category_id  = cat.category_id
             WHERE c.post_type = 'place'
             GROUP BY c.content_id, c.title, cat.label_name
             ORDER BY total_clicks DESC

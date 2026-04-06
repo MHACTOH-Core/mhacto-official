@@ -45,7 +45,7 @@ class HomeContent
                 cat.label_name AS category_name
             FROM featured_content fc
             LEFT JOIN content  c   ON fc.content_id  = c.content_id
-            LEFT JOIN category cat ON c.category_id  = cat.category_id
+            LEFT JOIN categories cat ON c.category_id  = cat.category_id
         ";
     }
 
@@ -349,7 +349,7 @@ class HomeContent
                        year, title, description, detail,
                        side, sort_order AS sortOrder, is_active AS isActive,
                        created_at AS createdAt, updated_at AS updatedAt
-                FROM milestone";
+                FROM milestones";
 
         if (!$all) {
             $sql .= " WHERE is_active = 1";
@@ -372,7 +372,7 @@ class HomeContent
         // Check for duplicate (same year + title)
         if (!empty($data['year']) && !empty($data['title'])) {
             $check = $this->conn->prepare(
-                "SELECT milestone_id FROM milestone WHERE year = :year AND title = :title LIMIT 1"
+                "SELECT milestone_id FROM milestones WHERE year = :year AND title = :title LIMIT 1"
             );
             $check->execute([':year' => $data['year'], ':title' => $data['title']]);
             if ($check->fetch()) {
@@ -380,7 +380,7 @@ class HomeContent
             }
         }
 
-        $sql = "INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active)
+        $sql = "INSERT INTO milestones (year, title, description, detail, side, sort_order, is_active)
                 VALUES (:year, :title, :description, :detail, :side, :sortOrder, :isActive)";
 
         $stmt = $this->conn->prepare($sql);
@@ -423,14 +423,14 @@ class HomeContent
 
         if (empty($fields)) return false;
 
-        $sql = "UPDATE milestone SET " . implode(', ', $fields) . " WHERE milestone_id = :id";
+        $sql = "UPDATE milestones SET " . implode(', ', $fields) . " WHERE milestone_id = :id";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute($params);
     }
 
     public function deleteMilestone($id)
     {
-        $stmt = $this->conn->prepare("DELETE FROM milestone WHERE milestone_id = :id");
+        $stmt = $this->conn->prepare("DELETE FROM milestones WHERE milestone_id = :id");
         return $stmt->execute([':id' => $id]);
     }
 
@@ -438,7 +438,7 @@ class HomeContent
     {
         $this->conn->beginTransaction();
         try {
-            $stmt = $this->conn->prepare("UPDATE milestone SET sort_order = :sortOrder WHERE milestone_id = :id");
+            $stmt = $this->conn->prepare("UPDATE milestones SET sort_order = :sortOrder WHERE milestone_id = :id");
 
             foreach ($order as $index => $id) {
                 $stmt->execute([

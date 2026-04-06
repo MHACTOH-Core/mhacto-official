@@ -32,7 +32,7 @@ class Analytics
                 COALESCE(cat.label_name, 'Page')      AS category
             FROM activity_logs al
             LEFT JOIN content  c   ON al.content_id  = c.content_id
-            LEFT JOIN category cat ON c.category_id  = cat.category_id
+            LEFT JOIN categories cat ON c.category_id  = cat.category_id
             WHERE al.action = 'page_view'
             GROUP BY al.page_path, c.title, cat.label_name
             ORDER BY views DESC

@@ -20,6 +20,7 @@ import {
   ImageIcon,
   Users,
   Flame,
+  UserCheck,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -37,6 +38,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; rol
   { href: "/admin/cms", label: "Manage Content", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/pagoda", label: "Pagoda Festival", icon: Flame, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/tour-guides", label: "Tour Guides", icon: UserCheck, roles: ["super_admin", "admin"] },
   { href: "/admin/accounts", label: "Accounts", icon: Users, roles: ["super_admin", "admin"] },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/activity-log", label: "Activity Log", icon: ClipboardList },

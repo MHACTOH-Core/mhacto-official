@@ -252,7 +252,7 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
         ];
         $name = $catMap[$data['contentCategory']] ?? null;
         if ($name) {
-            $stmt = $pdo->prepare("SELECT category_id FROM category WHERE category_type = 'category' AND label_name = :n LIMIT 1");
+            $stmt = $pdo->prepare("SELECT category_id FROM categories WHERE category_type = 'category' AND label_name = :n LIMIT 1");
             $stmt->execute([':n' => $name]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($row) $mapped['category_id'] = (int) $row['category_id'];
@@ -260,7 +260,7 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
     }
 
     if (isset($data['label'])) {
-        $stmt = $pdo->prepare("SELECT category_id FROM category WHERE category_type = 'label' AND label_key = :k LIMIT 1");
+        $stmt = $pdo->prepare("SELECT category_id FROM categories WHERE category_type = 'label' AND label_key = :k LIMIT 1");
         $stmt->execute([':k' => $data['label']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) $mapped['label_id'] = (int) $row['category_id'];
@@ -284,7 +284,7 @@ function _posts_resolveCategoryId(string $key): ?int
     $name = $map[$key] ?? null;
     if (!$name) return null;
 
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM category WHERE category_type = 'category' AND label_name = :n LIMIT 1");
+    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE category_type = 'category' AND label_name = :n LIMIT 1");
     $stmt->execute([':n' => $name]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;
@@ -292,7 +292,7 @@ function _posts_resolveCategoryId(string $key): ?int
 
 function _posts_resolveLabelId(string $key): ?int
 {
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM category WHERE category_type = 'label' AND label_key = :k LIMIT 1");
+    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE category_type = 'label' AND label_key = :k LIMIT 1");
     $stmt->execute([':k' => $key]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;

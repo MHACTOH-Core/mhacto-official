@@ -14,15 +14,6 @@ body[data-scroll-locked] {
   margin-right: 0px !important;
 }
 
-/* ── Custom Fonts ── */
-@font-face {
-  font-family: 'Barbara';
-  src: url('/fonts/BARABARA-final.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -115,9 +106,6 @@ body[data-scroll-locked] {
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
-  }
-  p {
-    font-family: 'Barbara', system-ui, sans-serif;
   }
   /* Offset hash-scroll targets below the fixed navbar */
   [id] {

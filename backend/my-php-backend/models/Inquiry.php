@@ -5,18 +5,22 @@ use PDO;
 use PDOException;
 
 /**
- * Inquiry Model — Schema v5 (hybrid + reply thread + assignment).
- * Real sortable columns: date_of_visit, number_of_pax.
+ * Inquiry Model — Schema v6 (tour scheduling + walk-in support).
+ * Real sortable columns: date_of_visit, confirmed_date, number_of_pax.
  * Contextual extras stored in additional_details JSON:
  *   school_name, company_name, referral_source, dietary_needs, etc.
  *
- * inquiry_type is VARCHAR (general_contact, tour_booking, partnership, …).
- * status ENUM: unread, assigned, archived, spam, trash.
- *   - assigned  → marked as assigned to a tourist guide (replaces 'resolved')
- *   - spam      → flagged as spam, hidden from main inbox
- *   - trash     → soft-deleted, shown in Trash tab, can be permanently removed
+ * inquiry_type VARCHAR: general_contact | tour_booking | partnership | walk_in
+ * status ENUM: unread, read, in_progress, assigned, confirmed, completed,
+ *              cancelled, expired, archived, spam, trash.
+ *   - confirmed → admin set a tour date (confirmed_date + confirmed_by filled)
+ *   - completed → tour done
+ *   - cancelled → admin cancelled
+ *   - expired   → set by autoExpire() when confirmed_date has passed and not completed
+ * tourist_name → actual tour attendee (may differ from form submitter)
+ * confirmed_date / confirmed_by → tour date + admin who confirmed
  * reply_text / replied_at / replied_by → in-app reply thread.
- * assigned_to → tourist guide name/ID handling this inquiry.
+ * assigned_to → tourist guide name handling this inquiry.
  */
 
 class Inquiry
@@ -33,10 +37,11 @@ class Inquiry
     private function baseSelect(): string
     {
         return "
-            SELECT inquiry_id, inquiry_type, full_name, email_address,
+            SELECT inquiry_id, inquiry_type, full_name, tourist_name, email_address,
                    contact_number, date_of_visit, number_of_pax,
                    message, additional_details, status,
-                   assigned_to, reply_text, replied_at, replied_by,
+                   assigned_to, confirmed_date, confirmed_by,
+                   reply_text, replied_at, replied_by,
                    created_at
             FROM inquiries
         ";
@@ -79,10 +84,10 @@ class Inquiry
         try {
             $query = "
                 INSERT INTO inquiries
-                  (inquiry_type, full_name, email_address, contact_number,
+                  (inquiry_type, full_name, tourist_name, email_address, contact_number,
                    date_of_visit, number_of_pax, message, additional_details)
                 VALUES
-                  (:inquiry_type, :full_name, :email, :contact_number,
+                  (:inquiry_type, :full_name, :tourist_name, :email, :contact_number,
                    :date_of_visit, :number_of_pax, :message, :additional_details)
             ";
 
@@ -93,6 +98,7 @@ class Inquiry
             $stmt->execute([
                 ':inquiry_type'       => $data['inquiryType'] ?? 'general_contact',
                 ':full_name'          => $data['name'],
+                ':tourist_name'       => $data['touristName'] ?? null,
                 ':email'              => $data['email'],
                 ':contact_number'     => $data['contactNumber'] ?? null,
                 ':date_of_visit'      => $data['dateOfVisit'] ?? null,
@@ -119,9 +125,24 @@ class Inquiry
             $params[':status'] = $data['status'];
         }
 
+        if (array_key_exists('tourist_name', $data)) {
+            $fields[] = "tourist_name = :tourist_name";
+            $params[':tourist_name'] = $data['tourist_name'] ? trim($data['tourist_name']) : null;
+        }
+
         if (array_key_exists('assigned_to', $data)) {
             $fields[] = "assigned_to = :assigned_to";
             $params[':assigned_to'] = $data['assigned_to'];
+        }
+
+        if (array_key_exists('confirmed_date', $data)) {
+            $fields[] = "confirmed_date = :confirmed_date";
+            $params[':confirmed_date'] = $data['confirmed_date'];
+        }
+
+        if (array_key_exists('confirmed_by', $data)) {
+            $fields[] = "confirmed_by = :confirmed_by";
+            $params[':confirmed_by'] = $data['confirmed_by'];
         }
 
         if (array_key_exists('reply_text', $data)) {
@@ -146,6 +167,20 @@ class Inquiry
         return $stmt->execute($params);
     }
 
+    /**
+     * Auto-expire confirmed inquiries whose confirmed_date is in the past
+     * and status is still 'confirmed'. Run on each admin GET.
+     */
+    public function autoExpire(): void
+    {
+        $this->conn->exec("
+            UPDATE inquiries
+               SET status = 'expired'
+             WHERE status = 'confirmed'
+               AND confirmed_date < CURDATE()
+        ");
+    }
+
     /** Permanently delete an inquiry. */
     public function delete(int $id): bool
     {
@@ -166,6 +201,7 @@ class Inquiry
             'id'                => (string) $row['inquiry_id'],
             'inquiryType'       => $row['inquiry_type'],
             'name'              => $row['full_name'] ?? '',
+            'touristName'       => $row['tourist_name'] ?? null,
             'email'             => $row['email_address'] ?? '',
             'contactNumber'     => $row['contact_number'] ?? null,
             'dateOfVisit'       => $row['date_of_visit'] ?? null,
@@ -174,6 +210,8 @@ class Inquiry
             'additionalDetails' => $extras,
             'status'            => $row['status'],
             'assignedTo'        => $row['assigned_to'] ?? null,
+            'confirmedDate'     => $row['confirmed_date'] ?? null,
+            'confirmedBy'       => $row['confirmed_by'] ?? null,
             'replyText'         => $row['reply_text'] ?? null,
             'repliedAt'         => $row['replied_at'] ?? null,
             'repliedBy'         => $row['replied_by'] ?? null,

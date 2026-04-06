@@ -29,7 +29,7 @@ class Post
                 c.status, c.post_type, c.created_at, c.updated_at,
                 cat.category_id, cat.label_name AS category_name
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
         ";
     }
 
@@ -103,7 +103,7 @@ class Post
                    c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
             WHERE EXISTS (
                 SELECT 1 FROM content_fields cm
                 WHERE cm.content_id = c.content_id
@@ -176,7 +176,7 @@ class Post
                    c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
             WHERE c.status = 'published'
               AND EXISTS (
                 SELECT 1 FROM content_fields feat
@@ -210,7 +210,7 @@ class Post
                    c.status, c.post_type, c.created_at, c.updated_at,
                    cat.category_id, cat.label_name AS category_name
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
             WHERE c.status = 'published'
               AND EXISTS (
                 SELECT 1 FROM content_fields feat
@@ -247,7 +247,7 @@ class Post
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'news' AND c.status = 'published'
             ORDER BY nd.meta_value DESC
@@ -267,7 +267,7 @@ class Post
                    cat.category_id, cat.label_name AS category_name,
                    nd.meta_value AS news_date
             FROM content c
-            LEFT JOIN category cat ON c.category_id = cat.category_id
+            LEFT JOIN categories cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'event' AND c.status = 'published'
             GROUP BY c.content_id
@@ -325,7 +325,7 @@ class Post
             }
             // Resolve label_key from label_id if not provided
             if (isset($data['label_id']) && !isset($metaMap['label_key'])) {
-                $lbl = $this->conn->prepare("SELECT label_key FROM category WHERE category_id = :id LIMIT 1");
+                $lbl = $this->conn->prepare("SELECT label_key FROM categories WHERE category_id = :id LIMIT 1");
                 $lbl->execute([':id' => $data['label_id']]);
                 $row = $lbl->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['label_key']) {
@@ -389,7 +389,7 @@ class Post
             }
             // Resolve label_key from label_id if label_id was updated
             if (array_key_exists('label_id', $data) && $data['label_id'] && !array_key_exists('label_key', $data)) {
-                $lbl = $this->conn->prepare("SELECT label_key FROM category WHERE category_id = :lid LIMIT 1");
+                $lbl = $this->conn->prepare("SELECT label_key FROM categories WHERE category_id = :lid LIMIT 1");
                 $lbl->execute([':lid' => $data['label_id']]);
                 $row = $lbl->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['label_key']) {

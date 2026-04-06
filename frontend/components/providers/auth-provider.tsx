@@ -104,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           saveJson("admin_current_user", null)
         }
         setIsHydrated(true)
+      }).catch(() => {
+        // Fallback: ensure the UI is never permanently stuck on a blank screen
+        // if an unexpected error occurs inside the .then() body
+        setIsHydrated(true)
       })
     } else {
       setIsHydrated(true)

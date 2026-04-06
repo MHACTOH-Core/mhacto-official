@@ -50,7 +50,7 @@ SET @place4 = (SELECT content_id FROM content WHERE title = 'Barangay Lolomboy H
 SET @place5 = (SELECT content_id FROM content WHERE title = 'Taal–Bocaue Footbridge' LIMIT 1);
 SET @place6 = (SELECT content_id FROM content WHERE title = 'Bocaue Municipal Plaza' LIMIT 1);
 
-SET @lbl_destinations = (SELECT category_id FROM category WHERE label_key = 'destinations' LIMIT 1);
+SET @lbl_destinations = (SELECT category_id FROM categories WHERE label_key = 'destinations' LIMIT 1);
 
 INSERT IGNORE INTO content_fields (content_id, meta_key, meta_value) VALUES
 (@place1, 'label_key',       'destinations'),
@@ -223,7 +223,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- NEWS ARTICLES (post_type = 'news', label = news)
 -- ========================================================================
 
-SET @lbl_news = (SELECT category_id FROM category WHERE label_key = 'news' LIMIT 1);
+SET @lbl_news = (SELECT category_id FROM categories WHERE label_key = 'news' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 4, 'Bocaue Launches New Tourism Website',
@@ -266,8 +266,8 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- EVENTS (post_type = 'event', label = events / festivals)
 -- ========================================================================
 
-SET @lbl_events   = (SELECT category_id FROM category WHERE label_key = 'events' LIMIT 1);
-SET @lbl_festivals = (SELECT category_id FROM category WHERE label_key = 'festivals' LIMIT 1);
+SET @lbl_events   = (SELECT category_id FROM categories WHERE label_key = 'events' LIMIT 1);
+SET @lbl_festivals = (SELECT category_id FROM categories WHERE label_key = 'festivals' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 4, 'Pagoda Festival 2026',
@@ -313,7 +313,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- LOCAL CUISINE (post_type = 'place', label = local-cuisine)
 -- ========================================================================
 
-SET @lbl_cuisine = (SELECT category_id FROM category WHERE label_key = 'local-cuisine' LIMIT 1);
+SET @lbl_cuisine = (SELECT category_id FROM categories WHERE label_key = 'local-cuisine' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 2, 'Chicharon ni Mang Tomas',
@@ -356,7 +356,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- TOUR PACKAGES (post_type = 'place', label = travel-tours)
 -- ========================================================================
 
-SET @lbl_tours = (SELECT category_id FROM category WHERE label_key = 'travel-tours' LIMIT 1);
+SET @lbl_tours = (SELECT category_id FROM categories WHERE label_key = 'travel-tours' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 3, 'Bocaue Heritage Day Tour',
@@ -437,7 +437,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- TIMELINE OF EVENTS (post_type = 'news', label = timeline-of-events)
 -- ========================================================================
 
-SET @lbl_timeline = (SELECT category_id FROM category WHERE label_key = 'timeline-of-events' LIMIT 1);
+SET @lbl_timeline = (SELECT category_id FROM categories WHERE label_key = 'timeline-of-events' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 1, 'Founding of Bocaue - 1580',
@@ -480,7 +480,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- NOTABLE FIGURES (post_type = 'news', label = notable-figures)
 -- ========================================================================
 
-SET @lbl_notable = (SELECT category_id FROM category WHERE label_key = 'notable-figures' LIMIT 1);
+SET @lbl_notable = (SELECT category_id FROM categories WHERE label_key = 'notable-figures' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 1, 'Gen. Emilio Jacinto',
@@ -520,7 +520,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- CULTURAL PRACTICES (post_type = 'news', label = cultural-practices)
 -- ========================================================================
 
-SET @lbl_cultural = (SELECT category_id FROM category WHERE label_key = 'cultural-practices' LIMIT 1);
+SET @lbl_cultural = (SELECT category_id FROM categories WHERE label_key = 'cultural-practices' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 2, 'Pagoda River Procession',
@@ -560,7 +560,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- CRAFTS & ARTISAN (post_type = 'news', label = crafts-artisan)
 -- ========================================================================
 
-SET @lbl_crafts = (SELECT category_id FROM category WHERE label_key = 'crafts-artisan' LIMIT 1);
+SET @lbl_crafts = (SELECT category_id FROM categories WHERE label_key = 'crafts-artisan' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 2, 'Pyrotechnic Artistry',
@@ -600,7 +600,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- PEOPLE & WONDERS (post_type = 'news', label = people-wonders)
 -- ========================================================================
 
-SET @lbl_people = (SELECT category_id FROM category WHERE label_key = 'people-wonders' LIMIT 1);
+SET @lbl_people = (SELECT category_id FROM categories WHERE label_key = 'people-wonders' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 2, 'Mang Carding - The Fireworks Legend',
@@ -640,7 +640,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- SCHOOLS (post_type = 'news', label = schools)
 -- ========================================================================
 
-SET @lbl_schools = (SELECT category_id FROM category WHERE label_key = 'schools' LIMIT 1);
+SET @lbl_schools = (SELECT category_id FROM categories WHERE label_key = 'schools' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 5, 'Bocaue Central School',
@@ -683,7 +683,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- HOSPITALS (post_type = 'news', label = hospitals)
 -- ========================================================================
 
-SET @lbl_hospitals = (SELECT category_id FROM category WHERE label_key = 'hospitals' LIMIT 1);
+SET @lbl_hospitals = (SELECT category_id FROM categories WHERE label_key = 'hospitals' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 5, 'Bocaue District Hospital',
@@ -729,7 +729,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- RESTAURANTS (post_type = 'place', label = restaurants)
 -- ========================================================================
 
-SET @lbl_restaurants = (SELECT category_id FROM category WHERE label_key = 'restaurants' LIMIT 1);
+SET @lbl_restaurants = (SELECT category_id FROM categories WHERE label_key = 'restaurants' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 2, 'Ihaw-Ihaw ni Bong',
@@ -772,7 +772,7 @@ INSERT INTO content_images (content_id, image_url, is_thumbnail, sort_order) VAL
 -- TOURISM WONDERS (post_type = 'place', label = tourism-wonders)
 -- ========================================================================
 
-SET @lbl_tw = (SELECT category_id FROM category WHERE label_key = 'tourism-wonders' LIMIT 1);
+SET @lbl_tw = (SELECT category_id FROM categories WHERE label_key = 'tourism-wonders' LIMIT 1);
 
 INSERT INTO content (user_id, category_id, title, description, status, post_type) VALUES
 (1, 3, 'Holy Cross of Wawa Shrine',
@@ -822,7 +822,7 @@ INSERT INTO featured_content (content_id, section, sort_order, is_active) VALUES
 -- MILESTONES (heritage timeline entries)
 -- ========================================================================
 
-INSERT INTO milestone (year, title, description, detail, side, sort_order, is_active) VALUES
+INSERT INTO milestones (year, title, description, detail, side, sort_order, is_active) VALUES
 (1580, 'Founding of Bocaue',
  'Bocaue was established as a visita (mission village) under the Augustinian missionaries, marking the beginning of organized settlement along the Bocaue River.',
  'The town''s name is derived from the word "bukaw," referring to the nocturnal owl that once populated the dense forests along the riverbanks.',

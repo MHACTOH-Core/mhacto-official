@@ -11,6 +11,7 @@ import {
 import type {
   CMSPost,
   Inquiry,
+  TourGuide,
   ActivityLogEntry,
   AdminSettings,
   ActivityAction,
@@ -25,6 +26,12 @@ import {
   apiFetchInquiries,
   apiUpdateInquiry,
   apiDeleteInquiry,
+  apiConfirmTour,
+  apiLogWalkIn,
+  apiFetchTourGuides,
+  apiCreateTourGuide,
+  apiUpdateTourGuide,
+  apiDeleteTourGuide,
   apiFetchSettings,
   apiUpdateSettings,
   apiFetchActivityLog,
@@ -55,6 +62,16 @@ export interface CMSDataContextValue {
   updateInquiry: (id: string, data: Partial<Inquiry>) => void
   deleteInquiry: (id: string) => void
   permanentDeleteInquiry: (id: string) => void
+  confirmTour: (id: string, confirmedDate: string, opts?: { assignedTo?: string; touristName?: string }) => Promise<void>
+  logWalkIn: (data: Parameters<typeof apiLogWalkIn>[0]) => Promise<void>
+  refreshInquiries: () => Promise<void>
+
+  // Tour Guides
+  tourGuides: TourGuide[]
+  createTourGuide: (data: { fullName: string; phoneNumber?: string; availability?: TourGuide["availability"] }) => Promise<void>
+  updateTourGuide: (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>) => Promise<void>
+  deleteTourGuide: (id: string) => Promise<void>
+  refreshTourGuides: () => Promise<void>
 
   // Settings
   settings: AdminSettings
@@ -78,10 +95,8 @@ export interface CMSDataContextValue {
   approveArchiveRequest: (requestId: number) => Promise<boolean>
   denyArchiveRequest: (requestId: number) => Promise<boolean>
 
-  // Loading / refresh
   loading: boolean
   refreshPosts: () => Promise<void>
-  refreshInquiries: () => Promise<void>
 }
 
 const CMSDataContext = createContext<CMSDataContextValue | null>(null)
@@ -124,6 +139,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
 
   const [posts, setPosts] = useState<CMSPost[]>([])
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
+  const [tourGuides, setTourGuides] = useState<TourGuide[]>([])
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([])
   const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS)
   const [users, setUsers] = useState<AdminUser[]>([])
@@ -134,12 +150,13 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const fetchAllBackendData = useCallback(async () => {
     setIsLoadingBackendData(true)
     try {
-      const [postsResult, inquiriesResult, settingsResult, activityResult, usersResult] = await Promise.allSettled([
+      const [postsResult, inquiriesResult, settingsResult, activityResult, usersResult, tourGuidesResult] = await Promise.allSettled([
         apiFetchPosts(),
         apiFetchInquiries(),
         apiFetchSettings(),
         apiFetchActivityLog(),
         apiFetchUsers(true),
+        apiFetchTourGuides(),
       ])
       if (postsResult.status === "fulfilled") {
         const normalizedPosts = postsResult.value.map(normalizeCMSPost)
@@ -160,6 +177,9 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       }
       if (usersResult.status === "fulfilled") {
         setUsers(usersResult.value)
+      }
+      if (tourGuidesResult.status === "fulfilled") {
+        setTourGuides(tourGuidesResult.value)
       }
     } catch (err) {
       console.error("Failed to load from backend:", err)
@@ -186,6 +206,15 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       saveJson("admin_inquiries", freshInquiries)
     } catch (err) {
       console.error("refreshInquiries failed:", err)
+    }
+  }, [])
+
+  const refreshTourGuides = useCallback(async () => {
+    try {
+      const fresh = await apiFetchTourGuides()
+      setTourGuides(fresh)
+    } catch (err) {
+      console.error("refreshTourGuides failed:", err)
     }
   }, [])
 
@@ -327,6 +356,77 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       }
     },
     [inquiries, logActivityFn],
+  )
+
+  const confirmTourFn = useCallback(
+    async (id: string, confirmedDate: string, opts?: { assignedTo?: string; touristName?: string }) => {
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === id
+            ? { ...inq, status: "confirmed" as const, confirmedDate, assignedTo: opts?.assignedTo ?? inq.assignedTo, touristName: opts?.touristName ?? inq.touristName }
+            : inq
+        )
+      )
+      try {
+        await apiConfirmTour(id, confirmedDate, opts)
+        await refreshInquiries()
+      } catch (err) {
+        console.error("confirmTour API error:", err)
+      }
+    },
+    [refreshInquiries],
+  )
+
+  const logWalkInFn = useCallback(
+    async (data: Parameters<typeof apiLogWalkIn>[0]) => {
+      try {
+        await apiLogWalkIn(data)
+        await refreshInquiries()
+      } catch (err) {
+        console.error("logWalkIn API error:", err)
+      }
+    },
+    [refreshInquiries],
+  )
+
+  // ── Tour Guides ──
+  const createTourGuideFn = useCallback(
+    async (data: { fullName: string; phoneNumber?: string; availability?: TourGuide["availability"] }) => {
+      try {
+        await apiCreateTourGuide(data)
+        await refreshTourGuides()
+      } catch (err) {
+        console.error("createTourGuide API error:", err)
+        throw err
+      }
+    },
+    [refreshTourGuides],
+  )
+
+  const updateTourGuideFn = useCallback(
+    async (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>) => {
+      setTourGuides((prev) => prev.map((g) => (g.id === id ? { ...g, ...data } : g)))
+      try {
+        await apiUpdateTourGuide(id, data)
+        await refreshTourGuides()
+      } catch (err) {
+        console.error("updateTourGuide API error:", err)
+        throw err
+      }
+    },
+    [refreshTourGuides],
+  )
+
+  const deleteTourGuideFn = useCallback(
+    async (id: string) => {
+      setTourGuides((prev) => prev.filter((g) => g.id !== id))
+      try {
+        await apiDeleteTourGuide(id)
+      } catch (err) {
+        console.error("deleteTourGuide API error:", err)
+      }
+    },
+    [],
   )
 
   // ── Settings ──
@@ -482,6 +582,14 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         updateInquiry: updateInquiryFn,
         deleteInquiry,
         permanentDeleteInquiry,
+        confirmTour: confirmTourFn,
+        logWalkIn: logWalkInFn,
+        refreshInquiries,
+        tourGuides,
+        createTourGuide: createTourGuideFn,
+        updateTourGuide: updateTourGuideFn,
+        deleteTourGuide: deleteTourGuideFn,
+        refreshTourGuides,
         settings,
         updateSettings: updateSettingsFn,
         activityLog,
@@ -498,7 +606,6 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         denyArchiveRequest: denyArchiveRequestFn,
         loading: isLoadingBackendData,
         refreshPosts,
-        refreshInquiries,
       }}
     >
       {children}

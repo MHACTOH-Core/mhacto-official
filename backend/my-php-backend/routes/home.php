@@ -319,7 +319,7 @@ function _home_culinary(string $method, PDO $db): void
         INNER JOIN content_fields cm ON c.content_id = cm.content_id
             AND cm.meta_key = 'label_key' AND cm.meta_value = 'local-cuisine'
         LEFT JOIN content_fields lm ON c.content_id = lm.content_id AND lm.meta_key = 'label_id'
-        LEFT JOIN category lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
+        LEFT JOIN categories lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
     ";
 
     if (!$all) $sql .= " WHERE c.status = 'published'";
@@ -368,7 +368,7 @@ function _home_restaurants(string $method, PDO $db): void
         INNER JOIN content_fields feat ON c.content_id = feat.content_id
             AND feat.meta_key = 'is_featured' AND feat.meta_value = '1'
         LEFT JOIN content_fields lm ON c.content_id = lm.content_id AND lm.meta_key = 'label_id'
-        LEFT JOIN category lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
+        LEFT JOIN categories lbl ON lbl.category_id = CAST(lm.meta_value AS UNSIGNED)
         WHERE c.status = 'published'
         ORDER BY c.created_at DESC
     ";
