@@ -310,7 +310,7 @@ INSERT INTO users (username, full_name, email, password_hash, role, status) VALU
 
 -- ── Categories (IDs 1–5) ──────────────────────────────────────
 
-INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES
+INSERT INTO categories (category_type, label_key, label_name, color_code, is_active) VALUES
 ('category', NULL, 'History Wonders',        '#3b82f6', 1),
 ('category', NULL, 'Arts & Culture Wonders', '#10b981', 1),
 ('category', NULL, 'Tourist Wonders',        '#f59e0b', 1),
@@ -320,14 +320,14 @@ INSERT INTO category (category_type, label_key, label_name, color_code, is_activ
 
 -- ── Labels under History (parent_id = 1) ──────────────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (1, 'label', 'timeline-of-events', 'Timeline of Events', 1),
 (1, 'label', 'notable-figures',    'Remarkable Persons',  1);
 
 
 -- ── Labels under Arts & Culture (parent_id = 2) ──────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (2, 'label', 'local-cuisine',      'Culinary Wonders',       1),
 (2, 'label', 'festivals',          'Festivals',              1),
 (2, 'label', 'cultural-practices', 'Cultural Practices',     1),
@@ -339,7 +339,7 @@ INSERT INTO category (parent_id, category_type, label_key, label_name, is_active
 
 -- ── Labels under Tourist Destinations (parent_id = 3) ─────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (3, 'label', 'destinations',    'Destinations',    1),
 (3, 'label', 'travel-tours',    'Travel Tours',    1),
 (3, 'label', 'tourism-wonders', 'Tourism Wonders', 1);
@@ -347,14 +347,14 @@ INSERT INTO category (parent_id, category_type, label_key, label_name, is_active
 
 -- ── Labels under News & Events (parent_id = 4) ───────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (4, 'label', 'events', 'Events', 1),
 (4, 'label', 'news',   'News',   1);
 
 
 -- ── Labels under Community (parent_id = 5) ────────────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (5, 'label', 'schools',   'Schools',   1),
 (5, 'label', 'colleges',  'Colleges',  1),
 (5, 'label', 'hospitals', 'Hospitals', 1),

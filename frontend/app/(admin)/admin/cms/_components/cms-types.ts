@@ -63,10 +63,10 @@ export const LABEL_PLACE_TYPES: Record<string, string[]> = {
   "restaurants": ["Restaurant", "Eatery", "Café", "Carinderia", "Bakery"],
   "destinations": ["Heritage Site", "Museum", "Religious Site"],
   "travel-tours": ["Heritage Tour", "Food Trail", "Festival Package", "Nature Tour", "Custom"],
-  "schools": ["Elementary", "High School", "Senior High", "College"],
-  "hospitals": ["Hospital", "Health Center", "Clinic", "Birthing Center"],
+  "schools": ["Public", "Private"],
+  "hospitals": ["Government", "Private", "Clinic", "Lying-In / Birthing", "Rural Health Unit"],
   "barangay": [],
-  "local-business": ["Retail", "Food & Beverage", "Services", "Manufacturing", "Agriculture"],
+  "local-business": ["Retail", "Food & Dining", "Services", "Crafts & Artisan", "Agriculture"],
   "pagoda": ["Festival Grounds", "Arena & Events Venue"],
 }
 
@@ -84,10 +84,10 @@ export const LABEL_VISIBLE_FIELDS: Record<string, DetailField[]> = {
   "destinations":       ["location", "hours", "contact", "established", "category", "story", "highlights"],
   "travel-tours":       ["contact", "category", "story", "highlights"],
   "events":             ["location", "story", "highlights"],
-  "schools":             ["location", "contact", "established", "category", "story"],
-  "hospitals":           ["location", "hours", "contact", "category", "story"],
-  "barangay":            ["location", "contact", "established", "story"],
-  "local-business":      ["location", "hours", "contact", "category", "story"],
+  "schools":             ["location", "established", "contact", "category", "story"],
+  "hospitals":           ["location", "hours", "contact", "established", "category", "story"],
+  "barangay":            ["location", "established", "story"],
+  "local-business":      ["location", "hours", "contact", "established", "category", "story", "highlights"],
   "pagoda":              ["location", "established", "story", "highlights"],
 }
 
@@ -114,18 +114,24 @@ export const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { la
     highlights: { label: "Includes", placeholder: "Licensed MHACTO guide\nEntrance fees\nWelcome snack" },
   },
   "schools": {
-    established: { label: "Year Founded", placeholder: "e.g. 1952" },
-    story: { label: "About / Description", placeholder: "Describe the school, programs offered, etc." },
+    location: { label: "Barangay / Location", placeholder: "e.g. Brgy. Lolomboy, Bocaue" },
+    established: { label: "Enrollment / Student Count", placeholder: "e.g. 1,200 students" },
+    contact: { label: "Year Founded", placeholder: "e.g. 1952" },
+    story: { label: "Programs Offered", placeholder: "Science & Technology\nHumss\nGeneral Academic Strand" },
   },
   "hospitals": {
-    story: { label: "About / Services", placeholder: "Describe the hospital or health center, services offered..." },
+    story: { label: "Services Offered", placeholder: "Emergency care\nOutpatient services\nLaboratory\nPharmacy" },
+    established: { label: "Bed Capacity", placeholder: "e.g. 50" },
   },
   "barangay": {
-    established: { label: "Year Established", placeholder: "e.g. 1950" },
-    story: { label: "About", placeholder: "Describe the barangay, its history and community..." },
+    location: { label: "Address", placeholder: "e.g. Brgy. Wawa, Bocaue, Bulacan" },
+    established: { label: "Population", placeholder: "e.g. 15,000 residents" },
+    story: { label: "Barangay Captain", placeholder: "e.g. Hon. Juan Dela Cruz" },
   },
   "local-business": {
+    established: { label: "Year Established", placeholder: "e.g. 2010" },
     story: { label: "About / Description", placeholder: "Describe the business, what it offers..." },
+    highlights: { label: "Products / Services Offered", placeholder: "Product A\nService B\nSpecialty C" },
   },
   "pagoda": {
     established: { label: "Year Started", placeholder: "e.g. 1787" },

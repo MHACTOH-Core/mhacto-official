@@ -155,6 +155,7 @@ export function CMSEditDialog({
             />
           </div>
 
+          {form.contentCategory !== "community" && (
           <div className="space-y-2">
             <Label>Author</Label>
             <Input
@@ -163,6 +164,7 @@ export function CMSEditDialog({
               placeholder="e.g. MHACTO Admin, Juan Dela Cruz"
             />
           </div>
+          )}
 
           <div className="space-y-2">
             <Label>{form.postType === "news" ? "Story / Content" : form.postType === "event" ? "Event Details" : "Content"}</Label>
@@ -528,7 +530,7 @@ export function CMSEditDialog({
               {show("category") && (
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : "Place Type"}
+                    <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : form.label === "schools" ? "Ownership" : form.label === "hospitals" ? "Facility Type" : form.label === "local-business" ? "Business Type" : "Place Type"}
                   </Label>
                   {(() => {
                     const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES

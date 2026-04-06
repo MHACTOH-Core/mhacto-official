@@ -7,6 +7,7 @@ import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { type Barangay } from "@/lib/data/community-data"
 import { apiFetchByLabel } from "@/lib/api"
+import { cmsToBarangay } from "@/lib/cms-mappers"
 
 // ── Logo / initials fallback ────────────────────────────────────────
 function BarangayLogo({ name, image }: { name: string; image?: string }) {
@@ -114,16 +115,7 @@ export default function BarangaysPage() {
     apiFetchByLabel("barangay")
       .then((posts) => {
         if (posts && posts.length > 0) {
-          setBarangayList(
-            posts.map((p: { id: string | number; title: string; body?: string; category?: string; image?: string[] }) => ({
-              id: String(p.id),
-              name: p.title,
-              captain: p.category ?? "",
-              address: "",
-              description: p.body ?? "",
-              image: p.image?.[0],
-            }))
-          )
+          setBarangayList(posts.map(cmsToBarangay))
         }
       })
       .catch(() => {})
@@ -227,7 +219,7 @@ export default function BarangaysPage() {
 
                 {/* Name */}
                 <h3 className="text-base font-black text-foreground leading-snug mb-0.5">
-                  Barangay {barangay.name}
+                  {barangay.name}
                 </h3>
 
                 {/* Captain */}

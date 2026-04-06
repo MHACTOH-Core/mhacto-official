@@ -418,10 +418,11 @@ export function cmsToBarangay(post: CMSPost): Barangay {
     id: post.id,
     name: post.title,
     description: post.body ?? "",
+    address: post.location ?? "",
     location: post.location ?? "",
     population: post.established ?? undefined,
+    captain: post.story ?? undefined,
     image: post.image?.[0] || undefined,
     isFeatured: post.isFeatured ?? false,
-    author: post.author ?? undefined,
   }
 }
