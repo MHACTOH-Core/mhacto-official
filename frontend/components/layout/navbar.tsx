@@ -509,7 +509,7 @@ export function Navbar() {
         </svg>
       </div>
 
-      <nav className="relative z-[2] mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-2.5 lg:py-3 lg:px-8">
+      <nav className="relative z-[2] mx-auto flex max-w-screen-2xl items-center gap-3 px-4 py-2.5 lg:py-5 lg:px-8">
         {/* Left – MHACTO logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
