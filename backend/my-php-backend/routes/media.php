@@ -76,12 +76,13 @@ function _media_upload(): void
     $imageDir   = $uploadsDir . '/images';
     $videoDir   = $uploadsDir . '/videos';
 
-    // Optional subfolder organization: ?category=places&label=heritage
-    $category = isset($_GET['category']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['category']) : '';
-    $label    = isset($_GET['label'])    ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['label'])    : '';
+    // Optional subfolder organization: ?category=places&label=heritage&subfolder=edited
+    $category  = isset($_GET['category'])  ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['category'])  : '';
+    $label     = isset($_GET['label'])     ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['label'])     : '';
+    $subfolder = isset($_GET['subfolder']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['subfolder']) : '';
 
-    if (strlen($category) > 50 || strlen($label) > 50) {
-        Response::error('Category/label too long (max 50 chars).', 400);
+    if (strlen($category) > 50 || strlen($label) > 50 || strlen($subfolder) > 50) {
+        Response::error('Category/label/subfolder too long (max 50 chars).', 400);
     }
 
     // Map CMS label keys to upload folder names where they differ
@@ -157,10 +158,11 @@ function _media_upload(): void
         $baseDir   = $isVideo ? $videoDir : $imageDir;
         $baseUrl   = $isVideo ? '/uploads/videos' : '/uploads/images';
 
-        // Build subfolder path from category/label
+        // Build subfolder path from category/label/subfolder
         $subPath = '';
-        if ($category) $subPath .= '/' . $category;
-        if ($label)    $subPath .= '/' . $label;
+        if ($category)  $subPath .= '/' . $category;
+        if ($label)     $subPath .= '/' . $label;
+        if ($subfolder) $subPath .= '/' . $subfolder;
 
         $targetDir = $baseDir . $subPath;
         $urlPrefix = $baseUrl . $subPath;

@@ -39,6 +39,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  Pencil,
 } from "lucide-react"
 import {
   apiListMedia,
@@ -250,9 +251,9 @@ export function MediaPicker({
         }
       }
       const ext = "jpg"
-      const fileName = `cropped_${Date.now()}.${ext}`
+      const fileName = `edited_${Date.now()}.${ext}`
       const file = new File([blob], fileName, { type: "image/jpeg" })
-      const result = await apiUploadMedia([file], "image", { category: uploadCategory, label: uploadLabel })
+      const result = await apiUploadMedia([file], "image", { category: uploadCategory, label: uploadLabel, subfolder: "edited" })
       if (result.uploaded.length > 0) {
         onSelect(result.uploaded[0].url)
         setCropSrc(null)
@@ -493,6 +494,14 @@ export function MediaPicker({
                                 <div className="rounded-full bg-primary p-1">
                                   <Check className="h-4 w-4 text-primary-foreground" />
                                 </div>
+                              </div>
+                            )}
+
+                            {/* Edited badge */}
+                            {file.url.includes('/edited/') && (
+                              <div className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow">
+                                <Pencil className="h-2.5 w-2.5" />
+                                Edited
                               </div>
                             )}
 

@@ -230,9 +230,6 @@ const DashboardPrintReport = forwardRef<HTMLDivElement, ReportProps>(
           <p>
             Prepared by: <strong>{generatedBy}</strong>
           </p>
-          <p>
-            This report was automatically generated from the MHACTo Admin Dashboard.
-          </p>
           <p className="report-confidential">CONFIDENTIAL — For internal use only</p>
         </div>
       </div>

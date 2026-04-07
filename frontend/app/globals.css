@@ -175,6 +175,11 @@ body[data-scroll-locked] {
     color: #999;
   }
 
+  /* Suppress URL display after links/images when printing */
+  a[href]::after {
+    content: none !important;
+  }
+
   @page {
     size: A4;
     margin: 18mm 15mm;

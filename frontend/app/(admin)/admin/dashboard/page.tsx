@@ -31,6 +31,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   BarChart,
   Bar,
   XAxis,
@@ -62,6 +72,7 @@ export default function DashboardPage() {
   }, [isHydrated, isLoggedIn, router])
 
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+  const [showPrintDialog, setShowPrintDialog] = useState(false)
 
   useEffect(() => {
     let el = document.getElementById("print-portal")
@@ -77,7 +88,13 @@ export default function DashboardPage() {
   }, [])
 
   const handleExport = useCallback(() => {
-    window.print()
+    setShowPrintDialog(true)
+  }, [])
+
+  const handlePrintConfirm = useCallback(() => {
+    setShowPrintDialog(false)
+    // Small delay so the dialog fully closes before print dialog opens
+    setTimeout(() => window.print(), 100)
   }, [])
 
   if (!isHydrated || !isLoggedIn) return null
@@ -150,24 +167,28 @@ export default function DashboardPage() {
       value: totals?.walkIns ?? 0,
       icon: Footprints,
       color: "text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300",
+      href: "/admin/inquiries",
     },
     {
       label: "Bookings Completed",
       value: totals?.bookingsCompleted ?? 0,
       icon: CalendarCheck,
       color: "text-green-600 bg-green-100 dark:bg-green-900/40 dark:text-green-300",
+      href: "/admin/inquiries",
     },
     {
       label: "Bookings Pending",
       value: totals?.bookingsPending ?? 0,
       icon: ClockAlert,
       color: "text-orange-600 bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300",
+      href: "/admin/inquiries",
     },
     {
       label: "Guide Assigned",
       value: totals?.guideAssigned ?? 0,
       icon: UserCheck,
       color: "text-purple-600 bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300",
+      href: "/admin/inquiries",
     },
   ]
 
@@ -198,21 +219,23 @@ export default function DashboardPage() {
           {/* Stat cards */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {statCards.map((stat) => (
-              <Card key={stat.label}>
-                <CardContent className="flex items-start gap-3 p-3 sm:gap-4 sm:p-5">
-                  <div className={`shrink-0 rounded-lg p-2 sm:rounded-xl sm:p-3 ${stat.color}`}>
-                    <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-                      {stat.label}
-                    </p>
-                    <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
-                      {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Link key={stat.label} href={stat.href} className="group">
+                <Card className="transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md">
+                  <CardContent className="flex items-start gap-3 p-3 sm:gap-4 sm:p-5">
+                    <div className={`shrink-0 rounded-lg p-2 sm:rounded-xl sm:p-3 ${stat.color}`}>
+                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-muted-foreground sm:text-sm">
+                        {stat.label}
+                      </p>
+                      <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
+                        {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 
@@ -508,6 +531,33 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Pre-print instruction dialog */}
+        <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Printer className="h-4 w-4" /> Before You Print
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm text-foreground">
+                  <p>To get a clean PDF without the browser URL and page title, follow these steps in the print dialog:</p>
+                  <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                    <li>Click <strong className="text-foreground">More settings</strong></li>
+                    <li>Uncheck <strong className="text-foreground">Headers and footers</strong></li>
+                    <li>Click <strong className="text-foreground">Print</strong> or <strong className="text-foreground">Save</strong></li>
+                  </ol>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handlePrintConfirm} className="gap-2">
+                <Printer className="h-4 w-4" /> Open Print Dialog
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Print-only report (rendered into a portal outside the app shell) */}
         {portalContainer &&

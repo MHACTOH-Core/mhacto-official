@@ -4,6 +4,7 @@ use App\Models\Inquiry;
 use App\Core\Auth;
 use App\Core\Validator;
 use App\Core\Response;
+use App\Core\Mailer;
 /**
  * Route: /api/inquiries
  *
@@ -189,6 +190,14 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
     $success = $inquiry->update($id, $payload);
     if ($success) {
         $updated = $inquiry->readOne($id);
+
+        // Send cancellation email to visitor (non-fatal)
+        if (isset($data['status']) && $data['status'] === 'cancelled') {
+            $visitorEmail = $updated['email_address'] ?? '';
+            $visitorName  = $updated['tourist_name'] ?: ($updated['full_name'] ?? '');
+            Mailer::sendTourCancelled($visitorEmail, $visitorName);
+        }
+
         Response::json([
             'message' => 'Inquiry updated successfully.',
             'inquiry' => $updated,
@@ -253,6 +262,10 @@ function _inquiries_confirm(Inquiry $inquiry, int $id): void
 
     $authUser = Auth::requireAuth();
 
+    // Fetch current record to detect reschedule vs first confirmation
+    $before       = $inquiry->readOne($id);
+    $wasConfirmed = $before && $before['status'] === 'confirmed';
+
     $payload = [
         'status'         => 'confirmed',
         'confirmed_date' => $data['confirmed_date'],
@@ -270,6 +283,20 @@ function _inquiries_confirm(Inquiry $inquiry, int $id): void
     $success = $inquiry->update($id, $payload);
     if ($success) {
         $updated = $inquiry->readOne($id);
+
+        // Send email notification to visitor (non-fatal)
+        $visitorEmail  = $updated['email_address'] ?? '';
+        $visitorName   = $updated['tourist_name'] ?: ($updated['full_name'] ?? '');
+        $guideName     = $updated['assigned_to'] ?? '';
+        $confirmedDate = $updated['confirmed_date'] ?? '';
+        $pax           = (string)($updated['number_of_pax'] ?? '');
+
+        if ($wasConfirmed) {
+            Mailer::sendTourRescheduled($visitorEmail, $visitorName, $confirmedDate, $guideName);
+        } else {
+            Mailer::sendTourConfirmed($visitorEmail, $visitorName, $confirmedDate, $guideName, $pax);
+        }
+
         Response::json([
             'message' => 'Tour confirmed successfully.',
             'inquiry' => $updated,

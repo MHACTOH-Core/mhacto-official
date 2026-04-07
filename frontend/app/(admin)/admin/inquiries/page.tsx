@@ -372,6 +372,12 @@ export default function InquiriesPage() {
     setConfirmTouristName(inq.touristName ?? "")
   }
 
+  const handleRevertConfirmed = (inq: Inquiry) => {
+    updateInquiry(inq.id, { status: "in_progress" })
+    setSelectedInquiry((prev) => prev ? { ...prev, status: "in_progress" as const } : prev)
+    toast({ title: "Reverted", description: `Booking for ${inq.name} moved back to In Progress.`, variant: "success" })
+  }
+
   const handleConfirmTour = async () => {
     if (!confirmTarget || !confirmDate) return
     setIsConfirming(true)
@@ -835,9 +841,37 @@ export default function InquiriesPage() {
 
 
 
-                    {/* Complete / Cancel — shown for confirmed tours */}
+                    {/* Complete / Cancel / Edit / Revert — shown for confirmed tours */}
                     {selectedInquiry.status === "confirmed" && (
                       <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-blue-400 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                              onClick={() => openConfirmDialog(selectedInquiry)}
+                            >
+                              <CalendarCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Edit Booking</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Change the tour date or assigned guide</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-yellow-400 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
+                              onClick={() => handleRevertConfirmed(selectedInquiry)}
+                            >
+                              <RotateCcw className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Revert</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Undo confirmation — move back to In Progress</TooltipContent>
+                        </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -1218,9 +1252,13 @@ export default function InquiriesPage() {
           <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) { setConfirmTarget(null) } }}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Tour Booking</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {confirmTarget?.status === "confirmed" ? "Edit Tour Booking" : "Confirm Tour Booking"}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Set the confirmed tour date for &quot;{confirmTarget?.name}&quot;.
+                  {confirmTarget?.status === "confirmed"
+                    ? `Update the confirmed date or guide for "${confirmTarget?.name}".`
+                    : `Set the confirmed tour date for "${confirmTarget?.name}".`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-3 px-0 py-2">
@@ -1278,7 +1316,7 @@ export default function InquiriesPage() {
                   className="bg-teal-600 hover:bg-teal-700 text-white"
                 >
                   {isConfirming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <CalendarCheck className="h-3.5 w-3.5 mr-1.5" />}
-                  Confirm Tour
+                  {confirmTarget?.status === "confirmed" ? "Save Changes" : "Confirm Tour"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
