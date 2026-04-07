@@ -88,7 +88,19 @@ function getFolderPath(url: string): string {
   return lastSlash === -1 ? "" : stripped.substring(0, lastSlash)
 }
 
+/**
+ * Map folder slugs to display names that match the Navbar labels.
+ * Only entries that differ from the default title-case conversion are listed.
+ */
+const FOLDER_DISPLAY_NAMES: Record<string, string> = {
+  "arts-culture": "Arts & Culture Wonders",
+  "festivals": "Bocaue Festival",
+  "notable-figures": "Remarkable Persons",
+  "news": "News",
+}
+
 function formatFolderName(name: string): string {
+  if (FOLDER_DISPLAY_NAMES[name]) return FOLDER_DISPLAY_NAMES[name]
   return name.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
 }
 
