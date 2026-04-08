@@ -5,6 +5,8 @@ use App\Core\Auth;
 use App\Core\Validator;
 use App\Core\Response;
 use App\Core\Mailer;
+use App\Core\RateLimit;
+use App\Core\DataPrivacy;
 /**
  * Route: /api/inquiries
  *
@@ -51,7 +53,7 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
 
         switch ($method) {
             case 'GET':
-                Auth::requireRole(['super_admin', 'admin']);
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 $inquiry->autoExpire();
                 _inquiries_read($inquiry);
                 break;
@@ -112,11 +114,17 @@ function _inquiries_read(Inquiry $inquiry): void
 
 function _inquiries_create(Inquiry $inquiry): void
 {
+    // Spam/DoS protection: max 5 inquiry submissions per IP per hour
+    RateLimit::check('inquiry', 5, 3600);
+
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (!$data) {
         Response::error('Invalid request body.', 400);
     }
+
+    // RA 10173 §7: verify data subject consent before storing any PII
+    DataPrivacy::verifyConsent((object) $data);
 
     $errors = Validator::validate($data, [
         'name'    => 'required|string|min:2|max:200',
@@ -135,11 +143,7 @@ function _inquiries_create(Inquiry $inquiry): void
         Response::error('Invalid email address.', 400);
     }
 
-    if (strlen($data['name']) > 255 || strlen($data['message']) > 10000) {
-        Response::error('Field length exceeded.', 400);
-    }
-
-    $success = $inquiry->create([
+    $newId = $inquiry->create([
         'name'              => $data['name'],
         'email'             => $data['email'],
         'touristName'       => $data['touristName'] ?? null,
@@ -149,9 +153,15 @@ function _inquiries_create(Inquiry $inquiry): void
         'numberOfPax'       => $data['numberOfPax'] ?? null,
         'message'           => $data['message'],
         'additionalDetails' => $data['additionalDetails'] ?? null,
+        // RA 10173: record consent details and submitter IP for audit trail
+        'consentGiven'      => true,
+        'consentText'       => $data['consentText'] ?? null,
+        'submitterIp'       => $_SERVER['REMOTE_ADDR'] ?? null,
     ]);
 
-    if ($success) {
+    if ($newId) {
+        // Notify admin of new inquiry (non-fatal)
+        Mailer::notifyAdmin($data['name'], $data['email'], $data['message'], $newId);
         Response::json(['message' => 'Inquiry submitted successfully.'], 201);
     } else {
         Response::error('Failed to submit inquiry.', 500);
@@ -168,7 +178,7 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
     $payload = [];
 
     if (isset($data['status'])) {
-        $allowed = ['unread', 'read', 'in_progress', 'assigned', 'confirmed', 'completed', 'cancelled', 'expired', 'archived', 'spam', 'trash'];
+        $allowed = ['unread', 'read', 'assigned', 'confirmed', 'completed', 'cancelled', 'expired', 'archived', 'spam', 'trash'];
         if (!in_array($data['status'], $allowed, true)) {
             Response::error('Invalid status. Allowed: ' . implode(', ', $allowed), 400);
         }
@@ -193,8 +203,8 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
 
         // Send cancellation email to visitor (non-fatal)
         if (isset($data['status']) && $data['status'] === 'cancelled') {
-            $visitorEmail = $updated['email_address'] ?? '';
-            $visitorName  = $updated['tourist_name'] ?: ($updated['full_name'] ?? '');
+            $visitorEmail = $updated['email'] ?? '';
+            $visitorName  = $updated['touristName'] ?: ($updated['name'] ?? '');
             Mailer::sendTourCancelled($visitorEmail, $visitorName);
         }
 
@@ -285,11 +295,11 @@ function _inquiries_confirm(Inquiry $inquiry, int $id): void
         $updated = $inquiry->readOne($id);
 
         // Send email notification to visitor (non-fatal)
-        $visitorEmail  = $updated['email_address'] ?? '';
-        $visitorName   = $updated['tourist_name'] ?: ($updated['full_name'] ?? '');
-        $guideName     = $updated['assigned_to'] ?? '';
-        $confirmedDate = $updated['confirmed_date'] ?? '';
-        $pax           = (string)($updated['number_of_pax'] ?? '');
+        $visitorEmail  = $updated['email'] ?? '';
+        $visitorName   = $updated['touristName'] ?: ($updated['name'] ?? '');
+        $guideName     = $updated['assignedTo'] ?? '';
+        $confirmedDate = $updated['confirmedDate'] ?? '';
+        $pax           = (string)($updated['numberOfPax'] ?? '');
 
         if ($wasConfirmed) {
             Mailer::sendTourRescheduled($visitorEmail, $visitorName, $confirmedDate, $guideName);

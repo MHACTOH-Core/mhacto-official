@@ -20,6 +20,17 @@ USE mhacto_db;
 
 
 -- ========================================================================
+-- RA 10173 COMPLIANCE SEED — initial consent statement version
+-- ========================================================================
+
+INSERT IGNORE INTO consent_versions (version_code, statement_text, effective_from) VALUES (
+  'v1.0',
+  'By submitting this form, I consent to the Municipal History, Arts, Culture & Tourism Office (MHACTO) of Bocaue, Bulacan collecting and processing my personal information (name, email address, contact number) for the purpose of responding to my inquiry. My data will be retained for the minimum period required by law and will not be shared with third parties without my consent, in accordance with the Philippines Data Privacy Act of 2012 (RA 10173).',
+  CURDATE()
+);
+
+
+-- ========================================================================
 -- PLACES (post_type = 'place', label = destinations)
 -- ========================================================================
 
@@ -877,7 +888,7 @@ VALUES
 
 ('general_contact','Kim Park',            'kimpark@travel.kr',           '+821012345678', '2026-06-20', 4,
  'We are visiting from South Korea and heard about the Pagoda Festival. Is it still happening in July?',
- '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'in_progress'),
+ '{"visitorType":"tourist","purposeOfVisit":"Attend Festival / Event"}', 'read'),
 
 ('partnership',    'Elena Fernandez',     'elena@bulacan-tourism.gov.ph','+639351234567', NULL, NULL,
  'We would like to discuss a potential collaboration for the Bulacan Heritage Trail project.',

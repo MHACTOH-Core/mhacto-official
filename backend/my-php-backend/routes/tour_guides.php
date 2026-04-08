@@ -23,21 +23,27 @@ function handle_tour_guides(string $method, ?string $idOrAction, ?string $subAct
         $id = ($idOrAction && is_numeric($idOrAction)) ? (int) $idOrAction : null;
         if (!$id && !empty($_GET['id'])) $id = (int) $_GET['id'];
 
-        Auth::requireRole(['super_admin', 'admin']);
+        // Content managers can view tour guides; only admins can modify
+        $readOnlyRoles = ['super_admin', 'admin', 'content_manager'];
+        $writeRoles    = ['super_admin', 'admin'];
 
         switch ($method) {
             case 'GET':
+                Auth::requireRole($readOnlyRoles);
                 _tour_guides_read($guide);
                 break;
             case 'POST':
+                Auth::requireRole($writeRoles);
                 _tour_guides_create($guide);
                 break;
             case 'PUT':
             case 'PATCH':
+                Auth::requireRole($writeRoles);
                 if (!$id) Response::error('Missing guide ID.', 400);
                 _tour_guides_update($guide, $id);
                 break;
             case 'DELETE':
+                Auth::requireRole($writeRoles);
                 if (!$id) Response::error('Missing guide ID.', 400);
                 _tour_guides_delete($guide, $id);
                 break;

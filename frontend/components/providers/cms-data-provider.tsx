@@ -44,6 +44,7 @@ import {
   apiFetchArchiveRequests,
   apiApproveArchiveRequest,
   apiDenyArchiveRequest,
+  AuthExpiredError,
 } from "@/lib/api"
 import type { ArchiveRequest } from "@/lib/api"
 import { useAuth } from "./auth-provider"
@@ -182,6 +183,10 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         setTourGuides(tourGuidesResult.value)
       }
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) {
+        console.warn("Failed to load from backend (unavailable):", err.message)
+        return
+      }
       console.error("Failed to load from backend:", err)
     } finally {
       setIsLoadingBackendData(false)
@@ -195,6 +200,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       setPosts(normalizedPosts)
       saveJson("admin_posts", normalizedPosts)
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) return
       console.error("refreshPosts failed:", err)
     }
   }, [])
@@ -205,6 +211,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       setInquiries(freshInquiries)
       saveJson("admin_inquiries", freshInquiries)
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) return
       console.error("refreshInquiries failed:", err)
     }
   }, [])
@@ -214,6 +221,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       const fresh = await apiFetchTourGuides()
       setTourGuides(fresh)
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) return
       console.error("refreshTourGuides failed:", err)
     }
   }, [])
@@ -453,6 +461,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       const freshUsers = await apiFetchUsers(true)
       setUsers(freshUsers)
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) return
       console.error("refreshUsers failed:", err)
     }
   }, [])
@@ -529,6 +538,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       const reqs = await apiFetchArchiveRequests("pending")
       setArchiveRequests(reqs)
     } catch (err) {
+      if (err instanceof AuthExpiredError || (err instanceof Error && /network error/i.test(err.message))) return
       console.error("refreshArchiveRequests failed:", err)
     }
   }, [])

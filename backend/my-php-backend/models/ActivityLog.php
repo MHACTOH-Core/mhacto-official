@@ -64,19 +64,33 @@ class ActivityLog
     /** Log a new activity entry. Details is stored as JSON. */
     public function log(string $action, string $details, ?int $userId = null, ?string $ip = null, ?int $contentId = null, ?string $pagePath = null): array|false
     {
-        $query = "INSERT INTO activity_logs (user_id, content_id, action, details, page_path, ip_address)
-                  VALUES (:user_id, :content_id, :action, :details, :page_path, :ip)";
+        $query = "INSERT INTO activity_logs (user_id, content_id, action, details, page_path, ip_address, user_agent, session_ref)
+                  VALUES (:user_id, :content_id, :action, :details, :page_path, :ip, :user_agent, :session_ref)";
 
         try {
-            // Store details as-is (already a plain string from callers)
+            // RA 10173 §21: record user-agent and a non-sensitive session reference
+            // for government audit trail requirements.
+            $rawUa = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            $userAgent = $rawUa ? mb_substr($rawUa, 0, 500) : null;
+
+            // Store a hashed (non-reversible) reference to the PHP session or JWT jti
+            // so log entries can be correlated without storing raw session tokens.
+            $sessionRef = null;
+            if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+                // Hash the last 16 chars of the Authorization header as a correlation ID
+                $sessionRef = hash('sha256', substr($_SERVER['HTTP_AUTHORIZATION'], -16));
+            }
+
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
-                ':user_id'    => $userId,
-                ':content_id' => $contentId,
-                ':action'     => $action,
-                ':details'    => $details,
-                ':page_path'  => $pagePath,
-                ':ip'         => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+                ':user_id'     => $userId,
+                ':content_id'  => $contentId,
+                ':action'      => $action,
+                ':details'     => $details,
+                ':page_path'   => $pagePath,
+                ':ip'          => $ip ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+                ':user_agent'  => $userAgent,
+                ':session_ref' => $sessionRef,
             ]);
 
             $logId = (int) $this->conn->lastInsertId();

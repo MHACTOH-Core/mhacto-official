@@ -184,12 +184,13 @@ export default function CulinaryWondersPage() {
   }, [])
 
   useEffect(() => {
-    apiFetchByLabel("local-cuisine")
-      .then((posts) => { if (posts?.length) setCulinaryWonders(posts.map(cmsToCuisineItem)) })
-      .catch(() => {})
-    apiFetchByLabel("restaurants")
-      .then((posts) => { if (posts?.length) setRestaurantList(posts.map(cmsToRestaurant)) })
-      .catch(() => {})
+    Promise.all([
+      apiFetchByLabel("local-cuisine").catch(() => null),
+      apiFetchByLabel("restaurants").catch(() => null),
+    ]).then(([cuisine, restaurants]) => {
+      if (cuisine?.length) setCulinaryWonders(cuisine.map(cmsToCuisineItem))
+      if (restaurants?.length) setRestaurantList(restaurants.map(cmsToRestaurant))
+    })
   }, [])
 
   const handlePrev = () => {

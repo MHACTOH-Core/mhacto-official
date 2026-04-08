@@ -3,6 +3,7 @@ use App\Config\Database;
 use App\Models\User;
 use App\Core\Auth;
 use App\Core\Response;
+use App\Core\RateLimit;
 /**
  * Route: /api/auth
  *
@@ -34,6 +35,9 @@ function _auth_login(string $method): void
     if ($method !== 'POST') {
         Response::error('Method not allowed. Use POST.', 405);
     }
+
+    // Brute-force protection: max 10 login attempts per IP per 15 minutes
+    RateLimit::check('login', 10, 900);
 
     $data = Response::getJsonInput();
 

@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, CalendarDays, MapPin, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { apiFetchPostById } from "@/lib/api"
+import { apiFetchPostById, apiLogDestinationView } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { asset } from "@/lib/utils"
 
@@ -15,7 +15,10 @@ export default function EventDetailClient({ id }: { id: string }) {
 
   useEffect(() => {
     apiFetchPostById(id)
-      .then((data) => setEvent(data))
+      .then((data) => {
+        setEvent(data)
+        apiLogDestinationView(Number(data.id), undefined, window.location.pathname).catch(() => {})
+      })
       .catch(() => {})
       .finally(() => setIsLoading(false))
   }, [id])

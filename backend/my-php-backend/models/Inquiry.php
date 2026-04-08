@@ -11,7 +11,7 @@ use PDOException;
  *   school_name, company_name, referral_source, dietary_needs, etc.
  *
  * inquiry_type VARCHAR: general_contact | tour_booking | partnership | walk_in
- * status ENUM: unread, read, in_progress, assigned, confirmed, completed,
+ * status ENUM: unread, read, assigned, confirmed, completed,
  *              cancelled, expired, archived, spam, trash.
  *   - confirmed → admin set a tour date (confirmed_date + confirmed_by filled)
  *   - completed → tour done
@@ -78,17 +78,21 @@ class Inquiry
      * @param array $data Keys:
      *   name, email, contactNumber?, inquiryType?, dateOfVisit?, numberOfPax?,
      *   message, additionalDetails? (assoc array → JSON)
+     * @return int|false New inquiry ID on success, false on failure.
      */
-    public function create(array $data): bool
+    public function create(array $data): int|false
     {
         try {
             $query = "
                 INSERT INTO inquiries
                   (inquiry_type, full_name, tourist_name, email_address, contact_number,
-                   date_of_visit, number_of_pax, message, additional_details)
+                   date_of_visit, number_of_pax, message, additional_details,
+                   consent_given, consent_text, submitter_ip, data_purge_date)
                 VALUES
                   (:inquiry_type, :full_name, :tourist_name, :email, :contact_number,
-                   :date_of_visit, :number_of_pax, :message, :additional_details)
+                   :date_of_visit, :number_of_pax, :message, :additional_details,
+                   :consent_given, :consent_text, :submitter_ip,
+                   DATE_ADD(CURDATE(), INTERVAL 10 YEAR))
             ";
 
             $extras = $data['additionalDetails'] ?? null;
@@ -105,9 +109,13 @@ class Inquiry
                 ':number_of_pax'      => !empty($data['numberOfPax']) ? (int) $data['numberOfPax'] : null,
                 ':message'            => $data['message'] ?? null,
                 ':additional_details' => $extrasJson,
+                // RA 10173 §7: store consent evidence
+                ':consent_given'      => $data['consentGiven'] ? 1 : 0,
+                ':consent_text'       => $data['consentText'] ?? null,
+                ':submitter_ip'       => $data['submitterIp'] ?? null,
             ]);
 
-            return true;
+            return (int) $this->conn->lastInsertId();
         } catch (PDOException $e) {
             error_log("Inquiry::create error: " . $e->getMessage());
             return false;

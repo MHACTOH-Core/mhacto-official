@@ -76,12 +76,11 @@ type VisitDateFilter = "all" | "this_week" | "this_month" | "this_year" | "custo
 
 const DRAFT_KEY = (id: string) => `inquiry_draft_reply_${id}`
 
-type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "confirmed" | "completed" | "cancelled" | "expired" | "spam" | "trash"
+type MailboxTab = "all" | "unread" | "assigned" | "confirmed" | "completed" | "cancelled" | "expired" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all",         label: "All Mail",    icon: Inbox },
   { key: "unread",      label: "Unread",      icon: Mail },
-  { key: "in_progress", label: "In Progress", icon: Loader2 },
   { key: "assigned",    label: "Assigned",    icon: UserCheck },
   { key: "confirmed",   label: "Confirmed",   icon: CalendarCheck },
   { key: "completed",   label: "Completed",   icon: CheckCircle2 },
@@ -134,13 +133,12 @@ export default function InquiriesPage() {
   // Memoized tab counts — single pass over inquiries
   const tabCounts = useMemo(() => {
     const counts: Record<MailboxTab, number> = {
-      all: 0, unread: 0, in_progress: 0, assigned: 0, confirmed: 0, completed: 0,
+      all: 0, unread: 0, assigned: 0, confirmed: 0, completed: 0,
       cancelled: 0, expired: 0, spam: 0, trash: 0,
     }
     for (const i of inquiries) {
       if (i.status !== "spam" && i.status !== "trash") counts.all++
       if (i.status === "unread") counts.unread++
-      else if (i.status === "in_progress") counts.in_progress++
       else if (i.status === "assigned") counts.assigned++
       else if (i.status === "confirmed") counts.confirmed++
       else if (i.status === "completed") counts.completed++
@@ -161,9 +159,6 @@ export default function InquiriesPage() {
         break
       case "unread":
         list = inquiries.filter((i) => i.status === "unread")
-        break
-      case "in_progress":
-        list = inquiries.filter((i) => i.status === "in_progress")
         break
       case "assigned":
         list = inquiries.filter((i) => i.status === "assigned")
@@ -230,7 +225,7 @@ export default function InquiriesPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Open inquiry — mark as in_progress if unread; restore draft if any
+  // Open inquiry — mark as read if unread; restore draft if any
   const openInquiry = (inq: Inquiry) => {
     const saved = localStorage.getItem(DRAFT_KEY(inq.id))
     if (saved) {
@@ -243,9 +238,9 @@ export default function InquiriesPage() {
       setDraftSaved(false)
     }
     if (inq.status === "unread") {
-      const updated = { ...inq, status: "in_progress" as InquiryStatus }
+      const updated = { ...inq, status: "read" as InquiryStatus }
       setSelectedInquiry(updated)
-      updateInquiry(inq.id, { status: "in_progress" })
+      updateInquiry(inq.id, { status: "read" })
     } else {
       setSelectedInquiry(inq)
     }
@@ -373,9 +368,9 @@ export default function InquiriesPage() {
   }
 
   const handleRevertConfirmed = (inq: Inquiry) => {
-    updateInquiry(inq.id, { status: "in_progress" })
-    setSelectedInquiry((prev) => prev ? { ...prev, status: "in_progress" as const } : prev)
-    toast({ title: "Reverted", description: `Booking for ${inq.name} moved back to In Progress.`, variant: "success" })
+    updateInquiry(inq.id, { status: "assigned" })
+    setSelectedInquiry((prev) => prev ? { ...prev, status: "assigned" as const } : prev)
+    toast({ title: "Reverted", description: `Booking for ${inq.name} moved back to Assigned.`, variant: "success" })
   }
 
   const handleConfirmTour = async () => {
@@ -470,7 +465,6 @@ export default function InquiriesPage() {
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
     all:         { icon: Inbox,        title: "No inquiries yet",           desc: "New inquiries will appear here." },
     unread:      { icon: Mail,         title: "All caught up!",             desc: "No unread inquiries." },
-    in_progress: { icon: Loader2,      title: "Nothing in progress",        desc: "Inquiries being worked on appear here." },
     assigned:    { icon: UserCheck,    title: "No assigned inquiries",      desc: "Inquiries assigned to a tourist guide appear here." },
     confirmed:   { icon: CalendarCheck, title: "No confirmed tours",        desc: "Confirmed tour bookings will appear here." },
     completed:   { icon: CheckCircle2, title: "No completed tours",         desc: "Tours marked as completed will appear here." },

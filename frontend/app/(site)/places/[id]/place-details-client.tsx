@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Clock, MapPin, Phone, CalendarDays, Tag, Loader2, Map } from "lucide-react"
 
-import { apiFetchPostById, type CMSPost } from "@/lib/api"
+import { apiFetchPostById, apiLogDestinationView, type CMSPost } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import ContentDetailLayout, { type QuickFact } from "@/components/sections/content-detail-layout"
@@ -25,7 +25,10 @@ export default function PlaceDetailsPage({ placeId }: PlaceDetailsPageProps) {
 
   useEffect(() => {
     apiFetchPostById(placeId)
-      .then((data) => setPlace(data))
+      .then((data) => {
+        setPlace(data)
+        apiLogDestinationView(Number(data.id), undefined, window.location.pathname).catch(() => {})
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [placeId])

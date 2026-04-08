@@ -119,20 +119,17 @@ export default function CommunityPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let completed = 0
-    const done = () => { if (++completed >= 3) setLoading(false) }
-    apiFetchByLabel("schools")
-      .then((posts) => { if (posts?.length) setSchools(posts.map(cmsToSchoolEntry)) })
-      .catch((err) => setError(err.message))
-      .finally(done)
-    apiFetchByLabel("hospitals")
-      .then((posts) => { if (posts?.length) setHospitals(posts.map(cmsToHospital)) })
-      .catch((err) => setError((prev) => prev ?? err.message))
-      .finally(done)
-    apiFetchByLabel("barangay")
-      .then((posts) => { if (posts?.length) setBarangays(posts.map(cmsToBarangay)) })
-      .catch((err) => setError((prev) => prev ?? err.message))
-      .finally(done)
+    setLoading(true)
+    Promise.all([
+      apiFetchByLabel("schools").catch(() => null),
+      apiFetchByLabel("hospitals").catch(() => null),
+      apiFetchByLabel("barangay").catch(() => null),
+    ]).then(([schoolPosts, hospitalPosts, barangayPosts]) => {
+      if (schoolPosts?.length) setSchools(schoolPosts.map(cmsToSchoolEntry))
+      if (hospitalPosts?.length) setHospitals(hospitalPosts.map(cmsToHospital))
+      if (barangayPosts?.length) setBarangays(barangayPosts.map(cmsToBarangay))
+    }).catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   const displayedSchools = useMemo(() => {

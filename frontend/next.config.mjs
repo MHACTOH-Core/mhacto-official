@@ -10,7 +10,7 @@ const nextConfig = {
   // In dev mode it causes the server to exit immediately on Linux.
   // Set STATIC_EXPORT=false to build without static export (e.g. when backend is unavailable).
   ...(!isDev && process.env.STATIC_EXPORT !== 'false' ? { output: 'export' } : {}),
-  basePath: '/MHACTO-PROJECT',
+  basePath: isDev ? '' : (process.env.NEXT_PUBLIC_BASE_PATH ?? '/mhacto'),
   images: {
     unoptimized: true,
     // Note: unoptimized is required for static export (GitHub Pages).
@@ -24,23 +24,25 @@ const nextConfig = {
   compiler: {
     ...(!isDev ? { removeConsole: { exclude: ['error', 'warn'] } } : {}),
   },
-  // Tree-shake barrel-export packages to reduce bundle size
-  optimizePackageImports: [
-    'lucide-react',
-    'date-fns',
-    'recharts',
-    '@radix-ui/react-accordion',
-    '@radix-ui/react-alert-dialog',
-    '@radix-ui/react-dialog',
-    '@radix-ui/react-dropdown-menu',
-    '@radix-ui/react-popover',
-    '@radix-ui/react-select',
-    '@radix-ui/react-tabs',
-    '@radix-ui/react-toast',
-    '@radix-ui/react-tooltip',
-  ],
   // Disable the X-Powered-By header (less overhead, better security)
   poweredByHeader: false,
+  experimental: {
+    // Tree-shake barrel-export packages to reduce bundle size
+    optimizePackageImports: [
+      'lucide-react',
+      'date-fns',
+      'recharts',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-tooltip',
+    ],
+  },
   turbopack: {
     root: __dirname,
   },
@@ -52,8 +54,13 @@ const nextConfig = {
         async rewrites() {
           return [
             {
+              source: '/api/:path*',
+              destination: 'http://127.0.0.1:8000/api/:path*',
+              basePath: false,
+            },
+            {
               source: '/uploads/:path*',
-              destination: 'http://localhost:8000/uploads/:path*',
+              destination: 'http://127.0.0.1:8000/uploads/:path*',
               basePath: false,
             },
           ]

@@ -69,6 +69,7 @@ export default function InquirePage() {
   const [visitorType, setVisitorType] = useState<"tourist" | "student">("tourist")
   const [schoolName, setSchoolName] = useState("")
   const [messageLength, setMessageLength] = useState(0)
+  const [consentGiven, setConsentGiven] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -217,6 +218,12 @@ export default function InquirePage() {
       educational: "tour_booking",
     }
 
+    if (!consentGiven) {
+      setError("You must consent to data collection under RA 10173 before submitting.")
+      setSubmitting(false)
+      return
+    }
+
     try {
       await apiCreateInquiry({
         name,
@@ -229,6 +236,7 @@ export default function InquirePage() {
         numberOfPax: paxValue || undefined,
         message: (formData.get("message") as string) || "",
         additionalDetails: Object.keys(additionalDetails).length > 0 ? additionalDetails : undefined,
+        consentGiven: true,
       })
       setSuccess(true)
       setNameWarning(null)
@@ -236,6 +244,7 @@ export default function InquirePage() {
       setPhoneWarning(null)
       setDateWarning(null)
       setSchoolWarning(null)
+      setConsentGiven(false)
       form.reset()
       setPurpose("")
       setVisitorType("tourist")
@@ -615,11 +624,28 @@ export default function InquirePage() {
                       </div>
                     </div>
 
+                    {/* ── RA 10173 Consent ── */}
+                    <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted/40 p-4">
+                      <input
+                        id="consent"
+                        type="checkbox"
+                        checked={consentGiven}
+                        onChange={(e) => setConsentGiven(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary cursor-pointer"
+                        required
+                      />
+                      <label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                        I consent to the collection and processing of my personal information (name, email, contact number) by MHACTO — Bocaue Tourism Office for the purpose of responding to this inquiry, in accordance with the{" "}
+                        <span className="font-semibold text-foreground">Data Privacy Act of 2012 (RA 10173)</span>.
+                        Your data will not be shared with third parties and will only be retained for as long as necessary.
+                      </label>
+                    </div>
+
                     {/* ── Submit ── */}
                     <Button
                       type="submit"
                       size="lg"
-                      disabled={submitting}
+                      disabled={submitting || !consentGiven}
                       className="w-full rounded-2xl gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90 text-white font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0"
                     >
                       {submitting ? (

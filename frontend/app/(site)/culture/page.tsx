@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { asset } from "@/lib/utils"
 import Link from "next/link"
-import { Utensils, Sparkles, Flame, MapPin, Clock, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight } from "lucide-react"
+import { Utensils, Sparkles, Flame, MapPin, Clock, CheckCircle, AlertTriangle, RefreshCw, Hammer, Users, Calendar, ChevronRight, Loader2 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -48,23 +48,22 @@ export default function CulturePage() {
   const [culturalPractices, setCulturalPractices] = useState<CulturalPractice[]>([])
   const [artWonders, setArtWonders] = useState<Artisan[]>([])
   const [peopleWonders, setPeopleWonders] = useState<PeopleWonder[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    apiFetchByLabel("local-cuisine")
-      .then((posts) => { if (posts?.length) setCulinaryWonders(posts.map(cmsToCuisineItem)) })
-      .catch(() => {})
-    apiFetchByLabel("festivals")
-      .then((posts) => { if (posts?.length) setFestivals(posts.map(cmsToFestival)) })
-      .catch(() => {})
-    apiFetchByLabel("cultural-practices")
-      .then((posts) => { if (posts?.length) setCulturalPractices(posts.map(cmsToCulturalPractice)) })
-      .catch(() => {})
-    apiFetchByLabel("crafts-artisan")
-      .then((posts) => { if (posts?.length) setArtWonders(posts.map(cmsToArtisan)) })
-      .catch(() => {})
-    apiFetchByLabel("people-wonders")
-      .then((posts) => { if (posts?.length) setPeopleWonders(posts.map(cmsToPeopleWonder)) })
-      .catch(() => {})
+    Promise.all([
+      apiFetchByLabel("local-cuisine").catch(() => null),
+      apiFetchByLabel("festivals").catch(() => null),
+      apiFetchByLabel("cultural-practices").catch(() => null),
+      apiFetchByLabel("crafts-artisan").catch(() => null),
+      apiFetchByLabel("people-wonders").catch(() => null),
+    ]).then(([cuisine, fests, practices, arts, people]) => {
+      if (cuisine?.length) setCulinaryWonders(cuisine.map(cmsToCuisineItem))
+      if (fests?.length) setFestivals(fests.map(cmsToFestival))
+      if (practices?.length) setCulturalPractices(practices.map(cmsToCulturalPractice))
+      if (arts?.length) setArtWonders(arts.map(cmsToArtisan))
+      if (people?.length) setPeopleWonders(people.map(cmsToPeopleWonder))
+    }).finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -118,6 +117,15 @@ export default function CulturePage() {
           </div>
         </div>
 
+      {/* ── Loading State ── */}
+      {loading && (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
+
+      {/* ── Content Sections ── */}
+      {!loading && <>
       {/* ── Culinary Wonders ── */}
       <section id="cuisine" className="py-12 sm:py-16 lg:py-20 border-b border-border">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -402,6 +410,7 @@ export default function CulturePage() {
           </div>
         </div>
       </section>
+      </>}
 
     </main>
   )

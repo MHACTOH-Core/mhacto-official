@@ -39,6 +39,18 @@ class Response
         header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
         header("Content-Type: application/json; charset=UTF-8");
+
+        // ── Security headers ─────────────────────────────────────────
+        // Prevent clickjacking (embedding in iframes on other origins)
+        header("X-Frame-Options: DENY");
+        // Prevent MIME-type sniffing attacks
+        header("X-Content-Type-Options: nosniff");
+        // Disable the legacy XSS auditor (can cause false positives; CSP is better)
+        header("X-XSS-Protection: 0");
+        // Don't send Referer on cross-origin requests
+        header("Referrer-Policy: strict-origin-when-cross-origin");
+        // Restrict browser features not needed by the API
+        header("Permissions-Policy: geolocation=(), camera=(), microphone=()");
     }
 
     /** Respond to OPTIONS pre-flight and exit. */

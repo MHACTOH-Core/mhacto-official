@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useAdmin } from "@/components/providers/admin-provider"
 import DashboardPrintReport from "@/components/admin/dashboard-print-report"
@@ -30,6 +30,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,24 @@ import {
 } from "recharts"
 import { format, parseISO } from "date-fns"
 
+// Static gradient definitions — defined outside to avoid recreation on every render
+const BAR_GRADIENTS = [
+  { id: "barGrad0", from: "hsl(210, 80%, 55%)", to: "hsl(210, 80%, 72%)" },
+  { id: "barGrad1", from: "hsl(145, 65%, 42%)", to: "hsl(145, 65%, 60%)" },
+  { id: "barGrad2", from: "hsl(35, 90%, 55%)",  to: "hsl(35, 90%, 72%)" },
+  { id: "barGrad3", from: "hsl(270, 60%, 55%)", to: "hsl(270, 60%, 72%)" },
+  { id: "barGrad4", from: "hsl(190, 70%, 50%)", to: "hsl(190, 70%, 68%)" },
+  { id: "barGrad5", from: "hsl(340, 70%, 55%)", to: "hsl(340, 70%, 72%)" },
+  { id: "barGrad6", from: "hsl(160, 60%, 45%)", to: "hsl(160, 60%, 62%)" },
+  { id: "barGrad7", from: "hsl(50, 85%, 52%)",  to: "hsl(50, 85%, 68%)" },
+]
+
+const INQUIRY_TYPE_ICON: Record<string, React.ElementType> = {
+  general_contact: Mail,
+  tour_booking: MapPin,
+  partnership: Handshake,
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const {
@@ -65,6 +84,8 @@ export default function DashboardPage() {
     inquiries,
     activityLog,
     visitorSummary,
+    isLoadingAnalytics,
+    refreshAnalytics,
   } = useAdmin()
 
   useEffect(() => {
@@ -97,100 +118,101 @@ export default function DashboardPage() {
     setTimeout(() => window.print(), 100)
   }, [])
 
-  if (!isHydrated || !isLoggedIn) return null
+  // ── Memoized derived data (hooks must run before any early return) ──
 
-  const topPages = [...pageViews].sort((a, b) => b.views - a.views)
+  const topPages = useMemo(() => [...pageViews].sort((a, b) => b.views - a.views), [pageViews])
 
-  // Inquiry summary — exclude spam/trash from active count
-  const activeInquiries = inquiries.filter((i) => i.status !== "spam" && i.status !== "trash")
+  const activeInquiries = useMemo(
+    () => inquiries.filter((i) => i.status !== "spam" && i.status !== "trash"),
+    [inquiries],
+  )
   const totalActiveInquiries = activeInquiries.length
 
-  const inquiryTypeIcon: Record<string, React.ElementType> = {
-    general_contact: Mail,
-    tour_booking: MapPin,
-    partnership: Handshake,
-  }
+  const inquiryByType = useMemo(
+    () => (["general_contact", "tour_booking", "partnership"] as InquiryType[]).map((type) => {
+      const count = activeInquiries.filter((i) => i.inquiryType === type).length
+      return { type, count, ...inquiryTypeLabels[type] }
+    }),
+    [activeInquiries],
+  )
 
-  const inquiryByType = (["general_contact", "tour_booking", "partnership"] as InquiryType[]).map((type) => {
-    const count = activeInquiries.filter((i) => i.inquiryType === type).length
-    return { type, count, ...inquiryTypeLabels[type] }
-  })
+  const inquiryByStatus = useMemo(
+    () => (["unread", "read", "assigned", "archived"] as InquiryStatus[]).map((status) => {
+      const count = inquiries.filter((i) => i.status === status).length
+      return { status, count, ...inquiryStatusLabels[status] }
+    }),
+    [inquiries],
+  )
 
-  const displayStatuses: InquiryStatus[] = ["unread", "in_progress", "assigned", "archived"]
-  const inquiryByStatus = displayStatuses.map((status) => {
-    const count = inquiries.filter((i) => i.status === status).length
-    return { status, count, ...inquiryStatusLabels[status] }
-  })
-
-  // Chart data: daily visits last 30 days
-  const visitChartData = dailyVisits.map((d) => ({
-    date: format(parseISO(d.date), "MMM d"),
-    views: d.views,
-  }))
+  const visitChartData = useMemo(
+    () => dailyVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views })),
+    [dailyVisits],
+  )
 
   const totals = visitorSummary?.totals
 
-  // Pie chart data for visitor engagement
-  const pieData = [
-    { name: "Walk-ins", value: totals?.walkIns ?? 0, color: "hsl(210, 80%, 55%)", bg: "bg-blue-500", ring: "ring-blue-500/20", text: "text-blue-600 dark:text-blue-400" },
-    { name: "Completed", value: totals?.bookingsCompleted ?? 0, color: "hsl(145, 65%, 42%)", bg: "bg-emerald-500", ring: "ring-emerald-500/20", text: "text-emerald-600 dark:text-emerald-400" },
-    { name: "Pending", value: totals?.bookingsPending ?? 0, color: "hsl(35, 90%, 55%)", bg: "bg-amber-500", ring: "ring-amber-500/20", text: "text-amber-600 dark:text-amber-400" },
-    { name: "Assigned", value: totals?.guideAssigned ?? 0, color: "hsl(270, 60%, 55%)", bg: "bg-violet-500", ring: "ring-violet-500/20", text: "text-violet-600 dark:text-violet-400" },
-  ]
-  const pieTotal = pieData.reduce((s, d) => s + d.value, 0)
+  const pieData = useMemo(
+    () => [
+      { name: "Walk-ins",  value: totals?.walkIns ?? 0,           color: "hsl(210, 80%, 55%)", bg: "bg-blue-500",    ring: "ring-blue-500/20",    text: "text-blue-600 dark:text-blue-400" },
+      { name: "Completed", value: totals?.bookingsCompleted ?? 0,  color: "hsl(145, 65%, 42%)", bg: "bg-emerald-500", ring: "ring-emerald-500/20", text: "text-emerald-600 dark:text-emerald-400" },
+      { name: "Pending",   value: totals?.bookingsPending ?? 0,    color: "hsl(35, 90%, 55%)",  bg: "bg-amber-500",   ring: "ring-amber-500/20",   text: "text-amber-600 dark:text-amber-400" },
+      { name: "Assigned",  value: totals?.guideAssigned ?? 0,      color: "hsl(270, 60%, 55%)", bg: "bg-violet-500",  ring: "ring-violet-500/20",  text: "text-violet-600 dark:text-violet-400" },
+    ],
+    // totals is derived inline; depend on visitorSummary to avoid stale closure
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visitorSummary],
+  )
+
+  const pieTotal = useMemo(() => pieData.reduce((s, d) => s + d.value, 0), [pieData])
   const hasPieData = pieTotal > 0
 
-  // Bar chart gradient colours — mirrors the pie palette
-  const barGradients = [
-    { id: "barGrad0", from: "hsl(210, 80%, 55%)", to: "hsl(210, 80%, 72%)" },
-    { id: "barGrad1", from: "hsl(145, 65%, 42%)", to: "hsl(145, 65%, 60%)" },
-    { id: "barGrad2", from: "hsl(35, 90%, 55%)",  to: "hsl(35, 90%, 72%)" },
-    { id: "barGrad3", from: "hsl(270, 60%, 55%)", to: "hsl(270, 60%, 72%)" },
-    { id: "barGrad4", from: "hsl(190, 70%, 50%)", to: "hsl(190, 70%, 68%)" },
-    { id: "barGrad5", from: "hsl(340, 70%, 55%)", to: "hsl(340, 70%, 72%)" },
-    { id: "barGrad6", from: "hsl(160, 60%, 45%)", to: "hsl(160, 60%, 62%)" },
-    { id: "barGrad7", from: "hsl(50, 85%, 52%)",  to: "hsl(50, 85%, 68%)" },
-  ]
+  const barChartData = useMemo(
+    () => topPages.slice(0, 8).map((p, i) => ({
+      name: p.title.length > 22 ? p.title.slice(0, 22) + "…" : p.title,
+      views: Number(p.views),
+      fill: `url(#${BAR_GRADIENTS[i % BAR_GRADIENTS.length].id})`,
+    })),
+    [topPages],
+  )
 
-  // Chart data: top 8 pages for bar chart
-  const barChartData = topPages.slice(0, 8).map((p, i) => ({
-    name: p.title.length > 22 ? p.title.slice(0, 22) + "…" : p.title,
-    views: p.views,
-    fill: `url(#${barGradients[i % barGradients.length].id})`,
-  }))
+  const recentActivity = useMemo(() => activityLog.slice(0, 5), [activityLog])
 
-  const recentActivity = activityLog.slice(0, 5)
+  const statCards = useMemo(
+    () => [
+      {
+        label: "Walk-ins",
+        value: totals?.walkIns ?? 0,
+        icon: Footprints,
+        color: "text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300",
+        href: "/admin/inquiries",
+      },
+      {
+        label: "Bookings Completed",
+        value: totals?.bookingsCompleted ?? 0,
+        icon: CalendarCheck,
+        color: "text-green-600 bg-green-100 dark:bg-green-900/40 dark:text-green-300",
+        href: "/admin/inquiries",
+      },
+      {
+        label: "Bookings Pending",
+        value: totals?.bookingsPending ?? 0,
+        icon: ClockAlert,
+        color: "text-orange-600 bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300",
+        href: "/admin/inquiries",
+      },
+      {
+        label: "Guide Assigned",
+        value: totals?.guideAssigned ?? 0,
+        icon: UserCheck,
+        color: "text-purple-600 bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300",
+        href: "/admin/inquiries",
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visitorSummary],
+  )
 
-  const statCards = [
-    {
-      label: "Walk-ins",
-      value: totals?.walkIns ?? 0,
-      icon: Footprints,
-      color: "text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300",
-      href: "/admin/inquiries",
-    },
-    {
-      label: "Bookings Completed",
-      value: totals?.bookingsCompleted ?? 0,
-      icon: CalendarCheck,
-      color: "text-green-600 bg-green-100 dark:bg-green-900/40 dark:text-green-300",
-      href: "/admin/inquiries",
-    },
-    {
-      label: "Bookings Pending",
-      value: totals?.bookingsPending ?? 0,
-      icon: ClockAlert,
-      color: "text-orange-600 bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300",
-      href: "/admin/inquiries",
-    },
-    {
-      label: "Guide Assigned",
-      value: totals?.guideAssigned ?? 0,
-      icon: UserCheck,
-      color: "text-purple-600 bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300",
-      href: "/admin/inquiries",
-    },
-  ]
+  if (!isHydrated || !isLoggedIn) return null
 
   return (
     <main className="flex-1 overflow-y-auto">
@@ -203,7 +225,7 @@ export default function DashboardPage() {
                 Welcome back — here&apos;s what&apos;s happening on your website.
               </p>
             </div>
-            {currentUser?.role === "super_admin" && (
+            {currentUser && (
               <Button
                 variant="outline"
                 className="gap-2"
@@ -229,9 +251,13 @@ export default function DashboardPage() {
                       <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                         {stat.label}
                       </p>
-                      <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
-                        {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-                      </p>
+                      {isLoadingAnalytics ? (
+                        <Skeleton className="mt-1 h-7 w-10 sm:h-8 sm:w-12" />
+                      ) : (
+                        <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
+                          {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -251,18 +277,33 @@ export default function DashboardPage() {
                 <p className="text-[11px] text-muted-foreground sm:text-xs">Last 30 days overview</p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col pt-0">
-                {hasPieData ? (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-4">
-                    {/* Donut chart with center label */}
-                    <div className="relative">
-                      <div className="h-36 w-36 sm:h-40 sm:w-40">
+                {isLoadingAnalytics ? (
+                  <div className="flex flex-1 flex-col items-center gap-5 py-2">
+                    <Skeleton className="h-44 w-44 rounded-full" />
+                    <div className="w-full space-y-3">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i}>
+                          <div className="mb-1 flex items-center justify-between">
+                            <Skeleton className="h-3.5 w-20" />
+                            <Skeleton className="h-3.5 w-12" />
+                          </div>
+                          <Skeleton className="h-1.5 w-full rounded-full" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : hasPieData ? (
+                  <div className="flex flex-1 flex-col items-center gap-5 py-2">
+                    {/* Donut chart centered */}
+                    <div className="relative shrink-0">
+                      <div className="h-44 w-44">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <defs>
                               {pieData.map((d, i) => (
                                 <linearGradient key={d.name} id={`pieGrad${i}`} x1="0" y1="0" x2="1" y2="1">
                                   <stop offset="0%" stopColor={d.color} stopOpacity={1} />
-                                  <stop offset="100%" stopColor={d.color} stopOpacity={0.6} />
+                                  <stop offset="100%" stopColor={d.color} stopOpacity={0.65} />
                                 </linearGradient>
                               ))}
                             </defs>
@@ -270,14 +311,14 @@ export default function DashboardPage() {
                               data={pieData}
                               cx="50%"
                               cy="50%"
-                              innerRadius="58%"
-                              outerRadius="90%"
-                              paddingAngle={4}
+                              innerRadius="56%"
+                              outerRadius="88%"
+                              paddingAngle={3}
                               dataKey="value"
                               strokeWidth={0}
-                              cornerRadius={5}
+                              cornerRadius={3}
                               animationBegin={0}
-                              animationDuration={1000}
+                              animationDuration={900}
                             >
                               {pieData.map((_, i) => (
                                 <Cell key={pieData[i].name} fill={`url(#pieGrad${i})`} />
@@ -303,27 +344,29 @@ export default function DashboardPage() {
                         </ResponsiveContainer>
                       </div>
                       {/* Center total overlay */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xl font-black text-card-foreground leading-none sm:text-2xl">{pieTotal}</span>
-                        <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mt-0.5">Total</span>
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-black leading-none text-card-foreground">{pieTotal}</span>
+                        <span className="mt-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Total</span>
                       </div>
                     </div>
 
-                    {/* Breakdown grid */}
-                    <div className="w-full grid grid-cols-2 gap-2">
+                    {/* Stat list below chart */}
+                    <div className="w-full space-y-3">
                       {pieData.map((d) => {
                         const pct = pieTotal > 0 ? (d.value / pieTotal) * 100 : 0
                         return (
-                          <div key={d.name} className="group rounded-lg border border-border/60 bg-muted/30 px-2.5 py-2 transition-all hover:border-border hover:bg-muted/60">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className={`h-2 w-2 rounded-full ${d.bg} ring-3 ${d.ring}`} />
-                              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{d.name}</span>
+                          <div key={d.name}>
+                            <div className="mb-1 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${d.bg}`} />
+                                <span className="text-xs font-medium text-card-foreground">{d.name}</span>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span className={`text-sm font-bold ${d.text}`}>{d.value}</span>
+                                <span className="w-7 text-right text-[10px] font-medium text-muted-foreground">{pct.toFixed(0)}%</span>
+                              </div>
                             </div>
-                            <div className="flex items-end justify-between">
-                              <span className={`text-base font-bold sm:text-lg ${d.text}`}>{d.value}</span>
-                              <span className="text-[10px] font-bold text-muted-foreground/70">{pct.toFixed(0)}%</span>
-                            </div>
-                            <div className="mt-1.5 h-1 w-full rounded-full bg-border/40 overflow-hidden">
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                               <div
                                 className={`h-full rounded-full ${d.bg} transition-all duration-700`}
                                 style={{ width: `${pct}%` }}
@@ -346,18 +389,36 @@ export default function DashboardPage() {
             <Card className="relative flex flex-col overflow-hidden">
               <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold sm:text-base">
-                  Most Popular Pages
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold sm:text-base">
+                    Most Popular Pages
+                  </CardTitle>
+                  <button
+                    onClick={() => refreshAnalytics()}
+                    className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    title="Refresh"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <p className="text-[11px] text-muted-foreground sm:text-xs">Top pages by total views</p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col pt-0">
-                {barChartData.length > 0 ? (
+                {isLoadingAnalytics ? (
+                  <div className="flex flex-1 flex-col justify-center gap-2 py-2">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-28 shrink-0" />
+                        <Skeleton className="h-5 flex-1" style={{ width: `${40 + (i % 3) * 20}%` }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : barChartData.length > 0 ? (
                   <div className="flex-1 min-h-0" style={{ minHeight: Math.max(180, barChartData.length * 44 + 32) }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={barChartData} layout="vertical" margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
                         <defs>
-                          {barGradients.map((g) => (
+                          {BAR_GRADIENTS.map((g) => (
                             <linearGradient key={g.id} id={g.id} x1="0" y1="0" x2="1" y2="0">
                               <stop offset="0%" stopColor={g.from} stopOpacity={0.9} />
                               <stop offset="100%" stopColor={g.to} stopOpacity={0.7} />
@@ -457,7 +518,7 @@ export default function DashboardPage() {
                 <div className="mb-4 space-y-2">
                   {inquiryByType.map((t) => {
                     const pct = totalActiveInquiries > 0 ? (t.count / totalActiveInquiries) * 100 : 0
-                    const Icon = inquiryTypeIcon[t.type] ?? Mail
+                    const Icon = INQUIRY_TYPE_ICON[t.type] ?? Mail
                     return (
                       <div key={t.type} className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent sm:gap-3 sm:px-3">
                         <Badge className={`shrink-0 gap-1 text-[10px] sm:text-xs ${t.color}`}>
@@ -512,21 +573,39 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 sm:space-y-4">
-                  {recentActivity.map((entry) => (
-                    <div key={entry.id} className="flex gap-3">
-                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-card-foreground sm:text-sm">
-                          {entry.description}
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-sm">
-                          {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
-                        </p>
+                {isLoadingAnalytics && recentActivity.length === 0 ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex gap-3">
+                        <Skeleton className="mt-1 h-2 w-2 shrink-0 rounded-full" />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <Skeleton className="h-3.5 w-full" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : recentActivity.length > 0 ? (
+                  <div className="space-y-3 sm:space-y-4">
+                    {recentActivity.map((entry) => (
+                      <div key={entry.id} className="flex gap-3">
+                        <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-card-foreground sm:text-sm">
+                            {entry.description}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-sm">
+                            {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                    No recent activity yet
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
