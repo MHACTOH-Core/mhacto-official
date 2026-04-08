@@ -237,6 +237,7 @@ export function cmsToLocalBusiness(post: CMSPost): LocalBusiness {
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
     image: resolveImage(post),
+    images: (post.image ?? []).filter(Boolean),
     isFeatured: post.isFeatured ?? false,
   }
 }
@@ -294,7 +295,7 @@ function parseList(text: string | undefined | null): string[] {
 export function cmsToSchoolEntry(post: CMSPost): SchoolEntry {
   const ownershipRaw = (post.category ?? "public").toLowerCase()
   const ownership: SchoolEntry["ownership"] = ownershipRaw.includes("private") ? "private" : "public"
-  const levelRaw = (post.postType ?? "elementary").toLowerCase()
+  const levelRaw = (post.hours ?? "").toLowerCase()
   const level: SchoolEntry["level"] = (
     levelRaw.includes("college") ? "college"
     : levelRaw.includes("senior") ? "senior-high"
@@ -380,6 +381,7 @@ export function cmsToHospital(post: CMSPost): Hospital {
     beds: post.established ? parseInt(post.established, 10) || undefined : undefined,
     hours: post.hours ?? "",
     emergency: post.isFeatured ?? false,
+    image: resolveImage(post),
   }
 }
 
@@ -418,10 +420,11 @@ export function cmsToBarangay(post: CMSPost): Barangay {
     id: post.id,
     name: post.title,
     description: post.body ?? "",
+    address: post.location ?? "",
     location: post.location ?? "",
     population: post.established ?? undefined,
+    captain: post.story ?? undefined,
     image: post.image?.[0] || undefined,
     isFeatured: post.isFeatured ?? false,
-    author: post.author ?? undefined,
   }
 }

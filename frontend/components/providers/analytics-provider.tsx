@@ -10,9 +10,8 @@ import {
 } from "react"
 import type { PageView, DailyVisit } from "@/lib/data/admin-data"
 import {
-  apiFetchPageViews,
-  apiFetchDailyVisits,
-  apiFetchVisitorSummary,
+  apiFetchAnalyticsDashboard,
+  AuthExpiredError,
   type VisitorSummary,
 } from "@/lib/api"
 import { useAuth } from "./auth-provider"
@@ -24,6 +23,8 @@ export interface AnalyticsContextValue {
   dailyVisits: DailyVisit[]
   totalViews: number
   visitorSummary: VisitorSummary | null
+  isLoadingAnalytics: boolean
+  refreshAnalytics: () => Promise<void>
 }
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null)
@@ -41,22 +42,29 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const [pageViews, setPageViews] = useState<PageView[]>([])
   const [dailyVisits, setDailyVisits] = useState<DailyVisit[]>([])
   const [visitorSummary, setVisitorSummary] = useState<VisitorSummary | null>(null)
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false)
 
   const fetchAnalytics = useCallback(async () => {
-    const [pvResult, dvResult, vsResult] = await Promise.allSettled([
-      apiFetchPageViews(),
-      apiFetchDailyVisits(),
-      apiFetchVisitorSummary(),
-    ])
-    if (pvResult.status === "fulfilled") setPageViews(pvResult.value)
-    if (dvResult.status === "fulfilled") setDailyVisits(dvResult.value)
-    if (vsResult.status === "fulfilled") setVisitorSummary(vsResult.value)
+    setIsLoadingAnalytics(true)
+    try {
+      const data = await apiFetchAnalyticsDashboard()
+      setPageViews(data.pageViews)
+      setDailyVisits(data.dailyVisits)
+      setVisitorSummary(data.visitorSummary)
+    } catch (e) {
+      if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
+        console.error("[Analytics] dashboard fetch failed:", e)
+      }
+    }
+    setIsLoadingAnalytics(false)
   }, [])
 
-  // Only fetch analytics after the user is authenticated
+  // Delay analytics fetch so CMS data provider's 6 parallel requests finish first
   useEffect(() => {
     if (!isHydrated || !isLoggedIn) return
-    fetchAnalytics()
+    setIsLoadingAnalytics(true)
+    const timer = setTimeout(fetchAnalytics, 500)
+    return () => clearTimeout(timer)
   }, [isHydrated, isLoggedIn, fetchAnalytics])
 
   // Re-fetch when the user switches back to this tab (keeps data fresh)
@@ -72,7 +80,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
 
   return (
-    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews, visitorSummary }}>
+    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews, visitorSummary, isLoadingAnalytics, refreshAnalytics: fetchAnalytics }}>
       {children}
     </AnalyticsContext.Provider>
   )

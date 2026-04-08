@@ -124,11 +124,12 @@ class Post
     public function readByCategory(string $categoryKey, ?string $status = null, ?int $limit = null): array
     {
         $catName = match ($categoryKey) {
-            'history'              => 'History Wonders',
-            'arts-culture'         => 'Arts & Culture Wonders',
-            'tourist-destinations' => 'Tourist Wonders',
-            'news'                 => 'News',
-            'events'               => 'Events',
+            'history'              => 'History',
+            'arts-culture'         => 'Arts & Culture',
+            'tourist-wonders'      => 'Tourist Destinations',
+            'tourist-destinations' => 'Tourist Destinations',
+            'news'                 => 'News & Events',
+            'events'               => 'News & Events',
             'community'            => 'Community',
             default                => $categoryKey,
         };
@@ -220,12 +221,14 @@ class Post
         $params = [];
         if ($categoryKey) {
             $catName = match ($categoryKey) {
-                'history' => 'History Wonders',
-                'arts-culture' => 'Arts & Culture Wonders',
-                'tourist-destinations' => 'Tourist Wonders',
-                'news' => 'News',
-                'events' => 'Events',
-                default => $categoryKey,
+                'history'              => 'History',
+                'arts-culture'         => 'Arts & Culture',
+                'tourist-wonders'      => 'Tourist Destinations',
+                'tourist-destinations' => 'Tourist Destinations',
+                'news'                 => 'News & Events',
+                'events'               => 'News & Events',
+                'community'            => 'Community',
+                default                => $categoryKey,
             };
             $sql .= " AND cat.label_name = :cn";
             $params[':cn'] = $catName;
@@ -270,7 +273,6 @@ class Post
             LEFT JOIN categories cat ON c.category_id = cat.category_id
             LEFT JOIN content_fields nd ON c.content_id = nd.content_id AND nd.meta_key = 'news_date'
             WHERE c.post_type = 'event' AND c.status = 'published'
-            GROUP BY c.content_id
             ORDER BY nd.meta_value DESC
         ";
         if ($limit !== null) { $q .= " LIMIT :_lim"; }
@@ -488,9 +490,10 @@ class Post
     private function mapCategoryKey(?string $name, ?string $labelKey = null): string
     {
         return match ($name) {
-            'History Wonders'              => 'history',
-            'Arts & Culture Wonders'       => 'arts-culture',
-            'Tourist Wonders' => 'tourist-wonders',
+            'History'              => 'history',
+            'Arts & Culture'       => 'arts-culture',
+            'Tourist Destinations' => 'tourist-wonders',
+            'Tourism Wonders'      => 'tourist-wonders', // legacy: older rows stored label id
             'News & Events'        => in_array($labelKey, ['events'], true) ? 'events' : 'news',
             'Community'            => 'community',
             default                => 'history',

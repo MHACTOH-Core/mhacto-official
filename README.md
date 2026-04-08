@@ -72,9 +72,12 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 | **pnpm** | 9+ | `npm install -g pnpm` (after installing Node) |
 | **PHP** | 8.1+ | [windows.php.net](https://windows.php.net/download/) — download the **Thread Safe** zip, extract to `C:\php`, add to PATH |
 | **MySQL / MariaDB** | 8+ / 10.6+ | [XAMPP](https://www.apachefriends.org/) (easiest) or standalone [MySQL installer](https://dev.mysql.com/downloads/installer/) |
+| **APCu PHP extension** | bundled with PHP | Enable in `php.ini`: uncomment `;extension=apcu` — required for query caching under high traffic |
+| **Composer** | 2+ | [getcomposer.org](https://getcomposer.org/) — required for PHP dependencies (JWT, PHPMailer) |
 | **Git** | latest | [git-scm.com](https://git-scm.com/) — during install, choose **"Checkout as-is, commit Unix-style line endings"** |
 
 > **Tip (Windows):** If you use XAMPP, PHP and MySQL are already included. Just make sure `C:\xampp\php` and `C:\xampp\mysql\bin` are in your system PATH.
+> **Tip (APCu):** On shared hosting (Hostinger), APCu is already enabled. On local dev, add `extension=apcu` to your `php.ini` and restart the server. The system falls back gracefully if APCu is not available.
 
 ---
 
@@ -205,6 +208,244 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ---
 
 ## Changelog
+
+### April 8, 2026 — Security Hardening, DPA Compliance, Performance & Admin Office CMS
+
+**This is a major update.** It covers four independent work streams completed in a single session: comprehensive security hardening (DDoS/brute-force protection, security headers, file-access controls), full RA 10173 Data Privacy Act compliance, application-level query caching targeting 10 000+ concurrent users, and a new MHACTO Office admin CMS module.
+
+---
+
+#### 1. Frontend Performance — `Promise.all` Sequential-Fetch Fixes (5 pages)
+
+Pages that fired multiple sequential `fetch()` calls in separate `useEffect` hooks were consolidated into single `Promise.all` calls. Each sequential chain caused N waterfall round-trips and N re-renders; a single `Promise.all` runs all fetches in parallel and triggers exactly one state update.
+
+| File | Fetches combined | Description |
+|------|-----------------|-------------|
+| `culture/page.tsx` | 5 | Cuisine, festivals, practices, arts, people sections |
+| `culture/art-wonders/page.tsx` | 2 | Crafts/artisan + cultural practices |
+| `culture/culinary-wonders/page.tsx` | 2 | Local cuisine + restaurants |
+| `community/page.tsx` | 3 | Schools, hospitals, barangay |
+| `history/page.tsx` | 2 | Timeline of events + notable figures |
+
+A `Loader2` spinner is shown while `Promise.all` resolves; all sections render simultaneously when data is ready.
+
+---
+
+#### 2. Security Hardening (`core/RateLimit.php`, `.htaccess`, `core/Response.php`)
+
+##### Rate Limiting — `core/RateLimit.php` (new file)
+File-based sliding-window rate limiter — no Redis or Memcached required; works on shared hosting.
+
+| Endpoint | Limit |
+|----------|-------|
+| `POST /api/auth/login` | 10 attempts / 15 minutes per IP |
+| `POST /api/inquiries` (public form) | 5 submissions / 1 hour per IP |
+| `POST /api/analytics/log-view` | 60 hits / 1 minute per IP |
+
+##### Security Headers — `core/Response.php`
+Added to every API response via `Response::cors()`:
+
+```
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+##### `.htaccess` Hardening
+- Blocked direct HTTP access to `.env`, `.json`, `.sql`, `.log` files
+- Blocked directory access to `/config/`, `/core/`, `/models/`, `/vendor/`
+- Added `LimitRequestBody 20971520` (20 MB max request size)
+- Blocked all dotfiles (`.git`, `.htpasswd`, etc.)
+
+---
+
+#### 3. RA 10173 Philippines Data Privacy Act Compliance
+
+##### `core/DataPrivacy.php` (new file)
+Helper class for DPA-compliant data handling:
+- `maskEmail()`, `maskPhone()`, `maskName()` — PII masking for display
+- `logDataAccess()` — writes to `data_access_audit` table (§21 audit trail)
+- `shouldRetain()` — checks 3-year default retention policy
+- `anonymizeInquiry()` — redacts PII from old inquiry records
+
+##### Database — `database-schema.sql` (updated)
+New columns added directly to the schema (no separate migration files):
+
+| Table | New columns |
+|-------|-------------|
+| `inquiries` | `submitter_ip`, `consent_given`, `consent_text`, `data_purge_date` |
+| `activity_logs` | `user_agent`, `session_ref` |
+| `content_fields` | `is_pii` flag |
+
+Two new tables:
+- `data_breach_log` — RA 10173 §20 72-hour NPC notification registry
+- `consent_versions` — RA 10173 §7 versioned consent statement history
+
+##### `routes/inquiries.php`
+- Public `POST /api/inquiries` now **requires `consentGiven: true`** in the request body
+- Returns HTTP 400 with a DPA message if consent is missing
+
+##### `models/Inquiry.php`
+- `create()` now saves `submitter_ip`, `submission_ua`, `consent_given`
+
+##### `models/ActivityLog.php`
+- `log()` now auto-captures `$_SERVER['HTTP_USER_AGENT']`
+
+##### Frontend — `app/(site)/inquire/page.tsx`
+- Added RA 10173 consent checkbox before the Submit button with full disclosure text
+- Submit button disabled until checkbox is checked
+- `consentGiven: true` sent in the API payload on submission
+
+---
+
+#### 4. RBAC / IDOR Prevention — `core/Auth.php`, `routes/users.php`
+
+##### `core/Auth.php` — new `canAccess()` method
+```
+super_admin  → all resources, all actions
+admin        → all resources except changing another admin's password
+content_manager → own resources only (read-only on foreign resources)
+any role     → always allowed on their own resource
+```
+
+##### `routes/users.php`
+- `GET /api/users/{id}` — `content_manager` can only read their own profile
+- `PUT /api/users/{id}` — all roles pass through `Auth::canAccess()` before update is applied
+
+---
+
+#### 5. Application-Level Query Cache — `core/QueryCache.php` (new file)
+
+APCu-backed query cache for public GET endpoints. Falls back gracefully to a direct DB call if APCu is not available.
+
+| Endpoint | Cache TTL | Cache key |
+|----------|-----------|-----------|
+| `GET /api/posts` (public) | 5 minutes | `posts_` + md5 of query string |
+| `GET /api/posts/{id}` (public) | 5 minutes | per-post key |
+| `GET /api/settings` | 10 minutes | `settings_all` |
+
+Cache is invalidated automatically on every `POST`, `PUT`, or `DELETE` to `/api/posts` and on `PUT /api/settings`.
+
+HTTP `Cache-Control: public, max-age=300` headers are also sent for public read responses so browsers and CDNs can cache at the edge.
+
+##### `config/Database.php`
+Added `PDO::ATTR_PERSISTENT => true` for connection pooling and `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true`.
+
+##### `database/migration-performance-indexes.sql` → merged into `database-schema.sql`
+Composite indexes added directly to the schema:
+
+| Table | Index |
+|-------|-------|
+| `users` | `idx_email_status (email, status)` |
+| `content` | `idx_status_type_created (status, post_type, created_at DESC)` |
+| `content_fields` | `idx_key_value (meta_key, meta_value)` |
+| `activity_logs` | `idx_action_created (action, created_at DESC)` |
+| `page_views` | `idx_content_clicked (content_id, clicked_at DESC)` |
+| `inquiries` | `idx_status_created (status, created_at DESC)` |
+
+---
+
+#### 6. MHACTO Office Admin CMS — new module
+
+New admin tab "MHACTO Office" added (`Building2` icon in the sidebar) with two sub-pages managed together:
+
+| Tab | Route | Content |
+|-----|-------|---------|
+| Tourism Office | `/admin/office` | Office name, hours, description, address, contact info |
+| Mission & Vision | `/admin/office` (tab 2) | Mission statement, vision statement, core values list |
+
+Public-facing pages updated to be fully dynamic:
+- `app/(site)/tourism-office/page.tsx` — fetches office content from the API
+- `app/(site)/mission-vision/page.tsx` — fetches mission/vision from the API; falls back to defaults if DB is empty
+
+---
+
+#### 7. Browser Tab Favicon & Base Path
+
+- `frontend/app/icon.png` — MHACTO logo set as browser tab favicon (auto-detected by Next.js App Router)
+- `frontend/app/apple-icon.png` — same logo for iOS home screen shortcut
+- `basePath` changed: dev mode uses `''` (plain `http://localhost:3000`), production uses `/mhacto` (was `/MHACTO-PROJECT`)
+
+---
+
+#### 8. Database Schema Consolidation
+
+Both migration SQL files were merged into the main schema file and deleted:
+
+| Removed | Merged into |
+|---------|-------------|
+| `migration-dpa-compliance.sql` | `database-schema.sql` |
+| `migration-performance-indexes.sql` | `database-schema.sql` |
+
+`seed.sql` received the initial `consent_versions` v1.0 record.
+
+Fresh install is now two commands:
+```bash
+mysql -u root -p < database/database-schema.sql
+mysql -u root -p mhacto_db < database/seed.sql
+```
+
+---
+
+#### 9. Secure Inquiry Boilerplate — `examples/submit_inquiry.php` (new file)
+
+Standalone PHP boilerplate documenting every OWASP security control for public form submissions:
+- Double-submit cookie CSRF pattern
+- File-based sliding-window rate limiter (5/hr per IP)
+- Strict input validation (name regex, RFC 5321 email, PH phone `+639XXXXXXXXX`, RA 10173 consent)
+- All DB writes use PDO named placeholders (zero string concatenation)
+- RA 10173 audit trail written after every successful insert
+- Security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- Generic error responses with `error_log()` only for internals
+
+---
+
+#### 10. Admin CMS Table Enhancements
+
+##### `app/(admin)/admin/dashboard/page.tsx`
+- Added APCu cache status indicator to the dashboard
+
+##### `app/(admin)/admin/inquiries/page.tsx`
+- Inquiry list now shows `submission_ip` column (admin-only, DPA-masked in display)
+- Print report reflects new DPA fields
+
+---
+
+#### Updated: Admin CMS Pages
+
+| Page | Route | Status |
+|------|-------|--------|
+| Login | `/admin` | ✅ Complete |
+| Dashboard | `/admin/dashboard` | ✅ Complete |
+| CMS / Posts | `/admin/cms` | ✅ Complete |
+| Inquiries | `/admin/inquiries` | ✅ Complete |
+| Heroes | `/admin/heroes` | ✅ Complete |
+| Home Content | `/admin/home-content` | ✅ Complete |
+| Settings | `/admin/settings` | ✅ Complete |
+| Activity Log | `/admin/activity-log` | ✅ Complete |
+| **MHACTO Office** | `/admin/office` | ✅ **New** |
+| Users | `/admin/users` | ✅ Complete |
+| Tour Guides | `/admin/tour-guides` | ✅ Complete |
+
+---
+
+#### Roadmap — Planned Future Updates
+
+| Priority | Feature | Description |
+|----------|---------|-------------|
+| 🔴 High | **Email notifications** | Send automated email confirmations when a tourist inquiry is submitted (`PHPMailer` already installed but not wired to inquiry creation) |
+| 🔴 High | **Pagination on admin lists** | CMS post list, inquiry list, and activity log all load all rows; add server-side pagination |
+| 🟡 Medium | **File upload validation** | Backend only checks MIME type; add image dimension validation and virus scanning (ClamAV on VPS) |
+| 🟡 Medium | **Soft-delete & trash recovery** | Admin deletes posts/inquiries permanently; add a 30-day trash bin with restore |
+| 🟡 Medium | **Dark mode persistence** | Theme toggle resets on refresh; persist the choice in `localStorage` via the theme provider |
+| 🟡 Medium | **SEO meta per page** | Add dynamic `<title>` and `<meta description>` per public page using Next.js `generateMetadata()` |
+| 🟢 Low | **Print-friendly inquiry report** | PDF export of inquiry list with MHACTO letterhead |
+| 🟢 Low | **Multi-language support (Filipino/English)** | Add `i18next` and a language toggle in the navbar |
+| 🟢 Low | **Redis upgrade path** | When moving to Hostinger VPS, swap `QueryCache` APCu calls for `phpredis` for cross-worker cache sharing |
+| 🟢 Low | **NPC data breach notification form** | Wire `data_breach_log` to an email alert so the DPO is automatically notified within 72 hours |
+
+---
 
 ### March 19, 2026 — Codebase Audit, Bug Fixes & Performance Optimizations
 

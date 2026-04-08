@@ -19,23 +19,31 @@ class Analytics
     }
 
     /**
-     * Page view rankings — aggregate activity_logs by page_path.
-     * Joins with content to get the content title.
+     * Page view rankings — aggregate page_views by content.
+     * Joins with content and categories to get the title, category,
+     * and (when available) the recorded URL path from activity_logs.
      */
     public function getPageViews(): array
     {
         $query = "
             SELECT
-                al.page_path                          AS page,
-                COALESCE(c.title, al.page_path)       AS title,
-                COUNT(*)                              AS views,
-                COALESCE(cat.label_name, 'Page')      AS category
-            FROM activity_logs al
-            LEFT JOIN content  c   ON al.content_id  = c.content_id
-            LEFT JOIN categories cat ON c.category_id  = cat.category_id
-            WHERE al.action = 'page_view'
-            GROUP BY al.page_path, c.title, cat.label_name
+                COALESCE(al_path.page_path, CONCAT('/content/', c.content_id)) AS page,
+                c.title                                  AS title,
+                COUNT(pv.view_id)                        AS views,
+                COALESCE(cat.label_name, 'Page')         AS category
+            FROM page_views pv
+            INNER JOIN content      c   ON pv.content_id  = c.content_id
+            LEFT  JOIN categories   cat ON c.category_id  = cat.category_id
+            LEFT  JOIN (
+                SELECT content_id, MIN(page_path) AS page_path
+                FROM activity_logs
+                WHERE action = 'page_view' AND page_path IS NOT NULL
+                GROUP BY content_id
+            ) al_path ON al_path.content_id = c.content_id
+            WHERE c.status = 'published'
+            GROUP BY c.content_id, c.title, cat.label_name, al_path.page_path
             ORDER BY views DESC
+            LIMIT 20
         ";
 
         $stmt = $this->conn->prepare($query);
@@ -63,21 +71,5 @@ class Analytics
         $stmt->bindParam(':days', $days, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /** Record a page view event. */
-    public function trackClick(int $contentId, string $pagePath, ?string $visitorIp = null): void
-    {
-        $query = "
-            INSERT INTO activity_logs (user_id, content_id, action, page_path, ip_address)
-            VALUES (NULL, :content_id, 'page_view', :page_path, :ip)
-        ";
-
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([
-            ':content_id' => $contentId,
-            ':page_path'  => $pagePath,
-            ':ip'         => $visitorIp ?? ($_SERVER['REMOTE_ADDR'] ?? null),
-        ]);
     }
 }

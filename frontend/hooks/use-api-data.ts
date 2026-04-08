@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import { AuthExpiredError } from "@/lib/api"
 
 // ─── Simple client-side cache shared across hook instances ────────
 // Returns cached data immediately so the UI doesn't flash loading states
@@ -52,9 +53,19 @@ export function useAPIData<T>(
       })
       .catch((err) => {
         if (controller.signal.aborted) return
-        // Network errors that look like "Failed to fetch" are often
-        // caused by the backend not running — treat as non-fatal.
-        if (err instanceof TypeError && err.message.toLowerCase().includes("failed to fetch")) {
+        // Auth failures are handled by the _onAuthError callback (which triggers
+        // logout + redirect to login). Don't set error state — the UI is already
+        // transitioning away and showing an error message would be confusing.
+        if (err instanceof AuthExpiredError) {
+          setIsLoading(false)
+          return
+        }
+        // Network errors (TypeError from fetch, or the wrapped Error from apiFetch)
+        if (
+          (err instanceof TypeError || err instanceof Error) &&
+          /failed to fetch|networkerror|network error/i.test(err.message)
+        ) {
+          setError("Network error — backend may be offline")
           setIsLoading(false)
           return
         }

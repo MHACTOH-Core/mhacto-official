@@ -183,7 +183,7 @@ export default function ContentDetailLayout({
                   <div className="flex gap-1.5 p-2 bg-muted/30">
                     {thumbs.map((img, i) => (
                       <button
-                        key={img}
+                        key={`${img}__${i}`}
                         onClick={() => setSelectedImage(img)}
                         className={`relative h-14 flex-1 overflow-hidden rounded-md border-2 transition-all duration-200 bg-muted ${
                           selectedImage === img ? "border-primary" : "border-transparent opacity-55 hover:opacity-90"

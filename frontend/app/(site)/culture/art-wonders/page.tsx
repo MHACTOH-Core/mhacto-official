@@ -152,12 +152,13 @@ export default function ArtWondersPage() {
   const [practiceList, setPracticeList] = useState<CulturalPractice[]>([])
 
   useEffect(() => {
-    apiFetchByLabel("crafts-artisan")      // → PHP: SELECT * ... WHERE label_key='crafts-artisan' AND status='published'
-      .then((posts) => { if (posts?.length) setArtWonders(posts.map(cmsToArtisan)) })
-      .catch(() => {})
-    apiFetchByLabel("cultural-practices")  // → PHP: SELECT * ... WHERE label_key='cultural-practices' AND status='published'
-      .then((posts) => { if (posts?.length) setPracticeList(posts.map(cmsToCulturalPractice)) })
-      .catch(() => {})
+    Promise.all([
+      apiFetchByLabel("crafts-artisan").catch(() => null),
+      apiFetchByLabel("cultural-practices").catch(() => null),
+    ]).then(([arts, practices]) => {
+      if (arts?.length) setArtWonders(arts.map(cmsToArtisan))
+      if (practices?.length) setPracticeList(practices.map(cmsToCulturalPractice))
+    })
   }, [])
 
   // The featured artisan is the first one (longest experience / most decorated)

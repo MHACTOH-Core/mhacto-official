@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { MapPin, Phone, Calendar, Store } from "lucide-react"
+import { MapPin, Phone, Calendar, Store, X } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,6 +29,7 @@ const typeColor: Record<LocalBusiness["type"], string> = {
 export default function LocalBusinessPage() {
   const [localBusinesses, setLocalBusinesses] = useState<LocalBusiness[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetchByLabel("local-business")
@@ -77,11 +78,30 @@ export default function LocalBusinessPage() {
             </div>
           ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 items-start">
-            {localBusinesses.map((biz) => (
-              <Card key={biz.id} className="group overflow-hidden border-border transition-all duration-300">
-                {biz.image && (
-                  <div className="relative h-36 overflow-hidden">
-                    <Image src={biz.image} alt={biz.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
+            {localBusinesses.map((biz, idx) => (
+              <Card key={biz.id} className={`reveal-on-scroll group overflow-hidden border-border transition-all duration-300 ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
+                {biz.images && biz.images.length > 1 ? (
+                  <div className={`grid gap-0.5 h-36 overflow-hidden ${biz.images.length <= 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                    {biz.images.slice(0, 6).map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setExpandedImage(img)}
+                        className="relative overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-inset"
+                        aria-label={`View image ${idx + 1} of ${biz.name}`}
+                      >
+                        <Image src={img} alt={`${biz.name} ${idx + 1}`} fill sizes="(max-width: 640px) 33vw, 20vw" className="object-cover transition-transform hover:scale-110" />
+                      </button>
+                    ))}
+                  </div>
+                ) : biz.image ? (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedImage(biz.image!)}
+                    className="relative h-36 w-full overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-inset"
+                    aria-label={`View ${biz.name} image`}
+                  >
+                    <Image src={biz.image} alt={biz.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover transition-transform hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute bottom-3 left-4 flex items-center gap-2">
                       <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>
@@ -91,10 +111,20 @@ export default function LocalBusinessPage() {
                         <Badge className="text-xs bg-amber-500 text-white border-0">Featured</Badge>
                       )}
                     </div>
-                  </div>
-                )}
+                  </button>
+                ) : null}
                 <CardContent className="p-5">
-                  {!biz.image && (
+                  {!biz.image && (!biz.images || biz.images.length === 0) && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>
+                        {typeLabels[biz.type]}
+                      </Badge>
+                      {biz.isFeatured && (
+                        <Badge className="text-xs bg-amber-500 text-white border-0">Featured</Badge>
+                      )}
+                    </div>
+                  )}
+                  {(biz.images && biz.images.length > 1) && (
                     <div className="flex items-center gap-2 mb-3">
                       <Badge variant="outline" className={`text-xs ${typeColor[biz.type]}`}>
                         {typeLabels[biz.type]}
@@ -141,6 +171,28 @@ export default function LocalBusinessPage() {
           )}
         </div>
       </section>
+
+      {/* Image lightbox — plain fixed overlay, no scroll lock */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div className="relative max-w-2xl w-[90vw] aspect-square" onClick={(e) => e.stopPropagation()}>
+            <Image src={expandedImage} alt="Business image" fill className="object-contain rounded-lg" sizes="(max-width: 768px) 90vw, 640px" />
+          </div>
+          <button
+            onClick={() => setExpandedImage(null)}
+            className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
     </main>
   )
 }

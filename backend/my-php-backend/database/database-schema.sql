@@ -8,7 +8,7 @@
 -- After import, run seed.sql to populate test / sample data:
 --   mysql -u root -p mhacto_db < seed.sql
 --
--- Tables (12 — confirmed plural naming convention):
+-- Tables (14):
 --   1.  users
 --   2.  config
 --   3.  categories
@@ -21,6 +21,9 @@
 --   10. milestones
 --   11. page_views
 --   12. tour_guides
+--   13. archive_requests
+--   14. data_breach_log      ← RA 10173 §20 breach registry
+--   15. consent_versions     ← RA 10173 §7 versioned consent text
 -- ========================================================================
 
 -- ────────────────────────────────────────────────────────────────
@@ -39,6 +42,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- DROP EXISTING TABLES (clean slate)
 -- ────────────────────────────────────────────────────────────────
 
+DROP TABLE IF EXISTS data_breach_log;
+DROP TABLE IF EXISTS consent_versions;
+DROP TABLE IF EXISTS archive_requests;
 DROP TABLE IF EXISTS page_views;
 DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS milestones;
@@ -74,7 +80,8 @@ CREATE TABLE users (
   status             ENUM('active','archived') DEFAULT 'active',
   notification_prefs JSON         DEFAULT NULL       COMMENT 'Per-user notification preferences',
   created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_email (email)
+  UNIQUE KEY uq_email (email),
+  INDEX idx_email_status (email, status)             COMMENT 'Covers login: WHERE email=? AND status=active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -127,8 +134,8 @@ CREATE TABLE content (
   updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id)     REFERENCES users(user_id)        ON DELETE SET NULL,
   FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
-  INDEX idx_status    (status),
-  INDEX idx_post_type (post_type)
+  INDEX idx_status_type_created (status, post_type, created_at DESC) COMMENT 'Covers CMS list: WHERE status+post_type ORDER BY created_at',
+  INDEX idx_user_status         (user_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -142,8 +149,10 @@ CREATE TABLE content_fields (
   content_id INT          NOT NULL,
   meta_key   VARCHAR(100) NOT NULL  COMMENT 'e.g., location, hours, news_date, label_key',
   meta_value TEXT         DEFAULT NULL COMMENT 'Value or JSON for complex data',
+  is_pii     TINYINT(1)   DEFAULT 0    COMMENT 'RA 10173: flags cells that hold personal identifiable information',
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
-  UNIQUE INDEX idx_content_key (content_id, meta_key)
+  UNIQUE INDEX idx_content_key (content_id, meta_key),
+  INDEX idx_key_value          (meta_key(30), meta_value(100)) COMMENT 'Covers apiFetchByLabel: WHERE meta_key=? AND meta_value=?'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -194,18 +203,26 @@ CREATE TABLE inquiries (
   number_of_pax      INT          DEFAULT NULL  COMMENT 'Aggregatable crowd volume',
   message            TEXT         DEFAULT NULL,
   additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, dateToVisit, etc.',
-  status             ENUM('unread','read','in_progress','assigned','confirmed','completed','cancelled','expired','archived','spam','trash') DEFAULT 'unread',
+  status             ENUM('unread','read','assigned','confirmed','completed','cancelled','expired','archived','spam','trash') DEFAULT 'unread',
   assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name',
   confirmed_date     DATE         DEFAULT NULL  COMMENT 'Actual confirmed tour date set by admin',
   confirmed_by       VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who confirmed the tour',
   reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply for in-app thread',
   replied_at         TIMESTAMP    DEFAULT NULL,
   replied_by         VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who replied',
+  -- RA 10173 DPA compliance columns
+  submitter_ip       VARCHAR(45)  DEFAULT NULL  COMMENT 'Submitter IP at time of creation — DPA audit trail',
+  consent_given      TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'RA 10173 §7: data subject must expressly consent before PII is stored',
+  consent_text       VARCHAR(500) DEFAULT NULL  COMMENT 'Exact consent statement shown to user at time of submission',
+  data_purge_date    DATE         DEFAULT NULL  COMMENT 'Retention cutoff date (NPC Advisory: max 10 years for govt)',
   created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_status (status),
-  INDEX idx_type   (inquiry_type),
-  INDEX idx_visit  (date_of_visit),
-  INDEX idx_confirmed (confirmed_date)
+  INDEX idx_status_created (status, created_at DESC)          COMMENT 'Admin list: WHERE status ORDER BY created_at',
+  INDEX idx_type_created   (inquiry_type, created_at DESC),
+  INDEX idx_email          (email_address(50)),
+  INDEX idx_visit          (date_of_visit),
+  INDEX idx_confirmed      (confirmed_date),
+  INDEX idx_purge_date     (data_purge_date),
+  INDEX idx_created_status (created_at, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -239,10 +256,16 @@ CREATE TABLE activity_logs (
   details    JSON         DEFAULT NULL  COMMENT 'Dynamic payload for action context',
   page_path  VARCHAR(255) DEFAULT NULL  COMMENT 'URL path (page_view events)',
   ip_address VARCHAR(45)  DEFAULT NULL,
+  -- RA 10173 §21 audit trail columns
+  user_agent  VARCHAR(500) DEFAULT NULL COMMENT 'Browser/client user-agent — RA 10173 §21 audit trail',
+  session_ref VARCHAR(64)  DEFAULT NULL COMMENT 'SHA-256 of last-16-chars of Authorization header (non-reversible correlation ID)',
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
-  INDEX idx_action  (action),
-  INDEX idx_created (created_at)
+  INDEX idx_action_created (action, created_at DESC)                COMMENT 'Dashboard analytics: WHERE action ORDER BY created_at',
+  INDEX idx_user_action    (user_id, action, created_at DESC),
+  INDEX idx_ip_created     (ip_address, created_at),
+  INDEX idx_ip_action      (ip_address, action),
+  INDEX idx_user_created   (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -277,9 +300,67 @@ CREATE TABLE page_views (
   visitor_session_id VARCHAR(100) DEFAULT NULL       COMMENT 'Optional client-generated session token',
   clicked_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
-  INDEX idx_content (content_id),
-  INDEX idx_clicked (clicked_at)
+  INDEX idx_content         (content_id),
+  INDEX idx_clicked         (clicked_at),
+  INDEX idx_content_clicked (content_id, clicked_at DESC) COMMENT 'Top destinations: GROUP BY content_id ORDER BY view_count'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ── 13. archive_requests ─────────────────────────────────────
+-- Approval workflow for archiving super_admin accounts.
+
+CREATE TABLE archive_requests (
+  request_id     INT AUTO_INCREMENT PRIMARY KEY,
+  target_user_id INT NOT NULL       COMMENT 'User being requested for archival',
+  requested_by   INT NOT NULL       COMMENT 'Admin who created the request',
+  status         ENUM('pending','approved','denied') NOT NULL DEFAULT 'pending',
+  reason         TEXT DEFAULT NULL,
+  reviewed_by    INT DEFAULT NULL   COMMENT 'Super-admin who reviewed',
+  created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at    DATETIME DEFAULT NULL,
+  INDEX idx_status (status),
+  INDEX idx_target (target_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ── 14. data_breach_log  (RA 10173 §20 — breach registry) ────────────
+-- §20 requires government PICs to notify NPC within 72 hours of a breach.
+
+CREATE TABLE data_breach_log (
+  breach_id       INT AUTO_INCREMENT PRIMARY KEY,
+  discovered_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '§20: date/time breach was discovered',
+  reported_by     INT          DEFAULT NULL                       COMMENT 'FK → users.user_id of staff who filed the report',
+  affected_table  VARCHAR(100) DEFAULT NULL                       COMMENT 'Table that contained the breached data',
+  affected_rows   INT          DEFAULT NULL                       COMMENT 'Estimated number of data subjects affected',
+  nature          TEXT         DEFAULT NULL                       COMMENT 'Description of what data was exposed/accessed',
+  cause           TEXT         DEFAULT NULL                       COMMENT 'Root-cause analysis',
+  remediation     TEXT         DEFAULT NULL                       COMMENT 'Steps taken to contain the breach',
+  npc_notified    TINYINT(1)   DEFAULT 0                          COMMENT '1 when NPC notification has been sent',
+  npc_notified_at TIMESTAMP    DEFAULT NULL,
+  status          ENUM('open','contained','closed') DEFAULT 'open',
+  FOREIGN KEY (reported_by) REFERENCES users(user_id) ON DELETE SET NULL,
+  INDEX idx_status     (status),
+  INDEX idx_discovered (discovered_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='RA 10173 §20 personal data breach registry';
+
+
+-- ── 15. consent_versions  (RA 10173 §7 — versioned consent text) ─────
+-- Stores the exact statement shown on the inquiry form per date range.
+-- NPC Advisory 2020-01 requires proof of what specifically was consented to.
+
+CREATE TABLE consent_versions (
+  version_id     INT AUTO_INCREMENT PRIMARY KEY,
+  version_code   VARCHAR(20)  NOT NULL COMMENT 'e.g., v1.0, v1.1',
+  statement_text TEXT         NOT NULL COMMENT 'Full consent statement shown on the public form',
+  effective_from DATE         NOT NULL,
+  effective_to   DATE         DEFAULT NULL COMMENT 'NULL = currently active version',
+  created_by     INT          DEFAULT NULL,
+  created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL,
+  INDEX idx_effective (effective_from, effective_to)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='RA 10173 §7 versioned consent statements';
 
 
 -- ========================================================================
@@ -310,7 +391,7 @@ INSERT INTO users (username, full_name, email, password_hash, role, status) VALU
 
 -- ── Categories (IDs 1–5) ──────────────────────────────────────
 
-INSERT INTO category (category_type, label_key, label_name, color_code, is_active) VALUES
+INSERT INTO categories (category_type, label_key, label_name, color_code, is_active) VALUES
 ('category', NULL, 'History Wonders',        '#3b82f6', 1),
 ('category', NULL, 'Arts & Culture Wonders', '#10b981', 1),
 ('category', NULL, 'Tourist Wonders',        '#f59e0b', 1),
@@ -320,14 +401,14 @@ INSERT INTO category (category_type, label_key, label_name, color_code, is_activ
 
 -- ── Labels under History (parent_id = 1) ──────────────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (1, 'label', 'timeline-of-events', 'Timeline of Events', 1),
 (1, 'label', 'notable-figures',    'Remarkable Persons',  1);
 
 
 -- ── Labels under Arts & Culture (parent_id = 2) ──────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (2, 'label', 'local-cuisine',      'Culinary Wonders',       1),
 (2, 'label', 'festivals',          'Festivals',              1),
 (2, 'label', 'cultural-practices', 'Cultural Practices',     1),
@@ -339,7 +420,7 @@ INSERT INTO category (parent_id, category_type, label_key, label_name, is_active
 
 -- ── Labels under Tourist Destinations (parent_id = 3) ─────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (3, 'label', 'destinations',    'Destinations',    1),
 (3, 'label', 'travel-tours',    'Travel Tours',    1),
 (3, 'label', 'tourism-wonders', 'Tourism Wonders', 1);
@@ -347,14 +428,14 @@ INSERT INTO category (parent_id, category_type, label_key, label_name, is_active
 
 -- ── Labels under News & Events (parent_id = 4) ───────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (4, 'label', 'events', 'Events', 1),
 (4, 'label', 'news',   'News',   1);
 
 
 -- ── Labels under Community (parent_id = 5) ────────────────────
 
-INSERT INTO category (parent_id, category_type, label_key, label_name, is_active) VALUES
+INSERT INTO categories (parent_id, category_type, label_key, label_name, is_active) VALUES
 (5, 'label', 'schools',   'Schools',   1),
 (5, 'label', 'colleges',  'Colleges',  1),
 (5, 'label', 'hospitals', 'Hospitals', 1),
@@ -400,7 +481,29 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 ('hero', 'hero_cta_link',     '"/destinations"',                                'string');
 
 
+-- ── Config: MHACTO Office (tourism-office + mission-vision) ──────────
+
+INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
+('tourism_office', 'office_name',        '"MHACTO — Municipal History, Arts, Culture & Tourism Office"', 'string'),
+('tourism_office', 'office_hours',       '"Monday to Friday, 8:00 AM – 5:00 PM"',                        'string'),
+('tourism_office', 'office_description', '""',                                                            'string'),
+('mission_vision', 'mission',            '""', 'string'),
+('mission_vision', 'vision',             '""', 'string'),
+('mission_vision', 'core_values',        '[]',  'json');
+
+
+-- ========================================================================
+-- ANALYZE — update query optimizer statistics after schema creation
+-- ========================================================================
+ANALYZE TABLE users;
+ANALYZE TABLE content;
+ANALYZE TABLE content_fields;
+ANALYZE TABLE inquiries;
+ANALYZE TABLE activity_logs;
+ANALYZE TABLE page_views;
+
+
 -- ========================================================================
 -- DONE — Run seed.sql next to import sample content.
 -- ========================================================================
-SELECT 'MHACTO database schema created and base data seeded successfully!' AS result;
+SELECT 'MHACTO database schema created successfully — run seed.sql next.' AS result;

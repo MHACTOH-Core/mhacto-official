@@ -1,5 +1,33 @@
 RewriteEngine On
 
+# ── Block direct access to sensitive files ────────────────────────
+<FilesMatch "\.(env|json|lock|md|sql|log|sh|bak|ini|git)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block hidden dotfiles (.env, .git, etc.)
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block direct access to PHP source directories
+<IfModule mod_rewrite.c>
+    RewriteRule ^(config|core|models|database|vendor)/.*$ - [F,L]
+</IfModule>
+
+# ── Security / DDoS mitigation ────────────────────────────────────
+<IfModule mod_headers.c>
+    # Remove server fingerprinting headers
+    Header unset X-Powered-By
+    Header always unset X-Powered-By
+    Header unset Server
+</IfModule>
+
+# Limit request body to 20 MB to prevent oversized-payload DoS
+LimitRequestBody 20971520
+
 # ── Pass Authorization header to PHP (Apache strips it by default) ──
 RewriteCond %{HTTP:Authorization} ^(.+)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

@@ -53,6 +53,7 @@ export interface LocalBusiness {
   contact?: string
   yearEstablished?: string
   image?: string
+  images?: string[]
   isFeatured?: boolean
 }
 

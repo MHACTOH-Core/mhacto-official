@@ -37,9 +37,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preconnect to API backend to reduce latency on first fetch */}
-        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} />
-        <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'} crossOrigin="anonymous" />
+        {/* Preconnect to API backend to reduce latency on first fetch.
+            Only rendered in production when NEXT_PUBLIC_API_URL is set;
+            in dev the Next.js rewrite proxy is used instead. */}
+        {process.env.NEXT_PUBLIC_API_URL ? (
+          <>
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_URL} />
+            <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL} crossOrigin="anonymous" />
+          </>
+        ) : null}
       </head>
       <body className={`${poppins.variable} ${inter.variable} font-sans antialiased overflow-x-hidden`}>
         <RevealObserverWrapper />

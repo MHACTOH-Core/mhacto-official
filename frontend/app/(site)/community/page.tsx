@@ -5,7 +5,7 @@ import { asset } from "@/lib/utils"
 import { useState, useMemo, useEffect } from "react"
 import {
   School, Activity, ArrowUpDown, BookOpen, Users,
-  Phone, MapPin, Clock, AlertTriangle, CheckCircle, ChevronRight, Loader2,
+  Phone, MapPin, Clock, AlertTriangle, CheckCircle, ChevronRight, Loader2, X,
 } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
@@ -73,16 +73,21 @@ const typeLabels: Record<Hospital["type"], string> = {
 }
 
 //  School logo fallback 
-function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
+function SchoolLogo({ name, logo, onExpand }: { name: string; logo?: string; onExpand?: (src: string) => void }) {
   const [imgError, setImgError] = useState(false)
   const initials = name
     .split(/\s+/).filter((w) => w.length > 2).slice(0, 2)
     .map((w) => w[0].toUpperCase()).join("")
   if (logo && !imgError) {
     return (
-      <div className="relative h-14 w-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-border/50 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onExpand?.(logo)}
+        className="relative h-14 w-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-border/50 shadow-sm cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+        aria-label={`View ${name} image`}
+      >
         <Image src={logo} alt={`${name} logo`} fill sizes="56px" className="object-contain p-1" onError={() => setImgError(true)} />
-      </div>
+      </button>
     )
   }
   return (
@@ -102,6 +107,7 @@ export default function CommunityPage() {
   const [schools, setSchools] = useState<SchoolEntry[]>([])
   const [filter, setFilter] = useState<FilterKey>("all")
   const [sort, setSort] = useState<SortKey>("name-asc")
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
 
   // Hospitals state
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -113,20 +119,17 @@ export default function CommunityPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let completed = 0
-    const done = () => { if (++completed >= 3) setLoading(false) }
-    apiFetchByLabel("schools")
-      .then((posts) => { if (posts?.length) setSchools(posts.map(cmsToSchoolEntry)) })
-      .catch((err) => setError(err.message))
-      .finally(done)
-    apiFetchByLabel("hospitals")
-      .then((posts) => { if (posts?.length) setHospitals(posts.map(cmsToHospital)) })
-      .catch((err) => setError((prev) => prev ?? err.message))
-      .finally(done)
-    apiFetchByLabel("barangay")
-      .then((posts) => { if (posts?.length) setBarangays(posts.map(cmsToBarangay)) })
-      .catch((err) => setError((prev) => prev ?? err.message))
-      .finally(done)
+    setLoading(true)
+    Promise.all([
+      apiFetchByLabel("schools").catch(() => null),
+      apiFetchByLabel("hospitals").catch(() => null),
+      apiFetchByLabel("barangay").catch(() => null),
+    ]).then(([schoolPosts, hospitalPosts, barangayPosts]) => {
+      if (schoolPosts?.length) setSchools(schoolPosts.map(cmsToSchoolEntry))
+      if (hospitalPosts?.length) setHospitals(hospitalPosts.map(cmsToHospital))
+      if (barangayPosts?.length) setBarangays(barangayPosts.map(cmsToBarangay))
+    }).catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   const displayedSchools = useMemo(() => {
@@ -287,15 +290,15 @@ export default function CommunityPage() {
               </div>
             )}
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
-              {displayedSchools.map((school) => (
+              {displayedSchools.map((school, idx) => (
                 <div
                   key={school.id}
-                  className="flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden"
+                  className={`reveal-on-scroll flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
                 >
                   <div className={`h-1.5 w-full ${school.ownership === "public" ? "bg-gradient-to-r from-sky-400 to-blue-500" : "bg-gradient-to-r from-violet-400 to-purple-500"}`} />
                   <div className="flex flex-col flex-1 p-5">
                     <div className="flex items-start gap-3 mb-4">
-                      <SchoolLogo name={school.name} logo={school.logo} />
+                      <SchoolLogo name={school.name} logo={school.logo} onExpand={setExpandedImage} />
                       <div className="flex flex-col gap-1.5 pt-0.5">
                         <Badge variant="outline" className={`text-xs w-fit ${levelBadgeClass[school.level]}`}>
                           {levelLabel[school.level]}
@@ -312,15 +315,12 @@ export default function CommunityPage() {
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/70 uppercase tracking-wide">
                         <BookOpen className="h-3.5 w-3.5" /> Programs
                       </div>
-                      <ul className="space-y-0.5">
-                        {school.programs.slice(0, 3).map((p) => (
-                          <li key={p} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <ul className={`gap-x-4 gap-y-0.5 ${school.programs.length > 10 ? "columns-4" : school.programs.length > 5 ? "columns-3" : school.programs.length > 3 ? "columns-2" : "columns-1"}`}>
+                        {school.programs.map((p) => (
+                          <li key={p} className="flex items-start gap-1.5 text-xs text-muted-foreground break-inside-avoid">
                             <span className="mt-1.5 h-1 w-1 rounded-full bg-primary/50 flex-shrink-0" />{p}
                           </li>
                         ))}
-                        {school.programs.length > 3 && (
-                          <li className="text-xs text-primary font-medium pl-2.5">+{school.programs.length - 3} more</li>
-                        )}
                       </ul>
                     </div>
                     {(school.enrollment || school.yearEstablished) && (
@@ -368,13 +368,19 @@ export default function CommunityPage() {
                 </div>
               )}
               <div className="grid gap-6 sm:grid-cols-2 items-start">
-                {hospitals.map((hospital) => (
-                  <Card key={hospital.id} className={`border-border flex flex-col`}>
+                {hospitals.map((hospital, idx) => (
+                  <Card key={hospital.id} className={`reveal-on-scroll border-border flex flex-col ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
                     <CardContent className="p-6 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                          <Activity className="h-6 w-6 text-primary" />
-                        </div>
+                        {hospital.image && hospital.image !== "/images/defaults/no-image.svg" ? (
+                          <div className="relative h-12 w-12 flex-shrink-0 rounded-full overflow-hidden border border-border/50">
+                            <Image src={hospital.image} alt={hospital.name} fill sizes="48px" className="object-cover" />
+                          </div>
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                            <Activity className="h-6 w-6 text-primary" />
+                          </div>
+                        )}
                         <div className="flex flex-col items-end gap-1.5">
                           <Badge variant="outline" className={`text-xs ${typeBadge[hospital.type]}`}>
                             {typeLabels[hospital.type]}
@@ -443,13 +449,13 @@ export default function CommunityPage() {
               </div>
             )}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {barangays.map((brgy) => (
+              {barangays.map((brgy, idx) => (
                 <a
                   key={brgy.id}
                   href={`/community/barangay/${brgy.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer"
+                  className={`reveal-on-scroll group block rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
                 >
                   <div className="p-5">
                     <h3 className="text-lg font-black text-foreground group-hover:text-primary transition-colors mb-2">
@@ -481,6 +487,28 @@ export default function CommunityPage() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Image lightbox — plain fixed overlay, no scroll lock */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div className="relative max-w-2xl w-[90vw] aspect-square" onClick={(e) => e.stopPropagation()}>
+            <Image src={expandedImage} alt="School image" fill className="object-contain rounded-lg" sizes="(max-width: 768px) 90vw, 640px" />
+          </div>
+          <button
+            onClick={() => setExpandedImage(null)}
+            className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       )}
     </main>
   )

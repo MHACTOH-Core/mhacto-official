@@ -21,6 +21,7 @@ import {
   Users,
   Flame,
   UserCheck,
+  Building2,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -35,6 +36,7 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; rol
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/home-content", label: "Home Page", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/heroes", label: "Page Banners", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
+  { href: "/admin/office", label: "MHACTO Office", icon: Building2, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/cms", label: "Manage Content", icon: FileEdit, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/pagoda", label: "Pagoda Festival", icon: Flame, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, roles: ["super_admin", "admin", "content_manager"] },

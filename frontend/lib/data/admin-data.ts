@@ -72,7 +72,6 @@ export interface CMSPost {
 export type InquiryStatus =
   | "unread"
   | "read"
-  | "in_progress"
   | "assigned"
   | "confirmed"
   | "completed"
@@ -277,7 +276,6 @@ export function getEventsLabel(): [ContentLabel, { label: string; color: string;
 export const inquiryStatusLabels: Record<InquiryStatus, { label: string; color: string }> = {
   unread:      { label: "Unread",      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
   read:        { label: "Read",        color: "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" },
-  in_progress: { label: "In Progress", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" },
   assigned:    { label: "Assigned",    color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
   confirmed:   { label: "Confirmed",   color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300" },
   completed:   { label: "Completed",   color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" },
@@ -316,35 +314,6 @@ let _idCounter = 100
 export function generateId(): string {
   return `${Date.now()}-${++_idCounter}`
 }
-
-export const MOCK_PAGE_VIEWS: PageView[] = [
-  { page: "/places/philippine-arena", title: "Philippine Arena", views: 2847, category: "Landmark" },
-  { page: "/places/bocaue-river-festival", title: "Bocaue River Festival", views: 2301, category: "Festival" },
-  { page: "/places/st-martin-church", title: "St. Martin of Tours Church", views: 1956, category: "Heritage" },
-  { page: "/", title: "Home Page", views: 1823, category: "Page" },
-  { page: "/places/local-delicacies", title: "Local Delicacies", views: 1204, category: "Cuisine" },
-  { page: "/places/bocaue-river-walk", title: "Bocaue River Walk", views: 987, category: "Nature" },
-  { page: "/places/bocaue-artisan-crafts", title: "Artisan Crafts Village", views: 876, category: "Arts" },
-  { page: "/places/old-town-plaza", title: "Old Town Plaza", views: 743, category: "Heritage" },
-  { page: "/places/ciudad-de-victoria", title: "Ciudad de Victoria", views: 634, category: "Landmark" },
-  { page: "/places", title: "Places & Events", views: 521, category: "Page" },
-  { page: "/contact", title: "Contact Page", views: 312, category: "Page" },
-  { page: "/inquire", title: "Inquire Page", views: 289, category: "Page" },
-]
-
-export const MOCK_DAILY_VISITS: DailyVisit[] = (() => {
-  const days: DailyVisit[] = []
-  const now = new Date()
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    days.push({
-      date: d.toISOString().slice(0, 10),
-      views: Math.floor(200 + Math.random() * 400),
-    })
-  }
-  return days
-})()
 
 export const MOCK_POSTS: CMSPost[] = [
   {

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowLeft, Loader2, MapPin, Clock, CalendarDays, Phone, Tag, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { apiFetchPostById } from "@/lib/api"
+import { apiFetchPostById, apiLogDestinationView } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { resolveMediaUrl } from "@/lib/utils"
 import ContentDetailLayout, { type QuickFact } from "@/components/sections/content-detail-layout"
@@ -89,7 +89,10 @@ export default function CultureDetailClient({
 
   useEffect(() => {
     apiFetchPostById(id)
-      .then((post) => setItem(fromCMSPost(post)))
+      .then((post) => {
+        setItem(fromCMSPost(post))
+        apiLogDestinationView(Number(post.id), undefined, window.location.pathname).catch(() => {})
+      })
       .catch(() => {})
       .finally(() => setApiLoading(false))
   }, [id])

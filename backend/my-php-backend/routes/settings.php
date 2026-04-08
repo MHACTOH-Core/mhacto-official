@@ -3,6 +3,7 @@ use App\Config\Database;
 use App\Models\Settings;
 use App\Core\Auth;
 use App\Core\Response;
+use App\Core\QueryCache;
 /**
  * Route: /api/settings
  *
@@ -18,7 +19,10 @@ function handle_settings(string $method, ?string $param1): void
 
         switch ($method) {
             case 'GET':
-                Response::json($settings->read());
+                // Cache settings for 10 minutes; rarely changes
+                QueryCache::httpCacheHeaders(600);
+                $data = QueryCache::remember('settings_all', 600, fn() => $settings->read());
+                Response::json($data);
                 break;
 
             case 'PUT':
@@ -27,6 +31,7 @@ function handle_settings(string $method, ?string $param1): void
                 if (!$data) Response::error('No data provided.', 400);
 
                 $updated = $settings->update($data);
+                QueryCache::forget('settings_all'); // Invalidate cached settings
                 Response::json([
                     'message'  => 'Settings updated successfully.',
                     'settings' => $updated,

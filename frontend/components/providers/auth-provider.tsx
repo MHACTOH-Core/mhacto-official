@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Validate the token with the backend — logout if expired/invalid
       apiVerifyAuth().then((user) => {
         if (!user) {
-          // Token is no longer valid
+          // Token is no longer valid — clear auth state
           setIsLoggedIn(false)
           setAdminEmail("")
           setCurrentUser(null)
@@ -104,9 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           saveJson("admin_current_user", null)
         }
         setIsHydrated(true)
-      }).catch(() => {
-        // Fallback: ensure the UI is never permanently stuck on a blank screen
-        // if an unexpected error occurs inside the .then() body
+      }).catch((err) => {
+        // On network error, keep existing auth state from localStorage
+        // instead of logging the user out — the backend may be temporarily unreachable
+        console.warn("Auth verify failed (keeping cached state):", err)
         setIsHydrated(true)
       })
     } else {

@@ -54,6 +54,7 @@ export interface Hospital {
   beds?: number
   hours?: string
   emergency?: boolean
+  image?: string
 }
 
 export interface Barangay {

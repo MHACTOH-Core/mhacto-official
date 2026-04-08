@@ -46,26 +46,23 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let completed = 0
-    const done = () => { if (++completed >= 2) setLoading(false) }
-    apiFetchByLabel("timeline-of-events")
-      .then((posts) => {
-        if (posts?.length) {
-          const events = posts.map(cmsToTimelineEvent)
-          events.sort((a, b) => {
-            const yearA = parseInt(a.year.replace(/\D/g, "")) || 0
-            const yearB = parseInt(b.year.replace(/\D/g, "")) || 0
-            return yearA - yearB
-          })
-          setTimelineEvents(events)
-        }
-      })
-      .catch((err) => setError(err.message))
-      .finally(done)
-    apiFetchByLabel("notable-figures")
-      .then((posts) => { if (posts?.length) setNotablePersons(posts.map(cmsToNotablePerson)) })
-      .catch((err) => setError((prev) => prev ?? err.message))
-      .finally(done)
+    setLoading(true)
+    Promise.all([
+      apiFetchByLabel("timeline-of-events").catch(() => null),
+      apiFetchByLabel("notable-figures").catch(() => null),
+    ]).then(([timelinePosts, figurePosts]) => {
+      if (timelinePosts?.length) {
+        const events = timelinePosts.map(cmsToTimelineEvent)
+        events.sort((a, b) => {
+          const yearA = parseInt(a.year.replace(/\D/g, "")) || 0
+          const yearB = parseInt(b.year.replace(/\D/g, "")) || 0
+          return yearA - yearB
+        })
+        setTimelineEvents(events)
+      }
+      if (figurePosts?.length) setNotablePersons(figurePosts.map(cmsToNotablePerson))
+    }).catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {

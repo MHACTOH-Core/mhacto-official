@@ -13,7 +13,7 @@ import {
   type HeritageSite, type Museum, type ReligiousSite,
 } from "@/lib/data/destinations-data"
 import { type CMSPost } from "@/lib/data/admin-data"
-import { apiFetchPostById } from "@/lib/api"
+import { apiFetchPostById, apiLogDestinationView } from "@/lib/api"
 import { cmsToHeritageSite, cmsToMuseum, cmsToReligiousSite } from "@/lib/cms-mappers"
 import ContentDetailLayout from "@/components/sections/content-detail-layout"
 
@@ -52,6 +52,7 @@ export default function DestinationDetailClient({ id }: { id: string }) {
         if (post) {
           const d = postToDestType(post)
           setDest(d)
+          apiLogDestinationView(Number(post.id), undefined, window.location.pathname).catch(() => {})
         }
       })
       .catch(() => {})

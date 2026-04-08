@@ -68,7 +68,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
             $targetId = (int) $param1;
 
             // Users can only change their own password unless super_admin
-            if ((int) $authUser['user_id'] !== $targetId && $authUser['role'] !== 'super_admin') {
+            if ((int) $authUser['sub'] !== $targetId && $authUser['role'] !== 'super_admin') {
                 Response::error('You can only change your own password.', 403);
             }
 
@@ -108,7 +108,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
             if ($targetId === 1) {
                 Response::error('Cannot request archival of the primary super admin.', 403);
             }
-            $requestId = $user->createArchiveRequest($targetId, (int) $authUser['user_id'], $data['reason'] ?? null);
+            $requestId = $user->createArchiveRequest($targetId, (int) $authUser['sub'], $data['reason'] ?? null);
             if ($requestId) {
                 Response::json(['message' => 'Archive request submitted for approval.', 'requestId' => $requestId], 201);
             } else {
@@ -128,7 +128,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
             if (!$requestId) {
                 Response::error('Request ID is required.', 400);
             }
-            if ($user->approveArchiveRequest($requestId, (int) $authUser['user_id'])) {
+            if ($user->approveArchiveRequest($requestId, (int) $authUser['sub'])) {
                 Response::json(['message' => 'Archive request approved. User has been archived.']);
             } else {
                 Response::error('Failed to approve request.', 400);
@@ -147,7 +147,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
             if (!$requestId) {
                 Response::error('Request ID is required.', 400);
             }
-            if ($user->denyArchiveRequest($requestId, (int) $authUser['user_id'])) {
+            if ($user->denyArchiveRequest($requestId, (int) $authUser['sub'])) {
                 Response::json(['message' => 'Archive request denied.']);
             } else {
                 Response::error('Failed to deny request.', 400);
@@ -158,15 +158,19 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
         switch ($method) {
             case 'GET':
                 if ($param1 && is_numeric($param1)) {
-                    // Single user
-                    $result = $user->findById((int) $param1);
+                    // IDOR check: content_managers can only read their own profile
+                    $authUser = Auth::requireAuth();
+                    $targetId = (int) $param1;
+                    Auth::canAccess($authUser, $targetId, ['super_admin', 'admin']);
+                    $result = $user->findById($targetId);
                     if ($result) {
                         Response::json($result);
                     } else {
                         Response::error('User not found.', 404);
                     }
                 } else {
-                    // List users
+                    // List users — only admins
+                    Auth::requireRole(['super_admin', 'admin']);
                     $includeArchived = !empty($_GET['all']);
                     Response::json($user->listAll($includeArchived));
                 }
@@ -203,6 +207,11 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
                 }
 
                 $id = (int) $param1;
+                $authUser = Auth::requireAuth();
+
+                // IDOR check: non-admins cannot update other users' profiles
+                Auth::canAccess($authUser, $id, ['super_admin', 'admin']);
+
                 $data = json_decode(file_get_contents('php://input'), true);
 
                 if (!$data) {
@@ -247,7 +256,7 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
 
                 if ($targetUser['role'] === 'super_admin' && $authUser['role'] !== 'super_admin') {
                     // Admin trying to archive a super_admin → create approval request
-                    $requestId = $user->createArchiveRequest($id, (int) $authUser['user_id'], 'Requested via account management.');
+                    $requestId = $user->createArchiveRequest($id, (int) $authUser['sub'], 'Requested via account management.');
                     if ($requestId) {
                         Response::json(['message' => 'Archive request submitted for super admin approval.', 'requiresApproval' => true, 'requestId' => $requestId], 202);
                     } else {

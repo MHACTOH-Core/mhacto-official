@@ -3,6 +3,7 @@ use App\Config\Database;
 use App\Models\Post;
 use App\Core\Auth;
 use App\Core\Response;
+use App\Core\QueryCache;
 
 /**
  * Route: /api/posts
@@ -51,10 +52,20 @@ function handle_posts(string $method, ?string $id): void
 
 function _posts_read(Post $post, ?string $id): void
 {
+    // Check if user is authenticated (admin/editor) — if not, restrict to published content only
+    $authedUser = Auth::optionalAuth();
+    $isAuthed = $authedUser !== null;
+
     // Single post by URL segment: /api/posts/42
     if ($id && is_numeric($id)) {
         $result = $post->readOne((int) $id);
         if (!$result) Response::error('Post not found.', 404);
+        // Public users can only see published posts
+        if (!$isAuthed && ($result['status'] ?? '') !== 'published') {
+            Response::error('Post not found.', 404);
+        }
+        // Cache individual public posts for 5 minutes
+        if (!$isAuthed) QueryCache::httpCacheHeaders(300);
         Response::json($result);
     }
 
@@ -62,6 +73,10 @@ function _posts_read(Post $post, ?string $id): void
     if (!empty($_GET['id'])) {
         $result = $post->readOne((int) $_GET['id']);
         if (!$result) Response::error('Post not found.', 404);
+        if (!$isAuthed && ($result['status'] ?? '') !== 'published') {
+            Response::error('Post not found.', 404);
+        }
+        if (!$isAuthed) QueryCache::httpCacheHeaders(300);
         Response::json($result);
     }
 
@@ -72,29 +87,40 @@ function _posts_read(Post $post, ?string $id): void
     $featured = !empty($_GET['featured']);
     $category = $_GET['category'] ?? null;
 
-    if ($featured) {
-        if ($label) {
-            $data = $post->readFeaturedByLabel($label, $limit);
-        } elseif ($category) {
-            $data = $post->readFeaturedByCategory($category, $limit);
-        } else {
-            $data = $post->readFeaturedByLabel(null, $limit);
-        }
-    } elseif ($type === 'places') {
-        $data = $post->readPublishedPlaces($limit);
-    } elseif ($type === 'news') {
-        $data = $post->readPublishedNews($limit);
-    } elseif ($type === 'events') {
-        $data = $post->readPublishedEvents($limit);
-    } elseif ($label) {
-        $data = $post->readByLabel($label, $status);
-    } elseif ($category) {
-        $data = $post->readByCategory($category, $status, $limit);
-    } elseif ($status) {
-        $data = $post->readByStatus($status);
-    } else {
-        $data = $post->readAll();
+    // Public users can only see published content
+    if (!$isAuthed && !$status) {
+        $status = 'published';
     }
+
+    // For public (unauthenticated) reads, cache results in APCu and send
+    // HTTP cache headers so CDN/browser can also cache the response.
+    // Admin reads (isAuthed=true) always bypass cache for fresh data.
+    $cacheKey = null;
+    if (!$isAuthed && $status === 'published') {
+        $cacheKey = 'posts_' . md5(http_build_query($_GET));
+        QueryCache::httpCacheHeaders(300); // 5-minute browser/CDN cache
+    } else {
+        QueryCache::noCacheHeaders();
+    }
+
+    $query = function () use ($post, $type, $label, $category, $status, $limit, $featured) {
+        if ($featured) {
+            if ($label)    return $post->readFeaturedByLabel($label, $limit);
+            if ($category) return $post->readFeaturedByCategory($category, $limit);
+            return $post->readFeaturedByLabel(null, $limit);
+        }
+        if ($type === 'places')  return $post->readPublishedPlaces($limit);
+        if ($type === 'news')    return $post->readPublishedNews($limit);
+        if ($type === 'events')  return $post->readPublishedEvents($limit);
+        if ($label)              return $post->readByLabel($label, $status);
+        if ($category)           return $post->readByCategory($category, $status, $limit);
+        if ($status)             return $post->readByStatus($status);
+        return $post->readAll();
+    };
+
+    $data = $cacheKey
+        ? QueryCache::remember($cacheKey, 300, $query)
+        : $query();
 
     if ($limit && !$type) {
         $data = array_slice($data, 0, $limit);
@@ -154,6 +180,9 @@ function _posts_create(Post $post): void
     }
     $created   = $post->readOne($contentId);
 
+    // Invalidate public post caches so next request rebuilds fresh data
+    QueryCache::forgetByPrefix('posts_');
+
     Response::json([
         'message' => 'Post created successfully.',
         'post'    => $created,
@@ -177,6 +206,9 @@ function _posts_update(Post $post, ?string $id, PDO $pdo): void
     }
     $updated = $post->readOne($postId);
 
+    // Invalidate all public post caches so edits are visible immediately
+    QueryCache::forgetByPrefix('posts_');
+
     Response::json([
         'message' => 'Post updated successfully.',
         'post'    => $updated,
@@ -192,6 +224,7 @@ function _posts_delete(Post $post, ?string $id): void
 
     $success = $post->delete($postId);
     if ($success) {
+        QueryCache::forgetByPrefix('posts_');
         Response::json(['message' => 'Post deleted successfully.']);
     } else {
         Response::error('Failed to delete post.', 500);
@@ -217,6 +250,7 @@ function _posts_mapFrontendToDb(array $data): array
     if (isset($data['newsDate']))    $db['news_date']      = $data['newsDate'];
     if (isset($data['category']))    $db['place_category'] = $data['category'];
     if (isset($data['author']))      $db['author']         = $data['author'];
+    if (isset($data['highlights']))  $db['tour_highlights'] = is_array($data['highlights']) ? json_encode($data['highlights']) : $data['highlights'];
 
     if (isset($data['image']) && is_array($data['image']))   $db['images'] = $data['image'];
     if (isset($data['images']) && is_array($data['images'])) $db['images'] = $data['images'];
@@ -238,17 +272,20 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
     if (isset($data['isFeatured'])) $mapped['is_featured']    = $data['isFeatured'] ? 1 : 0;
     if (isset($data['newsDate']))   $mapped['news_date']      = $data['newsDate'];
     if (isset($data['category']))   $mapped['place_category'] = $data['category'];
+    if (isset($data['highlights'])) $mapped['tour_highlights'] = is_array($data['highlights']) ? json_encode($data['highlights']) : $data['highlights'];
 
     if (isset($data['image']) && is_array($data['image']))   $mapped['images'] = $data['image'];
     if (isset($data['images']) && is_array($data['images'])) $mapped['images'] = $data['images'];
 
     if (isset($data['contentCategory'])) {
         $catMap = [
-            'history'              => 'History Wonders',
-            'arts-culture'         => 'Arts & Culture Wonders',
-            'tourist-destinations' => 'Tourist Wonders',
-            'news'                 => 'News',
-            'events'               => 'Events',
+            'history'              => 'History',
+            'arts-culture'         => 'Arts & Culture',
+            'tourist-wonders'      => 'Tourist Destinations',
+            'tourist-destinations' => 'Tourist Destinations',
+            'news'                 => 'News & Events',
+            'events'               => 'News & Events',
+            'community'            => 'Community',
         ];
         $name = $catMap[$data['contentCategory']] ?? null;
         if ($name) {
@@ -273,10 +310,10 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 function _posts_resolveCategoryId(string $key): ?int
 {
     $map = [
-        'history'              => 'History Wonders',
-        'arts-culture'         => 'Arts & Culture Wonders',
-        'tourist-wonders'      => 'Tourist Wonders',
-        'tourist-destinations' => 'Tourist Wonders',
+        'history'              => 'History',
+        'arts-culture'         => 'Arts & Culture',
+        'tourist-wonders'      => 'Tourist Destinations',
+        'tourist-destinations' => 'Tourist Destinations',
         'news'                 => 'News & Events',
         'events'               => 'News & Events',
         'community'            => 'Community',

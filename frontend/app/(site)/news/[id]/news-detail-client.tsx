@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Calendar, User, Clock, Loader2, Megaphone, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { apiFetchPostById, apiFetchPublishedNews, type NewsArticleAPI } from "@/lib/api"
+import { apiFetchPostById, apiFetchPublishedNews, apiLogDestinationView, type NewsArticleAPI } from "@/lib/api"
 import type { CMSPost } from "@/lib/data/admin-data"
 import { resolveMediaUrl } from "@/lib/utils"
 import ContentDetailLayout, { type QuickFact } from "@/components/sections/content-detail-layout"
@@ -39,6 +39,7 @@ export default function NewsDetailClient({ id }: Props) {
       .then(([post, allNews]) => {
         setArticle(post)
         setRelatedArticles(allNews.filter((a) => String(a.id) !== String(id)).slice(0, 4))
+        apiLogDestinationView(Number(post.id), undefined, window.location.pathname).catch(() => {})
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))

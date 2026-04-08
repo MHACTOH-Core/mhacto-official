@@ -94,6 +94,23 @@ class Auth
     }
 
     /**
+     * Optionally authenticate: return decoded JWT payload if a valid token
+     * is present, or null if not. Does NOT exit on missing/invalid token.
+     */
+    public static function optionalAuth(): ?array
+    {
+        $token = self::extractBearerToken();
+        if (!$token) return null;
+
+        try {
+            $decoded = JWT::decode($token, new Key(self::getSecret(), 'HS256'));
+            return (array) $decoded;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Require the authenticated user to have one of the given roles.
      * Calls requireAuth() first, then checks the role claim.
      *
@@ -153,4 +170,101 @@ class Auth
         }
         return $secret;
     }
+
+    // ── IDOR Prevention ───────────────────────────────────────────────
+
+    /**
+     * Prevent Insecure Direct Object Reference (IDOR) attacks.
+     *
+     * Verifies that the authenticated user is either:
+     *   (a) A super_admin or admin — can access any resource, or
+     *   (b) The owner of the requested resource (user_id matches sub claim)
+     *
+     * Usage (in any route handler):
+     *   $user = Auth::requireAuth();
+     *   Auth::canAccess($user, $row['user_id']);  // 403 if not owner/admin
+     *
+     * @param array      $authUser   Decoded JWT payload from requireAuth()
+     * @param int|null   $ownerId    user_id who owns the resource (null = no owner)
+     * @param string[]   $adminRoles Roles that bypass ownership check
+     */
+    public static function canAccess(array $authUser, ?int $ownerId, array $adminRoles = ['super_admin', 'admin']): void
+    {
+        $role    = $authUser['role'] ?? '';
+        $subject = (int) ($authUser['sub'] ?? 0);
+
+        // Privileged roles bypass ownership checks
+        if (in_array($role, $adminRoles, true)) {
+            return;
+        }
+
+        // Resource has no owner — deny non-admins
+        if ($ownerId === null) {
+            Response::error('Access denied.', 403);
+        }
+
+        // Ownership check: caller must own the resource
+        if ($subject !== $ownerId) {
+            // Log the IDOR attempt for audit purposes
+            error_log(sprintf(
+                'IDOR attempt: user #%d (role=%s) tried to access resource owned by user #%d | IP=%s | URI=%s',
+                $subject,
+                $role,
+                $ownerId,
+                $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                $_SERVER['REQUEST_URI'] ?? 'unknown'
+            ));
+            Response::error('Access denied. You do not own this resource.', 403);
+        }
+    }
+
+    /**
+     * Fetch a resource row and assert the authenticated user can access it.
+     * Combines a PDO lookup + canAccess() in one call to prevent the
+     * "fetch then forget to check" pattern that leads to IDOR bugs.
+     *
+     * @param array    $authUser     Decoded JWT payload
+     * @param \PDO     $db           Active PDO connection
+     * @param string   $table        Table name (validated against allowlist)
+     * @param string   $pkColumn     Primary key column name
+     * @param int      $pkValue      Requested resource ID
+     * @param string   $ownerColumn  Column that holds the owner's user_id
+     * @param string[] $adminRoles   Roles that bypass ownership check
+     * @return array   The fetched row
+     */
+    public static function fetchAndAssertAccess(
+        array $authUser,
+        \PDO $db,
+        string $table,
+        string $pkColumn,
+        int $pkValue,
+        string $ownerColumn = 'user_id',
+        array $adminRoles = ['super_admin', 'admin']
+    ): array {
+        // Allow-list table names to prevent SQL injection via $table parameter
+        $allowedTables = ['content', 'inquiries', 'users', 'activity_logs', 'milestones', 'page_views'];
+        if (!in_array($table, $allowedTables, true)) {
+            Response::error('Invalid resource type.', 400);
+        }
+
+        // Column names — only allow alphanumeric + underscore
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $pkColumn) ||
+            !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $ownerColumn)) {
+            Response::error('Invalid column reference.', 400);
+        }
+
+        $stmt = $db->prepare("SELECT * FROM `{$table}` WHERE `{$pkColumn}` = :id LIMIT 1");
+        $stmt->execute([':id' => $pkValue]);
+        $row  = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            Response::error('Resource not found.', 404);
+        }
+
+        $ownerId = isset($row[$ownerColumn]) ? (int) $row[$ownerColumn] : null;
+        self::canAccess($authUser, $ownerId, $adminRoles);
+
+        return $row;
+    }
 }
+

@@ -44,3 +44,23 @@ backend/my-php-backend/config/jwt.local.php
 # ── Misc ─────────────────────────────────────
 *.tsbuildinfo
 frontend/package-lock.json
+
+# ── Dev/temp files (never commit to repo) ────
+perf-test.mjs
+prompts.txt
+implementation-plan.txt
+notes.txt
+backend/my-php-backend/check_db.php
+*.bak
+ activity_logs       |
+| category            |
+| config              |
+| content             |
+| content_fields      |
+| content_images      |
+| featured_content    |
+| inquiries           |
+| milestone           |
+| page_views          |
+| tour_guides         |
+| users      

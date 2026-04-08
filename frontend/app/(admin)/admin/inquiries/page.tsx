@@ -76,12 +76,11 @@ type VisitDateFilter = "all" | "this_week" | "this_month" | "this_year" | "custo
 
 const DRAFT_KEY = (id: string) => `inquiry_draft_reply_${id}`
 
-type MailboxTab = "all" | "unread" | "in_progress" | "assigned" | "confirmed" | "completed" | "cancelled" | "expired" | "spam" | "trash"
+type MailboxTab = "all" | "unread" | "assigned" | "confirmed" | "completed" | "cancelled" | "expired" | "spam" | "trash"
 
 const mailboxTabs: { key: MailboxTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all",         label: "All Mail",    icon: Inbox },
   { key: "unread",      label: "Unread",      icon: Mail },
-  { key: "in_progress", label: "In Progress", icon: Loader2 },
   { key: "assigned",    label: "Assigned",    icon: UserCheck },
   { key: "confirmed",   label: "Confirmed",   icon: CalendarCheck },
   { key: "completed",   label: "Completed",   icon: CheckCircle2 },
@@ -102,9 +101,6 @@ export default function InquiriesPage() {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
-  // Assign dialog
-  const [assignTarget, setAssignTarget] = useState<Inquiry | null>(null)
-  const [assignGuideName, setAssignGuideName] = useState("")
   // Confirm tour dialog
   const [confirmTarget, setConfirmTarget] = useState<Inquiry | null>(null)
   const [confirmDate, setConfirmDate] = useState("")
@@ -137,13 +133,12 @@ export default function InquiriesPage() {
   // Memoized tab counts — single pass over inquiries
   const tabCounts = useMemo(() => {
     const counts: Record<MailboxTab, number> = {
-      all: 0, unread: 0, in_progress: 0, assigned: 0, confirmed: 0, completed: 0,
+      all: 0, unread: 0, assigned: 0, confirmed: 0, completed: 0,
       cancelled: 0, expired: 0, spam: 0, trash: 0,
     }
     for (const i of inquiries) {
       if (i.status !== "spam" && i.status !== "trash") counts.all++
       if (i.status === "unread") counts.unread++
-      else if (i.status === "in_progress") counts.in_progress++
       else if (i.status === "assigned") counts.assigned++
       else if (i.status === "confirmed") counts.confirmed++
       else if (i.status === "completed") counts.completed++
@@ -164,9 +159,6 @@ export default function InquiriesPage() {
         break
       case "unread":
         list = inquiries.filter((i) => i.status === "unread")
-        break
-      case "in_progress":
-        list = inquiries.filter((i) => i.status === "in_progress")
         break
       case "assigned":
         list = inquiries.filter((i) => i.status === "assigned")
@@ -233,7 +225,7 @@ export default function InquiriesPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Open inquiry — mark as in_progress if unread; restore draft if any
+  // Open inquiry — mark as read if unread; restore draft if any
   const openInquiry = (inq: Inquiry) => {
     const saved = localStorage.getItem(DRAFT_KEY(inq.id))
     if (saved) {
@@ -246,9 +238,9 @@ export default function InquiriesPage() {
       setDraftSaved(false)
     }
     if (inq.status === "unread") {
-      const updated = { ...inq, status: "in_progress" as InquiryStatus }
+      const updated = { ...inq, status: "read" as InquiryStatus }
       setSelectedInquiry(updated)
-      updateInquiry(inq.id, { status: "in_progress" })
+      updateInquiry(inq.id, { status: "read" })
     } else {
       setSelectedInquiry(inq)
     }
@@ -368,22 +360,17 @@ export default function InquiriesPage() {
     toast({ title: "Restored", description: `Inquiry from ${inq.name} has been restored.` })
   }
 
-  const confirmAssign = () => {
-    if (!assignTarget || !assignGuideName) return
-    updateInquiry(assignTarget.id, { status: "assigned", assignedTo: assignGuideName })
-    if (selectedInquiry?.id === assignTarget.id) {
-      setSelectedInquiry({ ...assignTarget, status: "assigned", assignedTo: assignGuideName })
-    }
-    toast({ title: "Assigned", description: `Inquiry from ${assignTarget.name} assigned to ${assignGuideName}.`, variant: "success" })
-    setAssignTarget(null)
-    setAssignGuideName("")
-  }
-
   const openConfirmDialog = (inq: Inquiry) => {
     setConfirmTarget(inq)
     setConfirmDate(inq.confirmedDate ?? "")
     setConfirmGuideName(inq.assignedTo ?? "")
     setConfirmTouristName(inq.touristName ?? "")
+  }
+
+  const handleRevertConfirmed = (inq: Inquiry) => {
+    updateInquiry(inq.id, { status: "assigned" })
+    setSelectedInquiry((prev) => prev ? { ...prev, status: "assigned" as const } : prev)
+    toast({ title: "Reverted", description: `Booking for ${inq.name} moved back to Assigned.`, variant: "success" })
   }
 
   const handleConfirmTour = async () => {
@@ -478,7 +465,6 @@ export default function InquiriesPage() {
   const emptyMessages: Record<MailboxTab, { icon: React.ComponentType<{ className?: string }>; title: string; desc: string }> = {
     all:         { icon: Inbox,        title: "No inquiries yet",           desc: "New inquiries will appear here." },
     unread:      { icon: Mail,         title: "All caught up!",             desc: "No unread inquiries." },
-    in_progress: { icon: Loader2,      title: "Nothing in progress",        desc: "Inquiries being worked on appear here." },
     assigned:    { icon: UserCheck,    title: "No assigned inquiries",      desc: "Inquiries assigned to a tourist guide appear here." },
     confirmed:   { icon: CalendarCheck, title: "No confirmed tours",        desc: "Confirmed tour bookings will appear here." },
     completed:   { icon: CheckCircle2, title: "No completed tours",         desc: "Tours marked as completed will appear here." },
@@ -847,22 +833,39 @@ export default function InquiriesPage() {
                       </Tooltip>
                     )}
 
-                    {/* Assign button — not shown when in trash/spam */}
-                    {selectedInquiry.status !== "assigned" && selectedInquiry.status !== "spam" && selectedInquiry.status !== "trash" && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 h-7 sm:h-8 text-xs px-2 sm:px-3" onClick={() => { setAssignTarget(selectedInquiry); setAssignGuideName(selectedInquiry.assignedTo ?? "") }}>
-                            <UserCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                            <span className="hidden sm:inline">Assign</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Assign to a tourist guide</TooltipContent>
-                      </Tooltip>
-                    )}
 
-                    {/* Complete / Cancel — shown for confirmed tours */}
+
+                    {/* Complete / Cancel / Edit / Revert — shown for confirmed tours */}
                     {selectedInquiry.status === "confirmed" && (
                       <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-blue-400 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                              onClick={() => openConfirmDialog(selectedInquiry)}
+                            >
+                              <CalendarCheck className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Edit Booking</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Change the tour date or assigned guide</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 sm:h-8 gap-1.5 text-xs px-2 sm:px-3 border-yellow-400 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
+                              onClick={() => handleRevertConfirmed(selectedInquiry)}
+                            >
+                              <RotateCcw className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                              <span className="hidden sm:inline">Revert</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Undo confirmation — move back to In Progress</TooltipContent>
+                        </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -1013,7 +1016,7 @@ export default function InquiriesPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {selectedInquiry.dateOfVisit && (() => {
                             const dateTo = selectedInquiry.additionalDetails?.dateToVisit as string | undefined
-                            const hasRange = dateTo && dateTo !== selectedInquiry.dateOfVisit
+                            const hasRange = !!dateTo
                             if (hasRange) {
                               return (
                                 <>
@@ -1048,7 +1051,7 @@ export default function InquiriesPage() {
                                   <CalendarDays className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Date of Visit</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Available From</p>
                                   <p className="text-xs font-medium text-card-foreground">
                                     {safeFormatDate(selectedInquiry.dateOfVisit, "MMMM d, yyyy")}
                                   </p>
@@ -1243,15 +1246,19 @@ export default function InquiriesPage() {
           <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) { setConfirmTarget(null) } }}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Tour Booking</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {confirmTarget?.status === "confirmed" ? "Edit Tour Booking" : "Confirm Tour Booking"}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Set the confirmed tour date for &quot;{confirmTarget?.name}&quot;.
+                  {confirmTarget?.status === "confirmed"
+                    ? `Update the confirmed date or guide for "${confirmTarget?.name}".`
+                    : `Set the confirmed tour date for "${confirmTarget?.name}".`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-3 px-0 py-2">
                 {confirmTarget?.dateOfVisit && (() => {
                   const dateTo = confirmTarget.additionalDetails?.dateToVisit as string | undefined
-                  const hasRange = dateTo && dateTo !== confirmTarget.dateOfVisit
+                  const hasRange = !!dateTo
                   return (
                     <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 text-xs">
                       <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Visitor&apos;s Availability Window</p>
@@ -1303,7 +1310,7 @@ export default function InquiriesPage() {
                   className="bg-teal-600 hover:bg-teal-700 text-white"
                 >
                   {isConfirming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <CalendarCheck className="h-3.5 w-3.5 mr-1.5" />}
-                  Confirm Tour
+                  {confirmTarget?.status === "confirmed" ? "Save Changes" : "Confirm Tour"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1355,49 +1362,6 @@ export default function InquiriesPage() {
                 >
                   {isLoggingWalkIn ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                   Log Walk-in
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* ─── Assign Dialog ────────────────────────────────── */}
-          <AlertDialog open={!!assignTarget} onOpenChange={() => { setAssignTarget(null); setAssignGuideName("") }}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Assign to Tourist Guide</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Select a tourist guide to assign the inquiry from &quot;{assignTarget?.name}&quot;.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="px-0 py-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Tourist Guide <span className="text-destructive">*</span></label>
-                  <Select value={assignGuideName || "__none__"} onValueChange={(v) => setAssignGuideName(v === "__none__" ? "" : v)}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select a guide" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__" disabled>Select a guide</SelectItem>
-                      {tourGuides.filter((g) => g.isActive).map((g) => (
-                        <SelectItem key={g.id} value={g.fullName}>
-                          {g.fullName}
-                          {g.availability !== "available" && (
-                            <span className="ml-1.5 text-[10px] text-muted-foreground">({g.availability.replace("_", " ")})</span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={confirmAssign}
-                  disabled={!assignGuideName}
-                  className="bg-primary text-primary-foreground"
-                >
-                  Assign
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

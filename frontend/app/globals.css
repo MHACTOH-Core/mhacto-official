@@ -5,13 +5,186 @@
 /* ── Smooth scrolling ── */
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll; /* always show scrollbar track to prevent layout shift */
 }
 
 /* Prevent Radix scroll-lock from hiding the page scrollbar */
 body[data-scroll-locked] {
-  overflow: auto !important;
+  overflow-y: scroll !important;
   padding-right: 0px !important;
   margin-right: 0px !important;
+}
+
+/* ── Print styles for Dashboard export ── */
+
+/* Hide the report on screen */
+.print-report {
+  display: none;
+}
+
+@media print {
+  /* Hide everything except the print report */
+  body > *:not(#print-portal) {
+    display: none !important;
+  }
+  #print-portal {
+    display: block !important;
+  }
+  .print-report {
+    display: block !important;
+  }
+
+  body {
+    background: white !important;
+    color: #1a1a1a !important;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Letterhead */
+  .report-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px 0 8px;
+  }
+  .report-logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+  }
+  .report-header-text {
+    text-align: center;
+    flex: 1;
+  }
+  .report-govt {
+    font-size: 10pt;
+    color: #555;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+  .report-municipality {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 2px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .report-title {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 6px 0 2px;
+  }
+  .report-date {
+    font-size: 9pt;
+    color: #666;
+    margin: 0;
+  }
+
+  .report-divider {
+    border: none;
+    border-top: 2px solid #1a1a1a;
+    margin: 10px 0;
+  }
+
+  /* Sections */
+  .report-section {
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+  .report-section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #999;
+    padding-bottom: 3px;
+    margin: 0 0 8px;
+    color: #1a1a1a;
+  }
+  .report-subsection-title {
+    font-size: 10pt;
+    font-weight: 600;
+    margin: 10px 0 4px;
+    color: #333;
+  }
+  .report-stat-line {
+    font-size: 11pt;
+    margin: 0 0 6px;
+  }
+  .report-empty {
+    font-size: 10pt;
+    color: #888;
+    font-style: italic;
+  }
+
+  /* Tables */
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin-bottom: 6px;
+  }
+  .report-table th,
+  .report-table td {
+    border: 1px solid #bbb;
+    padding: 5px 10px;
+    text-align: left;
+  }
+  .report-table th {
+    background: #e8e8e8 !important;
+    font-weight: 700;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #333;
+  }
+  .report-table tbody tr:nth-child(even) {
+    background: #f5f5f5 !important;
+  }
+  .report-total-row {
+    background: #e0e0e0 !important;
+  }
+  .report-total-row td {
+    border-top: 2px solid #888;
+  }
+
+  /* Footer */
+  .report-footer {
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    margin-top: 8px;
+  }
+  .report-footer p {
+    margin: 2px 0;
+  }
+  .report-confidential {
+    margin-top: 8px !important;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+  }
+
+  /* Suppress URL display after links/images when printing */
+  a[href]::after {
+    content: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 15mm;
+  }
 }
 
 @layer utilities {

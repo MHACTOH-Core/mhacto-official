@@ -4,7 +4,8 @@ import { API_BASE } from "@/lib/api"
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_BASE}/api/home/milestones.php`)
-    const data: { milestoneId: string | number }[] = await res.json()
+    const json = await res.json()
+    const data: { milestoneId: string | number }[] = json.data ?? json
     return data.map((m) => ({ id: String(m.milestoneId) }))
   } catch {
     return []

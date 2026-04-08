@@ -33,7 +33,7 @@ const categoryLabel: Record<PeopleWonder["category"], string> = {
 export function FeaturedPeopleWonders() {
   const { data: persons = [], isLoading } = useAPIData<PeopleWonder[]>(
     "featured-people-wonders",
-    () => apiFetchFeaturedByLabel("people-wonders", MAX_FEATURED).then((posts) =>
+    () => apiFetchFeaturedByLabel("people-wonders").then((posts) =>
       posts?.length ? posts.slice(0, MAX_FEATURED).map(cmsToPeopleWonder) : []
     ),
   )

@@ -5,57 +5,34 @@ import Link from "next/link"
 import { Building2, Phone, Mail, Clock, MapPin, Users, Layers, Target, ArrowRight, CheckCircle } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
-import { apiFetchSettings } from "@/lib/api"
+import { apiFetchSettings, apiFetchOfficeContent, type OrgStructureItem, type ProgramItem } from "@/lib/api"
 
-const staff = [
-  { name: "Office of the Mayor", role: "Chief Executive", note: "oversees MHACTO direction" },
-  { name: "Tourism Officer", role: "Department Head", note: "leads tourism planning & programs" },
-  { name: "Heritage & Culture Division", role: "Documentation & Preservation", note: "archives, research, intangible heritage" },
-  { name: "Arts & Events Division", role: "Programs & Events", note: "festivals, exhibits, cultural programs" },
-  { name: "Tourism Promotions Division", role: "Marketing & Partnerships", note: "tour packages, accreditation, DOT liaison" },
-  { name: "Administrative Division", role: "Administration & Records", note: "permits, coordination, records management" },
+const DEFAULT_ABOUT_P1 = "The Municipal History, Arts, Culture and Tourism Office (MHACTO) is a department of the Bocaue Local Government Unit tasked with the preservation, promotion, and development of the municipality's historical, artistic, cultural, and tourism resources."
+const DEFAULT_ABOUT_P2 = "MHACTO is committed to the principle that culture and tourism are powerful engines for both economic development and community well-being — and that the only sustainable tourism is tourism that preserves what makes Bocaue unique."
+
+const DEFAULT_ORG_STRUCTURE: OrgStructureItem[] = [
+  { name: "Office of the Mayor",        role: "Chief Executive",             note: "oversees MHACTO direction" },
+  { name: "Tourism Officer",            role: "Department Head",             note: "leads tourism planning & programs" },
+  { name: "Heritage & Culture Division",role: "Documentation & Preservation",note: "archives, research, intangible heritage" },
+  { name: "Arts & Events Division",     role: "Programs & Events",           note: "festivals, exhibits, cultural programs" },
+  { name: "Tourism Promotions Division",role: "Marketing & Partnerships",    note: "tour packages, accreditation, DOT liaison" },
+  { name: "Administrative Division",    role: "Administration & Records",    note: "permits, coordination, records management" },
 ]
 
-const programs = [
-  {
-    title: "Heritage Gallery & Archives",
-    description: "Maintains the MHACTO Heritage Gallery in the Old Municipal Hall, housing historical photographs, artifacts, documents, and oral history recordings spanning Bocaue's entire history.",
-    badge: "Ongoing",
-    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300",
-  },
-  {
-    title: "Living Cultural Heritage Bearer Program",
-    description: "Identifies, recognizes, and supports master practitioners of Bocaue's endangered traditional arts — including weaving, woodcarving, and traditional performing arts.",
-    badge: "Ongoing",
-    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300",
-  },
-  {
-    title: "Pagoda Festival Coordination",
-    description: "Leads the annual coordination of the Bocaue Pagoda Festival in partnership with the Parish of St. Martin of Tours, the NCCA, and barangay governments.",
-    badge: "Annual",
-    badgeColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300",
-  },
-  {
-    title: "Heritage Tourism Package Development",
-    description: "Designs and operates guided heritage tours, food trails, and festival immersion packages for individual visitors, school groups, and corporate tours.",
-    badge: "Ongoing",
-    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300",
-  },
-  {
-    title: "Bocaue Tourism Master Plan 2025–2030",
-    description: "Implements the strategic roadmap for Bocaue's tourism development, including the Bocaue River Esplanade Project, heritage marker installation, and digital heritage archiving.",
-    badge: "2025–2030",
-    badgeColor: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300",
-  },
-  {
-    title: "School Heritage Education Program",
-    description: "Partners with public schools in Bocaue to deliver heritage and culture modules in classrooms, organize school visits to the Heritage Gallery, and support student arts competitions.",
-    badge: "Annual",
-    badgeColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300",
-  },
+const DEFAULT_PROGRAMS: ProgramItem[] = [
+  { title: "Heritage Gallery & Archives",             description: "Maintains the MHACTO Heritage Gallery in the Old Municipal Hall, housing historical photographs, artifacts, documents, and oral history recordings spanning Bocaue's entire history.",                                                                              badge: "Ongoing",    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { title: "Living Cultural Heritage Bearer Program", description: "Identifies, recognizes, and supports master practitioners of Bocaue's endangered traditional arts — including weaving, woodcarving, and traditional performing arts.",                                                                                          badge: "Ongoing",    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { title: "Pagoda Festival Coordination",            description: "Leads the annual coordination of the Bocaue Pagoda Festival in partnership with the Parish of St. Martin of Tours, the NCCA, and barangay governments.",                                                                                                         badge: "Annual",     badgeColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300" },
+  { title: "Heritage Tourism Package Development",    description: "Designs and operates guided heritage tours, food trails, and festival immersion packages for individual visitors, school groups, and corporate tours.",                                                                                                            badge: "Ongoing",    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { title: "Bocaue Tourism Master Plan 2025–2030",    description: "Implements the strategic roadmap for Bocaue's tourism development, including the Bocaue River Esplanade Project, heritage marker installation, and digital heritage archiving.",                                                                                  badge: "2025–2030",  badgeColor: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300" },
+  { title: "School Heritage Education Program",       description: "Partners with public schools in Bocaue to deliver heritage and culture modules in classrooms, organize school visits to the Heritage Gallery, and support student arts competitions.",                                                                             badge: "Annual",     badgeColor: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300" },
 ]
 
 export default function TourismOfficePage() {
+  const [aboutP1, setAboutP1] = useState(DEFAULT_ABOUT_P1)
+  const [aboutP2, setAboutP2] = useState(DEFAULT_ABOUT_P2)
+  const [orgStructure, setOrgStructure] = useState<OrgStructureItem[]>(DEFAULT_ORG_STRUCTURE)
+  const [programs, setPrograms] = useState<ProgramItem[]>(DEFAULT_PROGRAMS)
   const [contactInfo, setContactInfo] = useState({
     address: "Bocaue Municipal Hall, Rizal Ave., Bocaue, Bulacan",
     phone: "(044) 123-4567",
@@ -63,18 +40,26 @@ export default function TourismOfficePage() {
   })
 
   useEffect(() => {
+    apiFetchOfficeContent()
+      .then((data) => {
+        if (data.aboutP1) setAboutP1(data.aboutP1)
+        if (data.aboutP2) setAboutP2(data.aboutP2)
+        if (Array.isArray(data.orgStructure) && data.orgStructure.length > 0) setOrgStructure(data.orgStructure)
+        if (Array.isArray(data.programs) && data.programs.length > 0) setPrograms(data.programs)
+      })
+      .catch(() => {})
+
     apiFetchSettings()
       .then((s) => {
         if (s) {
-          setContactInfo({
-            address: s.address || contactInfo.address,
-            phone: s.contactPhone || contactInfo.phone,
-            email: s.contactEmail || contactInfo.email,
-          })
+          setContactInfo((prev) => ({
+            address: s.address || prev.address,
+            phone: s.contactPhone || prev.phone,
+            email: s.contactEmail || prev.email,
+          }))
         }
       })
       .catch(() => {})
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -109,12 +94,8 @@ export default function TourismOfficePage() {
                   <span className="text-primary">Bocaue&apos;s Legacy</span>
                 </h2>
                 <div className="mt-4 space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    The Municipal History, Arts, Culture and Tourism Office (MHACTO) is a department of the Bocaue Local Government Unit tasked with the preservation, promotion, and development of the municipality&apos;s historical, artistic, cultural, and tourism resources.
-                  </p>
-                  <p>
-                    MHACTO is committed to the principle that culture and tourism are powerful engines for both economic development and community well-being — and that the only sustainable tourism is tourism that preserves what makes Bocaue unique.
-                  </p>
+                  <p>{aboutP1}</p>
+                  <p>{aboutP2}</p>
                 </div>
               </div>
 
@@ -172,9 +153,9 @@ export default function TourismOfficePage() {
                 </div>
                 <div className="p-6">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {staff.map((s, i) => (
+                    {orgStructure.map((s, i) => (
                       <div
-                        key={s.name}
+                        key={i}
                         className="flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
                       >
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-black text-primary-foreground">
@@ -206,9 +187,9 @@ export default function TourismOfficePage() {
                 </div>
                 <div className="p-6">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {programs.map((prog) => (
+                    {programs.map((prog, i) => (
                       <div
-                        key={prog.title}
+                        key={i}
                         className="flex flex-col rounded-2xl border border-border bg-card/60 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">

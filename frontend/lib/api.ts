@@ -4,12 +4,13 @@
  * Every backend call goes through `apiFetch` so you only configure
  * the base URL once and get consistent error handling everywhere.
  *
- * The base URL defaults to http://localhost:8000 and can be overridden
- * via the NEXT_PUBLIC_API_URL environment variable.
+ * The base URL defaults to empty in development (requests are proxied by
+ * Next.js rewrites to avoid CORS) and can be overridden via
+ * the NEXT_PUBLIC_API_URL environment variable for production.
  */
 
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+  process.env.NEXT_PUBLIC_API_URL ?? ""
 
 // ─── Lightweight in-memory cache for public GET requests ─────────
 // Prevents re-fetching the same data on SPA navigation (stale-while-revalidate).
@@ -23,6 +24,13 @@ interface CacheEntry<T = unknown> {
 const _apiCache = new Map<string, CacheEntry>()
 /** Default TTL: 60 seconds — stale data is served while revalidating */
 const CACHE_TTL_MS = 60_000
+
+// ─── In-flight request deduplication ────────────────────────────
+// When multiple components simultaneously request the same public URL
+// (e.g. the slider AND a section both asking for featured cultural-practices)
+// they share a single in-flight Promise instead of making separate requests.
+// The promise is removed from the map once it settles.
+const _inflight = new Map<string, Promise<unknown>>()
 
 /** Return cached data if fresh, otherwise undefined */
 function getCached<T>(key: string): T | undefined {
@@ -68,6 +76,18 @@ let _onAuthError: (() => void) | null = null
 // Holds a single in-flight refresh Promise so concurrent 401s share one refresh request
 let _isRefreshing: Promise<boolean> | null = null
 
+/**
+ * Thrown when a 401 cannot be recovered (refresh failed or token too old).
+ * `_onAuthError` has already been called so the UI is transitioning to login.
+ * Callers should silently discard this error rather than showing an error state.
+ */
+export class AuthExpiredError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AuthExpiredError'
+  }
+}
+
 /** Register a callback invoked when a 401 (token expired/invalid) is received. */
 export function onAuthError(cb: (() => void) | null) {
   _onAuthError = cb
@@ -107,13 +127,17 @@ async function tryRefreshToken(): Promise<boolean> {
   const token = getAuthToken()
   if (!token) return false
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
     const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
     if (!res.ok) return false
     const body = await res.json()
     if (body.success && body.data?.token) {
@@ -159,6 +183,11 @@ export async function apiFetch<T>(
   if (isCacheableGet) {
     const cached = getCached<T>(url)
     if (cached !== undefined) return cached
+
+    // If an identical request is already in-flight, share its promise
+    // rather than opening a second connection to the PHP server.
+    const existing = _inflight.get(url)
+    if (existing) return existing as Promise<T>
   }
 
   // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
@@ -173,11 +202,51 @@ export async function apiFetch<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    cache: 'no-store',
-    headers,
-  })
+  // Register this request as in-flight so simultaneous duplicate calls share it
+  let inflightPromise: Promise<T> | null = null
+  if (isCacheableGet) {
+    inflightPromise = (async () => {
+      try {
+        const res = await fetch(url, { ...fetchOptions, cache: 'no-store', headers }).catch(() => { throw new Error('Network error — backend may be unavailable') })
+        const text = await res.text()
+        let env: { success?: boolean; data?: T; error?: string; message?: string }
+        try { env = text ? JSON.parse(text) : {} } catch { throw new Error(`Invalid JSON response from ${endpoint}`) }
+        if (!res.ok) {
+          if (res.status === 401 && !skipAuth) {
+            const tok = getAuthToken()
+            if (tok) {
+              if (!_isRefreshing) _isRefreshing = tryRefreshToken()
+              const refreshed = await _isRefreshing
+              _isRefreshing = null
+              if (refreshed) { _inflight.delete(url); return apiFetch<T>(endpoint, options) }
+              setAuthToken(null)
+            }
+            _onAuthError?.()
+          }
+          const errMsg = env.error ?? env.message ?? `Request failed (${res.status})`
+          throw res.status === 401 ? new AuthExpiredError(errMsg) : new Error(errMsg)
+        }
+        const result = (env.success !== undefined && 'data' in env ? env.data : env) as T
+        setCache(url, result)
+        return result
+      } finally {
+        _inflight.delete(url)
+      }
+    })()
+    _inflight.set(url, inflightPromise as Promise<unknown>)
+    return inflightPromise
+  }
+
+  let response: Response
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      cache: 'no-store',
+      headers,
+    })
+  } catch {
+    throw new Error('Network error — backend may be unavailable')
+  }
 
   // Try to parse JSON even for error responses
   const rawText = await response.text()
@@ -212,7 +281,7 @@ export async function apiFetch<T>(
       envelope.error ??
       envelope.message ??
       `Request failed (${response.status})`
-    throw new Error(errorMessage)
+    throw response.status === 401 ? new AuthExpiredError(errorMessage) : new Error(errorMessage)
   }
 
   // Unwrap standard { success, data } envelope; fall back to raw response
@@ -259,7 +328,7 @@ export function apiListMedia(type: "images" | "videos" | "all" = "all") {
 export async function apiUploadMedia(
   files: File[],
   type: "image" | "video" = "image",
-  options?: { category?: string; label?: string },
+  options?: { category?: string; label?: string; subfolder?: string },
 ): Promise<MediaUploadResult> {
   const formData = new FormData()
   files.forEach((file) => formData.append("files[]", file))
@@ -267,6 +336,7 @@ export async function apiUploadMedia(
   const params = new URLSearchParams({ type })
   if (options?.category) params.set("category", options.category)
   if (options?.label) params.set("label", options.label)
+  if (options?.subfolder) params.set("subfolder", options.subfolder)
 
   const uploadUrl = `${API_BASE}/api/v1/media?${params.toString()}`
   const uploadHeaders: Record<string, string> = {}
@@ -420,18 +490,75 @@ export function apiFetchVisitorSummary(days = 30) {
   return apiFetch<VisitorSummary>(`/api/analytics/visitor-summary?days=${days}`)
 }
 
+/** Combined analytics fetch — pageviews + daily visits + visitor summary in one request */
+export interface AnalyticsDashboardData {
+  pageViews: PageView[]
+  dailyVisits: DailyVisit[]
+  visitorSummary: VisitorSummary
+}
+
+export function apiFetchAnalyticsDashboard(days = 30) {
+  return apiFetch<AnalyticsDashboardData>(`/api/analytics/dashboard?days=${days}`)
+}
+
+// ─── MHACTO Office Content ────────────────────────────────────────
+
+export interface OrgStructureItem {
+  name: string
+  role: string
+  note: string
+}
+
+export interface ProgramItem {
+  title: string
+  description: string
+  badge: string
+  badgeColor: string
+}
+
+export interface CoreValueItem {
+  title: string
+  description: string
+}
+
+export interface OfficeContent {
+  aboutP1: string
+  aboutP2: string
+  mission: string
+  vision: string
+  coreValues: CoreValueItem[]
+  objectives: string[]
+  orgStructure: OrgStructureItem[]
+  programs: ProgramItem[]
+}
+
+/** Fetch all MHACTO Office page content (public) */
+export function apiFetchOfficeContent() {
+  return apiFetch<OfficeContent>("/api/office", { skipAuth: true })
+}
+
+/** Update MHACTO Office page content (admin only) */
+export function apiUpdateOfficeContent(data: Partial<OfficeContent>) {
+  return apiFetch<{ message: string; content: OfficeContent }>("/api/office", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  })
+}
+
 /**
  * Log a destination click.
  * Called on the public site when a visitor navigates to a destination page.
- * Sends a lightweight POST with the destination's content_id.
+ * Sends a lightweight POST with the destination's content_id and current path.
  */
 export function apiLogDestinationView(
   contentId: number,
   sessionId?: string,
+  pagePath?: string,
 ) {
   return apiFetch<{ message: string }>("/api/analytics/log-view", {
     method: "POST",
-    body: JSON.stringify({ contentId, sessionId }),
+    body: JSON.stringify({ contentId, sessionId, pagePath }),
+    skipAuth: true,
   })
 }
 
@@ -595,6 +722,8 @@ export interface CreateInquiryPayload {
   numberOfPax?: number
   message: string
   additionalDetails?: Record<string, unknown>
+  /** RA 10173 — visitor must consent to data collection */
+  consentGiven?: boolean
 }
 
 /** Submit a new public inquiry from the tourist-facing form */

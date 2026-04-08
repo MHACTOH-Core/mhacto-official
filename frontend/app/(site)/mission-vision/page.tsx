@@ -1,34 +1,38 @@
 ﻿"use client"
 
-import Image from "next/image"
-import { asset } from "@/lib/utils"
-import Link from "next/link"
-import { ArrowLeft, Target, Eye, Heart } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Target, Eye, Heart } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Card, CardContent } from "@/components/ui/card"
+import { apiFetchOfficeContent, type CoreValueItem } from "@/lib/api"
 
-const values = [
+const ICONS = [Heart, Target, Eye]
+
+const DEFAULT_MISSION =
+  "To document, preserve, and promote the history, arts, culture, and tourism of the Municipality of Bocaue, Bulacan — fostering a deep sense of community identity and pride while developing sustainable tourism programs that improve the quality of life of all Bocaueños."
+
+const DEFAULT_VISION =
+  "A Bocaue that is recognized as a premier cultural heritage destination in the Philippines — where its rich past is celebrated, its living traditions are cherished, and its community is empowered through arts, culture, and tourism."
+
+const DEFAULT_CORE_VALUES: CoreValueItem[] = [
   {
-    icon: Heart,
     title: "Heritage Preservation",
     description:
       "We protect and promote Bocaue's tangible and intangible cultural heritage — from its 400-year-old church to its living traditions of weaving, balagtasan, and the Pagoda Festival.",
   },
   {
-    icon: Target,
     title: "Inclusive Tourism",
     description:
       "We develop tourism programs that benefit the whole community — ensuring that economic growth from tourism creates livelihoods for local artisans, food vendors, guides, and service providers.",
   },
   {
-    icon: Eye,
     title: "Cultural Education",
     description:
       "We partner with schools, libraries, and youth organizations to cultivate pride in Bocaue's history and culture among the next generation of Bocaueños.",
   },
 ]
 
-const objectives = [
+const DEFAULT_OBJECTIVES: string[] = [
   "Develop and manage heritage tourism programs that highlight Bocaue's historical and cultural assets.",
   "Document and preserve the municipality's tangible and intangible cultural heritage.",
   "Support local artisans, craftspeople, and culture bearers through recognition programs and market access.",
@@ -40,6 +44,22 @@ const objectives = [
 ]
 
 export default function MissionVisionPage() {
+  const [mission, setMission] = useState(DEFAULT_MISSION)
+  const [vision, setVision] = useState(DEFAULT_VISION)
+  const [coreValues, setCoreValues] = useState<CoreValueItem[]>(DEFAULT_CORE_VALUES)
+  const [objectives, setObjectives] = useState<string[]>(DEFAULT_OBJECTIVES)
+
+  useEffect(() => {
+    apiFetchOfficeContent()
+      .then((data) => {
+        if (data.mission) setMission(data.mission)
+        if (data.vision) setVision(data.vision)
+        if (Array.isArray(data.coreValues) && data.coreValues.length > 0) setCoreValues(data.coreValues)
+        if (Array.isArray(data.objectives) && data.objectives.length > 0) setObjectives(data.objectives)
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
@@ -67,11 +87,7 @@ export default function MissionVisionPage() {
                   </div>
                   <h2 className="text-2xl font-black text-foreground">Our Mission</h2>
                 </div>
-                <p className="text-foreground leading-relaxed text-base">
-                  To document, preserve, and promote the history, arts, culture, and tourism of the Municipality of
-                  Bocaue, Bulacan — fostering a deep sense of community identity and pride while developing
-                  sustainable tourism programs that improve the quality of life of all Bocaueños.
-                </p>
+                <p className="text-foreground leading-relaxed text-base">{mission}</p>
               </CardContent>
             </Card>
 
@@ -85,11 +101,7 @@ export default function MissionVisionPage() {
                   </div>
                   <h2 className="text-2xl font-black text-foreground">Our Vision</h2>
                 </div>
-                <p className="text-foreground leading-relaxed text-base">
-                  A Bocaue that is recognized as a premier cultural heritage destination in the Philippines —
-                  where its rich past is celebrated, its living traditions are cherished, and its community is
-                  empowered through arts, culture, and tourism.
-                </p>
+                <p className="text-foreground leading-relaxed text-base">{vision}</p>
               </CardContent>
             </Card>
           </div>
@@ -106,17 +118,20 @@ export default function MissionVisionPage() {
               </div>
             </div>
             <div className="grid gap-6 sm:grid-cols-3">
-              {values.map(({ icon: Icon, title, description }) => (
-                <Card key={title} className="border-border hover:border-primary/30 hover:shadow-md transition-all">
-                  <CardContent className="p-5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mb-4">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <h3 className="font-bold text-foreground mb-2">{title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {coreValues.map((val, i) => {
+                const Icon = ICONS[i % ICONS.length]
+                return (
+                  <Card key={i} className="border-border hover:border-primary/30 hover:shadow-md transition-all">
+                    <CardContent className="p-5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mb-4">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <h3 className="font-bold text-foreground mb-2">{val.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{val.description}</p>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           </div>
 
@@ -134,7 +149,7 @@ export default function MissionVisionPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {objectives.map((obj, i) => (
                 <div
-                  key={obj}
+                  key={i}
                   className="flex items-start gap-3 p-4 rounded-lg bg-muted/40 border border-border"
                 >
                   <span className="flex-shrink-0 mt-0.5 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
