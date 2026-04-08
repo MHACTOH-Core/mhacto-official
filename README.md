@@ -2,82 +2,79 @@
 
 A full-stack web application for the Municipality of Bocaue, Bulacan, Philippines — showcasing local tourism, culture, history, and community services with an admin CMS dashboard.
 
+---
+
 ## Tech Stack
 
-| Layer    | Technology                                      |
-| -------- | ----------------------------------------------- |
-| Frontend | Next.js 16, React, TypeScript, Tailwind CSS     |
-| UI       | shadcn/ui component library                     |
-| Backend  | PHP (vanilla, no framework)                     |
-| Database | MySQL (11 tables — see `backend/…/schema.sql`)  |
-| Package  | pnpm                                            |
+| Layer    | Technology                                  |
+|----------|---------------------------------------------|
+| Frontend | Next.js 16, React, TypeScript, Tailwind CSS |
+| UI       | shadcn/ui                                   |
+| Backend  | PHP (vanilla, no framework)                 |
+| Database | MySQL (11 tables)                           |
+| Package  | pnpm                                        |
+
+---
 
 ## Project Structure
 
 ```
-├── frontend/          # Next.js app (pages, components, API client)
-│   ├── app/           # Next.js App Router pages
-│   │   ├── (site)/    # Public tourist-facing pages
-│   │   └── (admin)/   # Admin CMS dashboard
-│   ├── components/    # Reusable UI, layout, sections, providers
-│   └── lib/           # API client (api.ts), utilities, data, mappers
+├── frontend/
+│   ├── app/
+│   │   ├── (site)/        # Public tourist-facing pages
+│   │   └── (admin)/       # Admin CMS dashboard
+│   ├── components/        # UI, layout, sections, providers
+│   └── lib/               # API client (api.ts), utilities, mappers
 │
-├── backend/my-php-backend/
-│   ├── index.php      # Central router (single entry point for all API requests)
-│   ├── .htaccess      # Apache mod_rewrite → index.php
-│   ├── routes/        # Route handlers (auth, posts, inquiries, media, etc.)
-│   ├── api/           # Legacy endpoints (fallback only)
-│   ├── config/        # Database connection
-│   ├── core/          # Response helpers (CORS, JSON), security
-│   ├── database/      # SQL schema & seed
-│   ├── models/        # PHP data models (Post, Inquiry, Settings, etc.)
-│   └── uploads/       # User-uploaded media (images, videos)
+└── backend/my-php-backend/
+    ├── index.php           # Central router (single entry point)
+    ├── routes/             # Route handlers (auth, posts, inquiries, etc.)
+    ├── config/             # Database connection
+    ├── core/               # Response helpers, security, caching
+    ├── models/             # PHP data models
+    └── database/           # SQL schema & seed files
 ```
 
-## Architecture — How Data Fetching Works
+---
 
-This project uses a **3-tier REST API architecture**. The frontend **never** connects to the database directly.
+## How Data Fetching Works
+
+This project uses a **3-tier REST API architecture**. The frontend never connects to the database directly.
 
 ```
 Browser (React/Next.js)  →  HTTP Request  →  PHP Backend  →  MySQL Database
-       FRONTEND                                 SERVER            DB
 ```
 
-### Why not direct SQL `SELECT` from the frontend?
+**Why not direct SQL from the frontend?**
+- The browser has no access to DB credentials — embedding them would expose them in DevTools
+- Browsers can only make HTTP requests; they cannot speak the MySQL wire protocol
+- The PHP backend handles input validation, sanitization, and authentication
 
-1. **Security** — The browser runs on the user's machine. Embedding DB credentials or SQL queries in frontend code would allow anyone to inspect them via DevTools, run arbitrary queries, or steal/delete data.
-2. **Network protocol** — Browsers can only make HTTP requests (`fetch()`). They cannot speak the MySQL wire protocol.
-3. **Validation & auth** — The PHP backend validates inputs, sanitizes parameters (preventing SQL injection via prepared statements), and enforces authentication before returning data.
-
-### The actual flow (example: fetching news)
-
+**Example flow (fetching news):**
 ```
-1. Frontend calls:       apiFetchPublishedNews()
-2. That sends:           GET http://localhost:8000/api/posts/read.php?type=news
-3. PHP backend receives:  read.php parses ?type=news
-4. PHP runs SQL:          SELECT * FROM content WHERE post_type = 'news' AND status = 'published'
-5. PHP responds:          JSON array of news articles
-6. Frontend parses JSON → puts it in React state → renders the UI
+1. Frontend:  apiFetchPublishedNews()
+2. Sends:     GET /api/posts?type=news
+3. PHP:       parses query, runs prepared SQL SELECT
+4. Returns:   JSON array → React state → rendered UI
 ```
 
-All frontend fetch calls go through the centralized `apiFetch()` wrapper in `frontend/lib/api.ts`, which handles URL resolution, JSON headers, and error handling in one place.
+All frontend fetch calls go through `frontend/lib/api.ts`, which handles URL resolution, JSON headers, and error handling.
 
 ---
 
 ## Prerequisites
 
-| Tool | Version | Install (Windows) |
-|------|---------|--------------------|
-| **Node.js** | 20+ | [nodejs.org](https://nodejs.org/) (LTS) or `winget install OpenJS.NodeJS.LTS` |
-| **pnpm** | 9+ | `npm install -g pnpm` (after installing Node) |
-| **PHP** | 8.1+ | [windows.php.net](https://windows.php.net/download/) — download the **Thread Safe** zip, extract to `C:\php`, add to PATH |
-| **MySQL / MariaDB** | 8+ / 10.6+ | [XAMPP](https://www.apachefriends.org/) (easiest) or standalone [MySQL installer](https://dev.mysql.com/downloads/installer/) |
-| **APCu PHP extension** | bundled with PHP | Enable in `php.ini`: uncomment `;extension=apcu` — required for query caching under high traffic |
-| **Composer** | 2+ | [getcomposer.org](https://getcomposer.org/) — required for PHP dependencies (JWT, PHPMailer) |
-| **Git** | latest | [git-scm.com](https://git-scm.com/) — during install, choose **"Checkout as-is, commit Unix-style line endings"** |
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | 20+ | [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS` |
+| pnpm | 9+ | `npm install -g pnpm` |
+| PHP | 8.1+ | Windows: Thread Safe zip from [windows.php.net](https://windows.php.net/download/), add to PATH |
+| MySQL / MariaDB | 8+ / 10.6+ | [XAMPP](https://www.apachefriends.org/) is the easiest option |
+| Composer | 2+ | [getcomposer.org](https://getcomposer.org/) — required for JWT and PHPMailer |
+| APCu PHP ext | bundled | Enable in `php.ini`: uncomment `;extension=apcu` |
+| Git | latest | [git-scm.com](https://git-scm.com/) |
 
-> **Tip (Windows):** If you use XAMPP, PHP and MySQL are already included. Just make sure `C:\xampp\php` and `C:\xampp\mysql\bin` are in your system PATH.
-> **Tip (APCu):** On shared hosting (Hostinger), APCu is already enabled. On local dev, add `extension=apcu` to your `php.ini` and restart the server. The system falls back gracefully if APCu is not available.
+> **XAMPP users:** PHP and MySQL are already included. Add `C:\xampp\php` and `C:\xampp\mysql\bin` to your system PATH.
 
 ---
 
@@ -86,25 +83,18 @@ All frontend fetch calls go through the centralized `apiFetch()` wrapper in `fro
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/mhacto-official.git
+git clone https://github.com/MHACTOH-Core/mhacto-official.git
 cd mhacto-official
 ```
 
 ### 2. Set up the database
 
-Open a MySQL client (MySQL Workbench, phpMyAdmin, or terminal) and run:
-
-```sql
-SOURCE backend/my-php-backend/database/schema.sql;
+```bash
+mysql -u root -p < backend/my-php-backend/database/database-schema.sql
+mysql -u root -p mhacto_db < backend/my-php-backend/database/seed.sql
 ```
 
-Or on Windows CMD:
-
-```cmd
-mysql -u root -p < backend\my-php-backend\database\schema.sql
-```
-
-This creates the `mhacto_db` database with all 11 tables and seeds the initial data.
+This creates `mhacto_db` with all 11 tables and seeds the initial data.
 
 ### 3. Configure database credentials
 
@@ -114,12 +104,9 @@ cp backend/my-php-backend/config/database.local.example.php backend/my-php-backe
 
 # Windows CMD
 copy backend\my-php-backend\config\database.local.example.php backend\my-php-backend\config\database.local.php
-
-# Windows PowerShell
-Copy-Item backend\my-php-backend\config\database.local.example.php backend\my-php-backend\config\database.local.php
 ```
 
-Edit `database.local.php` with your local MySQL username and password. This file is git-ignored.
+Edit `database.local.php` with your MySQL username and password. This file is git-ignored.
 
 ### 4. Start the PHP backend
 
@@ -128,80 +115,53 @@ cd backend/my-php-backend
 php -S localhost:8000 index.php
 ```
 
-> **Important:** You must include `index.php` in the command — the central router needs it. Just `php -S localhost:8000` alone will not route API requests correctly.
+> You **must** include `index.php` — without it, the central router will not work.
 
-> **Windows note:** If `php` is not recognized, add its folder to your system PATH: Settings → System → Environment Variables → Path → add `C:\php` (or `C:\xampp\php`).
-
-### 5. Set up the frontend
+### 5. Start the frontend
 
 Open a **new terminal** (keep the PHP server running):
 
 ```bash
 cd frontend
-
-# Copy the env example
-cp .env.example .env.local          # Linux / macOS
-copy .env.example .env.local        # Windows CMD
-
-# Install dependencies
+cp .env.example .env.local     # Linux/macOS
 pnpm install
-
-# Start dev server
 pnpm dev
 ```
 
-The frontend runs at **http://localhost:3000**.
+Frontend runs at **http://localhost:3000**.
 
-### 6. Verify everything works
+### 6. Verify
 
-- Open **http://localhost:3000** — you should see the homepage
-- Open **http://localhost:8000/api/posts** — you should see a JSON response
-- Open **http://localhost:3000/MHACTO-PROJECT/admin** — admin CMS dashboard
+| URL | Expected |
+|-----|----------|
+| http://localhost:3000 | Public homepage |
+| http://localhost:8000/api/posts | JSON API response |
+| http://localhost:3000/admin | Admin CMS login |
 
 ---
 
-## Windows-Specific Notes
+## Windows Troubleshooting
 
-### PHP `php_pdo_mysql` extension
+**"Could not find driver" error:**
+Open `php.ini`, uncomment `;extension=pdo_mysql` and `;extension=openssl`, then restart the PHP server.
 
-If you get a "could not find driver" error, enable the MySQL PDO extension:
-
-1. Open your `php.ini` file (inside the PHP folder)
-2. Find `;extension=pdo_mysql` and remove the leading semicolon
-3. Also uncomment `;extension=openssl` (needed by PHPMailer)
-4. Restart the PHP server
-
-If there's no `php.ini`, copy `php.ini-development` to `php.ini`.
-
-### Line endings
-
-The `.gitattributes` file ensures all text files use LF in the repository. Git on Windows will automatically convert to CRLF in your working directory — this is normal and expected. **Do not change the `.gitattributes` file.**
-
-### Long paths (if cloning fails)
-
-If you get errors about file paths being too long:
-
+**Long path errors when cloning:**
 ```cmd
 git config --global core.longpaths true
 ```
 
-### pnpm on Windows
-
-If `pnpm` commands fail with execution policy errors in PowerShell:
-
+**pnpm execution policy error (PowerShell):**
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
 ---
 
-## Project Configuration Files
+## Configuration Files
 
 | File | Purpose |
 |------|---------|
-| `.gitattributes` | Enforces LF line endings in the repo (Windows gets CRLF automatically) |
-| `.editorconfig` | Consistent indent/charset/EOL across all editors |
-| `.node-version` | Node.js version hint for version managers (nvm, fnm) |
+| `.gitattributes` | Enforces LF line endings in repo |
 | `frontend/.env.example` | Template for frontend environment variables |
 | `backend/.../database.local.example.php` | Template for local DB credentials |
 
@@ -209,795 +169,98 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
-### April 8, 2026 — Security Hardening, DPA Compliance, Performance & Admin Office CMS
+### April 8, 2026 — Security, DPA Compliance, Performance & Office CMS
 
-**This is a major update.** It covers four independent work streams completed in a single session: comprehensive security hardening (DDoS/brute-force protection, security headers, file-access controls), full RA 10173 Data Privacy Act compliance, application-level query caching targeting 10 000+ concurrent users, and a new MHACTO Office admin CMS module.
+#### Security Hardening
+- **`core/RateLimit.php`** — File-based sliding-window rate limiter (no Redis needed)
+  - Login: 10 attempts / 15 min per IP
+  - Inquiry form: 5 submissions / 1 hr per IP
+  - Analytics: 60 hits / 1 min per IP
+- **`core/Response.php`** — Security headers on every API response (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`)
+- **`.htaccess`** — Blocked direct access to `.env`, `.json`, `.sql`, `.log` files; blocked directory listing on sensitive folders; 20 MB max request size
 
----
+#### RA 10173 Data Privacy Act Compliance
+- **`core/DataPrivacy.php`** — PII masking helpers, audit trail logging, retention policy enforcement, inquiry anonymization
+- **Schema** — New columns on `inquiries` (`submitter_ip`, `consent_given`, `data_purge_date`); new `data_breach_log` and `consent_versions` tables
+- **Inquiry API** — Public `POST /api/inquiries` now requires `consentGiven: true`; returns HTTP 400 if missing
+- **Frontend** — Consent checkbox added to `/inquire`; submit button disabled until checked
 
-#### 1. Frontend Performance — `Promise.all` Sequential-Fetch Fixes (5 pages)
+#### RBAC / IDOR Prevention
+- **`core/Auth.php`** — New `canAccess()` with role hierarchy (`super_admin` → all, `content_manager` → own resources only)
+- **`routes/users.php`** — GET/PUT endpoints pass through `canAccess()` before executing
 
-Pages that fired multiple sequential `fetch()` calls in separate `useEffect` hooks were consolidated into single `Promise.all` calls. Each sequential chain caused N waterfall round-trips and N re-renders; a single `Promise.all` runs all fetches in parallel and triggers exactly one state update.
+#### Query Caching & Performance
+- **`core/QueryCache.php`** — APCu-backed cache for public GET endpoints (5 min posts, 10 min settings); graceful fallback if APCu unavailable
+- **`config/Database.php`** — PDO persistent connections and buffered queries enabled
+- **Schema** — 6 composite indexes added on high-traffic tables
+- **Frontend** — 5 pages converted from sequential `useEffect` fetches to `Promise.all`
 
-| File | Fetches combined | Description |
-|------|-----------------|-------------|
-| `culture/page.tsx` | 5 | Cuisine, festivals, practices, arts, people sections |
-| `culture/art-wonders/page.tsx` | 2 | Crafts/artisan + cultural practices |
-| `culture/culinary-wonders/page.tsx` | 2 | Local cuisine + restaurants |
-| `community/page.tsx` | 3 | Schools, hospitals, barangay |
-| `history/page.tsx` | 2 | Timeline of events + notable figures |
+#### MHACTO Office Admin CMS
+- New admin tab **MHACTO Office** (`/admin/office`) with two sub-tabs:
+  - Tourism Office: name, hours, address, contact
+  - Mission & Vision: statement, core values
+- Public pages `/tourism-office` and `/mission-vision` now fetch content from the API dynamically
 
-A `Loader2` spinner is shown while `Promise.all` resolves; all sections render simultaneously when data is ready.
-
----
-
-#### 2. Security Hardening (`core/RateLimit.php`, `.htaccess`, `core/Response.php`)
-
-##### Rate Limiting — `core/RateLimit.php` (new file)
-File-based sliding-window rate limiter — no Redis or Memcached required; works on shared hosting.
-
-| Endpoint | Limit |
-|----------|-------|
-| `POST /api/auth/login` | 10 attempts / 15 minutes per IP |
-| `POST /api/inquiries` (public form) | 5 submissions / 1 hour per IP |
-| `POST /api/analytics/log-view` | 60 hits / 1 minute per IP |
-
-##### Security Headers — `core/Response.php`
-Added to every API response via `Response::cors()`:
-
-```
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=()
-```
-
-##### `.htaccess` Hardening
-- Blocked direct HTTP access to `.env`, `.json`, `.sql`, `.log` files
-- Blocked directory access to `/config/`, `/core/`, `/models/`, `/vendor/`
-- Added `LimitRequestBody 20971520` (20 MB max request size)
-- Blocked all dotfiles (`.git`, `.htpasswd`, etc.)
+#### Other
+- Favicon set via `app/icon.png` (auto-detected by Next.js)
+- `basePath`: dev = `''`, production = `/mhacto`
+- Migration SQL files merged into `database-schema.sql` and deleted
+- `examples/submit_inquiry.php` — new OWASP-compliant form boilerplate (CSRF, rate limit, DPA audit trail)
 
 ---
 
-#### 3. RA 10173 Philippines Data Privacy Act Compliance
+### March 2–19, 2026 — Summary of Earlier Updates
 
-##### `core/DataPrivacy.php` (new file)
-Helper class for DPA-compliant data handling:
-- `maskEmail()`, `maskPhone()`, `maskName()` — PII masking for display
-- `logDataAccess()` — writes to `data_access_audit` table (§21 audit trail)
-- `shouldRetain()` — checks 3-year default retention policy
-- `anonymizeInquiry()` — redacts PII from old inquiry records
+#### Codebase Audit & Fixes (March 19)
+- Added `sizes` props to 10 `<Image fill>` components to prevent oversized image downloads
+- Replaced 8 `key={index}` anti-patterns with stable identifiers
+- Fixed stale `setTimeout` closure in `search-overlay.tsx`
+- Simplified CMS preview dialog to single-image view
+- Removed duplicate `use-mobile.tsx` file
 
-##### Database — `database-schema.sql` (updated)
-New columns added directly to the schema (no separate migration files):
+#### Schema Reset & Bug Fixes (March 6)
+- Full database reset — all 11 tables recreated cleanly with correct seed data
+- Fixed inquiry assignment: `PUT /api/inquiries/{id}` now supports `assigned` status and `assigned_to` field
+- "Arts & Livelihood" nav removed; replaced with flat "Local Businesses" link
+- Inquiry read/unread system added with auto-mark-as-read and tourist guide assignment UI
+- Fixed admin Home Content key props (`landmarkId` → `featuredId`)
+- Added `items-start` to 25 grid containers to prevent card height stretching
 
-| Table | New columns |
-|-------|-------------|
-| `inquiries` | `submitter_ip`, `consent_given`, `consent_text`, `data_purge_date` |
-| `activity_logs` | `user_agent`, `session_ref` |
-| `content_fields` | `is_pii` flag |
+#### REST API Rewrite (March 5)
+- All legacy `api/{resource}/{action}.php` endpoints replaced with a **central router** (`index.php`) dispatching to 10 route files
+- All 61 endpoint URLs in `api.ts` migrated to clean REST paths (`/api/posts`, `/api/inquiries/{id}`, etc.)
 
-Two new tables:
-- `data_breach_log` — RA 10173 §20 72-hour NPC notification registry
-- `consent_versions` — RA 10173 §7 versioned consent statement history
+#### Frontend Features (March 4)
+- New pages: Culinary Wonders, People Wonders, Historical Roadmap, Historical Wonders, Tourism Wonders
+- "Human Wonders" renamed to "People Wonders" across all files
+- Footer updated to white background with top shadow
+- Travel & Tours simplified to 3-column card grid
+- Inquiry form simplified to 6 fields with real-time validation
 
-##### `routes/inquiries.php`
-- Public `POST /api/inquiries` now **requires `consentGiven: true`** in the request body
-- Returns HTTP 400 with a DPA message if consent is missing
+#### Click Analytics & Form Validation (March 2)
+- `page_views` table (11th table) added for destination click tracking with session de-duplication
+- New endpoints: `POST /api/analytics/log-view`, `GET /api/analytics/top-destinations`
+- Inquiry form: name/phone regex, PH phone format hint, From/To date pickers with min-today enforcement
 
-##### `models/Inquiry.php`
-- `create()` now saves `submitter_ip`, `submission_ua`, `consent_given`
-
-##### `models/ActivityLog.php`
-- `log()` now auto-captures `$_SERVER['HTTP_USER_AGENT']`
-
-##### Frontend — `app/(site)/inquire/page.tsx`
-- Added RA 10173 consent checkbox before the Submit button with full disclosure text
-- Submit button disabled until checkbox is checked
-- `consentGiven: true` sent in the API payload on submission
-
----
-
-#### 4. RBAC / IDOR Prevention — `core/Auth.php`, `routes/users.php`
-
-##### `core/Auth.php` — new `canAccess()` method
-```
-super_admin  → all resources, all actions
-admin        → all resources except changing another admin's password
-content_manager → own resources only (read-only on foreign resources)
-any role     → always allowed on their own resource
-```
-
-##### `routes/users.php`
-- `GET /api/users/{id}` — `content_manager` can only read their own profile
-- `PUT /api/users/{id}` — all roles pass through `Auth::canAccess()` before update is applied
+#### Frontend Refactor (March 2)
+- 33+ files refactored with descriptive variable names (`loaded` → `isDataLoaded`, `open` → `isMobileMenuOpen`, etc.)
+- Performance: rAF-throttled scroll events, `useRef` instead of `useState` for autoplay, debounced `MutationObserver`
+- `framer-motion` page transitions replaced with equivalent CSS `@keyframes`
+- Removed unused `canvas-confetti` package (~6 KB)
 
 ---
 
-#### 5. Application-Level Query Cache — `core/QueryCache.php` (new file)
+## Roadmap
 
-APCu-backed query cache for public GET endpoints. Falls back gracefully to a direct DB call if APCu is not available.
-
-| Endpoint | Cache TTL | Cache key |
-|----------|-----------|-----------|
-| `GET /api/posts` (public) | 5 minutes | `posts_` + md5 of query string |
-| `GET /api/posts/{id}` (public) | 5 minutes | per-post key |
-| `GET /api/settings` | 10 minutes | `settings_all` |
-
-Cache is invalidated automatically on every `POST`, `PUT`, or `DELETE` to `/api/posts` and on `PUT /api/settings`.
-
-HTTP `Cache-Control: public, max-age=300` headers are also sent for public read responses so browsers and CDNs can cache at the edge.
-
-##### `config/Database.php`
-Added `PDO::ATTR_PERSISTENT => true` for connection pooling and `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true`.
-
-##### `database/migration-performance-indexes.sql` → merged into `database-schema.sql`
-Composite indexes added directly to the schema:
-
-| Table | Index |
-|-------|-------|
-| `users` | `idx_email_status (email, status)` |
-| `content` | `idx_status_type_created (status, post_type, created_at DESC)` |
-| `content_fields` | `idx_key_value (meta_key, meta_value)` |
-| `activity_logs` | `idx_action_created (action, created_at DESC)` |
-| `page_views` | `idx_content_clicked (content_id, clicked_at DESC)` |
-| `inquiries` | `idx_status_created (status, created_at DESC)` |
-
----
-
-#### 6. MHACTO Office Admin CMS — new module
-
-New admin tab "MHACTO Office" added (`Building2` icon in the sidebar) with two sub-pages managed together:
-
-| Tab | Route | Content |
-|-----|-------|---------|
-| Tourism Office | `/admin/office` | Office name, hours, description, address, contact info |
-| Mission & Vision | `/admin/office` (tab 2) | Mission statement, vision statement, core values list |
-
-Public-facing pages updated to be fully dynamic:
-- `app/(site)/tourism-office/page.tsx` — fetches office content from the API
-- `app/(site)/mission-vision/page.tsx` — fetches mission/vision from the API; falls back to defaults if DB is empty
-
----
-
-#### 7. Browser Tab Favicon & Base Path
-
-- `frontend/app/icon.png` — MHACTO logo set as browser tab favicon (auto-detected by Next.js App Router)
-- `frontend/app/apple-icon.png` — same logo for iOS home screen shortcut
-- `basePath` changed: dev mode uses `''` (plain `http://localhost:3000`), production uses `/mhacto` (was `/MHACTO-PROJECT`)
-
----
-
-#### 8. Database Schema Consolidation
-
-Both migration SQL files were merged into the main schema file and deleted:
-
-| Removed | Merged into |
-|---------|-------------|
-| `migration-dpa-compliance.sql` | `database-schema.sql` |
-| `migration-performance-indexes.sql` | `database-schema.sql` |
-
-`seed.sql` received the initial `consent_versions` v1.0 record.
-
-Fresh install is now two commands:
-```bash
-mysql -u root -p < database/database-schema.sql
-mysql -u root -p mhacto_db < database/seed.sql
-```
-
----
-
-#### 9. Secure Inquiry Boilerplate — `examples/submit_inquiry.php` (new file)
-
-Standalone PHP boilerplate documenting every OWASP security control for public form submissions:
-- Double-submit cookie CSRF pattern
-- File-based sliding-window rate limiter (5/hr per IP)
-- Strict input validation (name regex, RFC 5321 email, PH phone `+639XXXXXXXXX`, RA 10173 consent)
-- All DB writes use PDO named placeholders (zero string concatenation)
-- RA 10173 audit trail written after every successful insert
-- Security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
-- Generic error responses with `error_log()` only for internals
-
----
-
-#### 10. Admin CMS Table Enhancements
-
-##### `app/(admin)/admin/dashboard/page.tsx`
-- Added APCu cache status indicator to the dashboard
-
-##### `app/(admin)/admin/inquiries/page.tsx`
-- Inquiry list now shows `submission_ip` column (admin-only, DPA-masked in display)
-- Print report reflects new DPA fields
-
----
-
-#### Updated: Admin CMS Pages
-
-| Page | Route | Status |
-|------|-------|--------|
-| Login | `/admin` | ✅ Complete |
-| Dashboard | `/admin/dashboard` | ✅ Complete |
-| CMS / Posts | `/admin/cms` | ✅ Complete |
-| Inquiries | `/admin/inquiries` | ✅ Complete |
-| Heroes | `/admin/heroes` | ✅ Complete |
-| Home Content | `/admin/home-content` | ✅ Complete |
-| Settings | `/admin/settings` | ✅ Complete |
-| Activity Log | `/admin/activity-log` | ✅ Complete |
-| **MHACTO Office** | `/admin/office` | ✅ **New** |
-| Users | `/admin/users` | ✅ Complete |
-| Tour Guides | `/admin/tour-guides` | ✅ Complete |
-
----
-
-#### Roadmap — Planned Future Updates
-
-| Priority | Feature | Description |
-|----------|---------|-------------|
-| 🔴 High | **Email notifications** | Send automated email confirmations when a tourist inquiry is submitted (`PHPMailer` already installed but not wired to inquiry creation) |
-| 🔴 High | **Pagination on admin lists** | CMS post list, inquiry list, and activity log all load all rows; add server-side pagination |
-| 🟡 Medium | **File upload validation** | Backend only checks MIME type; add image dimension validation and virus scanning (ClamAV on VPS) |
-| 🟡 Medium | **Soft-delete & trash recovery** | Admin deletes posts/inquiries permanently; add a 30-day trash bin with restore |
-| 🟡 Medium | **Dark mode persistence** | Theme toggle resets on refresh; persist the choice in `localStorage` via the theme provider |
-| 🟡 Medium | **SEO meta per page** | Add dynamic `<title>` and `<meta description>` per public page using Next.js `generateMetadata()` |
-| 🟢 Low | **Print-friendly inquiry report** | PDF export of inquiry list with MHACTO letterhead |
-| 🟢 Low | **Multi-language support (Filipino/English)** | Add `i18next` and a language toggle in the navbar |
-| 🟢 Low | **Redis upgrade path** | When moving to Hostinger VPS, swap `QueryCache` APCu calls for `phpredis` for cross-worker cache sharing |
-| 🟢 Low | **NPC data breach notification form** | Wire `data_breach_log` to an email alert so the DPO is automatically notified within 72 hours |
-
----
-
-### March 19, 2026 — Codebase Audit, Bug Fixes & Performance Optimizations
-
-Full codebase scan to eliminate all Next.js dev-tool warnings plus targeted performance improvements — all without changing any design or visual effect.
-
-#### 1. Image `sizes` Prop — 10 Fixes Across 7 Files
-
-Next.js warns when an `<Image fill>` component lacks a `sizes` attribute (causes the browser to download full-width images unnecessarily). Added responsive `sizes` values to every affected component:
-
-| File | Image | `sizes` Value |
-|------|-------|---------------|
-| `history/page.tsx` | Notable person card | `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw` |
-| `history/page.tsx` | Timeline event image | `(max-width: 768px) 100vw, 672px` |
-| `events/[id]/event-detail-client.tsx` | Hero image | `100vw` |
-| `events/[id]/event-detail-client.tsx` | Gallery images | `(max-width: 640px) 100vw, 50vw` |
-| `destinations/religious-sites/page.tsx` | Site image | `(max-width: 768px) 100vw, 40vw` |
-| `destinations/museums/page.tsx` | Museum card | `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw` |
-| `destinations/heritage-sites/page.tsx` | Even layout image | `(max-width: 768px) 100vw, 40vw` |
-| `destinations/heritage-sites/page.tsx` | Odd layout image | `(max-width: 768px) 100vw, 40vw` |
-| `community/local-business/page.tsx` | Business card | `(max-width: 640px) 100vw, 50vw` |
-| `community/page.tsx` | School logo | `56px` |
-
-#### 2. Array Index Keys — 8 Fixes Across 6 Files
-
-Replaced `key={i}` (React anti-pattern) with stable identifiers:
-
-| File | Component | Before → After |
-|------|-----------|----------------|
-| `events/[id]/event-detail-client.tsx` | Gallery wrapper div | `key={i}` → `key={img}` |
-| `gallery-image.tsx` | Thumbnail button | `key={i}` → `key={img}` |
-| `content-detail-layout.tsx` | Thumbnail button | `key={i}` → `key={img}` |
-| `content-detail-layout.tsx` | Quick-facts row | `key={i}` → `key={fact.label}` |
-| `content-detail-layout.tsx` | Highlights item | `key={i}` → `key={item}` |
-| `featured-slider.tsx` | Slide background | `key={s.id + i}` → `key={s.id}` |
-| `featured-slider.tsx` | Dot indicator | `key={i}` → `key={s.id}` |
-| `mission-vision/page.tsx` | Objective item | `key={i}` → `key={obj}` |
-| `history/historical-wonders/page.tsx` | Thumbnail button | `key={i}` → `key={img}` |
-
-#### 3. Timer Cleanup — `search-overlay.tsx`
-
-The search overlay's `useEffect` used a bare `setTimeout` without cleanup. If the overlay unmounted before the 60 ms timer fired, the callback would run against a stale ref. Fixed by capturing the timer ID and returning `clearTimeout`.
-
-#### 4. Hero Upload Path Fix — `heroes/page.tsx`
-
-Removed `uploadCategory="heroes"` from the hero image picker. Previously, hero images were uploaded to `/uploads/images/heroes/` (a separate subfolder). Now they go to `/uploads/images/` — the same location as all other CMS uploads.
-
-#### 5. CMS Preview Dialog Simplification — `cms-preview-dialog.tsx`
-
-Removed the multi-image carousel (prev/next buttons, dot indicators, `useState(imgIdx)`) from the CMS preview dialog. The preview now shows only the first image — quick glance is the sole purpose of the dialog; full editing uses the CMS form.
-
-#### 6. Performance Optimizations (Zero Visual Change)
-
-| Change | File | Details |
-|--------|------|---------|
-| **rAF-throttled scroll** | `navbar.tsx` | Wrapped the scroll handler in `requestAnimationFrame` with a guard ref. Prevents `setIsScrolled` from firing on every pixel of scroll — now fires at most once per frame (~60 Hz). |
-| **Admin template → CSS** | `admin/template.tsx` | Replaced `framer-motion` `<motion.div>` with a plain `<div>` + `animation: admin-fade-in 0.3s`. Same `opacity: 0 → 1` + `translateX(12px → 0)` with the same cubic-bezier curve. |
-| **Site template → CSS** | `site/template.tsx` | Replaced `framer-motion` `<motion.div>` with a plain `<div>` + `animation: site-curtain 0.6s`. Same `clip-path: inset(0 0 100% 0) → inset(0 0 0% 0)` + opacity fade with the same cubic-bezier curve. |
-| **CSS keyframes** | `globals.css` | Added `@keyframes admin-fade-in` and `@keyframes site-curtain`. |
-| **Removed dead dependency** | `package.json` | Removed `canvas-confetti` and `@types/canvas-confetti` (~6 KB) — the package was installed but never imported anywhere in the codebase. |
-| **Extra `priority` removed** | `navbar.tsx` | Removed redundant `priority` prop from the second navbar logo (Bocaue municipal seal). Only the first MHACTO logo needs priority loading. |
-
-#### 7. Dead Code Cleanup
-
-Deleted `components/ui/use-mobile.tsx` — an identical duplicate of `hooks/use-mobile.tsx` that was never imported by any file.
-
-#### 8. Backend — Image Path & Query Fixes (Prior Session, Uncommitted)
-
-| File | Change |
-|------|--------|
-| `config/Database.php` | Renamed from lowercase `database.php` for PSR-4 autoloader compatibility |
-| `models/Post.php` | `readByLabel()` — changed from `INNER JOIN content_fields` to `WHERE EXISTS` subquery (prevents duplicate rows when content has multiple meta rows with the same key) |
-| `models/PageHero.php` | All 22 default `imageUrl` values changed from hardcoded place images to `/images/defaults/no-image.svg` |
-| `database.sql`, `schema.sql`, `seed-*.sql` | All seed image paths updated from `/images/heroes/hero-bocaue.jpg` and `/images/places/*.jpg` to `/images/defaults/no-image.svg` |
-
----
-
-### March 6, 2026 — Schema Reset, Nav Cleanup & Bug Fixes
-
-#### 1. Database Schema Reset (schema.sql v2)
-
-Dropped and recreated `mhacto_db` from scratch using the updated `schema.sql`. All 11 tables were created with the correct structure and seed data applied.
-
-| Verified | Details |
+| Priority | Feature |
 |----------|---------|
-| 11 tables | `users`, `config`, `category`, `content`, `content_fields`, `content_images`, `featured_content`, `inquiries`, `activity_logs`, `milestone`, `page_views` |
-| Admin user | `admin / mhacto.municipalityofbocaue@gmail.com` seeded |
-| 22 categories/labels | Full category hierarchy seeded |
-| 22 config rows | 8 general settings + 14 hero settings (4 title/highlight pairs) |
-
-**Issue fixed:** The previous database had a stale `'in_progress'` value in the `inquiries.status` ENUM that was already removed from the schema. The fresh run cleaned that up — the correct ENUM is `'unread','assigned','archived','spam','trash'`.
-
-#### 2. Bug Fix — `routes/inquiries.php` Missing `assigned` Status & `assigned_to` Field
-
-The `PUT /api/inquiries/{id}` route's `_inquiries_update()` had two gaps versus both the schema and the legacy `api/inquiries/update.php`:
-
-| Issue | Fix |
-|-------|-----|
-| `'assigned'` status was not in the allowed list | Added `'assigned'` to the `$allowed` array |
-| `assigned_to` field was never passed through | Added `assigned_to` to the payload |
-
-This means admins can now properly assign inquiries to tourist guides via the REST route.
-
-#### 3. "Arts & Livelihood" Removed — Replaced with "Local Businesses"
-
-**Navbar change** (`components/layout/navbar.tsx`):
-
-| Before | After |
-|--------|-------|
-| "Arts & Livelihood" nested dropdown under Community (with "Local Business" child) | Flat **"Local Businesses"** link directly under Community → `/community/local-business` |
-
-**Files deleted:**
-- `app/(site)/arts-livelihood/page.tsx`
-- `app/(site)/arts-livelihood/local-business/page.tsx`
-- `app/(site)/arts-livelihood/crafts-artisans/page.tsx`
-
-**File created:**
-- `app/(site)/community/local-business/page.tsx` — same Local Business content moved under Community, `fallbackLabel` updated from "Arts & Livelihood" → "Community"
-
-**Search index updated** (`lib/search-index.ts`):
-- Removed `page-arts-livelihood` page entry
-- Updated `page-local-business` href: `/arts-livelihood/local-business` → `/community/local-business`
-- Updated all business search item hrefs to `/community/local-business`
-
----
-
-#### 4. Inquiry Form: "Inquiry Category" → "Purpose of Visit"
-
-Updated the tourist-facing inquiry form (`/inquire`) to better reflect its purpose:
-
-| Before | After |
-|--------|-------|
-| Label: "Inquiry Category" | Label: **"Purpose of Visit"** |
-| Options: Student, Tourist | Options: **Leisure, Pilgrimage, Educational, Event, Official Business** |
-| Placeholder: "Select category" | Placeholder: **"Select purpose"** |
-
-The `purpose` field is now sent directly in the API payload alongside `inquiryType`. Backend already accepted both fields.
-
-#### 5. Admin Home Content — Key Prop & Deprecated ID Fix
-
-Fixed React "Each child in a list should have a unique key prop" warning in the admin Home Content page (`/admin/home-content`). The root cause was using deprecated type fields (`landmarkId`, `spotlightId`) that returned `undefined` from the API — the unified `featured_content` table uses `featuredId`.
-
-**8 replacements applied:**
-
-| Location | Before | After |
-|----------|--------|-------|
-| Landmark card key | `key={land.landmarkId}` | `key={land.featuredId}` |
-| Landmark toggle/delete | `land.landmarkId` | `land.featuredId` |
-| Spotlight toggle/delete | `spot.spotlightId` | `spot.featuredId` |
-| handleSave casts | `(editingItem as Spotlight).spotlightId` | `(editingItem as FeaturedContent).featuredId` |
-| handleSave casts | `(editingItem as FeaturedLandmark).landmarkId` | `(editingItem as FeaturedContent).featuredId` |
-| Reorder mapping | `l.landmarkId` | `l.featuredId` |
-
-#### 6. Inquiry Read/Unread Status + Assign Tourist Guide
-
-Added `read` status to the inquiry system and implemented one-click tourist guide assignment.
-
-**Database:**
-- ENUM changed from `('unread','in_progress','assigned','archived','spam','trash')` → `('unread','read','assigned','archived','spam','trash')`
-- Migrated existing `in_progress` rows to `unread`, then altered the column
-
-**Backend (`routes/inquiries.php`):**
-- Added `'read'` to the allowed statuses array
-
-**Frontend — Admin Inquiries (`/admin/inquiries`):**
-
-| Feature | Details |
-|---------|---------|
-| Auto mark-as-read | Clicking an unread inquiry automatically sets status to `read` (unbolds it) |
-| Read tab | New "Read" tab with `MailOpen` icon + filter + empty state |
-| Bold styling | Unread = bold name + semibold type; read/other = normal weight |
-| Assign Tourist Guide | One-click button sets status to `assigned` |
-| Unassign Tourist Guide | Reverts status to `read` (not `unread`, since admin already opened it) |
-| Assigned banner | Green banner shown in detail view when assigned |
-
-**Frontend types (`admin-data.ts`):**
-- `InquiryStatus` → added `"read"`
-- `inquiryStatusLabels` → added `read` entry (slate color)
-
-**API (`api.ts`):**
-- `apiAssignTouristGuide()` and `apiUnassignTouristGuide()` helpers added
-- Unassign now sends `status: "read"` instead of `"unread"`
-
-#### 7. Card Grid Independence (`items-start`)
-
-Added `items-start` to 25 CSS grid containers across 22 pages so that expanding one card (e.g. "Read Story") no longer stretches sibling cards in the same row.
-
-**Pages fixed:** local-cuisine, people-wonders, practices-traditions, crafts-artisan, culture (×4 sections), news, history, notable-persons, historical-wonders, bocaue-wonders, events (×2), destinations, museums, community (×2), colleges, public-schools, local-business, hospitals, schools, places, places/category, tourism-wonders
-
-#### 8. Removed Redundant Page — Bocaueños
-
-Deleted `app/(site)/community/bocauenos/page.tsx` and removed the README reference. No navbar/footer/search-index links existed for this page.
-
-#### 9. Activity Log Fallback Icon Fix
-
-`ActivityLogPage` crashed when `actionIcons[entry.action]` returned `undefined` for unrecognized action types. Added `?? ClipboardList` fallback.
-
----
-
-### March 5, 2026 — Full REST API Rewrite (Central Router)
-
-Replaced all legacy `api/{resource}/{action}.php` endpoints with a **single-entry-point central router** (`index.php`) that dispatches to 10 resource handler files.
-
-#### Architecture
-
-```
-Browser → GET /api/posts?type=news
-       → index.php (central router)
-       → routes/posts.php → handle_posts($method, $id, $sub)
-       → MySQL query → JSON response
-```
-
-- **`index.php`** — Parses URI segments, loads `routes/{resource}.php`, calls `handle_{resource}()`. Handles CORS once. Falls back to legacy `api/` files for unrecognized routes.
-- **`.htaccess`** — Apache mod_rewrite sends all non-file requests to `index.php`.
-- **CLI-server support** — Detects `php -S` built-in server SAPI to skip basePath stripping.
-
-#### Route Handlers (`backend/my-php-backend/routes/`)
-
-| File | Endpoints |
-|------|-----------|
-| `auth.php` | POST `/api/auth/login` |
-| `posts.php` | GET/POST/PUT/DELETE `/api/posts/{id}` with query filters (status, label, type, limit, featured, category) |
-| `inquiries.php` | GET/POST/PUT/DELETE `/api/inquiries/{id}`, POST `/api/inquiries/{id}/reply` |
-| `media.php` | GET/POST/DELETE `/api/media` |
-| `settings.php` | GET/PUT `/api/settings` |
-| `activity.php` | GET/POST `/api/activity` |
-| `analytics.php` | GET `/api/analytics/pageviews`, `/visits`, `/top-destinations`; POST `/log-view` |
-| `destinations.php` | GET/POST `/api/destinations` |
-| `heroes.php` | GET/PUT `/api/heroes/{slug}` |
-| `home.php` | 6 sub-resources: `hero`, `hero-settings`, `spotlight`, `landmarks`, `milestones`, `culinary` |
-
-#### Frontend Migration
-
-All 61 endpoint URLs in `frontend/lib/api.ts` migrated from legacy `.php` paths to clean REST URLs. No `.php` references remain in the frontend.
-
-**Important:** Backend must be started with the router: `php -S localhost:8000 index.php` (not just `php -S localhost:8000`).
-
----
-
-### March 2, 2026 — Click Analytics (page_views) & Inquiry Form Validation
-
-#### 1. New `page_views` Table (schema table #11)
-
-Added a dedicated click-analytics table to the database that tracks every time a visitor clickllows on a destination page. It references `content(content_id)` (destinations are `content` rows with `post_type = 'place'`) and stores an optional `visitor_session_id` for per-session de-duplication.
-
-#### 2. New Backend Endpoints & Model
-
-| File | Purpose |
-| ---- | ------- |
-| `models/PageView.php` | Model with `logView()` (parameterised INSERT) and `getTopDestinations()` (aggregated JOIN: `page_views → content → category`) |
-| `api/analytics/log-view.php` | **POST** — accepts `{ contentId, sessionId? }`, inserts one row into `page_views` |
-| `api/analytics/top-destinations.php` | **GET** — returns top N most-clicked destinations (name, category, total clicks) with `?limit=` param (default 10, max 50) |
-
-All SQL queries are parameterised to prevent injection. The GET query is capped at `LIMIT 50` to stay lightweight on localhost.
-
-#### 3. Frontend API Helpers
-
-| Function | Where |
-| -------- | ----- |
-| `apiLogDestinationView(contentId, sessionId?)` | `lib/api.ts` — fires POST to log a click |
-| `apiFetchTopDestinations(limit?)` | `lib/api.ts` — fetches dashboard analytics data |
-| `TopDestination` interface | `lib/data/admin-data.ts` — `{ content_id, destination_name, category, total_clicks }` |
-
-#### 4. Inquiry Form Validation Enhancements
-
-| Change | Details |
-| ------ | ------- |
-| Name validation | Only letters, spaces, hyphens, periods, and apostrophes — numbers trigger an inline warning |
-| PH phone format | Validates `09XX-XXX-XXXX` or `+639XXXXXXXXX` with a format hint; shows warning on invalid input |
-| Date range | Single date input replaced with **From / To** date pickers; both enforce `min={today}` (no past dates); warns if end < start |
-| Pax → People | Label renamed from "Number of Pax" to "Number of People" |
-
-All validations run in real-time (on change) with amber warning messages, plus a final check on submit.
-
----
-
-### March 4, 2026 — Frontend Feature Additions & Page Simplification
-
-#### 1. Culinary Section (Home Page)
-
-| Change | Details |
-|--------|---------|
-| Renamed | "Featured Culinary Delicacies" → **"Culinary Wonders"** |
-| Limit | Max featured items reduced from 4 → **3** |
-| CTA button | Changed from `outline` variant → solid **primary blue** |
-| Link | Now navigates to `/culture/culinary-wonders` |
-| Button text | "See More Culinary Wonders" |
-
-#### 2. Arts & Culture Page (`/culture`)
-
-- Renamed **"Local Cuisine"** → **"Culinary Wonders"** (nav, heading, sub-page card)
-- Renamed **"People Wonders"** sub-page label (was "Human Wonders" — see §8 below)
-- Added solid blue **"See More"** button at the bottom of every section (5 total: Culinary Wonders, Festivals, Cultural Practices, Crafts & Artisans, People Wonders)
-- Fixed duplicate `import Link from "next/link"` compiler error
-
-#### 3. Local Cuisine Page (`/culture/local-cuisine`)
-
-Added a full **Restaurants & Eateries in Bocaue** section with 6 static restaurant cards:
-- Aling Nena's Carinderia, Bocaue Lechon House, Puto Seko Central Bakery, Lutong Probinsya Restaurant, Manong Taho Kiosk, Plaza Merienda Center
-- Each card shows: type badge, price range, address, hours, and a highlight quote
-
-#### 4. Footer (`components/layout/footer.tsx`)
-
-| Before | After |
-|--------|-------|
-| `bg-foreground` (dark) | `bg-white` |
-| Dark text classes | `text-foreground` / `text-muted-foreground` |
-| No shadow | `shadow-[0_-8px_40px_rgba(0,0,0,0.18)]` |
-
-#### 5. New Pages Created
-
-| Page | Route | Description |
-|------|-------|-------------|
-| Culinary Wonders | `/culture/culinary-wonders` | Filter bar, stats, featured carousel, all delicacies grid, restaurants section, seasonal guide |
-| People Wonders | `/culture/people-wonders` | Tab-based (Notable Persons / Master Artisans), category filter, awards expand/collapse |
-| Historical Roadmap | `/history/roadmap` | Era filter, alternating timeline cards with expand/collapse, era legend, stats bar |
-| Historical Wonders | `/history/historical-wonders` | 6 heritage sites (St. Martin Church, Philippine Arena, etc.) + historical figures grid |
-| Tourism Wonders | `/places/tourism-wonders` | Full attractions grid with search + category filter, story expand/collapse, CTA |
-
-#### 6. Inquiry Form Simplified (`/inquire`)
-
-Replaced the complex visitor type toggle + purpose dropdown with a clean 6-field form:
-
-| Field | Details |
-|-------|---------|
-| Full Name | Letters/spaces only, max 18 chars |
-| Email Address | Validated against known providers (Gmail, Yahoo, etc.) |
-| Inquiry Category | `<Select>` with **Student** or **Tourist** options only |
-| Number of People (Pax) | Numeric, min 1 |
-| Estimated Tour Dates | From / To date pickers, min = today |
-| Inquiry Details | Textarea, up to **4,000 characters** with live counter |
-
-Removed: Contact Number field, Purpose of Visit dropdown, School Name conditional, Visitor Type card toggle.
-
-#### 7. Home Page Additions (`app/(site)/page.tsx`)
-
-Added two new lazily-loaded section components:
-
-| Component | Position | Description |
-|-----------|----------|-------------|
-| `FeaturedRestaurants` | After Culinary section | 3 featured Bocaue restaurants (static data), links to `/culture/culinary-wonders` |
-| `FeaturedHumanWonders` | After History & Art section | 3 featured People Wonders cards, links to `/culture/people-wonders` |
-
-> **Note:** `FeaturedRestaurants` was subsequently moved — it now lives on `/culture/local-cuisine` only; removed from home page.
-
-#### 8. "Human Wonders" → "People Wonders" Rename
-
-All references renamed across:
-- `app/(site)/culture/page.tsx` — sub-pages array, nav label, section heading, "See More" button
-- `components/sections/featured-human-wonders.tsx` — section heading and CTA button
-- All link `href` values changed from `/culture/human-wonders` → `/culture/people-wonders`
-- The duplicate `/culture/human-wonders/page.tsx` directory was **deleted**; `/culture/people-wonders/page.tsx` is the canonical page
-
-#### 9. Travel & Tours Simplified (`/travel-tours`)
-
-| Removed | Kept |
-|---------|------|
-| Full itinerary time-block list | Name, description, type badge |
-| Difficulty badge | Duration, group size |
-| Large horizontal split-card layout | Price pill (on image) |
-| | Up to 3 included items |
-| | Booking contact (phone + email) |
-
-Layout changed from stacked horizontal cards → **3-column card grid**.
-Added "Want a custom tour?" CTA block linking to `/inquire`.
-
----
-
-### March 4, 2026 — Component & Page Completion Status
-
-#### Layout Components (`components/layout/`)
-
-| Component | Description | Status |
-|-----------|-------------|--------|
-| `navbar.tsx` | Responsive top navigation with mobile menu, scroll-aware styling, desktop dropdown, and active route highlighting | ✅ Complete |
-| `footer.tsx` | Site footer with office info, navigation links, and social links | ✅ Complete |
-| `admin-sidebar.tsx` | Collapsible admin CMS sidebar with route links and active state | ✅ Complete |
-| `places-events-dropdown.tsx` | Mega-dropdown for Places & Events nav item with category links | ✅ Complete |
-| `search-overlay.tsx` | Full-screen search overlay with keyboard navigation and live results from static search index | ✅ Complete |
-
----
-
-#### Section Components (`components/sections/`)
-
-| Component | Description | Status |
-|-----------|-------------|--------|
-| `hero-section.tsx` | Full-screen video/image hero with parallax scroll, animated text, and CTA — data fetched from `api/home/hero-settings.php` | ✅ Complete |
-| `featured-spotlight.tsx` | Featured place spotlight card with image and description — data from `api/home/spotlight.php` | ✅ Complete |
-| `places-carousel.tsx` | Auto-playing Embla carousel of landmark places — data from `api/home/landmarks.php` | ✅ Complete |
-| `news-section.tsx` | Tabbed news grid with category filter — data from `api/posts/read.php?type=news` | ✅ Complete |
-| `culinary-section.tsx` | Local cuisine card grid with animated reveal — data from `api/home/culinary.php` | ✅ Complete |
-| `history-art-section.tsx` | Expandable historical timeline with milestones — data from `api/home/milestones.php` | ✅ Complete |
-| `inquiry-section.tsx` | Full inquiry form with real-time validation (name, phone, date range, pax) — submits to `api/inquiries/create.php` | ✅ Complete |
-| `page-hero.tsx` | Reusable per-page hero banner with title/subtitle/image — data from `api/heroes/read.php?slug=` | ✅ Complete |
-| `featured-human-wonders.tsx` | Home page "People Wonders" preview — shows 3 featured cards, fetches `people-wonders` label, links to `/culture/people-wonders` | ✅ Complete |
-| `featured-restaurants.tsx` | Featured Restaurants preview — shows 3 Bocaue restaurant cards with rating, tags, and address (static data) | ✅ Complete |
-
----
-
-#### Other Components
-
-| Component | Description | Status |
-|-----------|-------------|--------|
-| `providers/admin-provider.tsx` | Global admin context — handles login state, session persistence, data fetching for posts/inquiries/settings/activity log | ✅ Complete |
-| `providers/theme-provider.tsx` | Light/dark theme wrapper using `next-themes` | ✅ Complete |
-| `reveal-observer.tsx` | Intersection Observer wrapper for scroll-reveal animations with debouncing | ✅ Complete |
-| `reveal-observer-wrapper.tsx` | Provider wrapper that initialises the global reveal observer instance | ✅ Complete |
-| `ui/media-picker.tsx` | Media library picker modal with image upload and selection — calls `api/media/upload.php` and `api/media/list.php` | ✅ Complete |
-
----
-
-#### Public Site Pages (`app/(site)/`)
-
-| Page | Route | Status |
-|------|-------|--------|
-| Home | `/` | ✅ Complete |
-| Destinations | `/destinations` | ✅ Complete |
-| Place Detail | `/places/[id]` | ✅ Complete |
-| Place Category | `/places/category/[slug]` | ✅ Complete |
-| News | `/news` | ✅ Complete |
-| News Detail | `/news/[id]` | ✅ Complete |
-| Events | `/events` | ✅ Complete |
-| Travel & Tours | `/travel-tours` | ✅ Complete |
-| History | `/history` | ✅ Complete |
-| History Timeline | `/history/timeline` | ✅ Complete |
-| Historical Roadmap | `/history/roadmap` | ✅ Complete |
-| Historical Wonders | `/history/historical-wonders` | ✅ Complete |
-| Notable Persons | `/history/notable-persons` | ✅ Complete |
-| Culture Overview | `/culture` | ✅ Complete |
-| Culinary Wonders | `/culture/culinary-wonders` | ✅ Complete |
-| Local Cuisine | `/culture/local-cuisine` | ✅ Complete |
-| Festivals & Celebrations | `/culture/festivals-celebrations` | ✅ Complete |
-| Cultural Practices & Traditions | `/culture/practices-traditions` | ✅ Complete |
-| Crafts & Artisan | `/culture/crafts-artisan` | ✅ Complete |
-| People Wonders | `/culture/people-wonders` | ✅ Complete |
-| Tourism Wonders | `/places/tourism-wonders` | ✅ Complete |
-| Local Businesses | `/community/local-business` | ✅ Complete |
-| Hospitals | `/community/hospitals` | ✅ Complete |
-| Schools | `/community/schools` | ✅ Complete |
-| Inquire | `/inquire` | ✅ Complete |
-
----
-
-#### Admin CMS Pages (`app/(admin)/admin/`)
-
-| Page | Route | Status |
-|------|-------|--------|
-| Login | `/admin` | ✅ Complete |
-| Dashboard | `/admin/dashboard` | ✅ Complete |
-| CMS / Posts | `/admin/cms` | ✅ Complete |
-| Inquiries | `/admin/inquiries` | ✅ Complete |
-| Heroes | `/admin/heroes` | ✅ Complete |
-| Home Content | `/admin/home-content` | ✅ Complete |
-| Settings | `/admin/settings` | ✅ Complete |
-| Activity Log | `/admin/activity-log` | ✅ Complete |
-
----
-
-### March 2, 2026 — Frontend Refactoring & Performance Optimization
-
-**Scope:** 33+ frontend files refactored across the entire codebase.
-
-#### 1. Performance Fixes (CPU/Memory)
-
-| File | Issue | Fix |
-| ---- | ----- | --- |
-| `hero-section.tsx` | Scroll handler fired `setState` on every pixel, causing excessive re-renders | Wrapped in `requestAnimationFrame` with ref-based deduplication; added `useMemo` for scroll-derived parallax values |
-| `places-carousel.tsx` | `isPlaying` was a `useState` causing re-render loop every autoplay tick | Replaced with `useRef` (`isAutoPlayActiveRef`) — avoids re-render entirely |
-| `reveal-observer.tsx` | `MutationObserver` called `querySelectorAll` on every single DOM mutation | Added 100ms debounce; set `attributes: false, characterData: false` to exclude unnecessary observations |
-
-#### 2. Variable & Function Renaming (Readability)
-
-Renamed vague/abbreviated identifiers to be descriptive and intent-revealing across all major files:
-
-| File | Example renames |
-| ---- | --------------- |
-| `hero-section.tsx` | `loaded` → `isDataLoaded`, `lerp` → `linearInterpolation`, `currentSlide` → `activeSlideIndex` |
-| `navbar.tsx` | `open` → `isMobileMenuOpen`, `scrolled` → `isScrolled`, `hoveredDropdown` → `activeDesktopDropdown` (~20 renames) |
-| `places-carousel.tsx` | `api` → `carouselApi`, `activeIndex` → `activeSlideIndex`, `isPlaying` → `isAutoPlayActiveRef` |
-| `search-overlay.tsx` | `query` → `searchQuery`, `results` → `searchResults`, `loading` → `isSearching`, `activeIndex` → `highlightedResultIndex` |
-| `api.ts` | `qs` → `queryString`, `data` → `postData`/`inquiryData`/`settingsData`, `res` → `response` |
-| `news-section.tsx` | `articles` → `featuredArticles`, `loading` → `isLoading`, `categoryLabels` → `newsCategoryDisplayLabels` |
-| `culinary-section.tsx` | `delicacies` → `allDelicacies`, `displayItems` → `displayedDelicacies` |
-| `history-art-section.tsx` | `TimelineEvent` → `TimelineMilestone`, `timelineEvents` → `timelineMilestones`, `expanded` → `isDetailExpanded` |
-| `featured-spotlight.tsx` | `spotlight` → `spotlightData`, `imageUrl` → `spotlightImageUrl` |
-| `admin-provider.tsx` | `ctx` → `adminContext`, `loadJson` → `loadJsonFromStorage`, `mounted` → `isHydrated`, `loading` → `isLoadingBackendData` |
-
-#### 3. JSDoc & Architecture Comments
-
-- Added JSDoc comments to **~20 functions** in `api.ts` (the centralized API client).
-- Added a **detailed architecture explanation comment** in `news-section.tsx` describing the 3-tier REST API flow (Frontend → HTTP → PHP → MySQL), explaining why the app uses HTTP fetch instead of direct SQL.
-- Added **inline fetch-flow comments** to every `useEffect` that fetches data across **33 page/component files**, showing the exact HTTP endpoint and the SQL query the PHP backend runs. Example:
-  ```ts
-  // Sends GET /api/posts/read.php?type=news → PHP runs SQL SELECT → returns JSON
-  useEffect(() => { apiFetchPublishedNews() ... })
-  ```
-
-#### 4. Bug Fixes Found During Refactoring
-
-| File | Bug | Fix |
-| ---- | --- | --- |
-| `admin/inquiries/page.tsx` | `tab.key === "inbox"` — type `MailboxTab` doesn't contain `"inbox"` (TypeScript error) | Changed to `tab.key === "unread"` |
-| `lib/api.ts` | `CreateInquiryPayload` missing `purpose` field — inquire form passes `purpose` but the type rejected it | Added `purpose?: string` to the interface |
-| `culinary-section.tsx` | Renamed loop var `i` → `cardIndex` but missed one reference in template literal | Fixed the reference to use `cardIndex` |
-
-#### 5. Files Modified
-
-<details>
-<summary>Click to expand full list (33 frontend files)</summary>
-
-**Components:**
-- `components/sections/hero-section.tsx`
-- `components/sections/places-carousel.tsx`
-- `components/sections/news-section.tsx`
-- `components/sections/culinary-section.tsx`
-- `components/sections/history-art-section.tsx`
-- `components/sections/featured-spotlight.tsx`
-- `components/layout/navbar.tsx`
-- `components/layout/search-overlay.tsx`
-- `components/reveal-observer.tsx`
-- `components/providers/admin-provider.tsx`
-
-**Library:**
-- `lib/api.ts`
-
-**Pages:**
-- `app/(site)/news/page.tsx`
-- `app/(site)/news/[id]/news-detail-client.tsx`
-- `app/(site)/events/page.tsx`
-- `app/(site)/places/page.tsx`
-- `app/(site)/places/[id]/place-details-client.tsx`
-- `app/(site)/community/local-business/page.tsx`
-- `app/(site)/travel-tours/page.tsx`
-- `app/(site)/culture/page.tsx`
-- `app/(site)/culture/practices-traditions/page.tsx`
-- `app/(site)/culture/people-wonders/page.tsx`
-- `app/(site)/culture/local-cuisine/page.tsx`
-- `app/(site)/culture/festivals-celebrations/page.tsx`
-- `app/(site)/culture/crafts-artisan/page.tsx`
-- `app/(site)/destinations/page.tsx`
-- `app/(site)/destinations/heritage-sites/page.tsx`
-- `app/(site)/destinations/museums/page.tsx`
-- `app/(site)/destinations/religious-sites/page.tsx`
-- `app/(site)/community/colleges/page.tsx`
-- `app/(site)/community/hospitals/page.tsx`
-- `app/(site)/community/schools/page.tsx`
-- `app/(site)/community/public-schools/page.tsx`
-- `app/(site)/history/page.tsx`
-- `app/(site)/history/timeline/page.tsx`
-- `app/(site)/history/notable-persons/page.tsx`
-
-**Admin:**
-- `app/(admin)/admin/inquiries/page.tsx`
-- `app/(admin)/admin/home-content/page.tsx`
-
-</details>
+| 🔴 High | Email confirmations on inquiry submission (PHPMailer installed, not yet wired) |
+| 🔴 High | Server-side pagination for CMS posts, inquiry list, and activity log |
+| 🟡 Medium | File upload dimension validation + virus scanning |
+| 🟡 Medium | 30-day soft-delete trash bin for posts and inquiries |
+| 🟡 Medium | Dark mode persistence via `localStorage` |
+| 🟡 Medium | Dynamic `<title>` and `<meta description>` per public page |
+| 🟢 Low | PDF export of inquiry report with MHACTO letterhead |
+| 🟢 Low | Multi-language support (Filipino / English) |
+| 🟢 Low | Redis upgrade path for cross-worker cache sharing on VPS |
+| 🟢 Low | Auto-email DPO within 72 hours on data breach log entry |
