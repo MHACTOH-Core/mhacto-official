@@ -58,7 +58,7 @@ const sortLabels: Record<SortKey, string> = {
 }
 
 // ── School logo / initials fallback ─────────────────────────────────
-function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
+function SchoolLogo({ name, logo, onExpand }: { name: string; logo?: string; onExpand?: (src: string) => void }) {
   const [imgError, setImgError] = useState(false)
   const initials = name
     .split(/\s+/)
@@ -69,7 +69,12 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
 
   if (logo && !imgError) {
     return (
-      <div className="relative h-14 w-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-border/50 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onExpand?.(logo)}
+        className="relative h-14 w-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-border/50 shadow-sm cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+        aria-label={`View ${name} image`}
+      >
         <Image
           src={logo}
           alt={`${name} logo`}
@@ -77,7 +82,7 @@ function SchoolLogo({ name, logo }: { name: string; logo?: string }) {
           className="object-contain p-1"
           onError={() => setImgError(true)}
         />
-      </div>
+      </button>
     )
   }
 
@@ -96,6 +101,7 @@ export default function SchoolsPage() {
   const [sort, setSort] = useState<SortKey>("name-asc")
   const [search, setSearch] = useState("")
   const [searchFocused, setSearchFocused] = useState(false)
+  const [expandedImage, setExpandedImage] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
   // Sends GET /api/posts/read.php?label=schools&status=published → PHP runs SQL SELECT → returns JSON
@@ -290,10 +296,10 @@ export default function SchoolsPage() {
           </div>
         ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
-          {displayedSchools.map((school) => (
+          {displayedSchools.map((school, idx) => (
             <div
               key={school.id}
-              className="flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden"
+              className={`reveal-on-scroll flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
             >
               {/* accent bar — blue for public, violet for private */}
               <div
@@ -307,7 +313,7 @@ export default function SchoolsPage() {
               <div className="flex flex-col flex-1 p-5">
                 {/* Logo + badges */}
                 <div className="flex items-start gap-3 mb-4">
-                  <SchoolLogo name={school.name} logo={school.logo} />
+                  <SchoolLogo name={school.name} logo={school.logo} onExpand={setExpandedImage} />
                   <div className="flex flex-col gap-1.5 pt-0.5">
                     <Badge
                       variant="outline"
@@ -352,18 +358,13 @@ export default function SchoolsPage() {
                     <BookOpen className="h-3.5 w-3.5" />
                     Programs
                   </div>
-                  <ul className="space-y-0.5">
-                    {school.programs.slice(0, 3).map((p) => (
-                      <li key={p} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <ul className={`gap-x-4 gap-y-0.5 ${school.programs.length > 10 ? "columns-4" : school.programs.length > 5 ? "columns-3" : school.programs.length > 3 ? "columns-2" : "columns-1"}`}>
+                    {school.programs.map((p) => (
+                      <li key={p} className="flex items-start gap-1.5 text-xs text-muted-foreground break-inside-avoid">
                         <span className="mt-1.5 h-1 w-1 rounded-full bg-primary/50 flex-shrink-0" />
                         {p}
                       </li>
                     ))}
-                    {school.programs.length > 3 && (
-                      <li className="text-xs text-primary font-medium pl-2.5">
-                        +{school.programs.length - 3} more
-                      </li>
-                    )}
                   </ul>
                 </div>
 
@@ -390,6 +391,28 @@ export default function SchoolsPage() {
         </div>
         )}
       </section>
+
+      {/* Image lightbox — plain fixed overlay, no scroll lock */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div className="relative max-w-2xl w-[90vw] aspect-square" onClick={(e) => e.stopPropagation()}>
+            <Image src={expandedImage} alt="School image" fill className="object-contain rounded-lg" sizes="(max-width: 768px) 90vw, 640px" />
+          </div>
+          <button
+            onClick={() => setExpandedImage(null)}
+            className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
     </main>
   )
 }

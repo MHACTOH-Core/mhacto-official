@@ -89,6 +89,12 @@ export function CMSEditDialog({
   const [contactHint, setContactHint] = useState<string | null>(null)
   const [establishedHint, setEstablishedHint] = useState<string | null>(null)
 
+  // Image limits per category/label
+  const isCommunity = form.contentCategory === "community"
+  const isLocalBusiness = form.label === "local-business"
+  const maxImages = isLocalBusiness ? 6 : isCommunity ? 1 : Infinity
+  const imagesFull = form.images.length >= maxImages
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
@@ -296,7 +302,8 @@ export function CMSEditDialog({
             </div>
           </div>
 
-          {/* Featured Toggle */}
+          {/* Featured Toggle — hidden for Community category */}
+          {!isCommunity && (
           <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
             <div className="flex items-center gap-2">
               <Star className={`h-4 w-4 ${form.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
@@ -312,10 +319,11 @@ export function CMSEditDialog({
               onCheckedChange={(checked) => setForm({ ...form, isFeatured: checked })}
             />
           </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label>Images (optional)</Label>
+              <Label>Images {maxImages < Infinity ? `(max ${maxImages})` : "(optional)"}</Label>
 
               {form.images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
@@ -340,6 +348,12 @@ export function CMSEditDialog({
                 </div>
               )}
 
+              {imagesFull ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  {maxImages === 1 ? "Only 1 image allowed for this category." : `Maximum of ${maxImages} images reached.`}
+                </p>
+              ) : (
+              <>
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
@@ -372,18 +386,30 @@ export function CMSEditDialog({
                     <input
                       type="file"
                       accept="image/*"
-                      multiple
+                      multiple={maxImages > 1}
                       className="hidden"
                       disabled={isUploading}
                       onChange={async (e) => {
                         const files = e.target.files
                         if (!files) return
+                        const remaining = maxImages - form.images.length
+                        const allowed = Array.from(files).slice(0, remaining)
+                        if (files.length > remaining) {
+                          toast({
+                            title: "Image limit",
+                            description: maxImages === 1
+                              ? "Only 1 image is allowed for this category."
+                              : `Only ${remaining} more image${remaining === 1 ? "" : "s"} can be added (max ${maxImages}).`,
+                            variant: "destructive",
+                          })
+                        }
+                        if (allowed.length === 0) return
                         setIsUploading(true)
                         try {
-                          const result = await apiUploadMedia(Array.from(files), "image", { category: form.contentCategory, label: form.label })
+                          const result = await apiUploadMedia(allowed, "image", { category: form.contentCategory, label: form.label })
                           if (result.uploaded.length > 0) {
                             const newUrls = result.uploaded.map((u) => u.url)
-                            setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls] }))
+                            setForm((prev) => ({ ...prev, images: [...prev.images, ...newUrls].slice(0, maxImages) }))
                           }
                           if (result.errors.length > 0) {
                             toast({ title: "Something went wrong", description: result.errors.join("\n"), variant: "destructive" })
@@ -399,6 +425,8 @@ export function CMSEditDialog({
                   </label>
                 </div>
               ) : null}
+              </>
+              )}
 
               <MediaPicker
                 open={mediaBrowseOpen}
@@ -407,6 +435,18 @@ export function CMSEditDialog({
                   if (!open) setImageInputMode("url")
                 }}
                 onSelect={(url) => {
+                  if (form.images.length >= maxImages) {
+                    toast({
+                      title: "Image limit",
+                      description: maxImages === 1
+                        ? "Only 1 image is allowed for this category."
+                        : `Maximum of ${maxImages} images reached.`,
+                      variant: "destructive",
+                    })
+                    setMediaBrowseOpen(false)
+                    setImageInputMode("url")
+                    return
+                  }
                   setForm((prev) => ({ ...prev, images: [...prev.images, url] }))
                   setMediaBrowseOpen(false)
                   setImageInputMode("url")

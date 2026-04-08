@@ -237,6 +237,7 @@ export function cmsToLocalBusiness(post: CMSPost): LocalBusiness {
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
     image: resolveImage(post),
+    images: (post.image ?? []).filter(Boolean),
     isFeatured: post.isFeatured ?? false,
   }
 }
@@ -380,6 +381,7 @@ export function cmsToHospital(post: CMSPost): Hospital {
     beds: post.established ? parseInt(post.established, 10) || undefined : undefined,
     hours: post.hours ?? "",
     emergency: post.isFeatured ?? false,
+    image: resolveImage(post),
   }
 }
 

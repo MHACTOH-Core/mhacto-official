@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Activity, Phone, MapPin, Clock, AlertTriangle, CheckCircle } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
@@ -96,13 +97,19 @@ export default function HospitalsPage() {
             </div>
           ) : (
           <div className="grid gap-6 sm:grid-cols-2 items-start">
-            {hospitals.map((hospital) => (
-              <Card key={hospital.id} className={`border-border flex flex-col`}>
+            {hospitals.map((hospital, idx) => (
+              <Card key={hospital.id} className={`reveal-on-scroll border-border flex flex-col ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
                 <CardContent className="p-6 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                      <Activity className="h-6 w-6 text-primary" />
-                    </div>
+                    {hospital.image && hospital.image !== "/images/defaults/no-image.svg" ? (
+                      <div className="relative h-12 w-12 flex-shrink-0 rounded-full overflow-hidden border border-border/50">
+                        <Image src={hospital.image} alt={hospital.name} fill className="object-cover" sizes="48px" />
+                      </div>
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                        <Activity className="h-6 w-6 text-primary" />
+                      </div>
+                    )}
                     <div className="flex flex-col items-end gap-1.5">
                       <Badge variant="outline" className={`text-xs ${typeBadge[hospital.type]}`}>
                         {typeLabels[hospital.type]}
