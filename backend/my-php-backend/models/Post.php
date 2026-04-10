@@ -33,6 +33,19 @@ class Post
         ";
     }
 
+    // ── Meta key list ──────────────────────────────────────────────
+
+    /** Single source of truth for all meta field keys. */
+    private function metaKeys(): array
+    {
+        return [
+            'label_id', 'label_key', 'is_featured',
+            'location', 'latitude', 'longitude', 'hours', 'visit_date', 'contact', 'established',
+            'place_category', 'story', 'news_date', 'author',
+            'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
+        ];
+    }
+
     // ── Meta helpers ───────────────────────────────────────────────
 
     /** Get all meta key-value pairs for a content item. */
@@ -305,12 +318,7 @@ class Post
             $contentId = (int) $this->conn->lastInsertId();
 
             // Store meta fields
-            $metaKeys = [
-                'label_id', 'label_key', 'is_featured',
-                'location', 'hours', 'visit_date', 'contact', 'established',
-                'place_category', 'story', 'news_date',
-                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
-            ];
+            $metaKeys = $this->metaKeys();
             $metaMap = [];
             foreach ($metaKeys as $mk) {
                 if (array_key_exists($mk, $data) && $data[$mk] !== null) {
@@ -378,12 +386,7 @@ class Post
             }
 
             // Update meta fields
-            $metaKeys = [
-                'label_id', 'label_key', 'is_featured',
-                'location', 'hours', 'visit_date', 'contact', 'established',
-                'place_category', 'story', 'news_date',
-                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
-            ];
+            $metaKeys = $this->metaKeys();
             foreach ($metaKeys as $mk) {
                 if (array_key_exists($mk, $data)) {
                     $this->setMeta($id, $mk, $data[$mk] !== null ? (string) $data[$mk] : null);
@@ -462,6 +465,8 @@ class Post
             'image'           => $imageUrls,
             'isFeatured'      => (bool) ($meta['is_featured'] ?? false),
             'location'        => $meta['location'] ?? null,
+            'latitude'        => $meta['latitude'] ?? null,
+            'longitude'       => $meta['longitude'] ?? null,
             'hours'           => $meta['hours'] ?? null,
             'contact'         => $meta['contact'] ?? null,
             'established'     => $meta['established'] ?? null,
@@ -473,7 +478,7 @@ class Post
             'tourType'        => $meta['tour_type'] ?? null,
             'tourDifficulty'  => $meta['tour_difficulty'] ?? null,
             'newsDate'        => $meta['news_date'] ?? null,
-            'author'          => null,
+            'author'          => $meta['author'] ?? null,
             'createdAt'       => $row['created_at'],
             'updatedAt'       => $row['updated_at'],
         ];

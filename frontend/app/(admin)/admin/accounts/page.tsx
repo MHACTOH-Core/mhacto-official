@@ -178,6 +178,10 @@ export default function AccountsPage() {
       setFormError("Email is required.")
       return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setFormError("Please enter a valid email address.")
+      return
+    }
 
     if (!editingUser) {
       // Creating — password required
@@ -185,8 +189,8 @@ export default function AccountsPage() {
         setFormError("Password is required for new accounts.")
         return
       }
-      if (form.password.length < 6) {
-        setFormError("Password must be at least 6 characters.")
+      if (form.password.length < 8) {
+        setFormError("Password must be at least 8 characters.")
         return
       }
       if (form.password !== form.confirmPassword) {
@@ -195,8 +199,8 @@ export default function AccountsPage() {
       }
     } else {
       // Editing — password optional but must match if provided
-      if (form.password && form.password.length < 6) {
-        setFormError("Password must be at least 6 characters.")
+      if (form.password && form.password.length < 8) {
+        setFormError("Password must be at least 8 characters.")
         return
       }
       if (form.password && form.password !== form.confirmPassword) {
@@ -572,7 +576,7 @@ export default function AccountsPage() {
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder={editingUser ? "Leave blank to keep current" : "Min. 6 characters"}
+                    placeholder={editingUser ? "Leave blank to keep current" : "Min. 8 characters"}
                   />
                   <Button
                     type="button"

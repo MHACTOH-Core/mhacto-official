@@ -9,6 +9,8 @@ export type FormData = {
   status: ContentStatus
   images: string[]
   location: string
+  latitude: string
+  longitude: string
   hours: string
   contact: string
   established: string
@@ -29,6 +31,8 @@ export const EMPTY_FORM: FormData = {
   status: "draft",
   images: [],
   location: "",
+  latitude: "",
+  longitude: "",
   hours: "",
   contact: "",
   established: "",

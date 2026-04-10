@@ -64,7 +64,6 @@ function handle_users(string $method, ?string $param1, ?string $param2): void
 
         // Change password: PUT /api/users/{id}/change-password
         if ($method === 'PUT' && $param2 === 'change-password' && $param1 && is_numeric($param1)) {
-            $authUser = Auth::requireAuth();
             $targetId = (int) $param1;
 
             // Users can only change their own password unless super_admin

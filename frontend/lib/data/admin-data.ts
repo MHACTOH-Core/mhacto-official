@@ -46,6 +46,8 @@ export interface CMSPost {
   image: string[]
   // Place detail fields (optional — only for place/event post types)
   location?: string
+  latitude?: string
+  longitude?: string
   hours?: string
   contact?: string
   established?: string

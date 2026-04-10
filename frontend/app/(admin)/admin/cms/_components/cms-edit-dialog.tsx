@@ -49,6 +49,7 @@ import {
   Users,
 } from "lucide-react"
 import { MediaPicker } from "@/components/ui/media-picker"
+import { LocationPickerDialog } from "@/components/ui/location-picker-dialog"
 import { apiUploadMedia } from "@/lib/api"
 import { resolveMediaUrl } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -70,6 +71,265 @@ interface CMSEditDialogProps {
   showTypeChooser: boolean
   onSelectPostType: (type: PostType, preset?: string) => void
   onSave: () => void
+}
+
+interface CMSDetailFieldsProps {
+  form: FormData
+  setForm: React.Dispatch<React.SetStateAction<FormData>>
+  contactHint: string | null
+  setContactHint: (hint: string | null) => void
+  establishedHint: string | null
+  setEstablishedHint: (hint: string | null) => void
+}
+
+function CMSDetailFields({
+  form,
+  setForm,
+  contactHint,
+  setContactHint,
+  establishedHint,
+  setEstablishedHint,
+}: CMSDetailFieldsProps) {
+  const visibleFields = LABEL_VISIBLE_FIELDS[form.label] ?? ["location", "hours", "contact", "established", "category", "story", "highlights"]
+  if (visibleFields.length === 0) return null
+  const show = (f: DetailField) => visibleFields.includes(f)
+  const fieldLabel = (f: DetailField, fallback: string) =>
+    LABEL_FIELD_LABELS[form.label]?.[f]?.label ?? fallback
+  const fieldPlaceholder = (f: DetailField, fallback: string) =>
+    LABEL_FIELD_LABELS[form.label]?.[f]?.placeholder ?? fallback
+
+  const [mapOpen, setMapOpen] = useState(false)
+
+  const hasCoords = !!(form.latitude && form.longitude)
+
+  const sectionTitle = form.label === "travel-tours" ? "Tour Details" : form.label === "timeline-of-events" ? "Timeline Details" : form.label === "notable-figures" ? "Person Details" : form.label === "local-cuisine" ? "Dish Details" : form.label === "restaurants" ? "Restaurant Details" : "Additional Details"
+
+  return (
+    <>
+      <Separator />
+      <p className="text-sm font-medium text-muted-foreground">{sectionTitle}</p>
+
+      {(show("location") || show("hours") || show("contact") || show("established")) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {show("location") && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("location", "Location")}
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  placeholder={fieldPlaceholder("location", "e.g. Bocaue Town Center, Bulacan")}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setMapOpen(true)}
+                  title="Pick on map"
+                >
+                  <MapPin className="h-4 w-4" />
+                </Button>
+              </div>
+              {hasCoords && (
+                <div className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                  <span>
+                    📍 {parseFloat(form.latitude).toFixed(5)}&deg;N,{" "}
+                    {parseFloat(form.longitude).toFixed(5)}&deg;E
+                  </span>
+                  <button
+                    type="button"
+                    className="ml-2 text-muted-foreground hover:text-destructive"
+                    onClick={() => setForm({ ...form, latitude: "", longitude: "" })}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <LocationPickerDialog
+                open={mapOpen}
+                onOpenChange={setMapOpen}
+                initialLat={hasCoords ? parseFloat(form.latitude) : undefined}
+                initialLng={hasCoords ? parseFloat(form.longitude) : undefined}
+                onConfirm={({ lat, lng, address }) => {
+                  setForm({
+                    ...form,
+                    location: address,
+                    latitude: String(lat),
+                    longitude: String(lng),
+                  })
+                }}
+              />
+            </div>
+          )}
+
+          {show("hours") && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("hours", form.label === "travel-tours" ? "Duration" : "Hours")}
+              </Label>
+              <Input
+                value={form.hours}
+                onChange={(e) => setForm({ ...form, hours: e.target.value })}
+                placeholder={fieldPlaceholder("hours", form.label === "travel-tours" ? "e.g. Full Day (8 hours)" : "e.g. Daily: 6:00 AM – 8:00 PM")}
+              />
+            </div>
+          )}
+
+          {show("contact") && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                {["schools"].includes(form.label) ? <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> : <Phone className="h-3.5 w-3.5 text-muted-foreground" />} {fieldLabel("contact", "Contact")}
+              </Label>
+              {["schools"].includes(form.label) ? (
+                <Input
+                  type="date"
+                  value={form.contact}
+                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                />
+              ) : (
+                <>
+                  <Input
+                    value={form.contact}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      const val = raw.replace(/[^0-9+()\-\s]/g, '')
+                      if (val !== raw) {
+                        setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
+                        setTimeout(() => setContactHint(null), 4000)
+                      } else if (val.replace(/\D/g, '').length > 15) {
+                        setContactHint("Phone numbers should not exceed 15 digits.")
+                        setTimeout(() => setContactHint(null), 4000)
+                        return
+                      } else {
+                        setContactHint(null)
+                      }
+                      setForm({ ...form, contact: val })
+                    }}
+                    type="tel"
+                    placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
+                    maxLength={25}
+                  />
+                  {contactHint && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">{contactHint}</p>
+                  )}
+                  <p className="text-[11px] text-muted-foreground">Numbers, +, parentheses, and dashes only. Max 15 digits.</p>
+                </>
+              )}
+            </div>
+          )}
+
+          {show("established") && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("established", "Established")}
+              </Label>
+              <Input
+                value={form.established}
+                onChange={(e) => {
+                  const raw = e.target.value
+                  const val = raw.replace(/[^0-9\s\-\/,A-Za-z.]/g, '')
+                  if (val !== raw) {
+                    setEstablishedHint("Special characters are not allowed. Use numbers, letters, dashes, or slashes.")
+                    setTimeout(() => setEstablishedHint(null), 4000)
+                  } else {
+                    setEstablishedHint(null)
+                  }
+                  setForm({ ...form, established: val })
+                }}
+                placeholder={fieldPlaceholder("established", "e.g. 1787")}
+                maxLength={50}
+              />
+              {establishedHint && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">{establishedHint}</p>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                {form.label === "schools" ? "Number of enrolled students (e.g. 1,200 students)."
+                  : form.label === "hospitals" ? "Total number of hospital beds (e.g. 50)."
+                  : form.label === "barangay" ? "Estimated number of residents (e.g. 15,000)."
+                  : "Year or date when this was established (e.g. 1787, March 1945)."}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {show("category") && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : form.label === "schools" ? "Ownership" : form.label === "hospitals" ? "Facility Type" : form.label === "local-business" ? "Business Type" : "Place Type"}
+          </Label>
+          {(() => {
+            const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
+            if (relevantTypes.length === 0) {
+              return (
+                <p className="text-xs text-muted-foreground italic py-2">
+                  No type needed for this label.
+                </p>
+              )
+            }
+            if (relevantTypes.length === 1) {
+              return (
+                <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
+              )
+            }
+            return (
+              <Select
+                value={form.category}
+                onValueChange={(v) => setForm({ ...form, category: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {relevantTypes.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          })()}
+        </div>
+      )}
+
+      {show("story") && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("story", "Story")}
+          </Label>
+          <Textarea
+            value={form.story}
+            onChange={(e) => setForm({ ...form, story: e.target.value })}
+            placeholder={fieldPlaceholder("story", "Write the story behind this place...")}
+            rows={4}
+            className="resize-y"
+          />
+        </div>
+      )}
+
+      {show("highlights") && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <List className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("highlights", "Highlights")}
+            <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
+          </Label>
+          <Textarea
+            value={form.highlights}
+            onChange={(e) => setForm({ ...form, highlights: e.target.value })}
+            placeholder={fieldPlaceholder("highlights", "Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities")}
+            rows={4}
+            className="resize-y"
+          />
+        </div>
+      )}
+    </>
+  )
 }
 
 export function CMSEditDialog({
@@ -461,202 +721,16 @@ export function CMSEditDialog({
           </div>
 
           {/* Contextual Details Section */}
-          {(form.postType === "place" || form.postType === "event") && (() => {
-            const visibleFields = LABEL_VISIBLE_FIELDS[form.label] ?? ["location", "hours", "contact", "established", "category", "story", "highlights"]
-            if (visibleFields.length === 0) return null
-            const show = (f: DetailField) => visibleFields.includes(f)
-            const fieldLabel = (f: DetailField, fallback: string) =>
-              LABEL_FIELD_LABELS[form.label]?.[f]?.label ?? fallback
-            const fieldPlaceholder = (f: DetailField, fallback: string) =>
-              LABEL_FIELD_LABELS[form.label]?.[f]?.placeholder ?? fallback
-
-            const sectionTitle = form.label === "travel-tours" ? "Tour Details" : form.label === "timeline-of-events" ? "Timeline Details" : form.label === "notable-figures" ? "Person Details" : form.label === "local-cuisine" ? "Dish Details" : form.label === "restaurants" ? "Restaurant Details" : "Additional Details"
-
-            return (
-            <>
-              <Separator />
-              <p className="text-sm font-medium text-muted-foreground">{sectionTitle}</p>
-
-              {(show("location") || show("hours") || show("contact") || show("established")) && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {show("location") && (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("location", "Location")}
-                      </Label>
-                      <Input
-                        value={form.location}
-                        onChange={(e) => setForm({ ...form, location: e.target.value })}
-                        placeholder={fieldPlaceholder("location", "e.g. Bocaue Town Center, Bulacan")}
-                      />
-                    </div>
-                  )}
-
-                  {show("hours") && (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("hours", form.label === "travel-tours" ? "Duration" : "Hours")}
-                      </Label>
-                      <Input
-                        value={form.hours}
-                        onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                        placeholder={fieldPlaceholder("hours", form.label === "travel-tours" ? "e.g. Full Day (8 hours)" : "e.g. Daily: 6:00 AM – 8:00 PM")}
-                      />
-                    </div>
-                  )}
-
-                  {show("contact") && (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        {["schools"].includes(form.label) ? <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> : <Phone className="h-3.5 w-3.5 text-muted-foreground" />} {fieldLabel("contact", "Contact")}
-                      </Label>
-                      {["schools"].includes(form.label) ? (
-                        <Input
-                          type="date"
-                          value={form.contact}
-                          onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                        />
-                      ) : (
-                        <>
-                          <Input
-                            value={form.contact}
-                            onChange={(e) => {
-                              const raw = e.target.value
-                              const val = raw.replace(/[^0-9+()\-\s]/g, '')
-                              if (val !== raw) {
-                                setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
-                                setTimeout(() => setContactHint(null), 4000)
-                              } else if (val.replace(/\D/g, '').length > 15) {
-                                setContactHint("Phone numbers should not exceed 15 digits.")
-                                setTimeout(() => setContactHint(null), 4000)
-                                return
-                              } else {
-                                setContactHint(null)
-                              }
-                              setForm({ ...form, contact: val })
-                            }}
-                            type="tel"
-                            placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
-                            maxLength={25}
-                          />
-                          {contactHint && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400">{contactHint}</p>
-                          )}
-                          <p className="text-[11px] text-muted-foreground">Numbers, +, parentheses, and dashes only. Max 15 digits.</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {show("established") && (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("established", "Established")}
-                      </Label>
-                      <Input
-                        value={form.established}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          const val = raw.replace(/[^0-9\s\-\/,A-Za-z.]/g, '')
-                          if (val !== raw) {
-                            setEstablishedHint("Special characters are not allowed. Use numbers, letters, dashes, or slashes.")
-                            setTimeout(() => setEstablishedHint(null), 4000)
-                          } else {
-                            setEstablishedHint(null)
-                          }
-                          setForm({ ...form, established: val })
-                        }}
-                        placeholder={fieldPlaceholder("established", "e.g. 1787")}
-                        maxLength={50}
-                      />
-                      {establishedHint && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400">{establishedHint}</p>
-                      )}
-                      <p className="text-[11px] text-muted-foreground">
-                        {form.label === "schools" ? "Number of enrolled students (e.g. 1,200 students)."
-                          : form.label === "hospitals" ? "Total number of hospital beds (e.g. 50)."
-                          : form.label === "barangay" ? "Estimated number of residents (e.g. 15,000)."
-                          : "Year or date when this was established (e.g. 1787, March 1945)."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {show("category") && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5 text-muted-foreground" /> {form.label === "local-cuisine" ? "Food Type" : form.label === "restaurants" ? "Restaurant Type" : form.label === "travel-tours" ? "Tour Type" : form.label === "schools" ? "Ownership" : form.label === "hospitals" ? "Facility Type" : form.label === "local-business" ? "Business Type" : "Place Type"}
-                  </Label>
-                  {(() => {
-                    const relevantTypes = LABEL_PLACE_TYPES[form.label] ?? PLACE_CATEGORIES
-                    if (relevantTypes.length === 0) {
-                      return (
-                        <p className="text-xs text-muted-foreground italic py-2">
-                          No type needed for this label.
-                        </p>
-                      )
-                    }
-                    if (relevantTypes.length === 1) {
-                      return (
-                        <Input value={relevantTypes[0]} readOnly className="bg-muted cursor-not-allowed" />
-                      )
-                    }
-                    return (
-                      <Select
-                        value={form.category}
-                        onValueChange={(v) => setForm({ ...form, category: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a type..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {relevantTypes.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )
-                  })()}
-                </div>
-              )}
-
-              {show("story") && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("story", "Story")}
-                  </Label>
-                  <Textarea
-                    value={form.story}
-                    onChange={(e) => setForm({ ...form, story: e.target.value })}
-                    placeholder={fieldPlaceholder("story", "Write the story behind this place...")}
-                    rows={4}
-                    className="resize-y"
-                  />
-                </div>
-              )}
-
-              {show("highlights") && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <List className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("highlights", "Highlights")}
-                    <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
-                  </Label>
-                  <Textarea
-                    value={form.highlights}
-                    onChange={(e) => setForm({ ...form, highlights: e.target.value })}
-                    placeholder={fieldPlaceholder("highlights", "Over 235 years of tradition\nIconic pagoda fluvial procession\nWeek-long festivities")}
-                    rows={4}
-                    className="resize-y"
-                  />
-                </div>
-              )}
-            </>
-            )
-          })()}
+          {(form.postType === "place" || form.postType === "event") && (
+            <CMSDetailFields
+              form={form}
+              setForm={setForm}
+              contactHint={contactHint}
+              setContactHint={setContactHint}
+              establishedHint={establishedHint}
+              setEstablishedHint={setEstablishedHint}
+            />
+          )}
         </div>
 
         <DialogFooter>

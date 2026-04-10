@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Eye, EyeOff, MapPin } from "lucide-react"
-import { useAdmin } from "@/components/providers/admin-provider"
+import { useAuth } from "@/components/providers/auth-provider"
 import { asset, resolveMediaUrl } from "@/lib/utils"
 import { apiFetchSettings } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -159,9 +159,25 @@ function BlueWaveParticles() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-[2]" aria-hidden />
 }
 
+/**
+ * Fetches the admin login background image from site settings.
+ * Isolated here so the login form component has a single responsibility:
+ * credential submission. Layout concerns stay out of the form.
+ */
+function useLoginBackground(): string {
+  const [bgImage, setBgImage] = useState("")
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => { if (s?.loginBackgroundImage) setBgImage(s.loginBackgroundImage) })
+      .catch(() => {})
+  }, [])
+  return bgImage
+}
+
 export default function AdminLoginPage() {
-  const { login, isLoggedIn, isHydrated } = useAdmin()
+  const { login, isLoggedIn, isHydrated } = useAuth()
   const router = useRouter()
+  const loginBgImage = useLoginBackground()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -170,17 +186,8 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [loginBgImage, setLoginBgImage] = useState("")
 
   useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    apiFetchSettings()
-      .then((s) => {
-        if (s?.loginBackgroundImage) setLoginBgImage(s.loginBackgroundImage)
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     if (isHydrated && isLoggedIn) router.push("/admin/dashboard")

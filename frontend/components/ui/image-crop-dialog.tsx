@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import Cropper from "react-easy-crop"
 import type { Area } from "react-easy-crop"
 import {
@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
-import { ZoomIn, RotateCw, Crop, Sparkles, Loader2, Blend, Copy, RefreshCw } from "lucide-react"
+import { ZoomIn, RotateCw, Crop, Sparkles, Loader2, Blend, Copy, RefreshCw, Maximize2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
 // ─── Image enhancement (unsharp-mask + contrast bump) ───────────
@@ -108,9 +108,10 @@ export interface ImageCropDialogProps {
 /** Crop an image to the given pixel area and return a JPEG Blob. */
 async function getCroppedBlob(
   imageSrc: string,
-  crop: Area,
+  crop: Area | null,
   enhance: { enabled: boolean; strength: number },
   gradient: { enabled: boolean; direction: GradientDirection; strength: number },
+  outputSize?: { width: number; height: number },
 ): Promise<Blob> {
   // We need same-origin pixel access for canvas crop + enhance.
   // Strategy: load the image via an object URL created from a fetch blob.
@@ -140,21 +141,16 @@ async function getCroppedBlob(
   if (objectUrl) URL.revokeObjectURL(objectUrl)
 
   const canvas = document.createElement("canvas")
-  canvas.width = crop.width
-  canvas.height = crop.height
+  // null crop = full image mode
+  const srcX      = crop ? crop.x : 0
+  const srcY      = crop ? crop.y : 0
+  const srcWidth  = crop ? crop.width  : image.naturalWidth
+  const srcHeight = crop ? crop.height : image.naturalHeight
+  canvas.width  = srcWidth
+  canvas.height = srcHeight
 
   const ctx = canvas.getContext("2d")!
-  ctx.drawImage(
-    image,
-    crop.x,
-    crop.y,
-    crop.width,
-    crop.height,
-    0,
-    0,
-    crop.width,
-    crop.height,
-  )
+  ctx.drawImage(image, srcX, srcY, srcWidth, srcHeight, 0, 0, srcWidth, srcHeight)
 
   // Apply sharpening / enhancement if toggled on
   if (enhance.enabled) {
@@ -180,13 +176,83 @@ async function getCroppedBlob(
     ctx.fillRect(0, 0, w, h)
   }
 
+  // Resize to custom output dimensions if specified
+  let finalCanvas = canvas
+  if (outputSize && (outputSize.width !== canvas.width || outputSize.height !== canvas.height)) {
+    finalCanvas = document.createElement("canvas")
+    finalCanvas.width  = outputSize.width
+    finalCanvas.height = outputSize.height
+    const rCtx = finalCanvas.getContext("2d")!
+    rCtx.drawImage(canvas, 0, 0, outputSize.width, outputSize.height)
+  }
+
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
+    finalCanvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Canvas toBlob failed"))),
       "image/jpeg",
       JPEG_QUALITY,
     )
   })
+}
+
+/** Figma-style horizontal drag scrubber for numeric values. Double-click to reset. */
+function DragNumber({
+  label,
+  value,
+  onChange,
+  min = 1,
+  max = 9999,
+}: {
+  label: string
+  value: number | ""
+  onChange: (v: number | "") => void
+  min?: number
+  max?: number
+}) {
+  const startRef = useRef<{ x: number; startVal: number } | null>(null)
+  const [active, setActive] = useState(false)
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const startVal = typeof value === "number" ? value : Math.round((min + max) / 2)
+    startRef.current = { x: e.clientX, startVal }
+    setActive(true)
+    const onMove = (ev: MouseEvent) => {
+      if (!startRef.current) return
+      const delta = Math.round(ev.clientX - startRef.current.x)
+      const next = Math.min(max, Math.max(min, startRef.current.startVal + delta))
+      onChange(next)
+    }
+    const onUp = () => {
+      setActive(false)
+      startRef.current = null
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+  }
+
+  return (
+    <div
+      role="spinbutton"
+      aria-valuenow={typeof value === "number" ? value : undefined}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      tabIndex={0}
+      onMouseDown={handleMouseDown}
+      onDoubleClick={() => onChange("")}
+      title="Drag to set value • double-click to reset"
+      className={`flex items-center gap-1.5 rounded border px-2.5 h-8 cursor-ew-resize select-none text-xs transition-colors ${
+        active ? "border-primary bg-primary/10" : "border-border bg-muted/60 hover:border-primary/50"
+      }`}
+    >
+      <span className="font-medium text-muted-foreground">{label}</span>
+      <span className="tabular-nums min-w-[2rem] text-right">
+        {typeof value === "number" ? value : <span className="opacity-40">—</span>}
+      </span>
+    </div>
+  )
 }
 
 // Preset aspect ratios for common use cases
@@ -220,6 +286,11 @@ export function ImageCropDialog({
   const [gradientDirection, setGradientDirection] = useState<GradientDirection>("left")
   const [gradientStrength, setGradientStrength] = useState(DEFAULT_GRADIENT_STRENGTH)
   const [saveMode, setSaveMode] = useState<CropSaveMode>("copy")
+  /** When true, the entire image is used — no crop box */
+  const [fullImage, setFullImage] = useState(false)
+  /** Custom output dimensions (empty string = use natural crop size) */
+  const [outputWidth, setOutputWidth] = useState<number | "">("")
+  const [outputHeight, setOutputHeight] = useState<number | "">("")
 
   const handleCropComplete = useCallback(
     (_percent: Area, pixels: Area) => setCroppedArea(pixels),
@@ -227,14 +298,19 @@ export function ImageCropDialog({
   )
 
   const handleSave = async () => {
-    if (!croppedArea) return
+    if (!fullImage && !croppedArea) return
     setSaving(true)
     try {
-      const blob = await getCroppedBlob(imageSrc, croppedArea, { enabled: enhance, strength: enhanceStrength }, {
-        enabled: gradientEnabled,
-        direction: gradientDirection,
-        strength: gradientStrength,
-      })
+      const w = typeof outputWidth === "number" ? outputWidth : 0
+      const h = typeof outputHeight === "number" ? outputHeight : 0
+      const outputSize = (w > 0 && h > 0) ? { width: w, height: h } : undefined
+      const blob = await getCroppedBlob(
+        imageSrc,
+        fullImage ? null : croppedArea,
+        { enabled: enhance, strength: enhanceStrength },
+        { enabled: gradientEnabled, direction: gradientDirection, strength: gradientStrength },
+        outputSize,
+      )
       onCropComplete(blob, saveMode)
       onOpenChange(false)
     } finally {
@@ -256,6 +332,9 @@ export function ImageCropDialog({
       setGradientDirection("left")
       setGradientStrength(DEFAULT_GRADIENT_STRENGTH)
       setSaveMode("copy")
+      setFullImage(false)
+      setOutputWidth("")
+      setOutputHeight("")
     }
     onOpenChange(v)
   }
@@ -270,32 +349,71 @@ export function ImageCropDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Crop area — responsive height: fluid between 16rem (small screens) and 22rem (large screens) */}
+        {/* Crop area */}
         <div className="relative mx-auto w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border" style={{ height: 'clamp(16rem, 40vw, 22rem)' }}>
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={aspect}
-            cropShape="rect"
-            showGrid
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onRotationChange={setRotation}
-            onCropComplete={handleCropComplete}
-            style={{
-              cropAreaStyle: gradientEnabled && gradientStrength > 0 ? {
-                background: `linear-gradient(${GRADIENT_CSS_DIRECTION[gradientDirection]}, rgba(0,0,0,${gradientStrength}), transparent)`,
-              } : undefined,
-            }}
-          />
+          {fullImage ? (
+            /* Full-image mode: show the image scaled to fit, no crop UI */
+            <div className="flex h-full w-full items-center justify-center p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {imageSrc && (
+                <img
+                  src={imageSrc}
+                  alt="Full image preview"
+                  className="max-h-full max-w-full rounded object-contain"
+                  style={gradientEnabled && gradientStrength > 0 ? {
+                    mask: `linear-gradient(${GRADIENT_CSS_DIRECTION[gradientDirection]}, rgba(0,0,0,${1 - gradientStrength}), black)`,
+                    WebkitMask: `linear-gradient(${GRADIENT_CSS_DIRECTION[gradientDirection]}, rgba(0,0,0,${1 - gradientStrength}), black)`,
+                  } : undefined}
+                />
+              )}
+              <div className="absolute inset-0 flex items-end justify-center pb-3 pointer-events-none">
+                <span className="rounded-full bg-black/60 px-3 py-1 text-xs text-white/80">Full image — no crop applied</span>
+              </div>
+            </div>
+          ) : (
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={aspect}
+              cropShape="rect"
+              showGrid
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onRotationChange={setRotation}
+              onCropComplete={handleCropComplete}
+              style={{
+                cropAreaStyle: gradientEnabled && gradientStrength > 0 ? {
+                  background: `linear-gradient(${GRADIENT_CSS_DIRECTION[gradientDirection]}, rgba(0,0,0,${gradientStrength}), transparent)`,
+                } : undefined,
+              }}
+            />
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto max-h-[40vh] sm:max-h-none pr-1">
           {/* Left column – sliders & aspect */}
           <div className="space-y-4">
-            {/* Aspect ratio presets */}
+            {/* Full image toggle + Aspect ratio presets */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Mode</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  variant={fullImage ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 px-2.5 text-xs gap-1"
+                  onClick={() => setFullImage((v) => !v)}
+                >
+                  <Maximize2 className="h-3 w-3" />
+                  Full Image
+                </Button>
+              </div>
+            </div>
+
+            {/* Aspect ratio presets — hidden in full-image mode */}
+            {!fullImage && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Aspect Ratio</Label>
               <div className="flex flex-wrap gap-1.5">
@@ -313,7 +431,11 @@ export function ImageCropDialog({
                 ))}
               </div>
             </div>
+            )}
 
+            {/* Zoom + Rotation — hidden in full-image mode */}
+            {!fullImage && (
+            <>
             {/* Zoom slider */}
             <div className="flex items-center gap-3">
               <ZoomIn className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -344,6 +466,20 @@ export function ImageCropDialog({
               <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">
                 {rotation}°
               </span>
+            </div>
+            </>
+            )}
+
+            {/* Custom output dimensions */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Output Size (optional)</Label>
+              <div className="flex items-center gap-1.5">
+                <DragNumber label="W" value={outputWidth} onChange={setOutputWidth} />
+                <span className="text-xs text-muted-foreground">×</span>
+                <DragNumber label="H" value={outputHeight} onChange={setOutputHeight} />
+                <span className="text-xs text-muted-foreground">px</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Drag to set • double-click to reset</p>
             </div>
           </div>
 
@@ -469,7 +605,7 @@ export function ImageCropDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving || !croppedArea}>
+          <Button onClick={handleSave} disabled={saving || (!fullImage && !croppedArea)}>
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

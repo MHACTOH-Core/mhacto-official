@@ -106,12 +106,17 @@ function _tour_guides_update(TourGuide $guide, int $id): void
     $payload = [];
 
     if (array_key_exists('fullName', $data)) {
-        if (empty(trim($data['fullName']))) Response::error('fullName cannot be empty.', 400);
+        $nameErrors = Validator::validate(['fullName' => $data['fullName']], ['fullName' => 'required|string|min:2|max:200']);
+        if ($nameErrors) Response::error(implode(' ', $nameErrors), 400);
         $payload['fullName'] = $data['fullName'];
     }
 
     if (array_key_exists('phoneNumber', $data)) {
-        $payload['phoneNumber'] = $data['phoneNumber'];
+        if ($data['phoneNumber'] !== null && $data['phoneNumber'] !== '') {
+            $phoneErrors = Validator::validate(['phoneNumber' => $data['phoneNumber']], ['phoneNumber' => 'phone']);
+            if ($phoneErrors) Response::error(implode(' ', $phoneErrors), 400);
+        }
+        $payload['phoneNumber'] = $data['phoneNumber'] ?: null;
     }
 
     if (array_key_exists('availability', $data)) {

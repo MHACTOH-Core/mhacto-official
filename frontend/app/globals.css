@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet map styles (loaded globally; map component is client-only via next/dynamic) */
+@import "leaflet/dist/leaflet.css";
+
 
 body[data-scroll-locked] {
   padding-right: 0px !important;

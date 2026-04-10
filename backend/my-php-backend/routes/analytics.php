@@ -55,16 +55,16 @@ function handle_analytics(string $method, ?string $action): void
 
             case 'log-view':
                 // Public endpoint — no auth required (visitor tracking)
+                if ($method !== 'POST') Response::error('Method not allowed. Use POST.', 405);
                 // Rate-limit: max 60 page-view logs per IP per minute (bot protection)
                 RateLimit::check('log_view', 60, 60);
-                if ($method !== 'POST') Response::error('Method not allowed. Use POST.', 405);
                 $input = Response::getJsonInput();
                 if (!$input || empty($input->contentId) || !is_numeric($input->contentId)) {
                     Response::error('Missing or invalid "contentId".', 400);
                 }
                 $contentId = (int) $input->contentId;
-                $sessionId = isset($input->sessionId) ? trim((string) $input->sessionId) : null;
-                $pagePath  = isset($input->pagePath)  ? trim((string) $input->pagePath)  : null;
+                $sessionId = isset($input->sessionId) ? mb_substr(trim((string) $input->sessionId), 0, 128) : null;
+                $pagePath  = isset($input->pagePath)  ? mb_substr(trim((string) $input->pagePath),  0, 500) : null;
 
                 // Write to page_views table (for top-destinations ranking)
                 $pageView = new PageView($db);

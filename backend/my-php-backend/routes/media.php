@@ -15,6 +15,12 @@ function handle_media(string $method, ?string $param1): void
     Auth::requireRole(['super_admin', 'admin', 'content_manager']);
 
     try {
+        // GET /api/media/usages[?path=...]
+        if ($method === 'GET' && $param1 === 'usages') {
+            _media_usages();
+            return;
+        }
+
         switch ($method) {
             case 'GET':
                 _media_list();
@@ -97,7 +103,7 @@ function _media_upload(): void
     if (!is_dir($imageDir)) mkdir($imageDir, 0755, true);
     if (!is_dir($videoDir)) mkdir($videoDir, 0755, true);
 
-    $allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/avif'];
+    $allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
     $allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
 
     $maxImageSize = 10 * 1024 * 1024;   // 10 MB
@@ -131,7 +137,7 @@ function _media_upload(): void
 
         if (!$isVideo && !$isImage) {
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $errors[] = "\"{$file['name']}\" — This file type (.{$ext}) is not supported. Please use JPG, PNG, GIF, WebP, or SVG for images, and MP4, WebM, or OGG for videos.";
+            $errors[] = "\"{$file['name']}\" — This file type (.{$ext}) is not supported. Please use JPG, PNG, GIF, WebP, or AVIF for images, and MP4, WebM, or OGG for videos.";
             continue;
         }
 
@@ -147,7 +153,7 @@ function _media_upload(): void
         // (prevents double-extension attacks like "shell.php.jpg")
         $mimeToExt = [
             'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif',
-            'image/webp' => 'webp', 'image/svg+xml' => 'svg', 'image/avif' => 'avif',
+            'image/webp' => 'webp', 'image/avif' => 'avif',
             'video/mp4' => 'mp4', 'video/webm' => 'webm', 'video/ogg' => 'ogg',
             'video/quicktime' => 'mov', 'video/x-msvideo' => 'avi',
         ];
@@ -202,17 +208,142 @@ function _media_delete(): void
     $realUploadDir = realpath(__DIR__ . '/../uploads');
     $realFilePath  = realpath($fullPath);
 
-    if (!$realFilePath || strpos($realFilePath, $realUploadDir) !== 0) {
+    if (!$realFilePath || !str_starts_with($realFilePath, $realUploadDir . DIRECTORY_SEPARATOR)) {
         Response::error('File not found or access denied.', 404);
     }
-
-    if (!file_exists($realFilePath)) Response::error('File not found.', 404);
 
     if (unlink($realFilePath)) {
         Response::json(['message' => 'File deleted successfully.']);
     } else {
         Response::error('Failed to delete file.', 500);
     }
+}
+
+// ── USAGES ──────────────────────────────────────────────────────────
+// GET /api/media/usages          → map of { url → usage[] } for ALL referenced images
+// GET /api/media/usages?path=... → usage[] for a single image path
+
+function _media_usages(): void
+{
+    require_once __DIR__ . '/../config/Database.php';
+    $db = (new \App\Config\Database())->connect();
+
+    $path = isset($_GET['path']) && $_GET['path'] !== '' ? $_GET['path'] : null;
+
+    if ($path !== null) {
+        // Single-image lookup
+        if (strpos($path, '/uploads/') !== 0 || strpos($path, '..') !== false) {
+            Response::error('Invalid path.', 400);
+        }
+        $usages = _media_find_usages($db, $path);
+        Response::json(['path' => $path, 'usages' => $usages, 'count' => count($usages)]);
+    } else {
+        // Bulk lookup — returns { usageMap: { url -> usage[] } }
+        Response::json(['usageMap' => _media_find_all_usages($db)]);
+    }
+}
+
+/**
+ * Return all DB references to a single file URL.
+ * Checks: content_images (CMS posts) and config (settings / hero images).
+ */
+function _media_find_usages(\PDO $db, string $path): array
+{
+    $usages = [];
+
+    // 1. CMS content images
+    $stmt = $db->prepare(
+        "SELECT ci.image_url, c.content_id, c.title, c.post_type, c.status
+         FROM content_images ci
+         JOIN content c ON c.content_id = ci.content_id
+         WHERE ci.image_url = ?"
+    );
+    $stmt->execute([$path]);
+    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+        $usages[] = [
+            'type'       => 'content',
+            'content_id' => (int)$row['content_id'],
+            'title'      => $row['title'],
+            'post_type'  => $row['post_type'],
+            'status'     => $row['status'],
+        ];
+    }
+
+    // 2. Config / settings (hero images, logos, etc.) — LIKE search in JSON values
+    $stmt = $db->prepare(
+        "SELECT config_key, config_group, config_value
+         FROM config
+         WHERE config_value LIKE ?"
+    );
+    $stmt->execute(['%' . $path . '%']);
+    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+        $label = ucwords(str_replace(['_', '-'], ' ', $row['config_key']));
+        $usages[] = [
+            'type'         => 'config',
+            'config_key'   => $row['config_key'],
+            'config_group' => $row['config_group'],
+            'label'        => $label . ' (Settings)',
+        ];
+    }
+
+    return $usages;
+}
+
+/**
+ * Bulk version: returns a map of url → usage[] for every image currently
+ * referenced in the database. Used by the media picker to badge all in-use images.
+ */
+function _media_find_all_usages(\PDO $db): array
+{
+    $map = [];
+
+    // CMS content_images
+    $stmt = $db->query(
+        "SELECT ci.image_url, c.content_id, c.title, c.post_type, c.status
+         FROM content_images ci
+         JOIN content c ON c.content_id = ci.content_id"
+    );
+    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+        $url = $row['image_url'];
+        if (!$url) continue;
+        if (!isset($map[$url])) $map[$url] = [];
+        $map[$url][] = [
+            'type'       => 'content',
+            'content_id' => (int)$row['content_id'],
+            'title'      => $row['title'],
+            'post_type'  => $row['post_type'],
+            'status'     => $row['status'],
+        ];
+    }
+
+    // Config / settings
+    $stmt = $db->query(
+        "SELECT config_key, config_group, config_value FROM config WHERE config_value LIKE '%/uploads/%'"
+    );
+    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+        if (preg_match_all('#/uploads/[^\s"\'\\\\,]+#', $row['config_value'], $matches)) {
+            foreach ($matches[0] as $url) {
+                $url   = rtrim($url, ".,;");
+                $label = ucwords(str_replace(['_', '-'], ' ', $row['config_key']));
+                if (!isset($map[$url])) $map[$url] = [];
+                // Deduplicate config entries per URL
+                $alreadyAdded = false;
+                foreach ($map[$url] as $existing) {
+                    if (($existing['config_key'] ?? null) === $row['config_key']) { $alreadyAdded = true; break; }
+                }
+                if (!$alreadyAdded) {
+                    $map[$url][] = [
+                        'type'         => 'config',
+                        'config_key'   => $row['config_key'],
+                        'config_group' => $row['config_group'],
+                        'label'        => $label . ' (Settings)',
+                    ];
+                }
+            }
+        }
+    }
+
+    return $map;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

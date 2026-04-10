@@ -11,7 +11,7 @@ export function TourismTaglineSection() {
       className="relative z-20 overflow-hidden bg-background pt-0 pb-16 sm:pb-20 lg:pb-24"
     >
       {/* Decorative background gradient */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
+      <div className="pointer-events-none absolute inset-0 -z-10" data-no-reveal>
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
       </div>
@@ -91,8 +91,8 @@ export function TourismTaglineSection() {
             { value: "55,000", label: "Arena Seating Capacity" },
             { value: "400+", label: "Years of Town History" },
             { value: "1 of 1", label: "Fireworks Capital, PH" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
+          ].map((stat, i) => (
+            <div key={stat.label} className={`text-center reveal-on-scroll reveal-delay-${i + 1}`}>
               <p className="text-2xl font-extrabold text-primary sm:text-3xl">
                 {stat.value}
               </p>

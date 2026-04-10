@@ -27,15 +27,15 @@ function handle_inquiries(string $method, ?string $idOrAction, ?string $subActio
 
         // POST /api/inquiries/{id}/reply — admin reply
         if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'reply') {
-            Auth::requireRole(['super_admin', 'admin']);
-            _inquiries_reply($inquiry, (int) $idOrAction);
+            $authUser = Auth::requireRole(['super_admin', 'admin']);
+            _inquiries_reply($inquiry, (int) $idOrAction, $authUser);
             return;
         }
 
         // POST /api/inquiries/{id}/confirm — set confirmed_date + guide
         if ($method === 'POST' && $idOrAction && is_numeric($idOrAction) && $subAction === 'confirm') {
-            Auth::requireRole(['super_admin', 'admin']);
-            _inquiries_confirm($inquiry, (int) $idOrAction);
+            $authUser = Auth::requireRole(['super_admin', 'admin']);
+            _inquiries_confirm($inquiry, (int) $idOrAction, $authUser);
             return;
         }
 
@@ -139,10 +139,6 @@ function _inquiries_create(Inquiry $inquiry): void
         Response::error(implode(' ', $errors), 400);
     }
 
-    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-        Response::error('Invalid email address.', 400);
-    }
-
     $newId = $inquiry->create([
         'name'              => $data['name'],
         'email'             => $data['email'],
@@ -219,24 +215,31 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
 
 // ── POST reply ──────────────────────────────────────────────────────
 
-function _inquiries_reply(Inquiry $inquiry, int $id): void
+function _inquiries_reply(Inquiry $inquiry, int $id, array $authUser): void
 {
     $data = json_decode(file_get_contents('php://input'), true);
     if (!$data || empty(trim($data['reply_text'] ?? ''))) {
         Response::error('reply_text is required.', 400);
     }
 
-    $authUser = Auth::requireAuth(); // re-extract user info (role already verified by caller)
+    $replyText = trim($data['reply_text']);
     $success = $inquiry->update($id, [
-        'reply_text' => trim($data['reply_text']),
+        'reply_text' => $replyText,
         'replied_at' => date('Y-m-d H:i:s'),
         'replied_by' => $authUser['email'] ?? 'Admin',
     ]);
 
     if ($success) {
         $updated = $inquiry->readOne($id);
+
+        // Notify visitor that their inquiry has been replied to (non-fatal)
+        $visitorEmail = $updated['email'] ?? '';
+        $visitorName  = $updated['touristName'] ?: ($updated['name'] ?? '');
+        $origMessage  = $updated['message'] ?? '';
+        Mailer::sendReply($visitorEmail, $visitorName, $replyText, $origMessage);
+
         Response::json([
-            'message' => 'Reply saved successfully.',
+            'message' => 'Reply saved and notification sent.',
             'inquiry' => $updated,
         ]);
     } else {
@@ -257,7 +260,7 @@ function _inquiries_delete(Inquiry $inquiry, int $id): void
 }
 // ── POST confirm ──────────────────────────────────────────
 
-function _inquiries_confirm(Inquiry $inquiry, int $id): void
+function _inquiries_confirm(Inquiry $inquiry, int $id, array $authUser): void
 {
     $data = json_decode(file_get_contents('php://input'), true);
     if (!$data) Response::error('Request body is required.', 400);
@@ -269,8 +272,6 @@ function _inquiries_confirm(Inquiry $inquiry, int $id): void
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['confirmed_date'])) {
         Response::error('confirmed_date must be YYYY-MM-DD.', 400);
     }
-
-    $authUser = Auth::requireAuth();
 
     // Fetch current record to detect reschedule vs first confirmation
     $before       = $inquiry->readOne($id);

@@ -44,6 +44,8 @@ import {
   apiFetchArchiveRequests,
   apiApproveArchiveRequest,
   apiDenyArchiveRequest,
+  apiFetchUserPreferences,
+  apiUpdateUserPreferences,
   AuthExpiredError,
 } from "@/lib/api"
 import type { ArchiveRequest } from "@/lib/api"
@@ -61,7 +63,6 @@ export interface CMSDataContextValue {
   // Inquiries
   inquiries: Inquiry[]
   updateInquiry: (id: string, data: Partial<Inquiry>) => void
-  deleteInquiry: (id: string) => void
   permanentDeleteInquiry: (id: string) => void
   confirmTour: (id: string, confirmedDate: string, opts?: { assignedTo?: string; touristName?: string }) => Promise<void>
   logWalkIn: (data: Parameters<typeof apiLogWalkIn>[0]) => Promise<void>
@@ -98,6 +99,10 @@ export interface CMSDataContextValue {
 
   loading: boolean
   refreshPosts: () => Promise<void>
+
+  // Notification preferences
+  notificationPrefs: { enableEmailNotifications: boolean; enableInquiryAlerts: boolean }
+  updateNotificationPrefs: (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }) => Promise<boolean>
 }
 
 const CMSDataContext = createContext<CMSDataContextValue | null>(null)
@@ -333,30 +338,11 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
     [refreshInquiries],
   )
 
-  const deleteInquiry = useCallback(
-    async (id: string) => {
-      const inq = inquiries.find((i) => i.id === id)
-      setInquiries((prev) =>
-        prev.map((i) =>
-          i.id === id ? { ...i, status: "archived" as const } : i,
-        ),
-      )
-      logActivityFn("archive_inquiry", `Archived inquiry from ${inq?.name || "unknown"}`)
-      try {
-        await apiUpdateInquiry(id, { status: "archived" })
-        await refreshInquiries()
-      } catch (err) {
-        console.error("deleteInquiry API error:", err)
-      }
-    },
-    [inquiries, logActivityFn, refreshInquiries],
-  )
-
   const permanentDeleteInquiry = useCallback(
     async (id: string) => {
       const inq = inquiries.find((i) => i.id === id)
       setInquiries((prev) => prev.filter((i) => i.id !== id))
-      logActivityFn("archive_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
+      logActivityFn("delete_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
       try {
         await apiDeleteInquiry(id)
       } catch (err) {
@@ -427,14 +413,18 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
 
   const deleteTourGuideFn = useCallback(
     async (id: string) => {
+      const snapshot = tourGuides
       setTourGuides((prev) => prev.filter((g) => g.id !== id))
       try {
         await apiDeleteTourGuide(id)
+        await refreshTourGuides()
       } catch (err) {
+        setTourGuides(snapshot)
         console.error("deleteTourGuide API error:", err)
+        throw err
       }
     },
-    [],
+    [tourGuides, refreshTourGuides],
   )
 
   // ── Settings ──
@@ -532,6 +522,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
 
   // ── Archive requests ──
   const [archiveRequests, setArchiveRequests] = useState<ArchiveRequest[]>([])
+  const [notificationPrefs, setNotificationPrefs] = useState<{ enableEmailNotifications: boolean; enableInquiryAlerts: boolean }>({ enableEmailNotifications: true, enableInquiryAlerts: true })
 
   const refreshArchiveRequestsFn = useCallback(async () => {
     try {
@@ -581,6 +572,29 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser?.role, refreshArchiveRequestsFn])
 
+  // Fetch notification preferences when authenticated user is known
+  useEffect(() => {
+    if (!isHydrated || !isLoggedIn || !currentUser) return
+    apiFetchUserPreferences(currentUser.id)
+      .then((prefs) => setNotificationPrefs(prefs))
+      .catch((err) => console.warn("Failed to fetch notification prefs:", err))
+  }, [isHydrated, isLoggedIn, currentUser])
+
+  const updateNotificationPrefsFn = useCallback(
+    async (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }): Promise<boolean> => {
+      if (!currentUser) return false
+      try {
+        const res = await apiUpdateUserPreferences(currentUser.id, prefs)
+        if (res.preferences) setNotificationPrefs(res.preferences)
+        return true
+      } catch (err) {
+        console.error("updateNotificationPrefs error:", err)
+        return false
+      }
+    },
+    [currentUser],
+  )
+
   return (
     <CMSDataContext.Provider
       value={{
@@ -590,7 +604,6 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         deletePost,
         inquiries,
         updateInquiry: updateInquiryFn,
-        deleteInquiry,
         permanentDeleteInquiry,
         confirmTour: confirmTourFn,
         logWalkIn: logWalkInFn,
@@ -616,6 +629,8 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
         denyArchiveRequest: denyArchiveRequestFn,
         loading: isLoadingBackendData,
         refreshPosts,
+        notificationPrefs,
+        updateNotificationPrefs: updateNotificationPrefsFn,
       }}
     >
       {children}

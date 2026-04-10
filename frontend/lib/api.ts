@@ -157,6 +157,75 @@ export interface ApiFetchOptions extends RequestInit {
   skipAuth?: boolean
 }
 
+// ── Private helpers (keep apiFetch as a thin orchestrator) ────────
+
+/** Build the versioned absolute URL for a given endpoint. */
+function _buildUrl(endpoint: string): string {
+  const versioned = endpoint.startsWith("/api/") && !endpoint.startsWith("/api/v1/")
+    ? `/api/v1/${endpoint.slice(5)}`
+    : endpoint
+  return `${API_BASE}${versioned}`
+}
+
+/** Build request headers — Content-Type for body requests, JWT when present. */
+function _buildHeaders(
+  options: ApiFetchOptions,
+  token: string | null,
+): Record<string, string> {
+  const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
+  // Only set Content-Type when a body is present (avoids unnecessary CORS preflight on GETs)
+  if (options.body) {
+    headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+  return headers
+}
+
+/** Parse the raw response text into the standard envelope shape. */
+function _parseJsonResponse<T>(
+  rawText: string,
+  endpoint: string,
+): { success?: boolean; data?: T; error?: string; message?: string } {
+  try {
+    return rawText ? JSON.parse(rawText) : {}
+  } catch {
+    throw new Error(`Invalid JSON response from ${endpoint}`)
+  }
+}
+
+/** Unwrap the { success, data } envelope; fall back to the raw object for non-enveloped responses. */
+function _unwrapEnvelope<T>(
+  envelope: { success?: boolean; data?: T; error?: string; message?: string },
+): T {
+  if (envelope.success !== undefined && "data" in envelope) {
+    return envelope.data as T
+  }
+  return envelope as unknown as T
+}
+
+/**
+ * Handle a 401 response: attempt a silent token refresh and retry.
+ * Returns true if the caller should retry; throws AuthExpiredError if not.
+ */
+async function _handle401(skipAuth: boolean, errMsg: string): Promise<boolean> {
+  if (skipAuth) return false
+  const currentToken = getAuthToken()
+  if (currentToken) {
+    // Deduplicate: concurrent 401s share a single refresh request
+    if (!_isRefreshing) _isRefreshing = tryRefreshToken()
+    const refreshed = await _isRefreshing
+    _isRefreshing = null
+    if (refreshed) return true // caller should retry with new token
+    setAuthToken(null)
+  }
+  _onAuthError?.()
+  throw new AuthExpiredError(errMsg)
+}
+
+// ─────────────────────────────────────────────────────────────────
+
 /**
  * Centralised fetch wrapper. All backend calls go through here
  * for consistent URL resolution, JSON parsing, and error handling.
@@ -167,66 +236,43 @@ export async function apiFetch<T>(
   endpoint: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  // Auto-version: /api/posts → /api/v1/posts
-  const versioned = endpoint.startsWith("/api/") && !endpoint.startsWith("/api/v1/")
-    ? `/api/v1/${endpoint.slice(5)}`
-    : endpoint
-  const url = `${API_BASE}${versioned}`
-
-  // Determine if this is a cacheable public GET (no body, no auth token)
+  const url = _buildUrl(endpoint)
   const method = (options.method ?? "GET").toUpperCase()
   const { skipAuth, ...fetchOptions } = options
   const token = skipAuth ? null : getAuthToken()
   const isCacheableGet = method === "GET" && !token && !options.body
 
-  // Return cached data for public GETs when available
+  // ── Cache & in-flight deduplication (public GETs only) ──────────
   if (isCacheableGet) {
     const cached = getCached<T>(url)
     if (cached !== undefined) return cached
 
-    // If an identical request is already in-flight, share its promise
-    // rather than opening a second connection to the PHP server.
     const existing = _inflight.get(url)
     if (existing) return existing as Promise<T>
   }
 
-  // Only set Content-Type for requests that carry a body (POST/PUT/PATCH).
-  // Omitting it on GET avoids unnecessary CORS preflight requests.
-  const headers: Record<string, string> = { ...(options.headers as Record<string, string>) }
-  if (options.body) {
-    headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
-  }
+  const headers = _buildHeaders(options, token)
 
-  // Attach JWT token if available (unless skipAuth is set)
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  // Register this request as in-flight so simultaneous duplicate calls share it
-  let inflightPromise: Promise<T> | null = null
+  // ── Cacheable GET path: wrap in deduplication map ───────────────
   if (isCacheableGet) {
-    inflightPromise = (async () => {
+    const inflightPromise = (async (): Promise<T> => {
       try {
-        const res = await fetch(url, { ...fetchOptions, cache: 'no-store', headers }).catch(() => { throw new Error('Network error — backend may be unavailable') })
-        const text = await res.text()
-        let env: { success?: boolean; data?: T; error?: string; message?: string }
-        try { env = text ? JSON.parse(text) : {} } catch { throw new Error(`Invalid JSON response from ${endpoint}`) }
+        const res = await fetch(url, { ...fetchOptions, cache: "no-store", headers })
+          .catch(() => { throw new Error("Network error — backend may be unavailable") })
+
+        const envelope = _parseJsonResponse<T>(await res.text(), endpoint)
+
         if (!res.ok) {
-          if (res.status === 401 && !skipAuth) {
-            const tok = getAuthToken()
-            if (tok) {
-              if (!_isRefreshing) _isRefreshing = tryRefreshToken()
-              const refreshed = await _isRefreshing
-              _isRefreshing = null
-              if (refreshed) { _inflight.delete(url); return apiFetch<T>(endpoint, options) }
-              setAuthToken(null)
-            }
-            _onAuthError?.()
+          const errMsg = envelope.error ?? envelope.message ?? `Request failed (${res.status})`
+          if (res.status === 401) {
+            _inflight.delete(url)
+            const shouldRetry = await _handle401(skipAuth ?? false, errMsg)
+            if (shouldRetry) return apiFetch<T>(endpoint, options)
           }
-          const errMsg = env.error ?? env.message ?? `Request failed (${res.status})`
-          throw res.status === 401 ? new AuthExpiredError(errMsg) : new Error(errMsg)
+          throw new Error(errMsg)
         }
-        const result = (env.success !== undefined && 'data' in env ? env.data : env) as T
+
+        const result = _unwrapEnvelope<T>(envelope)
         setCache(url, result)
         return result
       } finally {
@@ -237,64 +283,26 @@ export async function apiFetch<T>(
     return inflightPromise
   }
 
+  // ── Standard (authenticated / mutation) path ────────────────────
   let response: Response
   try {
-    response = await fetch(url, {
-      ...fetchOptions,
-      cache: 'no-store',
-      headers,
-    })
+    response = await fetch(url, { ...fetchOptions, cache: "no-store", headers })
   } catch {
-    throw new Error('Network error — backend may be unavailable')
+    throw new Error("Network error — backend may be unavailable")
   }
 
-  // Try to parse JSON even for error responses
-  const rawText = await response.text()
-  let envelope: { success?: boolean; data?: T; error?: string; message?: string }
-
-  try {
-    envelope = rawText ? JSON.parse(rawText) : {}
-  } catch {
-    throw new Error(`Invalid JSON response from ${endpoint}`)
-  }
+  const envelope = _parseJsonResponse<T>(await response.text(), endpoint)
 
   if (!response.ok) {
-    // On 401, attempt a silent token refresh then retry once (only when auth is in use)
-    if (response.status === 401 && !skipAuth) {
-      const currentToken = getAuthToken()
-      if (currentToken) {
-        // Deduplicate: if a refresh is already running, await that same promise rather than issuing a second one
-        if (!_isRefreshing) _isRefreshing = tryRefreshToken()
-        const refreshed = await _isRefreshing
-        _isRefreshing = null
-        if (refreshed) {
-          // Retry the original request with the new token
-          return apiFetch<T>(endpoint, options)
-        }
-        // Refresh failed — clear token and notify
-        setAuthToken(null)
-      }
-      // No token (or refresh failed) — always notify so the UI can redirect to login
-      _onAuthError?.()
+    const errorMessage = envelope.error ?? envelope.message ?? `Request failed (${response.status})`
+    if (response.status === 401) {
+      const shouldRetry = await _handle401(skipAuth ?? false, errorMessage)
+      if (shouldRetry) return apiFetch<T>(endpoint, options)
     }
-    const errorMessage =
-      envelope.error ??
-      envelope.message ??
-      `Request failed (${response.status})`
-    throw response.status === 401 ? new AuthExpiredError(errorMessage) : new Error(errorMessage)
+    throw new Error(errorMessage)
   }
 
-  // Unwrap standard { success, data } envelope; fall back to raw response
-  // for any non-enveloped responses (e.g. third-party or upload endpoints).
-  if (envelope.success !== undefined && 'data' in envelope) {
-    const result = envelope.data as T
-    if (isCacheableGet) setCache(url, result)
-    return result
-  }
-
-  const result = envelope as unknown as T
-  if (isCacheableGet) setCache(url, result)
-  return result
+  return _unwrapEnvelope<T>(envelope)
 }
 
 // ─── Media Library ────────────────────────────────────────────────
@@ -338,10 +346,9 @@ export async function apiUploadMedia(
   if (options?.label) params.set("label", options.label)
   if (options?.subfolder) params.set("subfolder", options.subfolder)
 
-  const uploadUrl = `${API_BASE}/api/v1/media?${params.toString()}`
-  const uploadHeaders: Record<string, string> = {}
-  const token = getAuthToken()
-  if (token) uploadHeaders["Authorization"] = `Bearer ${token}`
+  const uploadUrl = `${API_BASE}/api/media?${params.toString()}`
+  // Reuse _buildHeaders without Content-Type (FormData sets its own multipart boundary)
+  const uploadHeaders = _buildHeaders({ body: undefined }, getAuthToken())
 
   const response = await fetch(uploadUrl, { method: "POST", body: formData, headers: uploadHeaders })
   const rawText = await response.text()
@@ -350,20 +357,9 @@ export async function apiUploadMedia(
     : {}
 
   if (!response.ok) {
-    // On 401, attempt a silent token refresh then retry once (mirrors apiFetch logic)
     if (response.status === 401) {
-      const currentToken = getAuthToken()
-      if (currentToken) {
-        // Deduplicate: if a refresh is already running, await that same promise rather than issuing a second one
-        if (!_isRefreshing) _isRefreshing = tryRefreshToken()
-        const refreshed = await _isRefreshing
-        _isRefreshing = null
-        if (refreshed) {
-          return apiUploadMedia(files, type, options)
-        }
-        setAuthToken(null)
-      }
-      _onAuthError?.()
+      const shouldRetry = await _handle401(false, envelope.error ?? "Upload failed")
+      if (shouldRetry) return apiUploadMedia(files, type, options)
     }
     throw new Error(envelope.error ?? "Upload failed")
   }
@@ -375,6 +371,36 @@ export function apiDeleteMedia(path: string) {
   return apiFetch<{ message: string }>(`/api/media?path=${encodeURIComponent(path)}`, {
     method: "DELETE",
   })
+}
+
+/** A single usage record — either a CMS content item or a site config entry */
+export interface MediaUsageItem {
+  type: "content" | "config"
+  // content
+  content_id?: number
+  title?: string
+  post_type?: string
+  status?: string
+  // config
+  config_key?: string
+  config_group?: string
+  label?: string
+}
+
+/**
+ * Fetch which content items / settings reference a given media file.
+ * - Pass `path` (e.g. `/uploads/images/foo.jpg`) for a single file.
+ * - Omit `path` to get a bulk map of all referenced URLs → their usages.
+ */
+export async function apiGetMediaUsages(path?: string): Promise<Record<string, MediaUsageItem[]>> {
+  if (path) {
+    const data = await apiFetch<{ path: string; usages: MediaUsageItem[]; count: number }>(
+      `/api/media/usages?path=${encodeURIComponent(path)}`
+    )
+    return { [path]: data.usages ?? [] }
+  }
+  const data = await apiFetch<{ usageMap: Record<string, MediaUsageItem[]> }>("/api/media/usages")
+  return data.usageMap ?? {}
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────
@@ -601,7 +627,7 @@ export function apiFetchPageHero(slug: string) {
 export function apiUpdatePageHero(slug: string, data: Partial<PageHeroData>) {
   return apiFetch<{ message: string; hero: PageHeroData }>(
     `/api/heroes?slug=${encodeURIComponent(slug)}`,
-    { method: "POST", body: JSON.stringify(data) },
+    { method: "PUT", body: JSON.stringify(data) },
   )
 }
 
@@ -665,14 +691,6 @@ export function apiReplyInquiry(id: string, replyText: string, repliedBy?: strin
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/${id}/reply`, {
     method: "POST",
     body: JSON.stringify({ reply_text: replyText, replied_by: repliedBy ?? "Admin" }),
-  })
-}
-
-/** Assign an inquiry to a tourist guide — sets status to 'assigned' and saves guide name */
-export function apiAssignInquiry(id: string, assignedTo: string) {
-  return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries?id=${id}`, {
-    method: "PUT",
-    body: JSON.stringify({ status: "assigned", assigned_to: assignedTo }),
   })
 }
 
@@ -1186,15 +1204,4 @@ export function apiUpdateHeroSlide(id: number, data: Partial<HeroSlide>) {
 export function apiDeleteHeroSlide(id: number) {
   return apiFetch<{ message: string }>(`/api/home/hero?id=${id}`, { method: "DELETE" })
 }
-/** @deprecated Culinary items managed via CMS posts */
-export function apiCreateCulinaryItem(_data: Partial<CulinaryItem>) {
-  throw new Error("Culinary items are now managed via CMS posts")
-}
-/** @deprecated */
-export function apiUpdateCulinaryItem(_id: number, _data: Partial<CulinaryItem>) {
-  throw new Error("Culinary items are now managed via CMS posts")
-}
-/** @deprecated */
-export function apiDeleteCulinaryItem(_id: number) {
-  throw new Error("Culinary items are now managed via CMS posts")
-}
+

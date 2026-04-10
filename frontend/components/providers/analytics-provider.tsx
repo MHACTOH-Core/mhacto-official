@@ -55,8 +55,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
         console.error("[Analytics] dashboard fetch failed:", e)
       }
+    } finally {
+      setIsLoadingAnalytics(false)
     }
-    setIsLoadingAnalytics(false)
   }, [])
 
   // Delay analytics fetch so CMS data provider's 6 parallel requests finish first
@@ -68,10 +69,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   }, [isHydrated, isLoggedIn, fetchAnalytics])
 
   // Re-fetch when the user switches back to this tab (keeps data fresh)
+  // Throttled to once every 30 s to avoid parallel requests from rapid alt-tabbing
   useEffect(() => {
     if (!isLoggedIn) return
+    let lastFetch = 0
     const onVisible = () => {
-      if (document.visibilityState === "visible") fetchAnalytics()
+      if (document.visibilityState !== "visible") return
+      const now = Date.now()
+      if (now - lastFetch < 30_000) return
+      lastFetch = now
+      fetchAnalytics()
     }
     document.addEventListener("visibilitychange", onVisible)
     return () => document.removeEventListener("visibilitychange", onVisible)

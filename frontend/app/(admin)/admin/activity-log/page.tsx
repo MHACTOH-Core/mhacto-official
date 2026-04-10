@@ -70,12 +70,8 @@ export default function ActivityLogPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Role-based filtering: content_manager and admin see only their own logs
-  const roleFiltered = currentUser?.role === "super_admin"
-    ? activityLog
-    : activityLog.filter((entry) => entry.user === (currentUser?.email ?? ""))
-
-  const filtered = roleFiltered.filter((entry) => {
+  // Backend already scopes the log to the requesting user for non-super_admins.
+  const filtered = activityLog.filter((entry) => {
     if (filterAction !== "all" && entry.action !== filterAction) return false
     if (
       search &&
