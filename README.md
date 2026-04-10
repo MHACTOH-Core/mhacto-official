@@ -169,6 +169,32 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 11, 2026 — Internal Links, Pagoda Hero, Developer Team Page & Footer Update
+
+#### Internal Link Behavior
+- Removed `target="_blank"` from all internal content links across 14 pages — clicking destinations, news, events, culture, places, community, and travel-tours links now navigates in the same tab
+- External links (Google Maps, Facebook, Instagram, OpenStreetMap) remain opening in new tabs
+
+#### Pagoda Hero Enhancement
+- Hero image now uses CSS `mask-image` for a true **left-to-right fade-away** effect — image is invisible on the left (clean dark background for text) and smoothly reveals toward the right
+- Image focal point shifted to `object-[65% 25%]` for better composition
+
+#### Developer Team Page (`/developers`)
+- New standalone page (no navbar/footer) showcasing the development team
+- Each member has a **color-coded card** with role icon, gradient accent bar, and description
+- Team hierarchy: Project Manager → Tech Lead → Full Stack Developer → QA Tester → UI/UX Designer
+- Tech stack pills displayed (Next.js, React, TypeScript, Tailwind CSS, PHP, MySQL, Framer Motion, shadcn/ui)
+- Jayson Visnar's card links to LinkedIn
+
+#### Footer Update
+- Removed developer names from footer
+- Added clickable **"Developer Team"** link (opens `/developers` in new tab) below "IN PARTNERSHIP WITH STI COLLEGE BALAGTAS"
+
+#### Scrollbar Stability Fix
+- Added `scrollbar-gutter: stable` on `html` to prevent navbar position shift when Radix Dialog opens/closes
+
+---
+
 ### April 10, 2026 — Schools CMS: Contact Details, Year Founded Date Picker & UI Fixes
 
 #### Schools CMS — Admin Panel
