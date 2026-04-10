@@ -135,7 +135,7 @@ export default function LocalBusinessPage() {
                     </div>
                   )}
                   <h3 className="text-lg font-black text-foreground mb-2">{biz.name}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{biz.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-words">{biz.description}</p>
                   <div className="space-y-2 mb-4">
                     {biz.yearEstablished && (
                       <div className="flex items-center gap-2 text-xs text-foreground">

@@ -131,7 +131,7 @@ export default function NewsPage() {
                           {heroFeatured.title}
                         </h3>
 
-                        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-4 line-clamp-4">
+                        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-4 line-clamp-4 break-words">
                           {heroFeatured.body}
                         </p>
 
@@ -185,7 +185,7 @@ export default function NewsPage() {
                         </div>
                         <CardContent className="p-5">
                           <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">{article.title}</h3>
-                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{article.body}</p>
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2 break-words">{article.body}</p>
                         </CardContent>
                       </Card>
                     </Link>
@@ -254,7 +254,7 @@ export default function NewsPage() {
                             {article.title}
                           </h3>
 
-                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed line-clamp-3">
+                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed line-clamp-3 break-words">
                             {article.body}
                           </p>
                         </div>

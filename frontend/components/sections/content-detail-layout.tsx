@@ -218,7 +218,7 @@ export default function ContentDetailLayout({
             </div>
 
             {/* ── RIGHT: text content ──────────────────────── */}
-            <div className="space-y-8 reveal-on-scroll reveal-right">
+            <div className="space-y-8 min-w-0 reveal-on-scroll reveal-right">
 
               {/* Badge row */}
               {badges && <div className="flex flex-wrap gap-2">{badges}</div>}
@@ -244,7 +244,7 @@ export default function ContentDetailLayout({
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
                     {bodyLabel}
                   </h3>
-                  <p className="text-base text-foreground leading-relaxed whitespace-pre-line">
+                  <p className="text-base text-foreground leading-relaxed whitespace-pre-line break-words">
                     {bodyText}
                   </p>
                 </div>
@@ -256,7 +256,7 @@ export default function ContentDetailLayout({
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
                     {storyLabel}
                   </h3>
-                  <p className="text-base text-foreground leading-relaxed whitespace-pre-line">
+                  <p className="text-base text-foreground leading-relaxed whitespace-pre-line break-words">
                     {storyText}
                   </p>
                 </div>

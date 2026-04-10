@@ -126,7 +126,7 @@ export default function HospitalsPage() {
                   {hospital.beds && (
                     <p className="text-xs text-muted-foreground mb-2">{hospital.beds}-bed capacity</p>
                   )}
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{hospital.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 break-words">{hospital.description}</p>
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-start gap-2 text-xs text-foreground">

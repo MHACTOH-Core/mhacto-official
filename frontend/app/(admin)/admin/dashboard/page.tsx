@@ -137,7 +137,7 @@ export default function DashboardPage() {
   )
 
   const inquiryByStatus = useMemo(
-    () => (["unread", "read", "assigned", "archived"] as InquiryStatus[]).map((status) => {
+    () => (["unread", "read", "assigned"] as InquiryStatus[]).map((status) => {
       const count = inquiries.filter((i) => i.status === status).length
       return { status, count, ...inquiryStatusLabels[status] }
     }),

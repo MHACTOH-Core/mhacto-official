@@ -394,7 +394,7 @@ export default function CommunityPage() {
                       </div>
                       <h3 className="text-lg font-black text-foreground mb-2">{hospital.name}</h3>
                       {hospital.beds && <p className="text-xs text-muted-foreground mb-2">{hospital.beds}-bed capacity</p>}
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{hospital.description}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 break-words">{hospital.description}</p>
                       <div className="space-y-2 mb-4">
                         <div className="flex items-start gap-2 text-xs text-foreground">
                           <MapPin className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />{hospital.location}

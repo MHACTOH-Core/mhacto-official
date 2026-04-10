@@ -419,10 +419,10 @@ export default function CMSPage() {
 
                 {/* Card body */}
                 <CardContent className="flex flex-1 flex-col p-4">
-                  <h3 className="text-base font-semibold text-card-foreground line-clamp-2 leading-snug">
+                  <h3 className="text-base font-semibold text-card-foreground line-clamp-2 leading-snug break-words">
                     {post.title}
                   </h3>
-                  <p className="mt-1.5 flex-1 text-sm text-muted-foreground line-clamp-3">
+                  <p className="mt-1.5 flex-1 text-sm text-muted-foreground line-clamp-3 break-words">
                     {post.body}
                   </p>
                   {post.location && (
