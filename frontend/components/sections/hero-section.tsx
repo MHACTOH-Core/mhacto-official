@@ -116,8 +116,9 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section id="home" ref={heroSectionRef} className="relative z-0 h-[180svh]">
-      <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
+    <section id="home" ref={heroSectionRef} className="relative z-0 h-[130svh]">
+      {/* bg-[hsl(215,25%,10%)] matches --foreground dark: visible before the video buffers */}
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-[hsl(215,25%,10%)]">
         {/* Background video — parallax zoom driven by scroll */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
@@ -135,7 +136,9 @@ export function HeroSection() {
           style={{ opacity: darkOverlayOpacity }}
         />
 
-        {/* Hero text content — fades and shifts up on scroll */}
+        {/* Hero text content — fades and shifts up on scroll.
+            pb-[15svh] shifts the flex center point upward so text sits
+            in the upper-center of the viewport rather than dead-center. */}
         <div
           className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4 text-center"
           style={{ opacity: heroTextOpacity, transform: `translateY(${heroTextTranslateY}px)` }}
