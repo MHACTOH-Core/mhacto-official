@@ -53,7 +53,14 @@ const team = [
 ]
 
 const techStack = [
-  "Next.js", "React", "TypeScript", "Tailwind CSS", "PHP", "MySQL", "Framer Motion", "shadcn/ui",
+  { name: "Next.js", icon: "▲", color: "bg-black/5 text-black border-black/10 dark:bg-white/10 dark:text-white dark:border-white/10" },
+  { name: "React", icon: "⚛", color: "bg-sky-50 text-sky-600 border-sky-200" },
+  { name: "TypeScript", icon: "TS", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { name: "Tailwind CSS", icon: "🌊", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+  { name: "PHP", icon: "🐘", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  { name: "MySQL", icon: "🗄", color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { name: "Framer Motion", icon: "✦", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { name: "shadcn/ui", icon: "◆", color: "bg-zinc-50 text-zinc-700 border-zinc-200" },
 ]
 
 export default function DevelopersPage() {
@@ -94,13 +101,14 @@ export default function DevelopersPage() {
           </p>
 
           {/* Tech stack pills */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
             {techStack.map((tech) => (
               <span
-                key={tech}
-                className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border/50"
+                key={tech.name}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default ${tech.color}`}
               >
-                {tech}
+                <span className="text-xs leading-none">{tech.icon}</span>
+                {tech.name}
               </span>
             ))}
           </div>
