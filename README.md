@@ -169,6 +169,28 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 10, 2026 — Schools CMS: Contact Details, Year Founded Date Picker & UI Fixes
+
+#### Schools CMS — Admin Panel
+- **Contact Details field** added to the Schools CMS form (`highlights` meta key) — supports multiline input (one entry per line: phone, email, website)
+- **Year Founded** (`contact` field) now uses a **native date picker** instead of a free-text input; calendar icon replaces the phone icon for schools
+- **Year Founded** input no longer restricts to phone-number characters — accepts full dates
+- **Field helper texts** are now label-aware:
+  - Schools → "Number of enrolled students"
+  - Hospitals → "Total number of hospital beds"
+  - Barangay → "Estimated number of residents"
+  - Others → "Year or date when this was established"
+
+#### Schools Page — Frontend
+- **Contact Details section** added to school cards (phone icon, displayed between Programs and the footer meta)
+- **Year Founded** on school cards now displays as a formatted date (e.g. "January 1, 1952") when a full date is stored
+- Data mapper (`cmsToSchoolEntry`) updated: `post.highlights[]` → `school.contact` (joined with newlines)
+
+#### Admin Dashboard
+- Fixed layout shift when opening the **Export Summary** dialog — body `overflow: hidden` scoped to admin layout so only the `<main>` scrollbar is visible
+
+---
+
 ### April 8, 2026 — Security, DPA Compliance, Performance & Office CMS
 
 #### Security Hardening
