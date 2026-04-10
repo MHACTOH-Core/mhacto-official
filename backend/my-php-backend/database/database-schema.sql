@@ -48,6 +48,7 @@ DROP TABLE IF EXISTS archive_requests;
 DROP TABLE IF EXISTS page_views;
 DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS milestones;
+DROP TABLE IF EXISTS tour_appointments;
 DROP TABLE IF EXISTS tour_guides;
 DROP TABLE IF EXISTS inquiries;
 DROP TABLE IF EXISTS featured_content;
@@ -204,7 +205,8 @@ CREATE TABLE inquiries (
   message            TEXT         DEFAULT NULL,
   additional_details JSON         DEFAULT NULL  COMMENT 'Contextual extras: school_name, company_name, dateToVisit, etc.',
   status             ENUM('unread','read','assigned','confirmed','completed','cancelled','expired','archived','spam','trash') DEFAULT 'unread',
-  assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Tourist guide name',
+  assigned_to        VARCHAR(150) DEFAULT NULL  COMMENT 'Legacy: guide name string (kept for backward compat with old records)',
+  assigned_guide_id  INT          DEFAULT NULL  COMMENT 'FK → tour_guides — normalized guide assignment',
   confirmed_date     DATE         DEFAULT NULL  COMMENT 'Actual confirmed tour date set by admin',
   confirmed_by       VARCHAR(100) DEFAULT NULL  COMMENT 'Admin username who confirmed the tour',
   reply_text         TEXT         DEFAULT NULL  COMMENT 'Admin reply for in-app thread',
@@ -222,7 +224,8 @@ CREATE TABLE inquiries (
   INDEX idx_visit          (date_of_visit),
   INDEX idx_confirmed      (confirmed_date),
   INDEX idx_purge_date     (data_purge_date),
-  INDEX idx_created_status (created_at, status)
+  INDEX idx_created_status (created_at, status),
+  FOREIGN KEY fk_inquiry_guide (assigned_guide_id) REFERENCES tour_guides(guide_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -238,6 +241,24 @@ CREATE TABLE tour_guides (
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_availability (availability, is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ────────────────────────────────────────────────────────────────
+-- 9b. TOUR_APPOINTMENTS  (scheduled tours per guide)
+--     Lazy-sync: availability is flipped automatically on GET
+--     by TourGuide::syncAvailability() — no cron needed.
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE tour_appointments (
+  appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+  guide_id       INT          NOT NULL,
+  title          VARCHAR(200) NOT NULL  COMMENT 'Brief label for this tour slot',
+  start_datetime DATETIME     NOT NULL  COMMENT 'Tour start — triggers on_tour status',
+  end_datetime   DATETIME     NOT NULL  COMMENT 'Tour end   — triggers available status',
+  notes          TEXT         DEFAULT NULL,
+  created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (guide_id) REFERENCES tour_guides(guide_id) ON DELETE CASCADE,
+  INDEX idx_guide_window (guide_id, start_datetime, end_datetime)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

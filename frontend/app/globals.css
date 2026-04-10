@@ -1,9 +1,9 @@
+/* Leaflet map styles — must precede all other rules */
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Leaflet map styles (loaded globally; map component is client-only via next/dynamic) */
-@import "leaflet/dist/leaflet.css";
 
 
 body[data-scroll-locked] {

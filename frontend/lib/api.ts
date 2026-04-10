@@ -450,6 +450,7 @@ import type {
   DailyVisit,
   TopDestination,
   TourGuide,
+  TourGuideAppointment,
 } from "@/lib/data/admin-data"
 
 export type { CMSPost } from "@/lib/data/admin-data"
@@ -698,13 +699,13 @@ export function apiReplyInquiry(id: string, replyText: string, repliedBy?: strin
 export function apiConfirmTour(
   id: string,
   confirmedDate: string,
-  opts?: { assignedTo?: string; touristName?: string }
+  opts?: { assignedGuideId?: string; touristName?: string }
 ) {
   return apiFetch<{ message: string; inquiry: Inquiry }>(`/api/inquiries/${id}/confirm`, {
     method: "POST",
     body: JSON.stringify({
       confirmed_date: confirmedDate,
-      assigned_to: opts?.assignedTo ?? undefined,
+      assignedGuideId: opts?.assignedGuideId ?? undefined,
       tourist_name: opts?.touristName ?? undefined,
     }),
   })
@@ -788,6 +789,44 @@ export function apiDeleteTourGuide(id: string) {
   return apiFetch<{ message: string }>(`/api/tour_guides?id=${id}`, {
     method: "DELETE",
   })
+}
+
+// ─── Tour Guide Appointments ──────────────────────────────────────
+
+/** Fetch all appointments for a specific guide */
+export function apiFetchAppointments(guideId: string) {
+  return apiFetch<TourGuideAppointment[]>(`/api/tour_guides/${guideId}/appointments`)
+}
+
+/** Create a new appointment for a guide */
+export function apiCreateAppointment(
+  guideId: string,
+  data: { title: string; startDatetime: string; endDatetime: string; notes?: string | null }
+) {
+  return apiFetch<{ message: string; appointment: TourGuideAppointment }>(
+    `/api/tour_guides/${guideId}/appointments`,
+    { method: "POST", body: JSON.stringify(data) }
+  )
+}
+
+/** Update an existing appointment */
+export function apiUpdateAppointment(
+  guideId: string,
+  apptId: string,
+  data: Partial<{ title: string; startDatetime: string; endDatetime: string; notes: string | null }>
+) {
+  return apiFetch<{ message: string; appointment: TourGuideAppointment }>(
+    `/api/tour_guides/${guideId}/appointments?apptId=${apptId}`,
+    { method: "PUT", body: JSON.stringify(data) }
+  )
+}
+
+/** Delete an appointment */
+export function apiDeleteAppointment(guideId: string, apptId: string) {
+  return apiFetch<{ message: string }>(
+    `/api/tour_guides/${guideId}/appointments?apptId=${apptId}`,
+    { method: "DELETE" }
+  )
 }
 
 // ─── Settings CRUD ────────────────────────────────────────────────

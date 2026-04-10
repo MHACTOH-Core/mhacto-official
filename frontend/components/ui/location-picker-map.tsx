@@ -90,8 +90,8 @@ export default function LocationPickerMap({ initialLat, initialLng, onPinChange 
         style={{ height: "340px", width: "100%", borderRadius: "0.5rem" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         <ClickHandler onClickLatLng={handleClick} />
         {marker && <Marker position={marker} icon={markerIcon} />}

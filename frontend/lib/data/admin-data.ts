@@ -98,6 +98,7 @@ export interface Inquiry {
   inquiryType: InquiryType
   additionalDetails?: Record<string, unknown>
   assignedTo?: string | null
+  assignedGuideId?: string | null
   confirmedDate?: string | null
   confirmedBy?: string | null
   replyText?: string | null
@@ -114,6 +115,17 @@ export interface TourGuide {
   phoneNumber?: string | null
   availability: GuideAvailability
   isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TourGuideAppointment {
+  id: string
+  guideId: string
+  title: string
+  startDatetime: string // "YYYY-MM-DD HH:MM:SS"
+  endDatetime: string   // "YYYY-MM-DD HH:MM:SS"
+  notes?: string | null
   createdAt: string
   updatedAt: string
 }

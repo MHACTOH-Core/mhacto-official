@@ -185,12 +185,18 @@ function _inquiries_update(Inquiry $inquiry, int $id): void
         $payload['assigned_to'] = $data['assigned_to'] ? trim($data['assigned_to']) : null;
     }
 
+    if (array_key_exists('assignedGuideId', $data)) {
+        $payload['assigned_guide_id'] = $data['assignedGuideId'] !== null && $data['assignedGuideId'] !== ''
+            ? (int) $data['assignedGuideId']
+            : null;
+    }
+
     if (array_key_exists('tourist_name', $data)) {
         $payload['tourist_name'] = $data['tourist_name'] ? trim($data['tourist_name']) : null;
     }
 
     if (empty($payload)) {
-        Response::error('No updatable fields provided (status, assigned_to, tourist_name).', 400);
+        Response::error('No updatable fields provided (status, assigned_to, assignedGuideId, tourist_name).', 400);
     }
 
     $success = $inquiry->update($id, $payload);
@@ -285,6 +291,12 @@ function _inquiries_confirm(Inquiry $inquiry, int $id, array $authUser): void
 
     if (!empty($data['assigned_to'])) {
         $payload['assigned_to'] = trim($data['assigned_to']);
+    }
+
+    if (array_key_exists('assignedGuideId', $data)) {
+        $payload['assigned_guide_id'] = $data['assignedGuideId'] !== null && $data['assignedGuideId'] !== ''
+            ? (int) $data['assignedGuideId']
+            : null;
     }
 
     if (!empty($data['tourist_name'])) {

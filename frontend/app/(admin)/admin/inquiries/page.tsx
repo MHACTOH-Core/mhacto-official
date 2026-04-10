@@ -104,7 +104,7 @@ export default function InquiriesPage() {
   // Confirm tour dialog
   const [confirmTarget, setConfirmTarget] = useState<Inquiry | null>(null)
   const [confirmDate, setConfirmDate] = useState("")
-  const [confirmGuideName, setConfirmGuideName] = useState("")
+  const [confirmGuideId, setConfirmGuideId] = useState("")
   const [confirmTouristName, setConfirmTouristName] = useState("")
   const [isConfirming, setIsConfirming] = useState(false)
   // Walk-in dialog
@@ -363,7 +363,7 @@ export default function InquiriesPage() {
   const openConfirmDialog = (inq: Inquiry) => {
     setConfirmTarget(inq)
     setConfirmDate(inq.confirmedDate ?? "")
-    setConfirmGuideName(inq.assignedTo ?? "")
+    setConfirmGuideId(inq.assignedGuideId ?? "")
     setConfirmTouristName(inq.touristName ?? "")
   }
 
@@ -378,15 +378,17 @@ export default function InquiriesPage() {
     setIsConfirming(true)
     try {
       await confirmTour(confirmTarget.id, confirmDate, {
-        assignedTo: confirmGuideName || undefined,
+        assignedGuideId: confirmGuideId || undefined,
         touristName: confirmTouristName || undefined,
       })
       if (selectedInquiry?.id === confirmTarget.id) {
+        const resolvedGuideName = tourGuides.find((g) => g.id === confirmGuideId)?.fullName ?? undefined
         setSelectedInquiry((prev) => prev ? {
           ...prev,
           status: "confirmed",
           confirmedDate: confirmDate,
-          assignedTo: confirmGuideName || prev.assignedTo,
+          assignedGuideId: confirmGuideId || prev.assignedGuideId,
+          assignedTo: resolvedGuideName ?? prev.assignedTo,
           touristName: confirmTouristName || prev.touristName,
         } : prev)
       }
@@ -1284,14 +1286,14 @@ export default function InquiriesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Assign Tourist Guide</label>
-                  <Select value={confirmGuideName || "__none__"} onValueChange={(v) => setConfirmGuideName(v === "__none__" ? "" : v)}>
+                  <Select value={confirmGuideId || "__none__"} onValueChange={(v) => setConfirmGuideId(v === "__none__" ? "" : v)}>
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select a guide (optional)" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">None</SelectItem>
                       {tourGuides.filter((g) => g.isActive).map((g) => (
-                        <SelectItem key={g.id} value={g.fullName}>
+                        <SelectItem key={g.id} value={g.id}>
                           {g.fullName}
                           {g.availability !== "available" && (
                             <span className="ml-1.5 text-[10px] text-muted-foreground">({g.availability.replace("_", " ")})</span>

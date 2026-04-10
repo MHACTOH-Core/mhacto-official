@@ -64,7 +64,7 @@ export interface CMSDataContextValue {
   inquiries: Inquiry[]
   updateInquiry: (id: string, data: Partial<Inquiry>) => void
   permanentDeleteInquiry: (id: string) => void
-  confirmTour: (id: string, confirmedDate: string, opts?: { assignedTo?: string; touristName?: string }) => Promise<void>
+  confirmTour: (id: string, confirmedDate: string, opts?: { assignedGuideId?: string; touristName?: string }) => Promise<void>
   logWalkIn: (data: Parameters<typeof apiLogWalkIn>[0]) => Promise<void>
   refreshInquiries: () => Promise<void>
 
@@ -353,11 +353,11 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   )
 
   const confirmTourFn = useCallback(
-    async (id: string, confirmedDate: string, opts?: { assignedTo?: string; touristName?: string }) => {
+    async (id: string, confirmedDate: string, opts?: { assignedGuideId?: string; touristName?: string }) => {
       setInquiries((prev) =>
         prev.map((inq) =>
           inq.id === id
-            ? { ...inq, status: "confirmed" as const, confirmedDate, assignedTo: opts?.assignedTo ?? inq.assignedTo, touristName: opts?.touristName ?? inq.touristName }
+            ? { ...inq, status: "confirmed" as const, confirmedDate, assignedGuideId: opts?.assignedGuideId ?? inq.assignedGuideId, touristName: opts?.touristName ?? inq.touristName }
             : inq
         )
       )

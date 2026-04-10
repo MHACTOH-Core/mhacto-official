@@ -20,7 +20,8 @@ use PDOException;
  * tourist_name → actual tour attendee (may differ from form submitter)
  * confirmed_date / confirmed_by → tour date + admin who confirmed
  * reply_text / replied_at / replied_by → in-app reply thread.
- * assigned_to → tourist guide name handling this inquiry.
+ * assigned_to       → legacy guide name string (kept for backward compat).
+ * assigned_guide_id → FK to tour_guides; JOIN resolves current name.
  */
 
 class Inquiry
@@ -37,13 +38,16 @@ class Inquiry
     private function baseSelect(): string
     {
         return "
-            SELECT inquiry_id, inquiry_type, full_name, tourist_name, email_address,
-                   contact_number, date_of_visit, number_of_pax,
-                   message, additional_details, status,
-                   assigned_to, confirmed_date, confirmed_by,
-                   reply_text, replied_at, replied_by,
-                   created_at
-            FROM inquiries
+            SELECT i.inquiry_id, i.inquiry_type, i.full_name, i.tourist_name, i.email_address,
+                   i.contact_number, i.date_of_visit, i.number_of_pax,
+                   i.message, i.additional_details, i.status,
+                   i.assigned_guide_id,
+                   COALESCE(tg.full_name, i.assigned_to) AS assigned_to,
+                   i.confirmed_date, i.confirmed_by,
+                   i.reply_text, i.replied_at, i.replied_by,
+                   i.created_at
+            FROM inquiries i
+            LEFT JOIN tour_guides tg ON tg.guide_id = i.assigned_guide_id
         ";
     }
 
@@ -143,6 +147,13 @@ class Inquiry
             $params[':assigned_to'] = $data['assigned_to'];
         }
 
+        if (array_key_exists('assigned_guide_id', $data)) {
+            $fields[] = "assigned_guide_id = :assigned_guide_id";
+            $params[':assigned_guide_id'] = $data['assigned_guide_id'] !== null
+                ? (int) $data['assigned_guide_id']
+                : null;
+        }
+
         if (array_key_exists('confirmed_date', $data)) {
             $fields[] = "confirmed_date = :confirmed_date";
             $params[':confirmed_date'] = $data['confirmed_date'];
@@ -218,6 +229,7 @@ class Inquiry
             'additionalDetails' => $extras,
             'status'            => $row['status'],
             'assignedTo'        => $row['assigned_to'] ?? null,
+            'assignedGuideId'   => $row['assigned_guide_id'] !== null ? (string) $row['assigned_guide_id'] : null,
             'confirmedDate'     => $row['confirmed_date'] ?? null,
             'confirmedBy'       => $row['confirmed_by'] ?? null,
             'replyText'         => $row['reply_text'] ?? null,
