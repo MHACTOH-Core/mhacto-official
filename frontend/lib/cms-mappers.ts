@@ -314,7 +314,15 @@ export function cmsToSchoolEntry(post: CMSPost): SchoolEntry {
     description: post.body ?? "",
     programs: parseList(post.story),
     enrollment: post.established ?? undefined,
-    yearEstablished: post.contact ?? undefined,
+    yearEstablished: post.contact
+      ? (() => {
+          const d = new Date(post.contact)
+          return isNaN(d.getTime())
+            ? post.contact
+            : d.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
+        })()
+      : undefined,
+    contact: Array.isArray(post.highlights) ? post.highlights.join("\n") : (post.highlights ?? undefined),
     logo: post.image?.[0] || undefined,
     isFeatured: post.isFeatured ?? false,
   }

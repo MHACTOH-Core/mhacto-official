@@ -13,6 +13,7 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <AdminProvider>
+        <style>{`body { overflow: hidden; }`}</style>
         <AdminShell>
           {children}
         </AdminShell>

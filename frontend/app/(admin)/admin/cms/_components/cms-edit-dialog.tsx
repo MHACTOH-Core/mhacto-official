@@ -36,6 +36,7 @@ import {
   Clock,
   Phone,
   CalendarDays,
+  Calendar,
   Tag,
   Sparkles,
   List,
@@ -507,33 +508,43 @@ export function CMSEditDialog({
                   {show("contact") && (
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {fieldLabel("contact", "Contact")}
+                        {["schools"].includes(form.label) ? <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> : <Phone className="h-3.5 w-3.5 text-muted-foreground" />} {fieldLabel("contact", "Contact")}
                       </Label>
-                      <Input
-                        value={form.contact}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          const val = raw.replace(/[^0-9+()\-\s]/g, '')
-                          if (val !== raw) {
-                            setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
-                            setTimeout(() => setContactHint(null), 4000)
-                          } else if (val.replace(/\D/g, '').length > 15) {
-                            setContactHint("Phone numbers should not exceed 15 digits.")
-                            setTimeout(() => setContactHint(null), 4000)
-                            return
-                          } else {
-                            setContactHint(null)
-                          }
-                          setForm({ ...form, contact: val })
-                        }}
-                        type="tel"
-                        placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
-                        maxLength={25}
-                      />
-                      {contactHint && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400">{contactHint}</p>
+                      {["schools"].includes(form.label) ? (
+                        <Input
+                          type="date"
+                          value={form.contact}
+                          onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                        />
+                      ) : (
+                        <>
+                          <Input
+                            value={form.contact}
+                            onChange={(e) => {
+                              const raw = e.target.value
+                              const val = raw.replace(/[^0-9+()\-\s]/g, '')
+                              if (val !== raw) {
+                                setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
+                                setTimeout(() => setContactHint(null), 4000)
+                              } else if (val.replace(/\D/g, '').length > 15) {
+                                setContactHint("Phone numbers should not exceed 15 digits.")
+                                setTimeout(() => setContactHint(null), 4000)
+                                return
+                              } else {
+                                setContactHint(null)
+                              }
+                              setForm({ ...form, contact: val })
+                            }}
+                            type="tel"
+                            placeholder={fieldPlaceholder("contact", "e.g. (044) 123-4567")}
+                            maxLength={25}
+                          />
+                          {contactHint && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">{contactHint}</p>
+                          )}
+                          <p className="text-[11px] text-muted-foreground">Numbers, +, parentheses, and dashes only. Max 15 digits.</p>
+                        </>
                       )}
-                      <p className="text-[11px] text-muted-foreground">Numbers, +, parentheses, and dashes only. Max 15 digits.</p>
                     </div>
                   )}
 
@@ -561,7 +572,12 @@ export function CMSEditDialog({
                       {establishedHint && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">{establishedHint}</p>
                       )}
-                      <p className="text-[11px] text-muted-foreground">Year or date when this was established (e.g. 1787, March 1945).</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {form.label === "schools" ? "Number of enrolled students (e.g. 1,200 students)."
+                          : form.label === "hospitals" ? "Total number of hospital beds (e.g. 50)."
+                          : form.label === "barangay" ? "Estimated number of residents (e.g. 15,000)."
+                          : "Year or date when this was established (e.g. 1787, March 1945)."}
+                      </p>
                     </div>
                   )}
                 </div>
