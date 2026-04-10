@@ -1,4 +1,4 @@
-/* Leaflet map styles — must precede all other rules */
+﻿/* Leaflet map styles (loaded globally; map component is client-only via next/dynamic) */
 @import "leaflet/dist/leaflet.css";
 
 @tailwind base;
@@ -6,12 +6,16 @@
 @tailwind utilities;
 
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body[data-scroll-locked] {
   padding-right: 0px !important;
   margin-right: 0px !important;
 }
 
-/* ── Print styles for Dashboard export ── */
+/* â”€â”€ Print styles for Dashboard export â”€â”€ */
 
 /* Hide the report on screen */
 .print-report {
@@ -282,7 +286,7 @@ body[data-scroll-locked] {
   }
 }
 
-/* ── Lightweight animation replacements (replaces framer-motion for simple cases) ── */
+/* â”€â”€ Lightweight animation replacements (replaces framer-motion for simple cases) â”€â”€ */
 
 /* Fade-in-up on mount */
 @keyframes fade-in-up {
@@ -431,7 +435,7 @@ body[data-scroll-locked] {
   animation: hero-text-in 0.6s ease-out both;
 }
 
-/* ── Ken Burns effect for Pagoda slider ── */
+/* â”€â”€ Ken Burns effect for Pagoda slider â”€â”€ */
 @keyframes ken-burns-1 {
   0%   { transform: scale(1) translate(0, 0); }
   100% { transform: scale(1.15) translate(-2%, -1%); }
@@ -448,7 +452,7 @@ body[data-scroll-locked] {
 .ken-burns-2 { animation: ken-burns-2 8s ease-in-out both; }
 .ken-burns-3 { animation: ken-burns-3 8s ease-in-out both; }
 
-/* ── Page-transition animations (replacing framer-motion) ────── */
+/* â”€â”€ Page-transition animations (replacing framer-motion) â”€â”€â”€â”€â”€â”€ */
 @keyframes admin-fade-in {
   from { opacity: 0; transform: translateX(12px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -464,7 +468,7 @@ body[data-scroll-locked] {
   to   { clip-path: inset(0 0 0% 0);   opacity: 1; }
 }
 
-/* ── Performance: lazy-render off-screen sections ────────────────── */
+/* â”€â”€ Performance: lazy-render off-screen sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* content-visibility: auto lets the browser skip rendering sections that
    are far off-screen, dramatically reducing initial paint work.
    contain-intrinsic-size provides height estimates to prevent layout shifts. */

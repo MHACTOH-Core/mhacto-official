@@ -71,7 +71,7 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   return (
-    <Link href={`/culture/culinary-wonders/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/culinary-wonders/${item.id}`} className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured

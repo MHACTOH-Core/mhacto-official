@@ -64,8 +64,7 @@ export default function BarangayPage() {
               <a
                 key={brgy.id}
                 href={`/community/barangay/${brgy.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
+
                 className="block"
               >
                 <article className="group overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer">

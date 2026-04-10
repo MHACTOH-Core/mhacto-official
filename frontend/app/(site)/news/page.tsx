@@ -80,7 +80,7 @@ export default function NewsPage() {
               </div>
 
               {/* Hero featured */}
-              <Link href={`/news/${heroFeatured.id}`} target="_blank" rel="noopener noreferrer" className="group block">
+              <Link href={`/news/${heroFeatured.id}`} className="group block">
                 <Card className="overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-lg hover:shadow-2xl">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
                     {/* Image */}
@@ -162,7 +162,7 @@ export default function NewsPage() {
               {additionalFeatured.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 items-start">
                   {additionalFeatured.map((article) => (
-                    <Link key={article.id} href={`/news/${article.id}`} target="_blank" rel="noopener noreferrer" className="group block">
+                    <Link key={article.id} href={`/news/${article.id}`} className="group block">
                       <Card className="overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-xl h-full">
                         <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
                           {article.image.length > 0 ? (
@@ -205,7 +205,7 @@ export default function NewsPage() {
 
             <div className="space-y-6 sm:space-y-8">
               {regularArticles.map((article) => (
-                <Link key={article.id} href={`/news/${article.id}`} target="_blank" rel="noopener noreferrer" className="group block">
+                <Link key={article.id} href={`/news/${article.id}`} className="group block">
                   <Card className="overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
                       {/* Image */}

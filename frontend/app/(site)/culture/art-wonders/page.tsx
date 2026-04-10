@@ -30,7 +30,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <Link href={`/culture/art-wonders/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/art-wonders/${artisan.id}`} className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured

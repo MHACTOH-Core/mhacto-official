@@ -144,8 +144,7 @@ export default function PlacesPage() {
                 >
                   <Link
                     href={`/places/${place.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+
                     className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
                   >
                     <div className="relative h-36 w-full overflow-hidden bg-muted">
