@@ -99,6 +99,7 @@ function _tour_guides_create(TourGuide $guide): void
     $newId = $guide->create([
         'fullName'     => $data['fullName'],
         'phoneNumber'  => $data['phoneNumber'] ?? null,
+        'organization' => $data['organization'] ?? null,
         'availability' => $data['availability'] ?? 'available',
     ]);
 
@@ -131,6 +132,10 @@ function _tour_guides_update(TourGuide $guide, int $id): void
             if ($phoneErrors) Response::error(implode(' ', $phoneErrors), 400);
         }
         $payload['phoneNumber'] = $data['phoneNumber'] ?: null;
+    }
+
+    if (array_key_exists('organization', $data)) {
+        $payload['organization'] = $data['organization'] ? trim($data['organization']) : null;
     }
 
     if (array_key_exists('availability', $data)) {

@@ -52,6 +52,7 @@ import {
   Pencil,
   Trash2,
   Phone,
+  Building2,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -110,6 +111,7 @@ export default function TourGuidesPage() {
   const [editTarget, setEditTarget] = useState<TourGuide | null>(null)
   const [formName, setFormName] = useState("")
   const [formPhone, setFormPhone] = useState("")
+  const [formOrganization, setFormOrganization] = useState("")
   const [formAvailability, setFormAvailability] = useState<GuideAvailability>("available")
   const [isSaving, setIsSaving] = useState(false)
 
@@ -143,7 +145,8 @@ export default function TourGuidesPage() {
 
   const filtered = tourGuides.filter((g) =>
     !search || g.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    (g.phoneNumber ?? "").includes(search)
+    (g.phoneNumber ?? "").includes(search) ||
+    (g.organization ?? "").toLowerCase().includes(search.toLowerCase())
   )
 
   // ── Guide CRUD ─────────────────────────────────────────────────────
@@ -152,6 +155,7 @@ export default function TourGuidesPage() {
     setEditTarget(null)
     setFormName("")
     setFormPhone("")
+    setFormOrganization("")
     setFormAvailability("available")
   }
 
@@ -160,6 +164,7 @@ export default function TourGuidesPage() {
     setEditTarget(g)
     setFormName(g.fullName)
     setFormPhone(g.phoneNumber ?? "")
+    setFormOrganization(g.organization ?? "")
     setFormAvailability(g.availability)
   }
 
@@ -168,10 +173,10 @@ export default function TourGuidesPage() {
     setIsSaving(true)
     try {
       if (dialogMode === "create") {
-        await createTourGuide({ fullName: formName.trim(), phoneNumber: formPhone.trim() || undefined, availability: formAvailability })
+        await createTourGuide({ fullName: formName.trim(), phoneNumber: formPhone.trim() || undefined, organization: formOrganization.trim() || undefined, availability: formAvailability })
         toast({ title: "Guide added", description: `${formName} has been added to the roster.`, variant: "success" })
       } else if (editTarget) {
-        await updateTourGuide(editTarget.id, { fullName: formName.trim(), phoneNumber: formPhone.trim() || undefined, availability: formAvailability })
+        await updateTourGuide(editTarget.id, { fullName: formName.trim(), phoneNumber: formPhone.trim() || undefined, organization: formOrganization.trim() || undefined, availability: formAvailability })
         toast({ title: "Guide updated", description: `${formName} has been updated.`, variant: "success" })
       }
       setDialogMode(null)
@@ -400,6 +405,13 @@ export default function TourGuidesPage() {
                         </a>
                       )}
 
+                      {/* Organization */}
+                      {g.organization && (
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <Building2 className="h-3 w-3" /> {g.organization}
+                        </p>
+                      )}
+
                       {/* Availability + active toggle */}
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <Badge className={cn("text-[10px] px-1.5 py-0 gap-0.5", avConfig.color)}>
@@ -444,6 +456,10 @@ export default function TourGuidesPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Phone Number</label>
               <Input placeholder="+63 9xx xxx xxxx" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Organization / Company</label>
+              <Input placeholder="e.g. Bocaue Tourism Cooperative" value={formOrganization} onChange={(e) => setFormOrganization(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Availability</label>

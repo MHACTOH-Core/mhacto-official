@@ -38,6 +38,13 @@ class Response
 
         header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+        // Private Network Access (PNA) — required by Firefox/Chrome when a page on
+        // localhost makes cross-origin requests to 127.0.0.1 (a different "host").
+        // Without this, Firefox throws "NetworkError when attempting to fetch resource."
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_PRIVATE_NETWORK'])
+            || ($_SERVER['HTTP_ORIGIN'] ?? '') !== '') {
+            header("Access-Control-Allow-Private-Network: true");
+        }
         header("Content-Type: application/json; charset=UTF-8");
 
         // ── Security headers ─────────────────────────────────────────

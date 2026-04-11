@@ -7,6 +7,8 @@ export interface HeritageSite {
   description: string
   story: string
   location: string
+  latitude?: string
+  longitude?: string
   hours: string
   highlights: string[]
   image: string
@@ -24,6 +26,8 @@ export interface Museum {
   description: string
   collections: string[]
   location: string
+  latitude?: string
+  longitude?: string
   hours: string
   admission: string
   contact: string
@@ -41,6 +45,8 @@ export interface ReligiousSite {
   description: string
   significance: string
   location: string
+  latitude?: string
+  longitude?: string
   hours: string
   highlights: string[]
   image: string

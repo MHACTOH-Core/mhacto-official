@@ -158,6 +158,8 @@ function _inquiries_create(Inquiry $inquiry): void
     if ($newId) {
         // Notify admin of new inquiry (non-fatal)
         Mailer::notifyAdmin($data['name'], $data['email'], $data['message'], $newId);
+        // Send auto-reply acknowledgement to the visitor (non-fatal)
+        Mailer::sendAutoReply($data['name'], $data['email'], $newId);
         Response::json(['message' => 'Inquiry submitted successfully.'], 201);
     } else {
         Response::error('Failed to submit inquiry.', 500);

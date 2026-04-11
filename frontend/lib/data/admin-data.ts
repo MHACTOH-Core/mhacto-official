@@ -113,6 +113,7 @@ export interface TourGuide {
   id: string
   fullName: string
   phoneNumber?: string | null
+  organization?: string | null
   availability: GuideAvailability
   isActive: boolean
   createdAt: string

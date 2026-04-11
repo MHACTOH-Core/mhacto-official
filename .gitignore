@@ -52,15 +52,13 @@ implementation-plan.txt
 notes.txt
 backend/my-php-backend/check_db.php
 *.bak
- activity_logs       |
-| category            |
-| config              |
-| content             |
-| content_fields      |
-| content_images      |
-| featured_content    |
-| inquiries           |
-| milestone           |
-| page_views          |
-| tour_guides         |
+
+# ── PHP vendor (install via composer) ────────
+backend/my-php-backend/vendor/
+
+# ── Uploads (user-generated media) ──────────
+backend/my-php-backend/uploads/images/*
+backend/my-php-backend/uploads/videos/*
+!backend/my-php-backend/uploads/images/.gitkeep
+!backend/my-php-backend/uploads/videos/.gitkeep
 | users      

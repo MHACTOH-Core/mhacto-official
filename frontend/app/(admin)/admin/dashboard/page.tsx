@@ -2,15 +2,22 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useAdmin } from "@/components/providers/admin-provider"
-import DashboardPrintReport from "@/components/admin/dashboard-print-report"
+
+// Lazy-load heavy dialog/modal components (only needed when opened)
+const DashboardPrintReport = dynamic(() => import("@/components/admin/dashboard-print-report"), { ssr: false })
+const PageViewsDialog = dynamic(() => import("@/components/admin/page-views-dialog").then(m => ({ default: m.PageViewsDialog })), { ssr: false })
+const VisitorEngagementDialog = dynamic(() => import("@/components/admin/visitor-engagement-dialog").then(m => ({ default: m.VisitorEngagementDialog })), { ssr: false })
 import {
   Users,
   FileText,
   MessageSquare,
   TrendingUp,
+  TrendingDown,
+  Minus,
   ArrowUpRight,
   Footprints,
   CalendarCheck,
@@ -20,13 +27,16 @@ import {
   MapPin,
   Handshake,
   Printer,
+  CalendarDays,
 } from "lucide-react"
 import {
   inquiryStatusLabels,
   inquiryTypeLabels,
   type InquiryStatus,
   type InquiryType,
+  type DailyVisit,
 } from "@/lib/data/admin-data"
+import { apiFetchDailyVisits } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,6 +52,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import {
   BarChart,
   Bar,
   XAxis,
@@ -52,8 +71,10 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from "recharts"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, subDays, startOfYear, isAfter, isBefore, startOfDay } from "date-fns"
 
 // Static gradient definitions — defined outside to avoid recreation on every render
 const BAR_GRADIENTS = [
@@ -94,6 +115,16 @@ export default function DashboardPage() {
 
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const [showPrintDialog, setShowPrintDialog] = useState(false)
+  const [showPageViewsDialog, setShowPageViewsDialog] = useState(false)
+  const [showVisitorDialog, setShowVisitorDialog] = useState(false)
+
+  // Website Visits date range filter
+  type VisitRange = "7d" | "30d" | "year" | "custom"
+  const [visitRange, setVisitRange] = useState<VisitRange>("7d")
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined)
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined)
+  const [extraVisits, setExtraVisits] = useState<DailyVisit[]>([])
+  const [isLoadingExtra, setIsLoadingExtra] = useState(false)
 
   useEffect(() => {
     let el = document.getElementById("print-portal")
@@ -117,6 +148,68 @@ export default function DashboardPage() {
     // Small delay so the dialog fully closes before print dialog opens
     setTimeout(() => window.print(), 100)
   }, [])
+
+  // ── Fetch extra visit data when "year" or "custom" needs more than 30 days ──
+  useEffect(() => {
+    if (visitRange === "year") {
+      const daysSinceJan1 = Math.ceil(
+        (Date.now() - startOfYear(new Date()).getTime()) / 86_400_000,
+      )
+      if (daysSinceJan1 > 30) {
+        setIsLoadingExtra(true)
+        apiFetchDailyVisits(daysSinceJan1)
+          .then(setExtraVisits)
+          .catch(() => setExtraVisits([]))
+          .finally(() => setIsLoadingExtra(false))
+      } else {
+        setExtraVisits([])
+      }
+    } else if (visitRange === "custom" && customFrom && customTo) {
+      const diffDays = Math.ceil(
+        (customTo.getTime() - customFrom.getTime()) / 86_400_000,
+      ) + 1
+      if (diffDays > 30) {
+        setIsLoadingExtra(true)
+        apiFetchDailyVisits(diffDays + 7) // fetch a bit extra to cover range
+          .then(setExtraVisits)
+          .catch(() => setExtraVisits([]))
+          .finally(() => setIsLoadingExtra(false))
+      } else {
+        setExtraVisits([])
+      }
+    } else {
+      setExtraVisits([])
+    }
+  }, [visitRange, customFrom, customTo])
+
+  // ── Filter daily visits by selected range ──
+  const filteredVisits = useMemo(() => {
+    const source =
+      (visitRange === "year" || visitRange === "custom") && extraVisits.length > 0
+        ? extraVisits
+        : dailyVisits
+
+    if (visitRange === "7d") {
+      const cutoff = subDays(new Date(), 7)
+      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
+    }
+    if (visitRange === "30d") {
+      return source // provider already fetches 30 days
+    }
+    if (visitRange === "year") {
+      const start = startOfYear(new Date())
+      return source.filter((d) => !isBefore(parseISO(d.date), start))
+    }
+    if (visitRange === "custom" && customFrom && customTo) {
+      const from = startOfDay(customFrom)
+      const to = startOfDay(customTo)
+      return source.filter((d) => {
+        const dt = parseISO(d.date)
+        return !isBefore(dt, from) && !isAfter(dt, to)
+      })
+    }
+    return source
+  }, [dailyVisits, extraVisits, visitRange, customFrom, customTo])
 
   // ── Memoized derived data (hooks must run before any early return) ──
 
@@ -145,8 +238,8 @@ export default function DashboardPage() {
   )
 
   const visitChartData = useMemo(
-    () => dailyVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views })),
-    [dailyVisits],
+    () => filteredVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views })),
+    [filteredVisits],
   )
 
   const totals = visitorSummary?.totals
@@ -176,6 +269,22 @@ export default function DashboardPage() {
   )
 
   const recentActivity = useMemo(() => activityLog.slice(0, 5), [activityLog])
+
+  const trafficSparkline = useMemo(() => visitChartData, [visitChartData])
+
+  const { todayViews, yesterdayViews, trendPct, trendDir } = useMemo(() => {
+    if (filteredVisits.length === 0)
+      return { todayViews: 0, yesterdayViews: 0, trendPct: 0, trendDir: "neutral" as const }
+    const sorted = [...filteredVisits].sort((a, b) => a.date.localeCompare(b.date))
+    const today = sorted[sorted.length - 1]?.views ?? 0
+    const yesterday = sorted[sorted.length - 2]?.views ?? 0
+    const pct =
+      yesterday === 0
+        ? today > 0 ? 100 : 0
+        : Math.round(((today - yesterday) / yesterday) * 100)
+    const dir = pct > 0 ? "up" : pct < 0 ? "down" : "neutral"
+    return { todayViews: today, yesterdayViews: yesterday, trendPct: Math.abs(pct), trendDir: dir }
+  }, [filteredVisits])
 
   const statCards = useMemo(
     () => [
@@ -265,15 +374,171 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Website Visits widget */}
+          <Card className="relative">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+            <CardHeader className="pb-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-sm font-semibold sm:text-base">Website Visits</CardTitle>
+                  <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    {visitRange === "7d" && "Last 7 days overview"}
+                    {visitRange === "30d" && "Last 30 days overview"}
+                    {visitRange === "year" && `${new Date().getFullYear()} year-to-date`}
+                    {visitRange === "custom" && customFrom && customTo
+                      ? `${format(customFrom, "MMM d, yyyy")} – ${format(customTo, "MMM d, yyyy")}`
+                      : visitRange === "custom" && "Select a date range"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={visitRange} onValueChange={(v) => setVisitRange(v as VisitRange)}>
+                    <SelectTrigger className="h-8 w-[130px] text-xs">
+                      <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7d">Last 7 days</SelectItem>
+                      <SelectItem value="30d">Last 30 days</SelectItem>
+                      <SelectItem value="year">This year</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {visitRange === "custom" && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {customFrom && customTo
+                            ? `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d")}`
+                            : "Pick dates"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="range"
+                          selected={customFrom && customTo ? { from: customFrom, to: customTo } : undefined}
+                          onSelect={(range) => {
+                            setCustomFrom(range?.from)
+                            setCustomTo(range?.to)
+                          }}
+                          numberOfMonths={2}
+                          disabled={{ after: new Date() }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 pt-0 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
+              {/* Left: number + trend */}
+              <div className="min-w-[180px]">
+                {isLoadingAnalytics || isLoadingExtra ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-9 w-28" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                ) : filteredVisits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No visit data yet</p>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black text-card-foreground tabular-nums leading-none">
+                      {filteredVisits.reduce((s, d) => s + d.views, 0).toLocaleString()}
+                      <span className="text-sm font-medium text-muted-foreground ml-2">
+                        {visitRange === "7d" ? "total (7d)" : visitRange === "30d" ? "total (30d)" : visitRange === "year" ? "this year" : "total"}
+                      </span>
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      {trendDir === "up" && (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                          <TrendingUp className="h-3 w-3" /> +{trendPct}%
+                        </span>
+                      )}
+                      {trendDir === "down" && (
+                        <span className="flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-xs font-semibold text-red-700 dark:text-red-300">
+                          <TrendingDown className="h-3 w-3" /> -{trendPct}%
+                        </span>
+                      )}
+                      {trendDir === "neutral" && (
+                        <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                          <Minus className="h-3 w-3" /> No change
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        latest day vs prior day
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Right: chart — fills remaining width */}
+              <div className="h-28 w-full">
+                {isLoadingAnalytics || isLoadingExtra ? (
+                  <Skeleton className="h-full w-full rounded-lg" />
+                ) : trafficSparkline.length > 1 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trafficSparkline} margin={{ top: 8, right: 12, bottom: 4, left: 12 }}>
+                      <defs>
+                        <linearGradient id="visitGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 10,
+                          border: "1px solid hsl(var(--border))",
+                          background: "hsl(var(--card))",
+                          color: "hsl(var(--card-foreground))",
+                          fontSize: 12,
+                          boxShadow: "0 8px 30px rgba(0,0,0,.12)",
+                        }}
+                        itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                        labelStyle={{ color: "hsl(var(--card-foreground))", fontSize: 11 }}
+                        formatter={(value: number) => [`${value.toLocaleString()} visits`, ""]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="views"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        fill="url(#visitGrad)"
+                        dot={false}
+                        activeDot={{ r: 4, strokeWidth: 0 }}
+                        animationBegin={0}
+                        animationDuration={900}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    Not enough data
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Charts row — pie left, bar right, equal stretch */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             {/* Visitor Engagement */}
             <Card className="relative flex flex-col overflow-hidden">
               <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold sm:text-base">
-                  Visitor Engagement
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold sm:text-base">
+                    Visitor Engagement
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] font-semibold text-primary hover:text-primary/80 gap-1"
+                    onClick={() => setShowVisitorDialog(true)}
+                  >
+                    View All <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                </div>
                 <p className="text-[11px] text-muted-foreground sm:text-xs">Last 30 days overview</p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col pt-0">
@@ -393,13 +658,22 @@ export default function DashboardPage() {
                   <CardTitle className="text-sm font-semibold sm:text-base">
                     Most Popular Pages
                   </CardTitle>
-                  <button
-                    onClick={() => refreshAnalytics()}
-                    className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                    title="Refresh"
-                  >
-                    <TrendingUp className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setShowPageViewsDialog(true)}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      title="View all page views"
+                    >
+                      View All
+                    </button>
+                    <button
+                      onClick={() => refreshAnalytics()}
+                      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      title="Refresh"
+                    >
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground sm:text-xs">Top pages by total views</p>
               </CardHeader>
@@ -610,6 +884,18 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Page views detail dialog */}
+        <PageViewsDialog
+          open={showPageViewsDialog}
+          onOpenChange={setShowPageViewsDialog}
+        />
+
+        {/* Visitor engagement detail dialog */}
+        <VisitorEngagementDialog
+          open={showVisitorDialog}
+          onOpenChange={setShowVisitorDialog}
+        />
 
         {/* Pre-print instruction dialog */}
         <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>

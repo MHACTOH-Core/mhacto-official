@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
+import { SiteSettingsProvider } from "@/components/providers/site-settings-provider"
 
 export const metadata: Metadata = {
   title: {
@@ -23,10 +24,10 @@ export default function SiteLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
+    <SiteSettingsProvider>
       <Navbar />
       {children}
       <Footer />
-    </>
+    </SiteSettingsProvider>
   )
 }

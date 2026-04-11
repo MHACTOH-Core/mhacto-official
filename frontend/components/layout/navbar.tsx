@@ -7,7 +7,7 @@ import Image from "next/image"
 import { Menu, ChevronDown, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { asset, resolveMediaUrl } from "@/lib/utils"
-import { apiFetchSettings } from "@/lib/api"
+import { useSiteSettings } from "@/components/providers/site-settings-provider"
 
 import {
   Sheet,
@@ -121,15 +121,13 @@ export function Navbar() {
   const router = useRouter()
   const isHomePage = pathname === "/"
 
+  // Use shared settings provider (single API call for navbar + footer)
+  const siteSettings = useSiteSettings()
   useEffect(() => {
-    apiFetchSettings()
-      .then((s) => {
-        if (s?.navbarLogoUrl) setNavbarLogoUrl(s.navbarLogoUrl)
-        if (s?.navbarSecondaryLogoUrl) setNavbarSecondaryLogoUrl(s.navbarSecondaryLogoUrl)
-        if (s?.navbarTitle) setNavbarTitle(s.navbarTitle)
-      })
-      .catch(() => {})
-  }, [])
+    if (siteSettings.navbarLogoUrl) setNavbarLogoUrl(siteSettings.navbarLogoUrl)
+    if (siteSettings.navbarSecondaryLogoUrl) setNavbarSecondaryLogoUrl(siteSettings.navbarSecondaryLogoUrl)
+    if (siteSettings.navbarTitle) setNavbarTitle(siteSettings.navbarTitle)
+  }, [siteSettings])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -144,6 +142,13 @@ export function Navbar() {
     return () => {
       window.removeEventListener("scroll", handleScroll)
       if (scrollRafIdRef.current != null) cancelAnimationFrame(scrollRafIdRef.current)
+    }
+  }, [])
+
+  // Cleanup dropdown close timer on unmount
+  useEffect(() => {
+    return () => {
+      if (dropdownCloseTimerRef.current) clearTimeout(dropdownCloseTimerRef.current)
     }
   }, [])
 

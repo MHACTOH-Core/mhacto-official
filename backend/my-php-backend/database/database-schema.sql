@@ -236,6 +236,7 @@ CREATE TABLE tour_guides (
   guide_id     INT AUTO_INCREMENT PRIMARY KEY,
   full_name    VARCHAR(200) NOT NULL,
   phone_number VARCHAR(20)  DEFAULT NULL,
+  organization VARCHAR(255) DEFAULT NULL  COMMENT 'Organization or company the guide represents',
   availability ENUM('available','unavailable','on_tour') DEFAULT 'available',
   is_active    TINYINT(1)   DEFAULT 1,
   created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -511,6 +512,35 @@ INSERT INTO config (config_group, config_key, config_value, data_type) VALUES
 ('mission_vision', 'mission',            '""', 'string'),
 ('mission_vision', 'vision',             '""', 'string'),
 ('mission_vision', 'core_values',        '[]',  'json');
+
+
+-- ========================================================================
+-- PERFORMANCE INDEXES — speed up common queries
+-- ========================================================================
+
+-- content_fields: batch meta lookups by content_id + specific key
+ALTER TABLE content_fields ADD INDEX IF NOT EXISTS idx_cf_content_key (content_id, meta_key);
+
+-- content_images: batch thumbnail lookups by content_id
+ALTER TABLE content_images ADD INDEX IF NOT EXISTS idx_ci_content_thumb (content_id, is_thumbnail, sort_order);
+
+-- activity_logs: dashboard analytics (page_view counts by date)
+ALTER TABLE activity_logs ADD INDEX IF NOT EXISTS idx_al_action_created (action, created_at);
+
+-- inquiries: visitor summary queries filter by type + status + date
+ALTER TABLE inquiries ADD INDEX IF NOT EXISTS idx_inq_type_status_created (inquiry_type, status, created_at);
+
+-- content: CMS list queries filter by status + post_type + date
+ALTER TABLE content ADD INDEX IF NOT EXISTS idx_content_status_type_date (status, post_type, created_at);
+
+-- milestones: homepage timeline ordered by active + sort_order
+ALTER TABLE milestones ADD INDEX IF NOT EXISTS idx_ms_active_order (is_active, sort_order);
+
+-- featured_content: section filtering + ordering
+ALTER TABLE featured_content ADD INDEX IF NOT EXISTS idx_fc_section_active (section, is_active, sort_order);
+
+-- page_views: top destinations aggregation
+ALTER TABLE page_views ADD INDEX IF NOT EXISTS idx_pv_content_clicked (content_id, clicked_at);
 
 
 -- ========================================================================

@@ -6,11 +6,12 @@ use App\Models\ActivityLog;
 use App\Core\Auth;
 use App\Core\Response;
 use App\Core\RateLimit;
+use App\Core\QueryCache;
 
 /**
  * Route: /api/analytics
  *
- * GET  /api/analytics/pageviews          — page view stats
+ * GET  /api/analytics/content-stats      — page view stats  (aliased from 'pageviews' to bypass ad-blockers)
  * GET  /api/analytics/visits             — daily visit counts (?days=30)
  * GET  /api/analytics/top-destinations   — top clicked destinations (?limit=10)
  * GET  /api/analytics/visitor-summary    — walk-ins, bookings, assignments summary
@@ -23,11 +24,18 @@ function handle_analytics(string $method, ?string $action): void
         $db = (new Database())->getConnection();
 
         switch ($action) {
-            case 'pageviews':
+            case 'content-stats':
+            case 'pageviews':  // keep legacy alias
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
-                $analytics = new Analytics($db);
-                Response::json($analytics->getPageViews());
+                $analytics  = new Analytics($db);
+                $allRows    = isset($_GET['all']) && $_GET['all'] === '1';
+                $limit      = $allRows ? null : (isset($_GET['limit']) ? max(1, min((int) $_GET['limit'], 500)) : 20);
+                $sortBy     = $_GET['sort_by']    ?? 'views';
+                $sortOrder  = $_GET['sort_order'] ?? 'DESC';
+                $startDate  = isset($_GET['start_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['start_date']) ? $_GET['start_date'] : null;
+                $endDate    = isset($_GET['end_date'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['end_date'])   ? $_GET['end_date']   : null;
+                Response::json($analytics->getPageViews($limit, $sortBy, $sortOrder, $startDate, $endDate));
                 break;
 
             case 'visits':
@@ -83,6 +91,7 @@ function handle_analytics(string $method, ?string $action): void
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
                 $days = isset($_GET['days']) ? max(1, (int) $_GET['days']) : 30;
                 $analytics = new Analytics($db);
+                QueryCache::noCacheHeaders(); // admin-only, always fresh
                 Response::json([
                     'pageViews'       => $analytics->getPageViews(),
                     'dailyVisits'     => $analytics->getDailyVisits($days),
@@ -90,12 +99,25 @@ function handle_analytics(string $method, ?string $action): void
                 ]);
                 break;
 
+            case 'visitor-details':
+                // Detailed per-person visitor engagement list (inquiries)
+                if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
+                Auth::requireRole(['super_admin', 'admin', 'content_manager']);
+                $sortBy    = $_GET['sort_by']    ?? 'created_at';
+                $sortOrder = $_GET['sort_order'] ?? 'DESC';
+                $startDate = isset($_GET['start_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['start_date']) ? $_GET['start_date'] : null;
+                $endDate   = isset($_GET['end_date'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['end_date'])   ? $_GET['end_date']   : null;
+                $type      = isset($_GET['type']) ? trim($_GET['type']) : null;
+                $status    = isset($_GET['status']) ? trim($_GET['status']) : null;
+                Response::json(_visitor_details_list($db, $sortBy, $sortOrder, $startDate, $endDate, $type, $status));
+                break;
+
             default:
                 Response::error('Unknown analytics action.', 404);
         }
-    } catch (Exception $e) {
-        error_log("analytics error: " . $e->getMessage());
-        Response::error('An internal error occurred.', 500);
+    } catch (\Throwable $e) {
+        error_log("analytics error [" . get_class($e) . "]: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+        Response::error('An internal error occurred: ' . $e->getMessage(), 500);
     }
 }
 
@@ -151,4 +173,93 @@ function _visitor_summary_data(PDO $db, int $days): array
             'guideAssigned'     => (int) $r['guide_assigned'],
         ], $dailyRows),
     ];
+}
+
+// ── Visitor Details — per-person engagement list ────────────────────
+
+function _visitor_details_list(
+    PDO     $db,
+    string  $sortBy,
+    string  $sortOrder,
+    ?string $startDate,
+    ?string $endDate,
+    ?string $type,
+    ?string $status
+): array {
+    // Whitelist sort columns
+    $allowedSort = [
+        'created_at' => 'i.created_at',
+        'full_name'  => 'i.full_name',
+        'type'       => 'i.inquiry_type',
+        'status'     => 'i.status',
+        'pax'        => 'i.number_of_pax',
+        'date_of_visit' => 'i.date_of_visit',
+    ];
+    $orderCol  = $allowedSort[$sortBy] ?? 'i.created_at';
+    $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+    $where  = "WHERE i.status NOT IN ('spam','trash')";
+    $params = [];
+
+    if ($startDate) {
+        $where .= " AND i.created_at >= :start_date";
+        $params[':start_date'] = $startDate . ' 00:00:00';
+    }
+    if ($endDate) {
+        $where .= " AND i.created_at <= :end_date";
+        $params[':end_date'] = $endDate . ' 23:59:59';
+    }
+    if ($type) {
+        $where .= " AND i.inquiry_type = :type";
+        $params[':type'] = $type;
+    }
+    if ($status) {
+        $where .= " AND i.status = :status";
+        $params[':status'] = $status;
+    }
+
+    $query = "
+        SELECT
+            i.inquiry_id    AS id,
+            i.full_name     AS fullName,
+            i.tourist_name  AS touristName,
+            i.email_address AS email,
+            i.contact_number AS contactNumber,
+            i.inquiry_type  AS type,
+            i.status,
+            i.number_of_pax AS pax,
+            i.date_of_visit AS dateOfVisit,
+            i.confirmed_date AS confirmedDate,
+            COALESCE(tg.full_name, i.assigned_to) AS assignedGuide,
+            i.message,
+            i.created_at    AS createdAt
+        FROM inquiries i
+        LEFT JOIN tour_guides tg ON tg.guide_id = i.assigned_guide_id
+        $where
+        ORDER BY $orderCol $sortOrder
+    ";
+
+    $stmt = $db->prepare($query);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+
+    return array_map(function ($r) {
+        return [
+            'id'            => (int) $r['id'],
+            'fullName'      => $r['fullName'],
+            'touristName'   => $r['touristName'],
+            'email'         => $r['email'],
+            'contactNumber' => $r['contactNumber'],
+            'type'          => $r['type'],
+            'status'        => $r['status'],
+            'pax'           => $r['pax'] !== null ? (int) $r['pax'] : null,
+            'dateOfVisit'   => $r['dateOfVisit'],
+            'confirmedDate' => $r['confirmedDate'],
+            'assignedGuide' => $r['assignedGuide'],
+            'message'       => $r['message'],
+            'createdAt'     => $r['createdAt'],
+        ];
+    }, $stmt->fetchAll(PDO::FETCH_ASSOC));
 }

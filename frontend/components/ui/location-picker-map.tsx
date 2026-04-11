@@ -1,5 +1,7 @@
 "use client"
 
+// @ts-expect-error -- CSS side-effect import, no type declaration needed
+import "leaflet/dist/leaflet.css"
 import { useEffect, useState } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
 import L from "leaflet"

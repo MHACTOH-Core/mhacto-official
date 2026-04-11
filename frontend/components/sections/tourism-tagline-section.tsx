@@ -8,7 +8,7 @@ export function TourismTaglineSection() {
   return (
     <section
       id="tagline"
-      className="relative z-20 overflow-hidden bg-background pt-0 pb-16 sm:pb-20 lg:pb-24"
+      className="relative z-20 overflow-hidden bg-background pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20 lg:pb-24"
     >
       {/* Decorative background gradient */}
       <div className="pointer-events-none absolute inset-0 -z-10" data-no-reveal>

@@ -12,10 +12,11 @@ const nextConfig = {
   ...(!isDev && process.env.STATIC_EXPORT !== 'false' ? { output: 'export' } : {}),
   basePath: isDev ? '' : (process.env.NEXT_PUBLIC_BASE_PATH ?? '/mhacto'),
   images: {
-    unoptimized: true,
-    // Note: unoptimized is required for static export (GitHub Pages).
-    // For production with a Node server, remove output:'export' and this flag
-    // to enable automatic WebP/AVIF conversion and responsive sizing.
+    unoptimized: !isDev && process.env.STATIC_EXPORT !== 'false',
+    // When STATIC_EXPORT=false (Node.js/Vercel deployment), images are automatically
+    // converted to WebP/AVIF with responsive sizing.
+    // Static export (GitHub Pages) requires unoptimized: true.
+    // In dev, uploads are same-origin via rewrites, so no remotePatterns needed.
   },
   typescript: {
     ignoreBuildErrors: false,
@@ -49,15 +50,13 @@ const nextConfig = {
   // Proxy backend uploads through Next.js in dev so images are same-origin
   // (required for canvas pixel access in the crop/enhance dialog).
   // Not added in production — static export doesn't support rewrites.
+  // API requests are proxied by the catch-all Route Handler in app/api/[...path]/route.ts
+  // (server-side Node fetch → PHP, more reliable than Turbopack's rewrite proxy).
+  // Only the /uploads/* rewrite is still needed for serving uploaded images/videos.
   ...(isDev
     ? {
         async rewrites() {
           return [
-            {
-              source: '/api/:path*',
-              destination: 'http://127.0.0.1:8000/api/:path*',
-              basePath: false,
-            },
             {
               source: '/uploads/:path*',
               destination: 'http://127.0.0.1:8000/uploads/:path*',

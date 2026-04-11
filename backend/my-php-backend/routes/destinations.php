@@ -2,6 +2,7 @@
 use App\Config\Database;
 use App\Models\Post;
 use App\Core\Response;
+use App\Core\QueryCache;
 
 /**
  * Route: /api/destinations
@@ -16,6 +17,7 @@ function handle_destinations(string $method, ?string $id): void
         if ($method === 'GET') {
             $db   = (new Database())->getConnection();
             $post = new Post($db);
+            QueryCache::httpCacheHeaders(300);
             Response::json($post->readPublishedPlaces());
             return;
         }

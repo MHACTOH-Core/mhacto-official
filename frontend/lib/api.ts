@@ -33,10 +33,10 @@ const CACHE_TTL_MS = 60_000
 const _inflight = new Map<string, Promise<unknown>>()
 
 /** Return cached data if fresh, otherwise undefined */
-function getCached<T>(key: string): T | undefined {
+function getCached<T>(key: string, ttl: number = CACHE_TTL_MS): T | undefined {
   const entry = _apiCache.get(key)
   if (!entry) return undefined
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS) return undefined
+  if (Date.now() - entry.timestamp > ttl) return undefined
   return entry.data as T
 }
 
@@ -155,6 +155,8 @@ async function tryRefreshToken(): Promise<boolean> {
 export interface ApiFetchOptions extends RequestInit {
   /** When true, skip attaching the JWT Authorization header (for public endpoints). */
   skipAuth?: boolean
+  /** Custom cache TTL in milliseconds for public GET requests. Defaults to 60 s. */
+  cacheTtl?: number
 }
 
 // ── Private helpers (keep apiFetch as a thin orchestrator) ────────
@@ -226,6 +228,36 @@ async function _handle401(skipAuth: boolean, errMsg: string): Promise<boolean> {
 
 // ─────────────────────────────────────────────────────────────────
 
+/** Retry a fetch up to `retries` times on transient network errors.
+ *  HTTP error responses (4xx/5xx) are NOT retried — only thrown `TypeError`
+ *  from `fetch()` itself (connection reset, DNS failure, proxy drop, etc.). */
+async function _fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  retries = 2,
+): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init)
+    } catch (err) {
+      lastError = err
+      console.warn(
+        `[apiFetch] attempt ${attempt + 1}/${retries + 1} failed for ${url}:`,
+        err,
+      )
+      if (attempt >= retries) {
+        const detail = err instanceof Error ? err.message : String(err)
+        throw new Error(
+          `Network error — backend may be unavailable (${detail})`,
+        )
+      }
+      // Exponential back-off: 500 ms, 1 000 ms
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+    }
+  }
+}
+
 /**
  * Centralised fetch wrapper. All backend calls go through here
  * for consistent URL resolution, JSON parsing, and error handling.
@@ -244,7 +276,7 @@ export async function apiFetch<T>(
 
   // ── Cache & in-flight deduplication (public GETs only) ──────────
   if (isCacheableGet) {
-    const cached = getCached<T>(url)
+    const cached = getCached<T>(url, options.cacheTtl)
     if (cached !== undefined) return cached
 
     const existing = _inflight.get(url)
@@ -257,8 +289,7 @@ export async function apiFetch<T>(
   if (isCacheableGet) {
     const inflightPromise = (async (): Promise<T> => {
       try {
-        const res = await fetch(url, { ...fetchOptions, cache: "no-store", headers })
-          .catch(() => { throw new Error("Network error — backend may be unavailable") })
+        const res = await _fetchWithRetry(url, { ...fetchOptions, cache: "no-store", headers })
 
         const envelope = _parseJsonResponse<T>(await res.text(), endpoint)
 
@@ -284,12 +315,7 @@ export async function apiFetch<T>(
   }
 
   // ── Standard (authenticated / mutation) path ────────────────────
-  let response: Response
-  try {
-    response = await fetch(url, { ...fetchOptions, cache: "no-store", headers })
-  } catch {
-    throw new Error("Network error — backend may be unavailable")
-  }
+  const response = await _fetchWithRetry(url, { ...fetchOptions, cache: "no-store", headers })
 
   const envelope = _parseJsonResponse<T>(await response.text(), endpoint)
 
@@ -482,7 +508,24 @@ export function apiFetchSettings() {
 
 /** Fetch page-level view counts for the analytics dashboard */
 export function apiFetchPageViews() {
-  return apiFetch<PageView[]>("/api/analytics/pageviews")
+  return apiFetch<PageView[]>("/api/analytics/content-stats")
+}
+
+export interface AllPageViewsFilter {
+  sortBy?: "views" | "title" | "category"
+  sortOrder?: "ASC" | "DESC"
+  startDate?: string
+  endDate?: string
+}
+
+/** Fetch all page views with optional sorting and date filtering (for analytics detail modal) */
+export function apiFetchAllPageViews(filters: AllPageViewsFilter = {}) {
+  const params = new URLSearchParams({ all: "1" })
+  if (filters.sortBy) params.set("sort_by", filters.sortBy)
+  if (filters.sortOrder) params.set("sort_order", filters.sortOrder)
+  if (filters.startDate) params.set("start_date", filters.startDate)
+  if (filters.endDate) params.set("end_date", filters.endDate)
+  return apiFetch<PageView[]>(`/api/analytics/content-stats?${params}`)
 }
 
 /** Fetch daily visit totals over the last N days (default 30) */
@@ -526,6 +569,45 @@ export interface AnalyticsDashboardData {
 
 export function apiFetchAnalyticsDashboard(days = 30) {
   return apiFetch<AnalyticsDashboardData>(`/api/analytics/dashboard?days=${days}`)
+}
+
+// ─── Visitor Engagement Details ───────────────────────────────────
+
+export interface VisitorDetail {
+  id: number
+  fullName: string
+  touristName: string | null
+  email: string
+  contactNumber: string | null
+  type: string
+  status: string
+  pax: number | null
+  dateOfVisit: string | null
+  confirmedDate: string | null
+  assignedGuide: string | null
+  message: string | null
+  createdAt: string
+}
+
+export interface VisitorDetailsFilter {
+  sortBy?: string
+  sortOrder?: "ASC" | "DESC"
+  startDate?: string
+  endDate?: string
+  type?: string
+  status?: string
+}
+
+/** Fetch detailed per-person visitor engagement list */
+export function apiFetchVisitorDetails(filters: VisitorDetailsFilter = {}) {
+  const params = new URLSearchParams()
+  if (filters.sortBy) params.set("sort_by", filters.sortBy)
+  if (filters.sortOrder) params.set("sort_order", filters.sortOrder)
+  if (filters.startDate) params.set("start_date", filters.startDate)
+  if (filters.endDate) params.set("end_date", filters.endDate)
+  if (filters.type) params.set("type", filters.type)
+  if (filters.status) params.set("status", filters.status)
+  return apiFetch<VisitorDetail[]>(`/api/analytics/visitor-details?${params}`)
 }
 
 // ─── MHACTO Office Content ────────────────────────────────────────
@@ -765,6 +847,7 @@ export function apiFetchTourGuides(activeOnly = false) {
 export function apiCreateTourGuide(data: {
   fullName: string
   phoneNumber?: string
+  organization?: string
   availability?: "available" | "unavailable" | "on_tour"
 }) {
   return apiFetch<{ message: string; guide: TourGuide }>("/api/tour_guides", {
@@ -776,7 +859,7 @@ export function apiCreateTourGuide(data: {
 /** Update an existing tour guide */
 export function apiUpdateTourGuide(
   id: string,
-  data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>
+  data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "organization" | "availability" | "isActive">>
 ) {
   return apiFetch<{ message: string; guide: TourGuide }>(`/api/tour_guides?id=${id}`, {
     method: "PUT",
@@ -1020,7 +1103,7 @@ export interface NewsArticleAPI {
 // ─── Spotlight (featured_content where section='spotlight') ───────
 
 export function apiFetchSpotlight() {
-  return apiFetch<FeaturedContent | null>("/api/home/spotlight")
+  return apiFetch<FeaturedContent | null>("/api/home/spotlight", { cacheTtl: 3_600_000 })
 }
 
 export function apiFetchAllSpotlights() {
@@ -1108,7 +1191,7 @@ export function apiFetchPostById(id: string) {
 export function apiFetchByLabel(label: string, limit?: number) {
   const params = new URLSearchParams({ label, status: "published" })
   if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts?${params}`)
+  return apiFetch<CMSPost[]>(`/api/posts?${params}`, { cacheTtl: 600_000 })
 }
 
 // ─── Featured posts by label / category (for navbar dropdowns) ────
@@ -1118,13 +1201,13 @@ export function apiFetchFeaturedByLabel(label?: string, limit?: number) {
   const params = new URLSearchParams({ featured: "1" })
   if (label) params.set("label", label)
   if (limit) params.set("limit", String(limit))
-  return apiFetch<CMSPost[]>(`/api/posts?${params}`)
+  return apiFetch<CMSPost[]>(`/api/posts?${params}`, { cacheTtl: 600_000 })
 }
 
 // ─── Hero Settings (now stored in site_settings) ──────────────────
 
 export function apiFetchHeroSettings() {
-  return apiFetch<HeroSettings | null>("/api/home/hero-settings")
+  return apiFetch<HeroSettings | null>("/api/home/hero-settings", { cacheTtl: 3_600_000 })
 }
 
 export function apiUpdateHeroSettings(data: Partial<HeroSettings>) {
@@ -1189,7 +1272,7 @@ export type FeaturedLandmark = {
 
 /** @deprecated Hero is now a single video — returns synthesized single-item array from site_settings */
 export function apiFetchHeroSlides() {
-  return apiFetch<HeroSlide[]>("/api/home/hero")
+  return apiFetch<HeroSlide[]>("/api/home/hero", { cacheTtl: 3_600_000 })
 }
 
 /** @deprecated Culinary items auto-fetched from CMS label 'local-cuisine' */

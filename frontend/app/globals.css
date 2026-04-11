@@ -1,5 +1,4 @@
-﻿/* Leaflet map styles (loaded globally; map component is client-only via next/dynamic) */
-@import "leaflet/dist/leaflet.css";
+﻿/* Leaflet map styles — import moved to map component to avoid loading ~40KB CSS on every page */
 
 @tailwind base;
 @tailwind components;

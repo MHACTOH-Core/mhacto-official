@@ -21,13 +21,20 @@ class TourGuide
 
     // ── Lazy sync ──────────────────────────────────────────────────
 
+    private static ?float $lastSyncTime = null;
+
     /**
      * Flip availability based on active appointments — no cron needed.
      * Only guides not manually set to 'unavailable' are auto-managed.
-     * Called before every read so the data is always fresh.
+     * Throttled to once per 60 seconds to avoid redundant writes on every GET.
      */
     public function syncAvailability(): void
     {
+        $now = microtime(true);
+        if (self::$lastSyncTime !== null && ($now - self::$lastSyncTime) < 60) {
+            return; // Already synced recently within this process
+        }
+        self::$lastSyncTime = $now;
         $now = date('Y-m-d H:i:s');
 
         // Flip to on_tour if currently inside an appointment window
@@ -67,7 +74,7 @@ class TourGuide
         $this->syncAvailability();
         $where = $activeOnly ? "WHERE is_active = 1" : "";
         $stmt  = $this->conn->prepare(
-            "SELECT guide_id, full_name, phone_number, availability, is_active, created_at, updated_at
+            "SELECT guide_id, full_name, phone_number, organization, availability, is_active, created_at, updated_at
                FROM tour_guides
                $where
               ORDER BY full_name ASC"
@@ -81,7 +88,7 @@ class TourGuide
     {
         $this->syncAvailability();
         $stmt = $this->conn->prepare(
-            "SELECT guide_id, full_name, phone_number, availability, is_active, created_at, updated_at
+            "SELECT guide_id, full_name, phone_number, organization, availability, is_active, created_at, updated_at
                FROM tour_guides
               WHERE guide_id = :id LIMIT 1"
         );
@@ -186,12 +193,13 @@ class TourGuide
     {
         try {
             $stmt = $this->conn->prepare(
-                "INSERT INTO tour_guides (full_name, phone_number, availability, is_active)
-                 VALUES (:full_name, :phone_number, :availability, 1)"
+                "INSERT INTO tour_guides (full_name, phone_number, organization, availability, is_active)
+                 VALUES (:full_name, :phone_number, :organization, :availability, 1)"
             );
             $stmt->execute([
                 ':full_name'    => trim($data['fullName']),
                 ':phone_number' => $data['phoneNumber'] ?? null,
+                ':organization' => $data['organization'] ?? null,
                 ':availability' => $data['availability'] ?? 'available',
             ]);
             return (int) $this->conn->lastInsertId();
@@ -216,6 +224,11 @@ class TourGuide
         if (array_key_exists('phoneNumber', $data)) {
             $fields[] = "phone_number = :phone_number";
             $params[':phone_number'] = $data['phoneNumber'];
+        }
+
+        if (array_key_exists('organization', $data)) {
+            $fields[] = "organization = :organization";
+            $params[':organization'] = $data['organization'] ? trim($data['organization']) : null;
         }
 
         if (array_key_exists('availability', $data)) {
@@ -252,6 +265,7 @@ class TourGuide
             'id'           => (string) $row['guide_id'],
             'fullName'     => $row['full_name'],
             'phoneNumber'  => $row['phone_number'] ?? null,
+            'organization' => $row['organization'] ?? null,
             'availability' => $row['availability'],
             'isActive'     => (bool) $row['is_active'],
             'createdAt'    => $row['created_at'],

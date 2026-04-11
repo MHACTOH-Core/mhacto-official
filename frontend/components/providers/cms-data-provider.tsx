@@ -70,8 +70,8 @@ export interface CMSDataContextValue {
 
   // Tour Guides
   tourGuides: TourGuide[]
-  createTourGuide: (data: { fullName: string; phoneNumber?: string; availability?: TourGuide["availability"] }) => Promise<void>
-  updateTourGuide: (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>) => Promise<void>
+  createTourGuide: (data: { fullName: string; phoneNumber?: string; organization?: string; availability?: TourGuide["availability"] }) => Promise<void>
+  updateTourGuide: (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "organization" | "availability" | "isActive">>) => Promise<void>
   deleteTourGuide: (id: string) => Promise<void>
   refreshTourGuides: () => Promise<void>
 
@@ -385,7 +385,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
 
   // ── Tour Guides ──
   const createTourGuideFn = useCallback(
-    async (data: { fullName: string; phoneNumber?: string; availability?: TourGuide["availability"] }) => {
+    async (data: { fullName: string; phoneNumber?: string; organization?: string; availability?: TourGuide["availability"] }) => {
       try {
         await apiCreateTourGuide(data)
         await refreshTourGuides()
@@ -398,7 +398,7 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   )
 
   const updateTourGuideFn = useCallback(
-    async (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "availability" | "isActive">>) => {
+    async (id: string, data: Partial<Pick<TourGuide, "fullName" | "phoneNumber" | "organization" | "availability" | "isActive">>) => {
       setTourGuides((prev) => prev.map((g) => (g.id === id ? { ...g, ...data } : g)))
       try {
         await apiUpdateTourGuide(id, data)

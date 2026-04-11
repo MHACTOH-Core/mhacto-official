@@ -112,9 +112,10 @@ Edit `database.local.php` with your MySQL username and password. This file is gi
 
 ```bash
 cd backend/my-php-backend
-php -S localhost:8000 index.php
+PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8000 index.php
 ```
 
+> **`PHP_CLI_SERVER_WORKERS=4` is required** — without it the built-in server is single-threaded and concurrent API requests (e.g. opening the Page Views dialog while the dashboard is loading) will drop connections.
 > You **must** include `index.php` — without it, the central router will not work.
 
 ### 5. Start the frontend

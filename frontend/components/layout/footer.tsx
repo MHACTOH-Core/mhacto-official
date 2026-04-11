@@ -5,20 +5,17 @@ import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram } from "lucide-react"
 import { asset, resolveMediaUrl } from "@/lib/utils"
-import { apiFetchSettings } from "@/lib/api"
+import { useSiteSettings } from "@/components/providers/site-settings-provider"
 
 export function Footer() {
+  const siteSettings = useSiteSettings()
   const [facebookUrl, setFacebookUrl] = useState("")
   const [instagramUrl, setInstagramUrl] = useState("")
 
   useEffect(() => {
-    apiFetchSettings()
-      .then((s) => {
-        if (s?.facebookUrl) setFacebookUrl(s.facebookUrl)
-        if (s?.instagramUrl) setInstagramUrl(s.instagramUrl)
-      })
-      .catch(() => {})
-  }, [])
+    if (siteSettings.facebookUrl) setFacebookUrl(siteSettings.facebookUrl)
+    if (siteSettings.instagramUrl) setInstagramUrl(siteSettings.instagramUrl)
+  }, [siteSettings])
   return (
     <footer className="relative border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground overflow-hidden">
       {/* Animated wave accent at top of footer */}
