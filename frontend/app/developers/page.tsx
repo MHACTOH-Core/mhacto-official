@@ -30,7 +30,7 @@ const team = [
     icon: Layers,
     color: "from-emerald-500 to-teal-500",
     colorLight: "bg-emerald-500/10 text-emerald-600",
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/juancarlosfloresph/?fbclid=IwY2xjawRJkjdleHRuA2FlbQIxMABicmlkETFJS1dScUR5R1EzWU9xajh6c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHh4nz3rZtS7xmxwVz4bwP802eUWld2fYrciMBu6Q1hGl7NKK8WSByTEp17Eo_aem_QPH0GVb1c-ekjzEkL6c-Ww",
   },
   {
     name: "John Leonard Chingcuangco",
@@ -39,7 +39,7 @@ const team = [
     icon: TestTube,
     color: "from-violet-500 to-purple-600",
     colorLight: "bg-violet-500/10 text-violet-600",
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/john-leonard-chingcuangco-9ba2623b0/?fbclid=IwY2xjawRJkktleHRuA2FlbQIxMABicmlkETFJS1dScUR5R1EzWU9xajh6c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHjr_gEvVHll3QgGAK5sjH-XZ-T-sKu0O-cDyBb_P3YH3UnU_I_wc0i0nW2nG_aem_ViQAO9Gc8GBPjms1KWzsTg",
   },
   {
     name: "Juan Miguel Borja",
@@ -48,7 +48,7 @@ const team = [
     icon: Palette,
     color: "from-pink-500 to-rose-500",
     colorLight: "bg-pink-500/10 text-pink-600",
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/miguel-borja-0659193b1/?fbclid=IwY2xjawRJkglleHRuA2FlbQIxMABicmlkETFJS1dScUR5R1EzWU9xajh6c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHjr_gEvVHll3QgGAK5sjH-XZ-T-sKu0O-cDyBb_P3YH3UnU_I_wc0i0nW2nG_aem_ViQAO9Gc8GBPjms1KWzsTg",
   },
 ]
 

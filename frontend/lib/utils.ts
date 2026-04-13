@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '/MHACTO-PROJECT'
+const isDev = process.env.NODE_ENV !== 'production'
+const BASE_PATH = isDev ? '' : (process.env.NEXT_PUBLIC_BASE_PATH ?? '/mhacto')
 
 /** Prefix a public asset path with the basePath so it resolves on GitHub Pages */
 export function asset(path: string): string {
