@@ -96,7 +96,7 @@ export default function HistoryPage() {
       />
 
             {/* Sticky nav */}
-        <div className="sticky top-[57px] lg:top-[67px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="sticky top-[57px] lg:top-[85px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             <div className="flex gap-1 overflow-x-auto py-1">
               {navSections.map((s) => (

@@ -395,7 +395,7 @@ export function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-blue-200/50 bg-white/80 backdrop-blur-md shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-40 border-b border-blue-200/50 bg-white/80 backdrop-blur-md shadow-sm">
       {/* ═══════════════════ Azure Horizon Water System ═══════════════
           Layer order (bottom → top):
             0. bg-white/80 backdrop-blur-md  (header base)
