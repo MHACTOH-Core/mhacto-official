@@ -17,45 +17,7 @@ export function Footer() {
     if (siteSettings.instagramUrl) setInstagramUrl(siteSettings.instagramUrl)
   }, [siteSettings])
   return (
-    <footer className="relative bg-white/80 backdrop-blur-md text-foreground overflow-hidden border-t border-blue-200/50 shadow-[0_-12px_48px_0_rgba(0,0,0,0.10)]">
-      {/* ── Sky-light bloom ── */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        aria-hidden
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 240% at 50% -15%, rgba(186,230,253,0.30) 0%, rgba(219,234,254,0.10) 55%, transparent 80%)',
-        }}
-      />
-      {/* ── Depth gradient ── */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        aria-hidden
-        style={{
-          background:
-            'linear-gradient(180deg, transparent 0%, rgba(186,230,253,0.07) 38%, rgba(96,165,250,0.17) 100%)',
-        }}
-      />
-      {/* ── Diagonal refraction wash ── */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        aria-hidden
-        style={{
-          background:
-            'linear-gradient(114deg, rgba(219,234,254,0.24) 0%, transparent 44%, rgba(186,230,253,0.18) 100%)',
-        }}
-      />
-      {/* ── Edge ambient glows ── */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        aria-hidden
-        style={{
-          background: [
-            'radial-gradient(ellipse 26% 130% at 0% 50%, rgba(147,197,253,0.15) 0%, transparent 100%)',
-            'radial-gradient(ellipse 26% 130% at 100% 50%, rgba(147,197,253,0.13) 0%, transparent 100%)',
-          ].join(', '),
-        }}
-      />
+    <footer className="relative border-t border-border bg-white shadow-[0_-8px_40px_0_rgba(0,0,0,0.15)] text-foreground overflow-hidden">
 
       <div className="relative z-[1] mx-auto max-w-7xl px-4 py-12 lg:px-8">
         <div className="grid gap-10 md:grid-cols-3">
