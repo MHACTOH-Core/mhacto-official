@@ -136,7 +136,7 @@ export default function SettingsPage() {
     <>
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-6 py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-card-foreground">Settings</h1>

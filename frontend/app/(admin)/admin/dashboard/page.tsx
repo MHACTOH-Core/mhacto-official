@@ -28,6 +28,7 @@ import {
   Handshake,
   Printer,
   CalendarDays,
+  RefreshCw,
 } from "lucide-react"
 import {
   inquiryStatusLabels,
@@ -37,10 +38,12 @@ import {
   type DailyVisit,
 } from "@/lib/data/admin-data"
 import { apiFetchDailyVisits } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -396,7 +399,7 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
@@ -405,13 +408,24 @@ export default function DashboardPage() {
               </p>
             </div>
             {currentUser && (
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={handleExport}
-              >
-                <Printer className="h-4 w-4" /> Export Summary
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => refreshAnalytics()}
+                >
+                  <RefreshCw className="h-4 w-4" /> Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleExport}
+                >
+                  <Printer className="h-4 w-4" /> Export Summary
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -421,23 +435,22 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {statCards.map((stat) => (
               <Link key={stat.label} href={stat.href} className="group">
-                <Card className="transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md">
-                  <CardContent className="flex items-start gap-3 p-3 sm:gap-4 sm:p-5">
-                    <div className={`shrink-0 rounded-lg p-2 sm:rounded-xl sm:p-3 ${stat.color}`}>
-                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-5 sm:pb-2">
+                    <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">{stat.label}</CardTitle>
+                    <div className={`shrink-0 rounded-lg p-1.5 sm:rounded-xl sm:p-2 ${stat.color}`}>
+                      <stat.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-                        {stat.label}
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0 sm:p-5 sm:pt-0">
+                    {isLoadingAnalytics ? (
+                      <Skeleton className="mt-1 h-7 w-10 sm:h-8 sm:w-12" />
+                    ) : (
+                      <p className="text-lg font-bold text-card-foreground sm:text-2xl">
+                        {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
                       </p>
-                      {isLoadingAnalytics ? (
-                        <Skeleton className="mt-1 h-7 w-10 sm:h-8 sm:w-12" />
-                      ) : (
-                        <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
-                          {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>
@@ -445,7 +458,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Website Visits widget */}
-          <Card className="relative">
+          <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
             <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
             <CardHeader className="pb-2">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -628,7 +641,7 @@ export default function DashboardPage() {
           {/* Charts row — pie left, bar right, equal stretch */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             {/* Visitor Engagement */}
-            <Card className="relative flex flex-col overflow-hidden">
+            <Card className="relative flex flex-col overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
               <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -756,7 +769,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Bar chart — Most popular pages */}
-            <Card className="relative flex flex-col overflow-hidden">
+            <Card className="relative flex flex-col overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
               <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -864,7 +877,7 @@ export default function DashboardPage() {
           {/* Bottom row: inquiry summary + recent activity */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
             {/* Inquiry Summary */}
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold sm:text-base">
@@ -937,7 +950,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Recent activity */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold sm:text-base">
@@ -965,20 +978,39 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 ) : recentActivity.length > 0 ? (
-                  <div className="space-y-3 sm:space-y-4">
-                    {recentActivity.map((entry) => (
-                      <div key={entry.id} className="flex gap-3">
-                        <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-card-foreground sm:text-sm">
-                            {entry.description}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-sm">
-                            {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
-                          </p>
+                  <div className="space-y-4">
+                    {recentActivity.map((entry) => {
+                      const initials = entry.user
+                        .split(' ')
+                        .map((w) => w[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)
+                      return (
+                        <div key={entry.id} className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 shrink-0 border border-border/50">
+                            {entry.profilePicture && (
+                              <AvatarImage
+                                src={resolveMediaUrl(entry.profilePicture)}
+                                alt={entry.user}
+                              />
+                            )}
+                            <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-card-foreground sm:text-sm">
+                              {entry.user}
+                            </p>
+                            <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
+                              {entry.description}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">

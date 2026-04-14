@@ -169,6 +169,7 @@ export interface ActivityLogEntry {
   description: string
   timestamp: string
   user: string
+  profilePicture?: string | null
 }
 
 export interface PageView {

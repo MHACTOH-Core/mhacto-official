@@ -1,6 +1,6 @@
 "use client"
 
-// @ts-expect-error - CSS imports don't have type declarations
+// CSS import for Leaflet map styles
 import "leaflet/dist/leaflet.css"
 import { useEffect, useState } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
