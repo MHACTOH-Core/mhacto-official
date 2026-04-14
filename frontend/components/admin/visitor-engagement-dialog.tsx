@@ -89,7 +89,7 @@ const STATUS_COLORS: Record<string, string> = {
 const TYPE_FILTERS = ["all", "walk_in", "tour_booking", "general_contact", "partnership"] as const
 const STATUS_FILTERS = ["all", "unread", "read", "assigned", "confirmed", "completed", "cancelled", "expired", "archived"] as const
 
-const PER_PAGE = 20
+const PER_PAGE = 10
 
 export function VisitorEngagementDialog({ open, onOpenChange }: VisitorEngagementDialogProps) {
   const [data, setData]           = useState<VisitorDetail[]>([])

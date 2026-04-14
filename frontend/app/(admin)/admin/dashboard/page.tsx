@@ -54,7 +54,10 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -74,7 +77,7 @@ import {
   AreaChart,
   Area,
 } from "recharts"
-import { format, parseISO, subDays, startOfYear, isAfter, isBefore, startOfDay } from "date-fns"
+import { format, parseISO, subDays, startOfYear, isAfter, isBefore, startOfDay, startOfMonth, endOfMonth } from "date-fns"
 
 // Static gradient definitions — defined outside to avoid recreation on every render
 const BAR_GRADIENTS = [
@@ -109,37 +112,24 @@ export default function DashboardPage() {
     refreshAnalytics,
   } = useAdmin()
 
-  useEffect(() => {
-    if (isHydrated && !isLoggedIn) router.push("/admin")
-  }, [isHydrated, isLoggedIn, router])
-
-  if (!isHydrated || !isLoggedIn || !currentUser) return null
-
-  // Only super_admin and admin can access dashboard
-  if (currentUser.role === "content_manager") {
-    return (
-      <main className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h2 className="mt-4 text-xl font-semibold">Access Restricted</h2>
-          <p className="mt-2 text-muted-foreground">You don&apos;t have permission to access the dashboard.</p>
-        </div>
-      </main>
-    )
-  }
-
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const [showPrintDialog, setShowPrintDialog] = useState(false)
   const [showPageViewsDialog, setShowPageViewsDialog] = useState(false)
   const [showVisitorDialog, setShowVisitorDialog] = useState(false)
 
   // Website Visits date range filter
-  type VisitRange = "7d" | "30d" | "year" | "custom"
+  type VisitRange = "7d" | "30d" | "3m" | "6m" | "year" | "custom"
+    | "m-0" | "m-1" | "m-2" | "m-3" | "m-4" | "m-5"
+    | "m-6" | "m-7" | "m-8" | "m-9" | "m-10" | "m-11"
   const [visitRange, setVisitRange] = useState<VisitRange>("7d")
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined)
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined)
   const [extraVisits, setExtraVisits] = useState<DailyVisit[]>([])
   const [isLoadingExtra, setIsLoadingExtra] = useState(false)
+
+  useEffect(() => {
+    if (isHydrated && !isLoggedIn) router.push("/admin")
+  }, [isHydrated, isLoggedIn, router])
 
   useEffect(() => {
     let el = document.getElementById("print-portal")
@@ -164,7 +154,7 @@ export default function DashboardPage() {
     setTimeout(() => window.print(), 100)
   }, [])
 
-  // ── Fetch extra visit data when "year" or "custom" needs more than 30 days ──
+  // ── Fetch extra visit data when range needs more than 30 days ──
   useEffect(() => {
     if (visitRange === "year") {
       const daysSinceJan1 = Math.ceil(
@@ -179,13 +169,38 @@ export default function DashboardPage() {
       } else {
         setExtraVisits([])
       }
+    } else if (visitRange === "3m") {
+      setIsLoadingExtra(true)
+      apiFetchDailyVisits(92)
+        .then(setExtraVisits)
+        .catch(() => setExtraVisits([]))
+        .finally(() => setIsLoadingExtra(false))
+    } else if (visitRange === "6m") {
+      setIsLoadingExtra(true)
+      apiFetchDailyVisits(185)
+        .then(setExtraVisits)
+        .catch(() => setExtraVisits([]))
+        .finally(() => setIsLoadingExtra(false))
+    } else if (visitRange.startsWith("m-")) {
+      const monthIndex = parseInt(visitRange.slice(2))
+      const monthStart = startOfMonth(new Date(new Date().getFullYear(), monthIndex, 1))
+      const daysAgo = Math.ceil((Date.now() - monthStart.getTime()) / 86_400_000) + 5
+      if (daysAgo > 30) {
+        setIsLoadingExtra(true)
+        apiFetchDailyVisits(daysAgo)
+          .then(setExtraVisits)
+          .catch(() => setExtraVisits([]))
+          .finally(() => setIsLoadingExtra(false))
+      } else {
+        setExtraVisits([])
+      }
     } else if (visitRange === "custom" && customFrom && customTo) {
       const diffDays = Math.ceil(
         (customTo.getTime() - customFrom.getTime()) / 86_400_000,
       ) + 1
       if (diffDays > 30) {
         setIsLoadingExtra(true)
-        apiFetchDailyVisits(diffDays + 7) // fetch a bit extra to cover range
+        apiFetchDailyVisits(diffDays + 7)
           .then(setExtraVisits)
           .catch(() => setExtraVisits([]))
           .finally(() => setIsLoadingExtra(false))
@@ -199,17 +214,35 @@ export default function DashboardPage() {
 
   // ── Filter daily visits by selected range ──
   const filteredVisits = useMemo(() => {
-    const source =
-      (visitRange === "year" || visitRange === "custom") && extraVisits.length > 0
-        ? extraVisits
-        : dailyVisits
+    const needsExtra = visitRange === "year" || visitRange === "custom"
+      || visitRange === "3m" || visitRange === "6m"
+      || visitRange.startsWith("m-")
+    const source = needsExtra && extraVisits.length > 0 ? extraVisits : dailyVisits
 
     if (visitRange === "7d") {
       const cutoff = subDays(new Date(), 7)
       return source.filter((d) => isAfter(parseISO(d.date), cutoff))
     }
     if (visitRange === "30d") {
-      return source // provider already fetches 30 days
+      return source
+    }
+    if (visitRange === "3m") {
+      const cutoff = subDays(new Date(), 92)
+      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
+    }
+    if (visitRange === "6m") {
+      const cutoff = subDays(new Date(), 185)
+      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
+    }
+    if (visitRange.startsWith("m-")) {
+      const monthIndex = parseInt(visitRange.slice(2))
+      const monthDate = new Date(new Date().getFullYear(), monthIndex, 1)
+      const from = startOfMonth(monthDate)
+      const to = endOfMonth(monthDate)
+      return source.filter((d) => {
+        const dt = parseISO(d.date)
+        return !isBefore(dt, from) && !isAfter(dt, to)
+      })
     }
     if (visitRange === "year") {
       const start = startOfYear(new Date())
@@ -226,7 +259,7 @@ export default function DashboardPage() {
     return source
   }, [dailyVisits, extraVisits, visitRange, customFrom, customTo])
 
-  // ── Memoized derived data (hooks must run before any early return) ──
+  // ── Memoized derived data ──
 
   const topPages = useMemo(() => [...pageViews].sort((a, b) => b.views - a.views), [pageViews])
 
@@ -252,10 +285,18 @@ export default function DashboardPage() {
     [inquiries],
   )
 
-  const visitChartData = useMemo(
-    () => filteredVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views })),
-    [filteredVisits],
-  )
+  const visitChartData = useMemo(() => {
+    const aggregateByMonth = visitRange === "3m" || visitRange === "6m" || visitRange === "year"
+    if (aggregateByMonth) {
+      const monthly: Record<string, number> = {}
+      for (const d of filteredVisits) {
+        const key = format(parseISO(d.date), "MMM yyyy")
+        monthly[key] = (monthly[key] ?? 0) + d.views
+      }
+      return Object.entries(monthly).map(([date, views]) => ({ date, views }))
+    }
+    return filteredVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views }))
+  }, [filteredVisits, visitRange])
 
   const totals = visitorSummary?.totals
 
@@ -336,7 +377,21 @@ export default function DashboardPage() {
     [visitorSummary],
   )
 
-  if (!isHydrated || !isLoggedIn) return null
+  // ── Early returns (after all hooks) ──
+  if (!isHydrated || !isLoggedIn || !currentUser) return null
+
+  // Only super_admin and admin can access dashboard
+  if (currentUser.role === "content_manager") {
+    return (
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h2 className="mt-4 text-xl font-semibold">Access Restricted</h2>
+          <p className="mt-2 text-muted-foreground">You don&apos;t have permission to access the dashboard.</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex-1 overflow-y-auto">
@@ -399,7 +454,10 @@ export default function DashboardPage() {
                   <p className="text-[11px] text-muted-foreground sm:text-xs">
                     {visitRange === "7d" && "Last 7 days overview"}
                     {visitRange === "30d" && "Last 30 days overview"}
+                    {visitRange === "3m" && "Last 3 months overview"}
+                    {visitRange === "6m" && "Last 6 months overview"}
                     {visitRange === "year" && `${new Date().getFullYear()} year-to-date`}
+                    {visitRange.startsWith("m-") && format(new Date(new Date().getFullYear(), parseInt(visitRange.slice(2)), 1), "MMMM yyyy")}
                     {visitRange === "custom" && customFrom && customTo
                       ? `${format(customFrom, "MMM d, yyyy")} – ${format(customTo, "MMM d, yyyy")}`
                       : visitRange === "custom" && "Select a date range"}
@@ -407,15 +465,32 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Select value={visitRange} onValueChange={(v) => setVisitRange(v as VisitRange)}>
-                    <SelectTrigger className="h-8 w-[130px] text-xs">
+                    <SelectTrigger className="h-8 w-[150px] text-xs">
                       <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="7d">Last 7 days</SelectItem>
-                      <SelectItem value="30d">Last 30 days</SelectItem>
-                      <SelectItem value="year">This year</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectGroup>
+                        <SelectLabel className="text-[10px]">Quick ranges</SelectLabel>
+                        <SelectItem value="7d">Last 7 days</SelectItem>
+                        <SelectItem value="30d">Last 30 days</SelectItem>
+                        <SelectItem value="3m">Last 3 months</SelectItem>
+                        <SelectItem value="6m">Last 6 months</SelectItem>
+                        <SelectItem value="year">This year</SelectItem>
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel className="text-[10px]">{new Date().getFullYear()} by month</SelectLabel>
+                        {Array.from({ length: new Date().getMonth() + 1 }, (_, i) => (
+                          <SelectItem key={i} value={`m-${i}`}>
+                            {format(new Date(new Date().getFullYear(), i, 1), "MMMM")}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectItem value="custom">Custom range</SelectItem>
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                   {visitRange === "custom" && (
@@ -460,7 +535,14 @@ export default function DashboardPage() {
                     <p className="text-3xl font-black text-card-foreground tabular-nums leading-none">
                       {filteredVisits.reduce((s, d) => s + d.views, 0).toLocaleString()}
                       <span className="text-sm font-medium text-muted-foreground ml-2">
-                        {visitRange === "7d" ? "total (7d)" : visitRange === "30d" ? "total (30d)" : visitRange === "year" ? "this year" : "total"}
+                        {visitRange === "7d" ? "total (7d)"
+                          : visitRange === "30d" ? "total (30d)"
+                          : visitRange === "3m" ? "total (3m)"
+                          : visitRange === "6m" ? "total (6m)"
+                          : visitRange === "year" ? "this year"
+                          : visitRange.startsWith("m-")
+                            ? format(new Date(new Date().getFullYear(), parseInt(visitRange.slice(2)), 1), "MMM yyyy")
+                          : "total"}
                       </span>
                     </p>
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -488,18 +570,26 @@ export default function DashboardPage() {
               </div>
 
               {/* Right: chart — fills remaining width */}
-              <div className="h-28 w-full">
+              <div className="h-36 w-full">
                 {isLoadingAnalytics || isLoadingExtra ? (
                   <Skeleton className="h-full w-full rounded-lg" />
                 ) : trafficSparkline.length > 1 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trafficSparkline} margin={{ top: 8, right: 12, bottom: 4, left: 12 }}>
+                    <AreaChart data={trafficSparkline} margin={{ top: 8, right: 12, bottom: 20, left: 12 }}>
                       <defs>
                         <linearGradient id="visitGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
                           <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={4}
+                        interval={Math.max(0, Math.floor(trafficSparkline.length / 7) - 1)}
+                      />
                       <Tooltip
                         contentStyle={{
                           borderRadius: 10,
@@ -519,8 +609,8 @@ export default function DashboardPage() {
                         stroke="hsl(var(--primary))"
                         strokeWidth={2}
                         fill="url(#visitGrad)"
-                        dot={false}
-                        activeDot={{ r: 4, strokeWidth: 0 }}
+                        dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
                         animationBegin={0}
                         animationDuration={900}
                       />

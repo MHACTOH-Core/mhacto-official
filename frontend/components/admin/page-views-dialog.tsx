@@ -57,7 +57,7 @@ function getDateRange(preset: DatePreset): { startDate?: string; endDate?: strin
   }
 }
 
-const PER_PAGE = 20
+const PER_PAGE = 10
 
 export function PageViewsDialog({ open, onOpenChange }: PageViewsDialogProps) {
   const [data, setData]           = useState<PageView[]>([])
