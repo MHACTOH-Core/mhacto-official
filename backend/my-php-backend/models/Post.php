@@ -295,6 +295,32 @@ class Post
         return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    // ── SEARCH ─────────────────────────────────────────────────────
+
+    /**
+     * Full-text-like search across published content titles and descriptions.
+     * Prioritises title matches over description matches.
+     */
+    public function search(string $query, int $limit = 12): array
+    {
+        $like = '%' . $query . '%';
+        $sql = $this->baseSelect() . "
+            WHERE c.status = 'published'
+              AND (c.title LIKE :qt OR c.description LIKE :qd)
+            ORDER BY
+                CASE WHEN c.title LIKE :qt2 THEN 0 ELSE 1 END,
+                c.created_at DESC
+            LIMIT :_lim
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':qt',  $like);
+        $stmt->bindValue(':qd',  $like);
+        $stmt->bindValue(':qt2', $like);
+        $stmt->bindValue(':_lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     // ── CREATE ─────────────────────────────────────────────────────
 
     public function create(array $data): int

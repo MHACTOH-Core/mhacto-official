@@ -488,6 +488,12 @@ export function apiFetchPosts(status?: string) {
   return apiFetch<CMSPost[]>(`/api/posts${queryString}`)
 }
 
+/** Search published posts by title/description keyword */
+export function apiFetchSearch(query: string, limit = 12, signal?: AbortSignal) {
+  const params = new URLSearchParams({ search: query, limit: String(limit) })
+  return apiFetch<CMSPost[]>(`/api/posts?${params}`, { cacheTtl: 10_000, signal })
+}
+
 /** Fetch inquiries, optionally filtered by status (unread/in-progress/etc.) */
 export function apiFetchInquiries(status?: string) {
   const queryString = status ? `?status=${status}` : ""

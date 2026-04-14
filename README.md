@@ -170,6 +170,38 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 14, 2026 — Live Search API Integration & Scroll-to-Card Navigation
+
+#### Live Search Connection
+- Search bar now queries the backend in real-time — visitors see **instant local static results** (no network delay) immediately, then **live CMS results** are merged in after a 300 ms debounce
+- `searchContentAsync()` in `search-index.ts` updated to parse the flat array returned by `/api/search`, maps each result through `mapCMSPostToSearchResult()` for correct routing
+- Backend `routes/search.php` updated to JOIN `content_fields` for `label_key` and return `post_type` + `label` in every result — enables the frontend to build proper navigation URLs per content type
+
+#### Label-First Routing Fix
+- `mapCMSPostToSearchResult()` now resolves the URL by **label mapping first** — a hospital with `post_type = "news"` no longer gets misrouted to `/news/{id}`; its label `"hospitals"` correctly maps to `/community/hospitals#item-{id}`
+- `postType`-based routing (`news`, `event`) is only used as a fallback when no label mapping exists
+
+#### Scroll-to-Card Navigation (Community Pages)
+- Searching a specific item (e.g. "St. Anne Medical Clinic") and clicking the result navigates to the list page **and smoothly scrolls to that card** with a temporary highlight ring
+- Implemented via URL hash fragment `#item-{id}` — all community cards carry `id={`item-${X.id}`}` attributes
+- Pages with scroll-to-card support: **Schools, Hospitals, Barangays, Local Business**
+
+#### Hash Navigation Fix
+- `navigateToResult()` in `search-overlay.tsx` now uses `window.location.href` for hash URLs — Next.js `router.push()` was stripping the `#fragment`, causing the scroll to never trigger
+- Enter-key navigation in the search overlay also uses the same `navigateToResult()` helper
+
+#### Page Transition Scroll Timing Fix
+- `template.tsx` scroll-to-hash effect now waits **700 ms** for the Framer Motion page transition animation to complete before searching for the target element (previously tried to scroll while the element was still hidden behind the `clipPath` animation)
+- Switched from `document.querySelector(hash)` to `document.getElementById(id)` — `querySelector` throws on CSS-invalid IDs (e.g. numeric IDs starting with a digit)
+- Retry interval increased to every 250 ms, up to 25 attempts (~6.25 s total) to handle slow async data loads
+
+#### Old Barangay Page Removed
+- Deleted `community/barangay/` folder (list page + `[id]/` detail route) — replaced by `community/barangays/` (card-only list, consistent with all other community sections)
+- All internal links updated from `/community/barangay/{id}` to `/community/barangays#item-{id}` (scroll-to-card)
+- `labelRouteMap` entry updated: `"barangay"` → `{ prefix: "/community/barangays", hasDetail: false }`
+
+---
+
 ### April 14, 2026 — Global Search, Dashboard Graph Enhancements & Pagination
 
 #### Global Search API (`GET /api/search?q=`)

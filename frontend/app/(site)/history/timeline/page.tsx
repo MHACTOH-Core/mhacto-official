@@ -103,7 +103,7 @@ export default function TimelinePage() {
                 const badge = significanceBadge[event.significance]
 
                 return (
-                  <div key={`${event.year}-${idx}`} className="relative pl-16 sm:pl-20">
+                  <div key={`${event.year}-${idx}`} id={`item-${event.year}-${idx}`} className="relative pl-16 sm:pl-20">
                     {/* Dot */}
                     <div
                       className={`absolute left-4 sm:left-6 top-4 h-4 w-4 rounded-full border-2 border-background ring-2 ${

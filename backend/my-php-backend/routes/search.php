@@ -29,9 +29,11 @@ function handle_search(string $method, ?string $param1, ?string $param2): void
         $results = array_slice($results, 0, 50);
         $results = array_map(static function (array $item): array {
             return [
-                'id' => $item['id'],
-                'type' => $item['type'],
-                'title' => $item['title'],
+                'id'        => $item['id'],
+                'post_type' => $item['post_type'],
+                'label'     => $item['label'],
+                'type'      => $item['type'],
+                'title'     => $item['title'],
                 'description' => $item['description'],
             ];
         }, $results);
@@ -69,15 +71,17 @@ function searchContent(PDO $db, string $query): array
 
     $sql = "
         SELECT
-            content_id AS id,
-            post_type,
-            title,
-            COALESCE(description, '') AS description
-        FROM content
-        WHERE status = 'published'
+            c.content_id AS id,
+            c.post_type,
+            c.title,
+            COALESCE(c.description, '') AS description,
+            COALESCE(lk.meta_value, '') AS label_key
+        FROM content c
+        LEFT JOIN content_fields lk ON lk.content_id = c.content_id AND lk.meta_key = 'label_key'
+        WHERE c.status = 'published'
           AND (
-                title LIKE ?
-            OR  description LIKE ?
+                c.title LIKE ?
+            OR  c.description LIKE ?
           )
         LIMIT 150
     ";
@@ -120,6 +124,8 @@ function searchContent(PDO $db, string $query): array
 
         $results[] = [
             'id'          => $row['id'],
+            'post_type'   => $row['post_type'],
+            'label'       => $row['label_key'] ?: null,
             'type'        => $typeMap[$row['post_type']] ?? ucfirst($row['post_type']),
             'title'       => $title,
             'description' => mb_substr($description, 0, 200, 'UTF-8'),

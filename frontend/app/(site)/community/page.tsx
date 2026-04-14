@@ -452,7 +452,7 @@ export default function CommunityPage() {
               {barangays.map((brgy, idx) => (
                 <a
                   key={brgy.id}
-                  href={`/community/barangay/${brgy.id}`}
+                  href={`/community/barangays#item-${brgy.id}`}
 
                   className={`reveal-on-scroll group block rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 cursor-pointer ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
                 >

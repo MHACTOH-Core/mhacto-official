@@ -414,7 +414,7 @@ export default function CulinaryWondersPage() {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {(activeType === "all" ? rest : filtered).map((item) => (
-                <CuisineCard key={item.id} item={item} />
+                <div key={item.id} id={`item-${item.id}`}><CuisineCard item={item} /></div>
               ))}
             </div>
           )}

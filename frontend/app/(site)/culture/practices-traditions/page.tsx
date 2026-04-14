@@ -76,7 +76,7 @@ export default function PracticesTraditionsPage() {
               const status = statusConfig[practice.status]
               const StatusIcon = status.icon
               return (
-                <Link key={practice.id} href={`/culture/practices-traditions/${practice.id}`} className="block">
+                <Link key={practice.id} id={`item-${practice.id}`} href={`/culture/practices-traditions/${practice.id}`} className="block">
                 <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer">
                   {practice.image && (
                     <GalleryImage

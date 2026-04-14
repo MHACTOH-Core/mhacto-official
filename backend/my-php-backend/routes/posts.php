@@ -79,6 +79,19 @@ function _posts_read(Post $post, ?string $id): void
         Response::json($result);
     }
 
+    // ── Public search: /api/posts?search=query ───────────────────
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    if ($search !== '') {
+        if (mb_strlen($search) < 2 || mb_strlen($search) > 100) {
+            Response::json([]);  // too short or too long — return empty
+        }
+        $searchLimit = isset($_GET['limit']) ? min((int) $_GET['limit'], 20) : 12;
+        $cacheKey = 'posts_search_' . md5($search . $searchLimit);
+        QueryCache::httpCacheHeaders(120); // 2-minute browser cache for search
+        $results = QueryCache::remember($cacheKey, 120, fn() => $post->search($search, $searchLimit));
+        Response::json($results);
+    }
+
     $status   = $_GET['status'] ?? null;
     $label    = $_GET['label'] ?? null;
     $type     = $_GET['type'] ?? null;

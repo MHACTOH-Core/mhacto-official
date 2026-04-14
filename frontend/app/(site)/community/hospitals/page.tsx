@@ -98,7 +98,7 @@ export default function HospitalsPage() {
           ) : (
           <div className="grid gap-6 sm:grid-cols-2 items-start">
             {hospitals.map((hospital, idx) => (
-              <Card key={hospital.id} className={`reveal-on-scroll border-border flex flex-col ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
+              <Card key={hospital.id} id={`item-${hospital.id}`} className={`reveal-on-scroll border-border flex flex-col ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
                 <CardContent className="p-6 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     {hospital.image && hospital.image !== "/images/defaults/no-image.svg" ? (

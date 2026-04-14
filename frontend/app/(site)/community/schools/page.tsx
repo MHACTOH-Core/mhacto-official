@@ -299,6 +299,7 @@ export default function SchoolsPage() {
           {displayedSchools.map((school, idx) => (
             <div
               key={school.id}
+              id={`item-${school.id}`}
               className={`reveal-on-scroll flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
             >
               {/* accent bar — blue for public, violet for private */}
