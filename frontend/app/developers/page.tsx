@@ -12,7 +12,7 @@ const team = [
     icon: Crown,
     color: "from-amber-500 to-orange-600",
     colorLight: "bg-amber-500/10 text-amber-600",
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/christian-carr-tac-an-638195249/",
   },
   {
     name: "Jayson Visnar",
