@@ -170,6 +170,44 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 14, 2026 — Global Search, Dashboard Graph Enhancements & Pagination
+
+#### Global Search API (`GET /api/search?q=`)
+- New PHP route `routes/search.php` — queries the `content` table with `status = 'published'` using PDO prepared statements
+- Relevance scoring: exact title match (+30), title contains (+20), starts-with bonus (+10), description contains (+8)
+- Results sorted by score, capped at 50, returned as unified `{id, type, title, description}` JSON
+- `post_type` values mapped to display labels: `place` → "Tourist Spot", `news` → "News Article", `event` → "Event"
+- Empty or missing `?q=` returns `[]` with HTTP 200
+- Route registered as a public GET resource in `index.php` (no JWT required)
+
+#### Next.js Proxy Fix (`app/api/[...path]/route.ts`)
+- Fixed `params.path` Promise error (Next.js 15+ requires `await context.params` before accessing `.path`)
+- All HTTP method handlers (GET, POST, PUT, DELETE, PATCH) updated to use the async `RouteContext` pattern
+
+#### Dashboard — Website Visits Graph
+- **Date X-axis** added to the traffic AreaChart — labels shown as "Mar 28", "Apr 1", etc. with auto-spaced ticks (~7 visible regardless of range)
+- **Month range selectors** added to the dropdown (grouped):
+  - Quick ranges: Last 7 days / Last 30 days / Last 3 months / Last 6 months / This year
+  - "2026 by month" group: individual month buttons (January → current month, auto-generated)
+  - Custom range (unchanged)
+- **Multi-month aggregation**: 3-month, 6-month, and year views aggregate data by month on the X-axis (e.g. "Jan 2026", "Feb 2026") matching the reference chart style
+- **Smooth monotone curve** with small dots on each data point for clear day/month-level visibility
+- Chart height increased (`h-36`) with extra bottom margin (20px) for label clearance
+
+#### Dashboard — React Hooks Order Fix
+- Resolved "change in order of Hooks" console error — all `useState`, `useEffect`, `useCallback`, and `useMemo` calls moved above early `return` statements, following the Rules of Hooks
+- Removed a duplicate `if (!isHydrated || !isLoggedIn) return null` guard
+
+#### Visit Seed Data
+- New script `backend/my-php-backend/database/seed-visits.php` — inserts 4,055 historical `page_view` entries into `activity_logs` from January 1 – April 13, 2026
+- Data designed to show realistic hills and valleys: Jan peak → Feb trough → Mar heritage-week spike → Apr recovery with visible dips (e.g. Apr 12: ~4 visits)
+
+#### Admin "View All" Dialogs — Pagination
+- `page-views-dialog.tsx` and `visitor-engagement-dialog.tsx` — `PER_PAGE` reduced from 20 to **10** per page
+- Existing prev/next page controls and "X / Y" page indicator remain unchanged
+
+---
+
 ### April 11, 2026 — Internal Links, Pagoda Hero, Developer Team Page & Footer Update
 
 #### Internal Link Behavior
