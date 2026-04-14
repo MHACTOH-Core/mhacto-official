@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const navItems: { href: string; label: string; icon: typeof LayoutDashboard; roles?: UserRole[] }[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "admin"] },
   { href: "/admin/home-content", label: "Home Page", icon: Home, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/heroes", label: "Page Banners", icon: ImageIcon, roles: ["super_admin", "admin", "content_manager"] },
   { href: "/admin/office", label: "MHACTO Office", icon: Building2, roles: ["super_admin", "admin", "content_manager"] },

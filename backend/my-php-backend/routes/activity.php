@@ -38,10 +38,11 @@ function handle_activity(string $method, ?string $param1): void
                 }
                 $action      = substr((string) $data['action'], 0, 50);
                 $description = substr((string) $data['description'], 0, 500);
+                $detailsJson = json_encode(['description' => $description]);
 
                 $entry = $log->log(
                     $action,
-                    $description,
+                    $detailsJson,
                     (int) $authUser['sub'],
                     null,
                     isset($data['contentId']) ? (int) $data['contentId'] : null

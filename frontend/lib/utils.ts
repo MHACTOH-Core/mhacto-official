@@ -29,8 +29,19 @@ export function resolveMediaUrl(
 ): string {
   if (!url) return asset(fallback)
   if (url.startsWith('http://') || url.startsWith('https://')) return url
+
   if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-    return `${API_BASE}${url.startsWith('/') ? url : `/${url}`}`
+    const uploadsPath = url.startsWith('/') ? url : `/${url}`
+
+    // In development, use the local /uploads rewrite proxy instead of
+    // issuing direct requests to the backend host. This avoids Next.js
+    // private-IP image validation errors for 127.0.0.1.
+    if (process.env.NODE_ENV !== 'production') {
+      return uploadsPath
+    }
+
+    return `${API_BASE}${uploadsPath}`
   }
+
   return asset(url.startsWith('/') ? url : `/${url}`)
 }

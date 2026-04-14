@@ -65,6 +65,44 @@ export function searchContent(query: string): SearchResult[] {
   return scored
 }
 
+// ── Backend search function (async) ───────────────────────────────────
+/**
+ * Search backend for posts, tour guides, and other public content.
+ * This searches the live database content instead of the static index.
+ */
+export async function searchContentAsync(query: string): Promise<SearchResult[]> {
+  if (!query.trim()) return []
+
+  try {
+    const params = new URLSearchParams({ q: query })
+    const response = await fetch(`/api/search?${params}`)
+
+    if (!response.ok) {
+      console.warn('Backend search failed, falling back to static index')
+      return searchContent(query)
+    }
+
+    const data = await response.json()
+
+    // Transform backend results to SearchResult format
+    if (data.data?.results && Array.isArray(data.data.results)) {
+      return data.data.results.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        subtitle: item.subtitle,
+        href: item.href,
+        category: item.type === 'Tour Guide' ? 'Tour Guide' : (item.post_type || 'Post'),
+        keywords: `${item.title} ${item.subtitle} ${item.description}`.toLowerCase(),
+      }))
+    }
+
+    return []
+  } catch (error) {
+    console.warn('Backend search error, falling back to static index', error)
+    return searchContent(query)
+  }
+}
+
 // ── Category icon helper (string name to pass to front-end) ─────────
 export const categoryIconMap: Record<string, string> = {
   Page: "FileText",

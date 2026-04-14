@@ -123,7 +123,7 @@ if ($resource && file_exists($routeFile)) {
         //  - /api/auth/*           → handles its own auth (login, me)
         //  - POST /api/inquiries   → public tourist contact form (no id)
         //  - POST /api/analytics/* → public page-view logging
-        $publicReadResources = ['posts', 'heroes', 'home', 'destinations', 'analytics', 'settings', 'office'];
+        $publicReadResources = ['posts', 'heroes', 'home', 'destinations', 'analytics', 'settings', 'office', 'search', 'tour_guides'];
         $isPublicRead = ($method === 'GET' && in_array($resource, $publicReadResources, true));
         $isAuthRoute  = ($resource === 'auth');
         $isPublicInquiryCreate = ($resource === 'inquiries' && $method === 'POST' && !$param1);

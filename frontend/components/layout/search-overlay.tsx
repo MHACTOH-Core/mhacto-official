@@ -7,7 +7,7 @@ import {
   Users, ShoppingBag, Clock, UserCheck, Landmark, Building2,
   MapPin, GraduationCap, Cross, Newspaper, ArrowRight, Loader2,
 } from "lucide-react"
-import { searchContent, type SearchResult } from "@/lib/search-index"
+import { searchContentAsync, type SearchResult } from "@/lib/search-index"
 
 // ── Icon map ──────────────────────────────────────────────────────────
 const iconMap: Record<string, React.ReactNode> = {
@@ -114,8 +114,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     if (!searchQuery.trim()) { setSearchResults([]); setIsSearching(false); return }
 
     setIsSearching(true)
-    searchDebounceTimerRef.current = setTimeout(() => {
-      setSearchResults(searchContent(searchQuery))
+    searchDebounceTimerRef.current = setTimeout(async () => {
+      const results = await searchContentAsync(searchQuery)
+      setSearchResults(results)
       setHighlightedResultIndex(0)
       setIsSearching(false)
     }, 180)

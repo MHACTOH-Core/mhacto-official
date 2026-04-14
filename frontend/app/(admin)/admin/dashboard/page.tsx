@@ -113,6 +113,21 @@ export default function DashboardPage() {
     if (isHydrated && !isLoggedIn) router.push("/admin")
   }, [isHydrated, isLoggedIn, router])
 
+  if (!isHydrated || !isLoggedIn || !currentUser) return null
+
+  // Only super_admin and admin can access dashboard
+  if (currentUser.role === "content_manager") {
+    return (
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h2 className="mt-4 text-xl font-semibold">Access Restricted</h2>
+          <p className="mt-2 text-muted-foreground">You don&apos;t have permission to access the dashboard.</p>
+        </div>
+      </main>
+    )
+  }
+
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const [showPrintDialog, setShowPrintDialog] = useState(false)
   const [showPageViewsDialog, setShowPageViewsDialog] = useState(false)

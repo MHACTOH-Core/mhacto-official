@@ -16,7 +16,15 @@ const nextConfig = {
     // When STATIC_EXPORT=false (Node.js/Vercel deployment), images are automatically
     // converted to WebP/AVIF with responsive sizing.
     // Static export (GitHub Pages) requires unoptimized: true.
-    // In dev, uploads are same-origin via rewrites, so no remotePatterns needed.
+    // In dev and build, allow backend uploads via 127.0.0.1:8000
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '8000',
+        pathname: '/uploads/**',
+      },
+    ],
   },
   typescript: {
     ignoreBuildErrors: false,

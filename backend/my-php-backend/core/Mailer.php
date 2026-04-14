@@ -32,6 +32,7 @@ class Mailer
         $mail->Username   = $cfg['username'];
         $mail->Password   = $cfg['password'];
         $mail->Port       = $cfg['port'];
+        $mail->Timeout    = 5; // fail fast if SMTP is unreachable (seconds)
         $mail->CharSet    = PHPMailer::CHARSET_UTF8;
 
         if ($cfg['encryption'] === 'ssl') {

@@ -1,96 +1,70 @@
-/**
- * Server-side API proxy — replaces Turbopack's rewrite-based proxy for /api/*
- * requests in development. The browser talks same-origin to localhost:3000,
- * and this Route Handler forwards the request to the PHP backend (127.0.0.1:8000)
- * using Node.js fetch (which is far more reliable than Turbopack's built-in proxy).
- *
- * In production the frontend uses NEXT_PUBLIC_API_URL to talk directly to
- * the backend, so this file is never reached.
- */
+import { NextRequest, NextResponse } from 'next/server'
 
-import { type NextRequest, NextResponse } from "next/server"
+const BACKEND_API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://127.0.0.1:8000'
 
-const BACKEND = process.env.PHP_BACKEND_URL ?? "http://127.0.0.1:8000"
-
-/** Headers that must not be forwarded between hops */
-const HOP_BY_HOP = new Set([
-  "host",
-  "connection",
-  "keep-alive",
-  "transfer-encoding",
-  "te",
-  "upgrade",
-  "proxy-authorization",
-  "proxy-connection",
-])
-
-async function handler(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
-  const { path } = await params
-  const target = `${BACKEND}/api/${path.join("/")}${req.nextUrl.search}`
-
-  // Handle CORS preflight locally — no need to round-trip to PHP
-  if (req.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": req.headers.get("origin") ?? "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-        "Access-Control-Max-Age": "86400",
-      },
-    })
+async function proxyRequest(req: NextRequest, pathSegments: string[] = []): Promise<NextResponse> {
+  if (pathSegments.length === 0) {
+    return NextResponse.json({ error: 'API path required' }, { status: 400 })
   }
 
-  // Forward request headers, stripping hop-by-hop ones
-  const fwdHeaders = new Headers()
-  req.headers.forEach((v, k) => {
-    if (!HOP_BY_HOP.has(k)) fwdHeaders.set(k, v)
+  const backendPath = pathSegments.join('/')
+  const targetUrl = new URL(`${BACKEND_API_BASE}/api/${backendPath}${req.nextUrl.search}`)
+
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('host', targetUrl.host)
+
+  const fetchOptions: RequestInit = {
+    method: req.method,
+    headers: requestHeaders,
+    redirect: 'manual',
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    fetchOptions.body = await req.text()
+  }
+
+  const backendResponse = await fetch(targetUrl.toString(), fetchOptions)
+
+  const responseHeaders = new Headers(backendResponse.headers)
+  responseHeaders.set('x-proxy-target', targetUrl.origin)
+
+  const body = await backendResponse.arrayBuffer()
+  return new NextResponse(body, {
+    status: backendResponse.status,
+    headers: responseHeaders,
   })
-
-  try {
-    const init: RequestInit & { duplex?: string } = {
-      method: req.method,
-      headers: fwdHeaders,
-    }
-
-    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-      init.body = req.body
-      init.duplex = "half" // required for streaming request body in Node 18+
-    }
-
-    const upstream = await fetch(target, init)
-
-    // Read the full body so we return a complete, non-chunked response
-    const body = await upstream.arrayBuffer()
-
-    const resHeaders = new Headers()
-    upstream.headers.forEach((v, k) => {
-      if (!HOP_BY_HOP.has(k)) resHeaders.set(k, v)
-    })
-
-    return new NextResponse(body, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: resHeaders,
-    })
-  } catch (err) {
-    console.error(`[api-proxy] ${req.method} ${target} failed:`, err)
-    return NextResponse.json(
-      { success: false, error: "Backend unavailable" },
-      { status: 502 },
-    )
-  }
 }
 
-export const GET = handler
-export const POST = handler
-export const PUT = handler
-export const PATCH = handler
-export const DELETE = handler
-export const OPTIONS = handler
+export async function GET(req: NextRequest, context: any) {
+  const params = await context?.params;
+  return proxyRequest(req, params?.path ?? [])
+}
 
-// Only meaningful in development — production uses direct backend URL
-export const dynamic = "force-dynamic"
+export async function POST(req: NextRequest, context: any) {
+  const params = await context?.params;
+  return proxyRequest(req, params?.path ?? [])
+}
+
+export async function PUT(req: NextRequest, context: any) {
+  const params = await context?.params;
+  return proxyRequest(req, params?.path ?? [])
+}
+
+export async function DELETE(req: NextRequest, context: any) {
+  const params = await context?.params;
+  return proxyRequest(req, params?.path ?? [])
+}
+
+export async function PATCH(req: NextRequest, context: any) {
+  const params = await context?.params;
+  return proxyRequest(req, params?.path ?? [])
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Allow': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    },
+  })
+}

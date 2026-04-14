@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import {
   Dialog,
   DialogContent,
@@ -347,7 +347,7 @@ export function VisitorEngagementDialog({ open, onOpenChange }: VisitorEngagemen
                   const TypeIcon = TYPE_ICONS[row.type] ?? Users
                   const isExpanded = expandedId === row.id
                   return (
-                    <>
+                    <React.Fragment key={row.id}>
                       <tr
                         key={row.id}
                         onClick={() => setExpandedId(isExpanded ? null : row.id)}
@@ -422,7 +422,7 @@ export function VisitorEngagementDialog({ open, onOpenChange }: VisitorEngagemen
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </tbody>
