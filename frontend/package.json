@@ -10,7 +10,9 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",

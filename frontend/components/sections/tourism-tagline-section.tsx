@@ -84,24 +84,6 @@ export function TourismTaglineSection() {
           </div>
         </div>
 
-        {/* Stats strip */}
-        <div className="mt-14 grid grid-cols-2 gap-6 border-t border-border pt-10 sm:grid-cols-4 reveal-on-scroll reveal-scale">
-          {[
-            { value: "235+", label: "Years of Pagoda Festival" },
-            { value: "55,000", label: "Arena Seating Capacity" },
-            { value: "400+", label: "Years of Town History" },
-            { value: "1 of 1", label: "Fireworks Capital, PH" },
-          ].map((stat, i) => (
-            <div key={stat.label} className={`text-center reveal-on-scroll reveal-delay-${i + 1}`}>
-              <p className="text-2xl font-extrabold text-primary sm:text-3xl">
-                {stat.value}
-              </p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   )

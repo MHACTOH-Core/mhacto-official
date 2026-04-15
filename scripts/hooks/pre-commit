@@ -1,0 +1,21 @@
+#!/bin/sh
+# scripts/hooks/pre-commit
+#
+# Tracked version of the pre-commit hook.
+# Installed to .git/hooks/pre-commit by running: sh scripts/setup-hooks.sh
+
+echo "🔍 [pre-commit] Running developer-credit enforcement tests..."
+
+cd frontend && pnpm test --reporter=verbose 2>&1
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Commit blocked: developer credit tests failed."
+  echo "   The /developers page link in the footer must not be removed."
+  echo "   Restore the credits in components/layout/footer.tsx and app/developers/page.tsx"
+  echo ""
+  exit 1
+fi
+
+echo "✅ Credit checks passed. Proceeding with commit."
+exit 0

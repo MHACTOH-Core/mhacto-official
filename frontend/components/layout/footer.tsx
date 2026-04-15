@@ -146,7 +146,7 @@ export function Footer() {
             href="/developers"
             className="text-xs text-slate-500 underline underline-offset-2 hover:text-blue-600 transition-colors"
           >
-            Know more about the Dev Team, click here!
+            Meet the Dev Team →
           </Link>
           {/* ═══════ END STI PARTNERSHIP & CREDITS — DO NOT REMOVE ═══════ */}
         </div>
