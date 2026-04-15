@@ -1,7 +1,10 @@
 import { fileURLToPath } from 'url'
 import path from 'path'
+import { createRequire } from 'module'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const require = createRequire(import.meta.url)
+const { version } = require('./package.json')
 const isDev = process.env.NODE_ENV !== 'production'
 
 /** @type {import('next').NextConfig} */
@@ -35,6 +38,10 @@ const nextConfig = {
   },
   // Disable the X-Powered-By header (less overhead, better security)
   poweredByHeader: false,
+  // Expose the package version as a public env var so the UI can display it
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
   experimental: {
     // Tree-shake barrel-export packages to reduce bundle size
     optimizePackageImports: [

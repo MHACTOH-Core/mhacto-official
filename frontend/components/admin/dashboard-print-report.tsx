@@ -20,6 +20,7 @@ type ReportProps = {
   totalActiveInquiries: number
   recentActivity: { id: string; description: string; timestamp: string }[]
   generatedBy: string
+  reportPeriod?: string
 }
 
 const DashboardPrintReport = forwardRef<HTMLDivElement, ReportProps>(
@@ -34,6 +35,7 @@ const DashboardPrintReport = forwardRef<HTMLDivElement, ReportProps>(
       totalActiveInquiries,
       recentActivity,
       generatedBy,
+      reportPeriod,
     },
     ref,
   ) => {
@@ -57,6 +59,11 @@ const DashboardPrintReport = forwardRef<HTMLDivElement, ReportProps>(
             <p className="report-date">
               Generated on {dateStr} at {timeStr}
             </p>
+            {reportPeriod && (
+              <p className="report-date" style={{ fontWeight: 600, marginTop: 4 }}>
+                Report Period: {reportPeriod}
+              </p>
+            )}
           </div>
           <img
             src={resolveMediaUrl("/uploads/images/logos/Municipality_of_bocaue.png")}

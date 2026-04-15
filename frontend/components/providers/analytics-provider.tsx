@@ -11,6 +11,7 @@ import {
 import type { PageView, DailyVisit } from "@/lib/data/admin-data"
 import {
   apiFetchAnalyticsDashboard,
+  apiFetchAnalyticsDashboardByRange,
   AuthExpiredError,
   type VisitorSummary,
 } from "@/lib/api"
@@ -18,13 +19,21 @@ import { useAuth } from "./auth-provider"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
+export interface DashboardDateFilter {
+  label: string
+  from: string // YYYY-MM-DD
+  to: string   // YYYY-MM-DD
+}
+
 export interface AnalyticsContextValue {
   pageViews: PageView[]
   dailyVisits: DailyVisit[]
   totalViews: number
   visitorSummary: VisitorSummary | null
   isLoadingAnalytics: boolean
+  activeDateFilter: DashboardDateFilter | null
   refreshAnalytics: () => Promise<void>
+  refreshAnalyticsWithRange: (startDate: string, endDate: string, label: string) => Promise<void>
 }
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null)
@@ -43,6 +52,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const [dailyVisits, setDailyVisits] = useState<DailyVisit[]>([])
   const [visitorSummary, setVisitorSummary] = useState<VisitorSummary | null>(null)
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false)
+  const [activeDateFilter, setActiveDateFilter] = useState<DashboardDateFilter | null>(null)
 
   const fetchAnalytics = useCallback(async () => {
     setIsLoadingAnalytics(true)
@@ -51,6 +61,24 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       setPageViews(data.pageViews)
       setDailyVisits(data.dailyVisits)
       setVisitorSummary(data.visitorSummary)
+      setActiveDateFilter(null)
+    } catch (e) {
+      if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
+        console.error("[Analytics] dashboard fetch failed:", e)
+      }
+    } finally {
+      setIsLoadingAnalytics(false)
+    }
+  }, [])
+
+  const refreshAnalyticsWithRange = useCallback(async (startDate: string, endDate: string, label: string) => {
+    setIsLoadingAnalytics(true)
+    try {
+      const data = await apiFetchAnalyticsDashboardByRange(startDate, endDate)
+      setPageViews(data.pageViews)
+      setDailyVisits(data.dailyVisits)
+      setVisitorSummary(data.visitorSummary)
+      setActiveDateFilter({ label, from: startDate, to: endDate })
     } catch (e) {
       if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
         console.error("[Analytics] dashboard fetch failed:", e)
@@ -87,7 +115,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
 
   return (
-    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews, visitorSummary, isLoadingAnalytics, refreshAnalytics: fetchAnalytics }}>
+    <AnalyticsContext.Provider value={{
+      pageViews,
+      dailyVisits,
+      totalViews,
+      visitorSummary,
+      isLoadingAnalytics,
+      activeDateFilter,
+      refreshAnalytics: fetchAnalytics,
+      refreshAnalyticsWithRange,
+    }}>
       {children}
     </AnalyticsContext.Provider>
   )

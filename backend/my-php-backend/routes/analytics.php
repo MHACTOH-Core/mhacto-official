@@ -57,8 +57,14 @@ function handle_analytics(string $method, ?string $action): void
             case 'visitor-summary':
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
-                $days = isset($_GET['days']) ? max(1, (int) $_GET['days']) : 30;
-                Response::json(_visitor_summary_data($db, $days));
+                $startDate = isset($_GET['start_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['start_date']) ? $_GET['start_date'] : null;
+                $endDate   = isset($_GET['end_date'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['end_date'])   ? $_GET['end_date']   : null;
+                if (!$startDate && !$endDate) {
+                    $days = isset($_GET['days']) ? max(1, (int) $_GET['days']) : 30;
+                    $startDate = date('Y-m-d', strtotime("-{$days} days"));
+                    $endDate   = date('Y-m-d');
+                }
+                Response::json(_visitor_summary_data($db, $startDate, $endDate));
                 break;
 
             case 'log-view':
@@ -89,13 +95,19 @@ function handle_analytics(string $method, ?string $action): void
                 // Combined endpoint: returns pageviews + daily visits + visitor summary in one request
                 if ($method !== 'GET') Response::error('Method not allowed. Use GET.', 405);
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
-                $days = isset($_GET['days']) ? max(1, (int) $_GET['days']) : 30;
+                $startDate = isset($_GET['start_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['start_date']) ? $_GET['start_date'] : null;
+                $endDate   = isset($_GET['end_date'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['end_date'])   ? $_GET['end_date']   : null;
+                if (!$startDate && !$endDate) {
+                    $days = isset($_GET['days']) ? max(1, (int) $_GET['days']) : 30;
+                    $startDate = date('Y-m-d', strtotime("-{$days} days"));
+                    $endDate   = date('Y-m-d');
+                }
                 $analytics = new Analytics($db);
                 QueryCache::noCacheHeaders(); // admin-only, always fresh
                 Response::json([
-                    'pageViews'       => $analytics->getPageViews(),
-                    'dailyVisits'     => $analytics->getDailyVisits($days),
-                    'visitorSummary'  => _visitor_summary_data($db, $days),
+                    'pageViews'      => $analytics->getPageViews(null, 'views', 'DESC', $startDate, $endDate),
+                    'dailyVisits'    => $analytics->getDailyVisitsByRange($startDate, $endDate),
+                    'visitorSummary' => _visitor_summary_data($db, $startDate, $endDate),
                 ]);
                 break;
 
@@ -123,9 +135,9 @@ function handle_analytics(string $method, ?string $action): void
 
 // ── Visitor Summary ─────────────────────────────────────────────────
 
-function _visitor_summary_data(PDO $db, int $days): array
+function _visitor_summary_data(PDO $db, string $startDate, string $endDate): array
 {
-    $since = date('Y-m-d', strtotime("-{$days} days"));
+    $params = [':start_date' => $startDate, ':end_date' => $endDate];
 
     // Count inquiries by status within date range
     $stmt = $db->prepare("
@@ -135,10 +147,11 @@ function _visitor_summary_data(PDO $db, int $days): array
             SUM(status IN ('unread','read','assigned','confirmed') AND inquiry_type = 'tour_booking') AS bookings_pending,
             SUM(status = 'assigned')                                    AS guide_assigned
         FROM inquiries
-        WHERE created_at >= :since
+        WHERE DATE(created_at) >= :start_date
+          AND DATE(created_at) <= :end_date
           AND status NOT IN ('spam','trash')
     ");
-    $stmt->execute([':since' => $since]);
+    $stmt->execute($params);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Daily breakdown for chart
@@ -150,12 +163,13 @@ function _visitor_summary_data(PDO $db, int $days): array
             SUM(inquiry_type = 'tour_booking' AND status IN ('unread','read','assigned','confirmed')) AS bookings_pending,
             SUM(status = 'assigned')                                    AS guide_assigned
         FROM inquiries
-        WHERE created_at >= :since
+        WHERE DATE(created_at) >= :start_date
+          AND DATE(created_at) <= :end_date
           AND status NOT IN ('spam','trash')
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC
     ");
-    $daily->execute([':since' => $since]);
+    $daily->execute($params);
     $dailyRows = $daily->fetchAll(PDO::FETCH_ASSOC);
 
     return [

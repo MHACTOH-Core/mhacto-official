@@ -577,6 +577,12 @@ export function apiFetchAnalyticsDashboard(days = 30) {
   return apiFetch<AnalyticsDashboardData>(`/api/analytics/dashboard?days=${days}`)
 }
 
+/** Fetch combined dashboard analytics filtered by an explicit date range */
+export function apiFetchAnalyticsDashboardByRange(startDate: string, endDate: string) {
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate })
+  return apiFetch<AnalyticsDashboardData>(`/api/analytics/dashboard?${params}`)
+}
+
 // ─── Visitor Engagement Details ───────────────────────────────────
 
 export interface VisitorDetail {

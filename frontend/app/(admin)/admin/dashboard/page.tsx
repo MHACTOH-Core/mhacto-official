@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useAdmin } from "@/components/providers/admin-provider"
 
@@ -13,7 +13,6 @@ const PageViewsDialog = dynamic(() => import("@/components/admin/page-views-dial
 const VisitorEngagementDialog = dynamic(() => import("@/components/admin/visitor-engagement-dialog").then(m => ({ default: m.VisitorEngagementDialog })), { ssr: false })
 import {
   Users,
-  FileText,
   MessageSquare,
   TrendingUp,
   TrendingDown,
@@ -35,9 +34,7 @@ import {
   inquiryTypeLabels,
   type InquiryStatus,
   type InquiryType,
-  type DailyVisit,
 } from "@/lib/data/admin-data"
-import { apiFetchDailyVisits } from "@/lib/api"
 import { resolveMediaUrl } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -57,9 +54,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectSeparator,
   SelectTrigger,
   SelectValue,
@@ -80,7 +75,7 @@ import {
   AreaChart,
   Area,
 } from "recharts"
-import { format, parseISO, subDays, startOfYear, isAfter, isBefore, startOfDay, startOfMonth, endOfMonth } from "date-fns"
+import { format, parseISO, startOfYear, isAfter, isBefore, startOfMonth, startOfWeek, differenceInDays } from "date-fns"
 
 // Static gradient definitions — defined outside to avoid recreation on every render
 const BAR_GRADIENTS = [
@@ -112,7 +107,9 @@ export default function DashboardPage() {
     activityLog,
     visitorSummary,
     isLoadingAnalytics,
+    activeDateFilter,
     refreshAnalytics,
+    refreshAnalyticsWithRange,
   } = useAdmin()
 
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
@@ -120,15 +117,11 @@ export default function DashboardPage() {
   const [showPageViewsDialog, setShowPageViewsDialog] = useState(false)
   const [showVisitorDialog, setShowVisitorDialog] = useState(false)
 
-  // Website Visits date range filter
-  type VisitRange = "7d" | "30d" | "3m" | "6m" | "year" | "custom"
-    | "m-0" | "m-1" | "m-2" | "m-3" | "m-4" | "m-5"
-    | "m-6" | "m-7" | "m-8" | "m-9" | "m-10" | "m-11"
-  const [visitRange, setVisitRange] = useState<VisitRange>("7d")
+  // ── Global dashboard date filter ──
+  type GlobalFilter = "all" | "today" | "week" | "month" | "year" | "custom"
+  const [globalFilter, setGlobalFilter] = useState<GlobalFilter>("all")
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined)
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined)
-  const [extraVisits, setExtraVisits] = useState<DailyVisit[]>([])
-  const [isLoadingExtra, setIsLoadingExtra] = useState(false)
 
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
@@ -147,128 +140,72 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // ── Compute the active date range from the global filter ──
+  const globalDateRange = useMemo(() => {
+    const now = new Date()
+    switch (globalFilter) {
+      case "today":
+        return { from: format(now, "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "Today" }
+      case "week": {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 })
+        return { from: format(weekStart, "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Week" }
+      }
+      case "month":
+        return { from: format(startOfMonth(now), "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Month" }
+      case "year":
+        return { from: format(startOfYear(now), "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Year" }
+      case "custom":
+        if (customFrom && customTo)
+          return {
+            from: format(customFrom, "yyyy-MM-dd"),
+            to:   format(customTo,   "yyyy-MM-dd"),
+            label: `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d, yyyy")}`,
+          }
+        return null
+      default:
+        return null // "all" → last 30 days (backend default)
+    }
+  }, [globalFilter, customFrom, customTo])
+
+  // ── Re-fetch analytics whenever the global filter changes ──
+  useEffect(() => {
+    if (!isHydrated || !isLoggedIn) return
+    if (globalDateRange) {
+      refreshAnalyticsWithRange(globalDateRange.from, globalDateRange.to, globalDateRange.label)
+    } else if (globalFilter === "all") {
+      refreshAnalytics()
+    }
+  // refreshAnalytics / refreshAnalyticsWithRange are stable useCallback refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalDateRange, globalFilter, isHydrated, isLoggedIn])
+
   const handleExport = useCallback(() => {
     setShowPrintDialog(true)
   }, [])
 
   const handlePrintConfirm = useCallback(() => {
     setShowPrintDialog(false)
-    // Small delay so the dialog fully closes before print dialog opens
     setTimeout(() => window.print(), 100)
   }, [])
-
-  // ── Fetch extra visit data when range needs more than 30 days ──
-  useEffect(() => {
-    if (visitRange === "year") {
-      const daysSinceJan1 = Math.ceil(
-        (Date.now() - startOfYear(new Date()).getTime()) / 86_400_000,
-      )
-      if (daysSinceJan1 > 30) {
-        setIsLoadingExtra(true)
-        apiFetchDailyVisits(daysSinceJan1)
-          .then(setExtraVisits)
-          .catch(() => setExtraVisits([]))
-          .finally(() => setIsLoadingExtra(false))
-      } else {
-        setExtraVisits([])
-      }
-    } else if (visitRange === "3m") {
-      setIsLoadingExtra(true)
-      apiFetchDailyVisits(92)
-        .then(setExtraVisits)
-        .catch(() => setExtraVisits([]))
-        .finally(() => setIsLoadingExtra(false))
-    } else if (visitRange === "6m") {
-      setIsLoadingExtra(true)
-      apiFetchDailyVisits(185)
-        .then(setExtraVisits)
-        .catch(() => setExtraVisits([]))
-        .finally(() => setIsLoadingExtra(false))
-    } else if (visitRange.startsWith("m-")) {
-      const monthIndex = parseInt(visitRange.slice(2))
-      const monthStart = startOfMonth(new Date(new Date().getFullYear(), monthIndex, 1))
-      const daysAgo = Math.ceil((Date.now() - monthStart.getTime()) / 86_400_000) + 5
-      if (daysAgo > 30) {
-        setIsLoadingExtra(true)
-        apiFetchDailyVisits(daysAgo)
-          .then(setExtraVisits)
-          .catch(() => setExtraVisits([]))
-          .finally(() => setIsLoadingExtra(false))
-      } else {
-        setExtraVisits([])
-      }
-    } else if (visitRange === "custom" && customFrom && customTo) {
-      const diffDays = Math.ceil(
-        (customTo.getTime() - customFrom.getTime()) / 86_400_000,
-      ) + 1
-      if (diffDays > 30) {
-        setIsLoadingExtra(true)
-        apiFetchDailyVisits(diffDays + 7)
-          .then(setExtraVisits)
-          .catch(() => setExtraVisits([]))
-          .finally(() => setIsLoadingExtra(false))
-      } else {
-        setExtraVisits([])
-      }
-    } else {
-      setExtraVisits([])
-    }
-  }, [visitRange, customFrom, customTo])
-
-  // ── Filter daily visits by selected range ──
-  const filteredVisits = useMemo(() => {
-    const needsExtra = visitRange === "year" || visitRange === "custom"
-      || visitRange === "3m" || visitRange === "6m"
-      || visitRange.startsWith("m-")
-    const source = needsExtra && extraVisits.length > 0 ? extraVisits : dailyVisits
-
-    if (visitRange === "7d") {
-      const cutoff = subDays(new Date(), 7)
-      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
-    }
-    if (visitRange === "30d") {
-      return source
-    }
-    if (visitRange === "3m") {
-      const cutoff = subDays(new Date(), 92)
-      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
-    }
-    if (visitRange === "6m") {
-      const cutoff = subDays(new Date(), 185)
-      return source.filter((d) => isAfter(parseISO(d.date), cutoff))
-    }
-    if (visitRange.startsWith("m-")) {
-      const monthIndex = parseInt(visitRange.slice(2))
-      const monthDate = new Date(new Date().getFullYear(), monthIndex, 1)
-      const from = startOfMonth(monthDate)
-      const to = endOfMonth(monthDate)
-      return source.filter((d) => {
-        const dt = parseISO(d.date)
-        return !isBefore(dt, from) && !isAfter(dt, to)
-      })
-    }
-    if (visitRange === "year") {
-      const start = startOfYear(new Date())
-      return source.filter((d) => !isBefore(parseISO(d.date), start))
-    }
-    if (visitRange === "custom" && customFrom && customTo) {
-      const from = startOfDay(customFrom)
-      const to = startOfDay(customTo)
-      return source.filter((d) => {
-        const dt = parseISO(d.date)
-        return !isBefore(dt, from) && !isAfter(dt, to)
-      })
-    }
-    return source
-  }, [dailyVisits, extraVisits, visitRange, customFrom, customTo])
 
   // ── Memoized derived data ──
 
   const topPages = useMemo(() => [...pageViews].sort((a, b) => b.views - a.views), [pageViews])
 
+  // Filter inquiries client-side by the active global date range
+  const dateFilteredInquiries = useMemo(() => {
+    if (!globalDateRange) return inquiries
+    const from = parseISO(globalDateRange.from)
+    const to   = parseISO(globalDateRange.to)
+    return inquiries.filter((i) => {
+      const d = parseISO(i.createdAt)
+      return !isBefore(d, from) && !isAfter(d, to)
+    })
+  }, [inquiries, globalDateRange])
+
   const activeInquiries = useMemo(
-    () => inquiries.filter((i) => i.status !== "spam" && i.status !== "trash"),
-    [inquiries],
+    () => dateFilteredInquiries.filter((i) => i.status !== "spam" && i.status !== "trash"),
+    [dateFilteredInquiries],
   )
   const totalActiveInquiries = activeInquiries.length
 
@@ -282,24 +219,28 @@ export default function DashboardPage() {
 
   const inquiryByStatus = useMemo(
     () => (["unread", "read", "assigned"] as InquiryStatus[]).map((status) => {
-      const count = inquiries.filter((i) => i.status === status).length
+      const count = dateFilteredInquiries.filter((i) => i.status === status).length
       return { status, count, ...inquiryStatusLabels[status] }
     }),
-    [inquiries],
+    [dateFilteredInquiries],
   )
 
+  // Auto-aggregate by month when range spans more than 60 days
   const visitChartData = useMemo(() => {
-    const aggregateByMonth = visitRange === "3m" || visitRange === "6m" || visitRange === "year"
+    const rangeDays = globalDateRange
+      ? differenceInDays(parseISO(globalDateRange.to), parseISO(globalDateRange.from)) + 1
+      : 30
+    const aggregateByMonth = rangeDays > 60
     if (aggregateByMonth) {
       const monthly: Record<string, number> = {}
-      for (const d of filteredVisits) {
+      for (const d of dailyVisits) {
         const key = format(parseISO(d.date), "MMM yyyy")
         monthly[key] = (monthly[key] ?? 0) + d.views
       }
       return Object.entries(monthly).map(([date, views]) => ({ date, views }))
     }
-    return filteredVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views }))
-  }, [filteredVisits, visitRange])
+    return dailyVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views }))
+  }, [dailyVisits, globalDateRange])
 
   const totals = visitorSummary?.totals
 
@@ -310,7 +251,6 @@ export default function DashboardPage() {
       { name: "Pending",   value: totals?.bookingsPending ?? 0,    color: "hsl(35, 90%, 55%)",  bg: "bg-amber-500",   ring: "ring-amber-500/20",   text: "text-amber-600 dark:text-amber-400" },
       { name: "Assigned",  value: totals?.guideAssigned ?? 0,      color: "hsl(270, 60%, 55%)", bg: "bg-violet-500",  ring: "ring-violet-500/20",  text: "text-violet-600 dark:text-violet-400" },
     ],
-    // totals is derived inline; depend on visitorSummary to avoid stale closure
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visitorSummary],
   )
@@ -331,10 +271,10 @@ export default function DashboardPage() {
 
   const trafficSparkline = useMemo(() => visitChartData, [visitChartData])
 
-  const { todayViews, yesterdayViews, trendPct, trendDir } = useMemo(() => {
-    if (filteredVisits.length === 0)
-      return { todayViews: 0, yesterdayViews: 0, trendPct: 0, trendDir: "neutral" as const }
-    const sorted = [...filteredVisits].sort((a, b) => a.date.localeCompare(b.date))
+  const { todayViews, trendPct, trendDir } = useMemo(() => {
+    if (dailyVisits.length === 0)
+      return { todayViews: 0, trendPct: 0, trendDir: "neutral" as const }
+    const sorted = [...dailyVisits].sort((a, b) => a.date.localeCompare(b.date))
     const today = sorted[sorted.length - 1]?.views ?? 0
     const yesterday = sorted[sorted.length - 2]?.views ?? 0
     const pct =
@@ -342,8 +282,8 @@ export default function DashboardPage() {
         ? today > 0 ? 100 : 0
         : Math.round(((today - yesterday) / yesterday) * 100)
     const dir = pct > 0 ? "up" : pct < 0 ? "down" : "neutral"
-    return { todayViews: today, yesterdayViews: yesterday, trendPct: Math.abs(pct), trendDir: dir }
-  }, [filteredVisits])
+    return { todayViews: today, trendPct: Math.abs(pct), trendDir: dir }
+  }, [dailyVisits])
 
   const statCards = useMemo(
     () => [
@@ -404,26 +344,77 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                Welcome back — here&apos;s what&apos;s happening on your website.
+                {activeDateFilter
+                  ? <>Showing data for <strong>{activeDateFilter.label}</strong> ({activeDateFilter.from} – {activeDateFilter.to})</>
+                  : <>Welcome back — here&apos;s what&apos;s happening on your website.</>}
               </p>
             </div>
             {currentUser && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* ── Global Date Filter ── */}
+                <Select value={globalFilter} onValueChange={(v) => setGlobalFilter(v as GlobalFilter)}>
+                  <SelectTrigger className="h-8 w-[145px] text-xs">
+                    <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Last 30 days</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                    <SelectSeparator />
+                    <SelectItem value="custom">Custom range…</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Custom range date picker — shown only when "custom" is selected */}
+                {globalFilter === "custom" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {customFrom && customTo
+                          ? `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d, yyyy")}`
+                          : "Pick dates"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="range"
+                        selected={customFrom && customTo ? { from: customFrom, to: customTo } : undefined}
+                        onSelect={(range) => {
+                          setCustomFrom(range?.from)
+                          setCustomTo(range?.to)
+                        }}
+                        numberOfMonths={2}
+                        disabled={{ after: new Date() }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2"
-                  onClick={() => refreshAnalytics()}
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => {
+                    if (globalDateRange) {
+                      refreshAnalyticsWithRange(globalDateRange.from, globalDateRange.to, globalDateRange.label)
+                    } else {
+                      refreshAnalytics()
+                    }
+                  }}
                 >
-                  <RefreshCw className="h-4 w-4" /> Refresh
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="h-8 gap-1.5 text-xs"
                   onClick={handleExport}
                 >
-                  <Printer className="h-4 w-4" /> Export Summary
+                  <Printer className="h-3.5 w-3.5" /> Export PDF
                 </Button>
               </div>
             )}
@@ -465,97 +456,27 @@ export default function DashboardPage() {
                 <div>
                   <CardTitle className="text-sm font-semibold sm:text-base">Website Visits</CardTitle>
                   <p className="text-[11px] text-muted-foreground sm:text-xs">
-                    {visitRange === "7d" && "Last 7 days overview"}
-                    {visitRange === "30d" && "Last 30 days overview"}
-                    {visitRange === "3m" && "Last 3 months overview"}
-                    {visitRange === "6m" && "Last 6 months overview"}
-                    {visitRange === "year" && `${new Date().getFullYear()} year-to-date`}
-                    {visitRange.startsWith("m-") && format(new Date(new Date().getFullYear(), parseInt(visitRange.slice(2)), 1), "MMMM yyyy")}
-                    {visitRange === "custom" && customFrom && customTo
-                      ? `${format(customFrom, "MMM d, yyyy")} – ${format(customTo, "MMM d, yyyy")}`
-                      : visitRange === "custom" && "Select a date range"}
+                    {activeDateFilter ? activeDateFilter.label : "Last 30 days overview"}
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select value={visitRange} onValueChange={(v) => setVisitRange(v as VisitRange)}>
-                    <SelectTrigger className="h-8 w-[150px] text-xs">
-                      <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel className="text-[10px]">Quick ranges</SelectLabel>
-                        <SelectItem value="7d">Last 7 days</SelectItem>
-                        <SelectItem value="30d">Last 30 days</SelectItem>
-                        <SelectItem value="3m">Last 3 months</SelectItem>
-                        <SelectItem value="6m">Last 6 months</SelectItem>
-                        <SelectItem value="year">This year</SelectItem>
-                      </SelectGroup>
-                      <SelectSeparator />
-                      <SelectGroup>
-                        <SelectLabel className="text-[10px]">{new Date().getFullYear()} by month</SelectLabel>
-                        {Array.from({ length: new Date().getMonth() + 1 }, (_, i) => (
-                          <SelectItem key={i} value={`m-${i}`}>
-                            {format(new Date(new Date().getFullYear(), i, 1), "MMMM")}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectSeparator />
-                      <SelectGroup>
-                        <SelectItem value="custom">Custom range</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  {visitRange === "custom" && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {customFrom && customTo
-                            ? `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d")}`
-                            : "Pick dates"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="range"
-                          selected={customFrom && customTo ? { from: customFrom, to: customTo } : undefined}
-                          onSelect={(range) => {
-                            setCustomFrom(range?.from)
-                            setCustomTo(range?.to)
-                          }}
-                          numberOfMonths={2}
-                          disabled={{ after: new Date() }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 pt-0 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
               {/* Left: number + trend */}
               <div className="min-w-[180px]">
-                {isLoadingAnalytics || isLoadingExtra ? (
+                {isLoadingAnalytics ? (
                   <div className="space-y-2">
                     <Skeleton className="h-9 w-28" />
                     <Skeleton className="h-4 w-40" />
                   </div>
-                ) : filteredVisits.length === 0 ? (
+                ) : dailyVisits.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No visit data yet</p>
                 ) : (
                   <>
                     <p className="text-3xl font-black text-card-foreground tabular-nums leading-none">
-                      {filteredVisits.reduce((s, d) => s + d.views, 0).toLocaleString()}
+                      {dailyVisits.reduce((s, d) => s + d.views, 0).toLocaleString()}
                       <span className="text-sm font-medium text-muted-foreground ml-2">
-                        {visitRange === "7d" ? "total (7d)"
-                          : visitRange === "30d" ? "total (30d)"
-                          : visitRange === "3m" ? "total (3m)"
-                          : visitRange === "6m" ? "total (6m)"
-                          : visitRange === "year" ? "this year"
-                          : visitRange.startsWith("m-")
-                            ? format(new Date(new Date().getFullYear(), parseInt(visitRange.slice(2)), 1), "MMM yyyy")
-                          : "total"}
+                        {activeDateFilter ? activeDateFilter.label.toLowerCase() : "last 30d"}
                       </span>
                     </p>
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -584,7 +505,7 @@ export default function DashboardPage() {
 
               {/* Right: chart — fills remaining width */}
               <div className="h-36 w-full">
-                {isLoadingAnalytics || isLoadingExtra ? (
+                {isLoadingAnalytics ? (
                   <Skeleton className="h-full w-full rounded-lg" />
                 ) : trafficSparkline.length > 1 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -657,7 +578,9 @@ export default function DashboardPage() {
                     View All <ArrowUpRight className="h-3 w-3" />
                   </Button>
                 </div>
-                <p className="text-[11px] text-muted-foreground sm:text-xs">Last 30 days overview</p>
+                <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    {activeDateFilter ? activeDateFilter.label : "Last 30 days overview"}
+                  </p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col pt-0">
                 {isLoadingAnalytics ? (
@@ -1074,6 +997,9 @@ export default function DashboardPage() {
               totalActiveInquiries={totalActiveInquiries}
               recentActivity={recentActivity}
               generatedBy={currentUser?.fullName || currentUser?.email || "Super Admin"}
+              reportPeriod={activeDateFilter
+                ? `${activeDateFilter.label} (${activeDateFilter.from} – ${activeDateFilter.to})`
+                : "Last 30 Days"}
             />,
             portalContainer,
           )}

@@ -1,5 +1,7 @@
 # MHACTO Official — Bocaue Municipal History, Arts, Culture & Tourism Office
 
+**Current Version: `v1.2.0`** — Released April 15, 2026
+
 A full-stack web application for the Municipality of Bocaue, Bulacan, Philippines — showcasing local tourism, culture, history, and community services with an admin CMS dashboard.
 
 ---
@@ -168,7 +170,44 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ---
 
+## Version History
+
+| Version | Release Date | Highlights |
+|---------|-------------|------------|
+| `v1.2.0` | April 15, 2026 | Global dashboard date filter (Today / Week / Month / Year / Custom), analytics re-fetch by range, PDF export with report period |
+| `v1.1.0` | April 14, 2026 | Live Search API, scroll-to-card navigation, global search overlay |
+| `v1.0.0` | April 10, 2026 | Initial public release — CMS dashboard, public site, analytics |
+
+---
+
 ## Changelog
+
+### April 15, 2026 — Global Dashboard Date Filter & System Versioning (`v1.2.0`)
+
+#### Global Dashboard Date Filter
+- New **date filter toolbar** in the Dashboard header — admins and super admins can filter all dashboard data by:
+  - **Today** — current day only
+  - **This Week** — Monday to today
+  - **This Month** — 1st of the month to today
+  - **This Year** — January 1 to today
+  - **Custom range** — opens a two-month calendar popover
+  - **Last 30 Days** — default (same as before)
+- Selecting a filter re-fetches **all analytics from the backend** for that exact date range — visitor stats, daily visits chart, and page views all update simultaneously
+- Inquiry Summary card is additionally filtered **client-side** by `createdAt` to match the selected period
+- Website Visits chart **auto-aggregates to monthly buckets** when the range exceeds 60 days
+- Header subtitle dynamically displays the active period label
+
+#### PDF Export — Report Period
+- The **Export PDF** report now shows a `Report Period:` line in the letterhead — exported reports clearly state which date range the data covers
+- The filter state is persisted in the analytics context (`activeDateFilter`) so the print component always reflects the current selection
+
+#### System Versioning
+- `package.json` `name` updated to `mhacto-official`, `version` bumped to `1.2.0`
+- Version exposed as `NEXT_PUBLIC_APP_VERSION` environment variable via `next.config.mjs`
+- **Settings page** — new **"About This System"** card visible to all roles shows: System Version, Application name, Release Date, and Stack
+- README updated with Version History table and this changelog entry
+
+---
 
 ### April 14, 2026 — Live Search API Integration & Scroll-to-Card Navigation
 

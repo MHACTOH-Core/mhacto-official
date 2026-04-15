@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
-import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X, Palette, Upload } from "lucide-react"
+import { Save, User, Globe, Bell, Shield, Camera, Eye, EyeOff, KeyRound, Pencil, Check, X, Palette, Upload, Info } from "lucide-react"
 import { ROLE_LABELS } from "@/lib/data/admin-data"
 import { API_BASE } from "@/lib/api"
 import { ProfilePictureCropDialog } from "@/components/ui/profile-picture-crop"
@@ -662,6 +662,41 @@ export default function SettingsPage() {
 
           {/* Bottom spacer for sticky bar */}
           {isSuperAdmin && hasChanges && <div className="h-16" />}
+
+          {/* About / System Info — visible to all roles */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/40">
+                  <Info className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">About This System</CardTitle>
+                  <p className="text-sm text-muted-foreground">Version and build information</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                <span className="text-muted-foreground font-medium">System Version</span>
+                <span className="font-mono font-semibold text-card-foreground">
+                  v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.2.0"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                <span className="text-muted-foreground font-medium">Application</span>
+                <span className="font-semibold text-card-foreground">MHACTO Official</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                <span className="text-muted-foreground font-medium">Release Date</span>
+                <span className="font-semibold text-card-foreground">April 15, 2026</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                <span className="text-muted-foreground font-medium">Stack</span>
+                <span className="text-card-foreground">Next.js · PHP · MariaDB</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sticky Save Bar — visible only when super_admin has unsaved changes */}

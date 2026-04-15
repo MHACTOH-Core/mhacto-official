@@ -1,6 +1,6 @@
 {
-  "name": "my-project",
-  "version": "0.1.0",
+  "name": "mhacto-official",
+  "version": "1.2.0",
   "private": true,
   "engines": {
     "node": ">=20",

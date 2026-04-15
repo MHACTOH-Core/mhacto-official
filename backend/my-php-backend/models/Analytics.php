@@ -108,4 +108,31 @@ class Analytics
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Daily visit counts filtered by an explicit date range.
+     *
+     * @param string $startDate  YYYY-MM-DD (inclusive)
+     * @param string $endDate    YYYY-MM-DD (inclusive)
+     */
+    public function getDailyVisitsByRange(string $startDate, string $endDate): array
+    {
+        $query = "
+            SELECT
+                DATE(created_at) AS date,
+                COUNT(*)         AS views
+            FROM activity_logs
+            WHERE action = 'page_view'
+              AND DATE(created_at) >= :start_date
+              AND DATE(created_at) <= :end_date
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':start_date', $startDate);
+        $stmt->bindParam(':end_date',   $endDate);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

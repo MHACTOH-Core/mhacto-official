@@ -53,6 +53,11 @@ notes.txt
 backend/my-php-backend/check_db.php
 *.bak
 
+# ── SQLite databases (local dev only, never commit) ──
+*.db
+*.sqlite
+*.sqlite3
+
 # ── PHP vendor (install via composer) ────────
 backend/my-php-backend/vendor/
 
