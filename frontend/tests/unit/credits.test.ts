@@ -1,15 +1,16 @@
 /**
  * credits.test.ts
  *
- * Enforces that the developer team credit link and page are never accidentally
- * (or intentionally) removed from the codebase.
+ * Enforces that the developer team credit link, STI College Balagtas logo,
+ * and partnership notice are never accidentally (or intentionally) removed
+ * from the codebase.
  *
  * These tests run as part of the pre-commit hook and should be included in any
  * CI pipeline before merging to main/development.
  *
  * ⚠️  DO NOT DELETE OR MODIFY these tests without team consensus.
- *     Removing the developer credits violates the project agreement between
- *     MHACTO and STI College Balagtas.
+ *     Removing the developer credits or STI logo violates the project agreement
+ *     between MHACTO and STI College Balagtas.
  */
 
 import { readFileSync } from "fs"
@@ -47,5 +48,31 @@ describe("Developer Credits — must never be removed", () => {
     const page = read("app/developers/page.tsx")
     // Must contain at least one developer name or team-related keyword
     expect(page.toLowerCase()).toMatch(/developer|team|built by|created by|sti/i)
+  })
+})
+
+describe("STI College Balagtas Logo — must never be removed", () => {
+  it("footer.tsx still references the STI logo image", () => {
+    const footer = read("components/layout/footer.tsx")
+    expect(footer).toContain("sti-logo")
+  })
+
+  it("footer.tsx has the STI logo alt text", () => {
+    const footer = read("components/layout/footer.tsx")
+    expect(footer).toContain("STI College Balagtas Logo")
+  })
+
+  it("footer.tsx has the 'In partnership with STI College Balagtas' text", () => {
+    const footer = read("components/layout/footer.tsx")
+    expect(footer).toContain("In partnership with STI College Balagtas")
+  })
+
+  it("STI logo image file exists in the uploads directory", () => {
+    const { existsSync } = require("fs")
+    const logoPath = resolve(ROOT, "../backend/my-php-backend/uploads/images/logos/sti-logo.jpg")
+    expect(
+      existsSync(logoPath),
+      "sti-logo.jpg must not be deleted from uploads/images/logos/"
+    ).toBe(true)
   })
 })
