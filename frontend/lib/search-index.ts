@@ -114,7 +114,7 @@ export function searchContent(query: string): SearchResult[] {
 
       return { item, score }
     })
-    .filter(({ score }) => score > 0)
+    .filter(({ score, item }) => score > 0 && item.category !== "Page")
     .sort((a, b) => b.score - a.score)
     .slice(0, 12)
     .map(({ item }) => item)
@@ -150,7 +150,7 @@ export async function searchContentAsync(query: string): Promise<SearchResult[]>
         label: item.label ?? undefined,
         postType: item.post_type ?? undefined,
       })
-    )
+    ).filter((r) => r.category !== "Page")
   } catch (error) {
     console.warn('Backend search error, falling back to static index', error)
     return searchContent(query)
