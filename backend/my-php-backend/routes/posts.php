@@ -257,7 +257,11 @@ function _posts_mapFrontendToDb(array $data, PDO $pdo): array
     }
     if (isset($data['body']))        $db['description']    = $data['body'];
     if (isset($data['postType']))    $db['post_type']      = $data['postType'];
-    if (isset($data['isFeatured']))  $db['is_featured']    = $data['isFeatured'] ? 1 : 0;
+    if (isset($data['label']) && $data['label'] === 'timeline-of-events') {
+        $db['is_featured'] = 0;
+    } elseif (isset($data['isFeatured'])) {
+        $db['is_featured'] = $data['isFeatured'] ? 1 : 0;
+    }
     if (isset($data['newsDate']))    $db['news_date']      = $data['newsDate'];
     if (isset($data['category']))    $db['place_category'] = $data['category'];
     if (isset($data['author']))      $db['author']         = $data['author'];
@@ -280,7 +284,11 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 
     if (isset($data['body']))       $mapped['description']    = $data['body'];
     if (isset($data['postType']))   $mapped['post_type']      = $data['postType'];
-    if (isset($data['isFeatured'])) $mapped['is_featured']    = $data['isFeatured'] ? 1 : 0;
+    if (isset($data['label']) && $data['label'] === 'timeline-of-events') {
+        $mapped['is_featured'] = 0;
+    } elseif (isset($data['isFeatured'])) {
+        $mapped['is_featured'] = $data['isFeatured'] ? 1 : 0;
+    }
     if (isset($data['newsDate']))   $mapped['news_date']      = $data['newsDate'];
     if (isset($data['category']))   $mapped['place_category'] = $data['category'];
     if (isset($data['highlights'])) $mapped['tour_highlights'] = is_array($data['highlights']) ? json_encode($data['highlights']) : $data['highlights'];

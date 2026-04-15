@@ -352,6 +352,7 @@ export function CMSEditDialog({
 
   // Image limits per category/label
   const isCommunity = form.contentCategory === "community"
+  const isTimeline = form.label === "timeline-of-events"
   const isLocalBusiness = form.label === "local-business"
   const maxImages = isLocalBusiness ? 6 : isCommunity ? 1 : Infinity
   const imagesFull = form.images.length >= maxImages
@@ -526,7 +527,7 @@ export function CMSEditDialog({
                     const newLabel = v as ContentLabel
                     const relevantTypes = LABEL_PLACE_TYPES[newLabel] ?? PLACE_CATEGORIES
                     const autoCategory = relevantTypes.length === 1 ? relevantTypes[0] : "none"
-                    setForm({ ...form, label: newLabel, category: autoCategory })
+                    setForm({ ...form, label: newLabel, category: autoCategory, ...(newLabel === "timeline-of-events" ? { isFeatured: false } : {}) })
                   }}
                 >
                   <SelectTrigger>
@@ -563,8 +564,8 @@ export function CMSEditDialog({
             </div>
           </div>
 
-          {/* Featured Toggle — hidden for Community category */}
-          {!isCommunity && (
+          {/* Featured Toggle — hidden for Community category and Timeline of Events label */}
+          {!isCommunity && !isTimeline && (
           <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
             <div className="flex items-center gap-2">
               <Star className={`h-4 w-4 ${form.isFeatured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
