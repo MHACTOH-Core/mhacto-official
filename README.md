@@ -182,6 +182,37 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 15, 2026 — Developer Credits Enforcement, STI Logo Protection & UI Cleanup
+
+#### Developer Credits — Automated Enforcement
+- New **Vitest test suite** (`frontend/tests/unit/credits.test.ts`) with 9 tests across 2 `describe` blocks that enforce the presence of developer and partnership content at every commit
+- **Developer Credits suite (5 tests):**
+  - `footer.tsx` contains the `/developers` href
+  - `footer.tsx` contains "Meet the Dev Team" text
+  - `footer.tsx` contains any "STI" reference
+  - `app/developers/page.tsx` exists and is non-empty (>200 chars)
+  - Developers page renders team-related content (regex check)
+- **STI College Balagtas Logo suite (4 tests):**
+  - `footer.tsx` still references the `sti-logo` image source
+  - `footer.tsx` has `alt="STI College Balagtas Logo"` on the image
+  - `footer.tsx` has the "In partnership with STI College Balagtas" text
+  - `sti-logo.jpg` physically exists in `uploads/images/logos/`
+
+#### Pre-commit Git Hook
+- New **pre-commit hook** (`.git/hooks/pre-commit`) automatically runs `pnpm test --reporter=verbose` before every commit — any failing credit check blocks the commit entirely
+- Tracked hook source stored at `scripts/hooks/pre-commit` (committed to the repository)
+- `scripts/setup-hooks.sh` helper script added for teammates to activate the hook on a fresh clone
+- `"test"` and `"test:watch"` scripts added to `frontend/package.json`
+- `frontend/vitest.config.ts` created (`environment: "node"`, covers `tests/unit/**/*.test.ts`)
+
+#### Footer — UI Update
+- Developer team link text changed from "Know more about the Dev Team, click here!" → **"Meet the Dev Team →"** — cleaner and more discoverable
+
+#### Home Page — Stats Strip Removed
+- Removed the static stats strip from the tourism tagline section (235+ Years of Pagoda Festival, 55,000 Arena Seating Capacity, 400+ Years of History, 1 of 1 Fireworks Capital) — avoids displaying unverified hardcoded figures on the public site
+
+---
+
 ### April 15, 2026 — Global Dashboard Date Filter & System Versioning (`v1.2.0`)
 
 #### Global Dashboard Date Filter
