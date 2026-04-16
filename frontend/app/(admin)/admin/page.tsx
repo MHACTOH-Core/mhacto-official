@@ -421,23 +421,6 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-7">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/[0.06]" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-4 text-xs text-slate-500" style={{ backgroundColor: "#15203a" }}>or</span>
-            </div>
-          </div>
-
-          {/* Demo hint */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
-            <p className="text-center text-xs text-slate-500">
-              Demo: <span className="font-semibold text-slate-300">admin@mhacto.gov.ph</span> / <span className="font-semibold text-slate-300">admin123</span>
-            </p>
-          </div>
-
           {/* Footer */}
           <p className="mt-10 text-center text-[11px] text-slate-300/60">
             &copy; {new Date().getFullYear()} Municipal History, Arts, Culture &amp; Tourism Office
