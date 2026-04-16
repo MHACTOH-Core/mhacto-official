@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -103,8 +103,12 @@ export function VisitorEngagementDialog({ open, onOpenChange }: VisitorEngagemen
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [page, setPage]           = useState(1)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const fetchData = useCallback(async () => {
+    abortRef.current?.abort()
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
     setIsLoading(true)
     setError(null)
     try {
@@ -115,16 +119,20 @@ export function VisitorEngagementDialog({ open, onOpenChange }: VisitorEngagemen
       if (typeFilter !== "all") filters.type = typeFilter
       if (statusFilter !== "all") filters.status = statusFilter
       const result = await apiFetchVisitorDetails(filters)
+      if (ctrl.signal.aborted) return
       setData(result)
       setPage(1)
     } catch (e) {
+      if (ctrl.signal.aborted) return
       console.error("[VisitorEngagement] fetch failed:", e)
       setError(e instanceof Error ? e.message : "Failed to load visitor data.")
       setData([])
     } finally {
-      setIsLoading(false)
+      if (!ctrl.signal.aborted) setIsLoading(false)
     }
   }, [preset, sortKey, sortOrder, typeFilter, statusFilter])
+
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   useEffect(() => {
     if (open) fetchData()

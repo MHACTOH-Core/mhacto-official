@@ -45,8 +45,12 @@ function setCache<T>(key: string, data: T): void {
   _apiCache.set(key, { data, timestamp: Date.now() })
   // Cap cache size to prevent memory leaks on long sessions
   if (_apiCache.size > 200) {
-    const firstKey = _apiCache.keys().next().value
-    if (firstKey) _apiCache.delete(firstKey)
+    const keys = _apiCache.keys()
+    // Evict 10 oldest entries at once to avoid thrashing under burst conditions
+    for (let i = 0; i < 10; i++) {
+      const k = keys.next().value
+      if (k) _apiCache.delete(k)
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -69,8 +69,12 @@ export function PageViewsDialog({ open, onOpenChange }: PageViewsDialogProps) {
   const [search, setSearch]           = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [page, setPage]               = useState(1)
+  const abortRef = useRef<AbortController | null>(null)
 
   const fetchData = useCallback(async () => {
+    abortRef.current?.abort()
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
     setIsLoading(true)
     setError(null)
     try {
@@ -79,16 +83,20 @@ export function PageViewsDialog({ open, onOpenChange }: PageViewsDialogProps) {
       if (startDate) filters.startDate = startDate
       if (endDate)   filters.endDate   = endDate
       const result = await apiFetchAllPageViews(filters)
+      if (ctrl.signal.aborted) return
       setData(result)
       setPage(1)
     } catch (e) {
+      if (ctrl.signal.aborted) return
       console.error("[PageViewsDialog] fetch failed:", e)
       setError(e instanceof Error ? e.message : "Failed to load page view data.")
       setData([])
     } finally {
-      setIsLoading(false)
+      if (!ctrl.signal.aborted) setIsLoading(false)
     }
   }, [preset, sortKey, sortOrder])
+
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   useEffect(() => {
     if (open) fetchData()

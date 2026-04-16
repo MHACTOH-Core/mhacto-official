@@ -313,12 +313,14 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const deletePost = useCallback(
     async (id: string) => {
       const post = posts.find((p) => p.id === id)
+      const snapshot = posts
       setPosts((prev) => prev.filter((p) => p.id !== id))
       logActivityFn("delete_post", `Deleted "${post?.title || "post"}"`)
       try {
         await apiDeletePost(id)
       } catch (err) {
         console.error("deletePost API error:", err)
+        setPosts(snapshot)
       }
     },
     [posts, logActivityFn],
@@ -341,12 +343,14 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const permanentDeleteInquiry = useCallback(
     async (id: string) => {
       const inq = inquiries.find((i) => i.id === id)
+      const snapshot = inquiries
       setInquiries((prev) => prev.filter((i) => i.id !== id))
       logActivityFn("delete_inquiry", `Permanently deleted inquiry from ${inq?.name || "unknown"}`)
       try {
         await apiDeleteInquiry(id)
       } catch (err) {
         console.error("permanentDeleteInquiry API error:", err)
+        setInquiries(snapshot)
       }
     },
     [inquiries, logActivityFn],

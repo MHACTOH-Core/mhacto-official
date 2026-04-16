@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import {
   contentLabels,
   contentCategories,
@@ -90,6 +90,8 @@ function CMSDetailFields({
   establishedHint,
   setEstablishedHint,
 }: CMSDetailFieldsProps) {
+  const contactHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const establishedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const visibleFields = LABEL_VISIBLE_FIELDS[form.label] ?? ["location", "hours", "contact", "established", "category", "story", "highlights"]
   if (visibleFields.length === 0) return null
   const show = (f: DetailField) => visibleFields.includes(f)
@@ -199,10 +201,12 @@ function CMSDetailFields({
                       const val = raw.replace(/[^0-9+()\-\s]/g, '')
                       if (val !== raw) {
                         setContactHint("Only numbers, +, (, ), and dashes are allowed in phone numbers.")
-                        setTimeout(() => setContactHint(null), 4000)
+                        clearTimeout(contactHintTimerRef.current!)
+                        contactHintTimerRef.current = setTimeout(() => setContactHint(null), 4000)
                       } else if (val.replace(/\D/g, '').length > 15) {
                         setContactHint("Phone numbers should not exceed 15 digits.")
-                        setTimeout(() => setContactHint(null), 4000)
+                        clearTimeout(contactHintTimerRef.current!)
+                        contactHintTimerRef.current = setTimeout(() => setContactHint(null), 4000)
                         return
                       } else {
                         setContactHint(null)
@@ -234,7 +238,8 @@ function CMSDetailFields({
                   const val = raw.replace(/[^0-9\s\-\/,A-Za-z.]/g, '')
                   if (val !== raw) {
                     setEstablishedHint("Special characters are not allowed. Use numbers, letters, dashes, or slashes.")
-                    setTimeout(() => setEstablishedHint(null), 4000)
+                    clearTimeout(establishedHintTimerRef.current!)
+                    establishedHintTimerRef.current = setTimeout(() => setEstablishedHint(null), 4000)
                   } else {
                     setEstablishedHint(null)
                   }

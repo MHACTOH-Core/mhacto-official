@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
 import {
@@ -71,7 +71,7 @@ export default function ActivityLogPage() {
   if (!isHydrated || !isLoggedIn) return null
 
   // Backend already scopes the log to the requesting user for non-super_admins.
-  const filtered = activityLog.filter((entry) => {
+  const filtered = useMemo(() => activityLog.filter((entry) => {
     if (filterAction !== "all" && entry.action !== filterAction) return false
     if (
       search &&
@@ -80,15 +80,18 @@ export default function ActivityLogPage() {
     )
       return false
     return true
-  })
+  }), [activityLog, filterAction, search])
 
   // Group by date
-  const grouped: Record<string, typeof filtered> = {}
-  for (const entry of filtered) {
-    const dateKey = format(parseISO(entry.timestamp), "MMMM d, yyyy")
-    if (!grouped[dateKey]) grouped[dateKey] = []
-    grouped[dateKey].push(entry)
-  }
+  const grouped = useMemo(() => {
+    const groups: Record<string, typeof filtered> = {}
+    for (const entry of filtered) {
+      const dateKey = format(parseISO(entry.timestamp), "MMMM d, yyyy")
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(entry)
+    }
+    return groups
+  }, [filtered])
 
   return (
     <main className="flex-1 overflow-y-auto">

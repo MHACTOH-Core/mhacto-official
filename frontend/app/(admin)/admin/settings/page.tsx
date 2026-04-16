@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAdmin } from "@/components/providers/admin-provider"
@@ -45,6 +45,7 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState(settings)
   const [saved, setSaved] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
 
   // Profile editing state
@@ -98,6 +99,8 @@ export default function SettingsPage() {
     setForm(settings)
   }, [settings])
 
+  useEffect(() => () => { clearTimeout(savedTimerRef.current!) }, [])
+
   if (!isHydrated || !isLoggedIn) return null
 
   const handleSave = () => {
@@ -109,7 +112,8 @@ export default function SettingsPage() {
     updateSettings(form)
     setSaved(true)
     toast({ title: "Settings saved", description: "Website settings have been updated.", variant: "success" })
-    setTimeout(() => setSaved(false), 2500)
+    clearTimeout(savedTimerRef.current!)
+    savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
   }
 
   const hasChanges = JSON.stringify(form) !== JSON.stringify(settings)

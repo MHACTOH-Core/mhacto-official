@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
 import {
@@ -116,6 +116,20 @@ export default function AccountsPage() {
     if (isLoggedIn) refreshUsers()
   }, [isLoggedIn, refreshUsers])
 
+  const filtered = useMemo(() => users.filter((u) => {
+    if (filterTab === "active" && u.status !== "active") return false
+    if (filterTab === "archived" && u.status !== "archived") return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (
+        (u.full_name ?? "").toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q)
+      )
+    }
+    return true
+  }), [users, filterTab, search])
+
   if (!isHydrated || !isLoggedIn || !currentUser) return null
 
   // Only super_admin and admin can access accounts
@@ -130,20 +144,6 @@ export default function AccountsPage() {
         </main>
     )
   }
-
-  const filtered = users.filter((u) => {
-    if (filterTab === "active" && u.status !== "active") return false
-    if (filterTab === "archived" && u.status !== "archived") return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        (u.full_name ?? "").toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
 
   const openCreate = () => {
     setEditingUser(null)

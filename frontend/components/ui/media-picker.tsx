@@ -156,16 +156,16 @@ export function MediaPicker({
       setFiles(all)
       // Load usage map in parallel (non-blocking — failures are silent)
       apiGetMediaUsages().then(setUsageMap).catch(() => {})
+      setLoading(false)
     } catch (err) {
       console.error("Failed to load media:", err)
-      // Auto-retry once after 2 seconds on failure
+      // Auto-retry once after 2 seconds on failure — keep loading state active
       if (retryCount < 1) {
         setTimeout(() => loadFiles(retryCount + 1), 2000)
-        return // keep loading state active
+        return
       }
-      setError("Failed to load media library. Check your connection and try again.")
-    } finally {
       setLoading(false)
+      setError("Failed to load media library. Check your connection and try again.")
     }
   }, [accept])
 

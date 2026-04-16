@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react"
 import type { PageView, DailyVisit } from "@/lib/data/admin-data"
@@ -53,11 +54,14 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const [visitorSummary, setVisitorSummary] = useState<VisitorSummary | null>(null)
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false)
   const [activeDateFilter, setActiveDateFilter] = useState<DashboardDateFilter | null>(null)
+  const fetchGenRef = useRef(0)
 
   const fetchAnalytics = useCallback(async () => {
+    const thisGen = ++fetchGenRef.current
     setIsLoadingAnalytics(true)
     try {
       const data = await apiFetchAnalyticsDashboard()
+      if (fetchGenRef.current !== thisGen) return
       setPageViews(data.pageViews)
       setDailyVisits(data.dailyVisits)
       setVisitorSummary(data.visitorSummary)
@@ -67,14 +71,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         console.error("[Analytics] dashboard fetch failed:", e)
       }
     } finally {
-      setIsLoadingAnalytics(false)
+      if (fetchGenRef.current === thisGen) setIsLoadingAnalytics(false)
     }
   }, [])
 
   const refreshAnalyticsWithRange = useCallback(async (startDate: string, endDate: string, label: string) => {
+    const thisGen = ++fetchGenRef.current
     setIsLoadingAnalytics(true)
     try {
       const data = await apiFetchAnalyticsDashboardByRange(startDate, endDate)
+      if (fetchGenRef.current !== thisGen) return
       setPageViews(data.pageViews)
       setDailyVisits(data.dailyVisits)
       setVisitorSummary(data.visitorSummary)
@@ -84,7 +90,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         console.error("[Analytics] dashboard fetch failed:", e)
       }
     } finally {
-      setIsLoadingAnalytics(false)
+      if (fetchGenRef.current === thisGen) setIsLoadingAnalytics(false)
     }
   }, [])
 
