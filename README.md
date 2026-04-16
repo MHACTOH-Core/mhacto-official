@@ -182,6 +182,38 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## Changelog
 
+### April 16, 2026 — AFK Auto-Logout with Warning Dialog
+
+#### Idle Session Timeout (All Admin Roles)
+- Implemented AFK auto-logout for all three admin roles (`super_admin`, `admin`, `content_manager`)
+- After **30 minutes of inactivity**, a non-dismissible warning dialog appears: *"Wait, stay for a moment or log out."*
+- Dialog shows a live **5-minute countdown timer** (color shifts amber → red as time runs low)
+- **"Stay"** button resets the idle timer and closes the dialog
+- **"Log Out"** button immediately logs the user out
+- If the countdown reaches **0:00** without interaction, the user is automatically logged out
+- A message is shown on the admin login page after AFK logout: *"Sorry, we logged you out because you've been AFK for 30 minutes."*
+- **Cross-tab sync** — activity in any admin tab resets the idle timer across all open tabs (via `localStorage`)
+- **Tab visibility aware** — re-checks elapsed idle time when a hidden tab becomes visible again; auto-triggers timeout if the page was left open past the limit
+- Idle timer is scoped to authenticated admin pages only — the login page (`/admin`) is excluded
+- Dialog cannot be dismissed via Escape key or clicking outside — user must explicitly choose Stay or Log Out
+
+#### New Files
+- `frontend/hooks/use-idle-timer.ts` — Activity tracking hook (throttled event listeners, cross-tab `localStorage` sync, visibility change handling)
+- `frontend/components/admin/idle-warning-dialog.tsx` — Warning dialog with countdown and auto-logout logic
+
+#### Modified Files
+- `frontend/app/(admin)/admin/layout.tsx` — Mounts `<IdleWarningDialog />` inside `AdminProvider`
+- `frontend/app/(admin)/admin/page.tsx` — Displays AFK logout message via `sessionStorage` flag
+
+#### Dev/Testing
+- Timeout values can be overridden via environment variables for testing:
+  ```
+  NEXT_PUBLIC_IDLE_TIMEOUT_MS=30000   # 30 seconds instead of 30 minutes
+  NEXT_PUBLIC_IDLE_WARNING_MS=10000   # 10 seconds instead of 5 minutes
+  ```
+
+---
+
 ### April 15, 2026 — Developer Credits Enforcement, STI Logo Protection & UI Cleanup
 
 #### Developer Credits — Automated Enforcement

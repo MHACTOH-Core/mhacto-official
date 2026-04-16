@@ -186,8 +186,18 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [afkMessage, setAfkMessage] = useState("")
 
   useEffect(() => { setMounted(true) }, [])
+
+  // Check for AFK logout message
+  useEffect(() => {
+    const afkLogout = sessionStorage.getItem("afk_logout")
+    if (afkLogout) {
+      setAfkMessage("Sorry, we logged you out because you've been AFK for 30 minutes.")
+      sessionStorage.removeItem("afk_logout")
+    }
+  }, [])
 
   useEffect(() => {
     if (isHydrated && isLoggedIn) router.push("/admin/dashboard")
@@ -396,6 +406,14 @@ export default function AdminLoginPage() {
                 Remember Me
               </Label>
             </div>
+
+            {/* AFK logout message */}
+            {afkMessage && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.08] px-4 py-3">
+                <div className="h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <p className="text-sm text-amber-300">{afkMessage}</p>
+              </div>
+            )}
 
             {/* Error */}
             {error && (

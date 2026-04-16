@@ -3,6 +3,7 @@ import { AdminProvider } from "@/components/providers/admin-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AdminShell } from "@/components/layout/admin-shell"
+import { IdleWarningDialog } from "@/components/admin/idle-warning-dialog"
 
 export const metadata: Metadata = {
   title: "MHACTO Admin",
@@ -18,6 +19,7 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
           {children}
         </AdminShell>
         <Toaster />
+        <IdleWarningDialog />
       </AdminProvider>
     </ThemeProvider>
   )
