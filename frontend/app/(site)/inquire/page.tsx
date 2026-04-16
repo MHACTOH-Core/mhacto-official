@@ -38,29 +38,20 @@ function isValidPHPhoneNumber(phone: string): boolean {
 
 /**
  * Validates that a name contains only letters and spaces.
- * Max 18 characters. No numbers, special characters, hyphens, or periods.
+ * Max 200 characters (matches backend Validator rule).
  */
 function isValidName(name: string): boolean {
   if (!name.trim()) return false
-  if (name.trim().length > 18) return false
+  if (name.trim().length > 200) return false
   return /^[A-Za-zÀ-ÿñÑ\s]+$/.test(name.trim())
 }
 
 /**
- * Validates email — must be from a real email provider.
+ * Validates email format.
  */
 function isValidEmail(email: string): boolean {
   if (!email) return false
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) return false
-  const domain = email.split("@")[1]?.toLowerCase()
-  const allowedDomains = [
-    "gmail.com", "yahoo.com", "yahoo.com.ph", "outlook.com", "hotmail.com",
-    "live.com", "icloud.com", "me.com", "aol.com", "protonmail.com",
-    "proton.me", "zoho.com", "mail.com", "ymail.com", "msn.com",
-    "rocketmail.com", "gmx.com", "fastmail.com",
-  ]
-  return allowedDomains.includes(domain)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 export default function InquirePage() {
@@ -69,6 +60,8 @@ export default function InquirePage() {
   const [visitorType, setVisitorType] = useState<"tourist" | "student">("tourist")
   const [schoolName, setSchoolName] = useState("")
   const [messageLength, setMessageLength] = useState(0)
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
   const [consentGiven, setConsentGiven] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -81,11 +74,11 @@ export default function InquirePage() {
   const [dateWarning, setDateWarning] = useState<string | null>(null)
   const [schoolWarning, setSchoolWarning] = useState<string | null>(null)
 
-  /** Validate name on change — letters/spaces only, max 18 chars */
+  /** Validate name on change — letters/spaces only, max 200 chars */
   function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
-    if (value && value.length > 100) {
-      setNameWarning("Name must be 100 characters or less.")
+    if (value && value.length > 200) {
+      setNameWarning("Name must be 200 characters or less.")
     } else if (value && !isValidName(value)) {
       setNameWarning("Name must contain only letters and spaces (no numbers or special characters).")
     } else {
@@ -93,11 +86,11 @@ export default function InquirePage() {
     }
   }
 
-  /** Validate email provider on change */
+  /** Validate email format on change */
   function handleEmailChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
     if (value && value.includes("@") && !isValidEmail(value)) {
-      setEmailWarning("Please use a valid email (Gmail, Outlook, Yahoo, etc.).")
+      setEmailWarning("Please enter a valid email address.")
     } else {
       setEmailWarning(null)
     }
@@ -115,9 +108,9 @@ export default function InquirePage() {
 
   /** Ensure the end date is not before the start date */
   function handleDateFromChange(e: ChangeEvent<HTMLInputElement>) {
-    const startDate = e.target.value
-    const endDateInput = document.getElementById("date-to") as HTMLInputElement | null
-    if (endDateInput && endDateInput.value && startDate > endDateInput.value) {
+    const start = e.target.value
+    setDateFrom(start)
+    if (dateTo && start > dateTo) {
       setDateWarning("The end date cannot be before the start date.")
     } else {
       setDateWarning(null)
@@ -125,9 +118,9 @@ export default function InquirePage() {
   }
 
   function handleDateToChange(e: ChangeEvent<HTMLInputElement>) {
-    const endDate = e.target.value
-    const startDateInput = document.getElementById("date-from") as HTMLInputElement | null
-    if (startDateInput && startDateInput.value && endDate < startDateInput.value) {
+    const end = e.target.value
+    setDateTo(end)
+    if (dateFrom && end < dateFrom) {
       setDateWarning("The end date cannot be before the start date.")
     } else {
       setDateWarning(null)
@@ -149,14 +142,14 @@ export default function InquirePage() {
 
     // Client-side validation
     if (!isValidName(name)) {
-      setError(name.length > 18 ? "Name must be 18 characters or less." : "Please enter a valid name (letters and spaces only, no special characters).")
+      setError(name.length > 200 ? "Name must be 200 characters or less." : "Please enter a valid name (letters and spaces only, no special characters).")
       setSubmitting(false)
       return
     }
 
     const email = (formData.get("email") as string).trim()
     if (!isValidEmail(email)) {
-      setError("Please use a valid email address (Gmail, Outlook, Yahoo, etc.).")
+      setError("Please enter a valid email address.")
       setSubmitting(false)
       return
     }
@@ -171,8 +164,8 @@ export default function InquirePage() {
     const fullContactNumber = contactNumber ? `+63${contactNumber.replace(/[\s\-()]/g, "")}` : ""
 
     const paxValue = formData.get("pax") ? Number(formData.get("pax")) : 0
-    if (paxValue > 20) {
-      setError("Number of people cannot exceed 20.")
+    if (paxValue > 500) {
+      setError("Number of people cannot exceed 500.")
       setSubmitting(false)
       return
     }
@@ -246,6 +239,8 @@ export default function InquirePage() {
       setSchoolWarning(null)
       setConsentGiven(false)
       form.reset()
+      setDateFrom("")
+      setDateTo("")
       setPurpose("")
       setVisitorType("tourist")
       setSchoolName("")
@@ -458,6 +453,7 @@ export default function InquirePage() {
                                 name="date-from"
                                 type="date"
                                 min={getTodayISO()}
+                                value={dateFrom}
                                 required
                                 onChange={handleDateFromChange}
                                 className="rounded-xl"
@@ -470,6 +466,7 @@ export default function InquirePage() {
                                 name="date-to"
                                 type="date"
                                 min={getTodayISO()}
+                                value={dateTo}
                                 required
                                 onChange={handleDateToChange}
                                 className="rounded-xl"
@@ -493,12 +490,12 @@ export default function InquirePage() {
                             name="pax"
                             type="number"
                             min={1}
-                            max={20}
+                            max={500}
                             placeholder="1"
                             required
                             className="rounded-xl"
                           />
-                          <p className="text-[11px] text-muted-foreground">Maximum of 20 people per inquiry</p>
+                          <p className="text-[11px] text-muted-foreground">Maximum of 500 people per inquiry</p>
                         </div>
 
                         {/* Purpose of Visit */}

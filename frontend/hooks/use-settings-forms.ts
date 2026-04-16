@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import { apiUploadMedia } from "@/lib/api"
 import type { CropSaveMode } from "@/components/ui/image-crop-dialog"
 
@@ -22,6 +22,7 @@ export function usePasswordForm({ changePassword, onSuccess, onError }: UsePassw
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const open = () => {
     setOldPassword("")
@@ -34,26 +35,35 @@ export function usePasswordForm({ changePassword, onSuccess, onError }: UsePassw
     setDialogOpen(true)
   }
 
-  const submit = async () => {
+  const submit = useCallback(async () => {
     setError("")
     if (newPassword.length < MIN_PASSWORD_LENGTH) { setError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`); return }
     if (newPassword !== confirmPassword) { setError("New passwords do not match."); return }
     setSaving(true)
-    const result = await changePassword(oldPassword, newPassword)
-    setSaving(false)
-    if (result === true) {
-      setSuccess(true)
-      onSuccess?.()
-      setTimeout(() => setDialogOpen(false), SUCCESS_CLOSE_DELAY_MS)
-    } else {
-      setError(result)
-      onError?.(result)
+    try {
+      const result = await changePassword(oldPassword, newPassword)
+      if (result === true) {
+        setSuccess(true)
+        onSuccess?.()
+        closeTimerRef.current = setTimeout(() => setDialogOpen(false), SUCCESS_CLOSE_DELAY_MS)
+      } else {
+        setError(result)
+        onError?.(result)
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setSaving(false)
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oldPassword, newPassword, confirmPassword, changePassword, onSuccess, onError])
 
   return {
     dialogOpen,
-    setDialogOpen,
+    setDialogOpen: (v: boolean) => {
+      if (!v) clearTimeout(closeTimerRef.current!)
+      setDialogOpen(v)
+    },
     oldPassword, setOldPassword,
     newPassword, setNewPassword,
     confirmPassword, setConfirmPassword,
@@ -106,8 +116,9 @@ export function useProfilePicture({ updateProfile, onSuccess, onError }: UseProf
     } catch (err) {
       console.error("Picture upload error:", err)
       onError?.()
+    } finally {
+      setUploading(false)
     }
-    setUploading(false)
   }
 
   const closeCropDialog = () => {

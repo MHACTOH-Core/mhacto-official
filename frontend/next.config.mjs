@@ -1,7 +1,10 @@
 import { fileURLToPath } from 'url'
 import path from 'path'
+import { createRequire } from 'module'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const require = createRequire(import.meta.url)
+const { version } = require('./package.json')
 const isDev = process.env.NODE_ENV !== 'production'
 
 /** @type {import('next').NextConfig} */
@@ -12,10 +15,19 @@ const nextConfig = {
   ...(!isDev && process.env.STATIC_EXPORT !== 'false' ? { output: 'export' } : {}),
   basePath: isDev ? '' : (process.env.NEXT_PUBLIC_BASE_PATH ?? '/mhacto'),
   images: {
-    unoptimized: true,
-    // Note: unoptimized is required for static export (GitHub Pages).
-    // For production with a Node server, remove output:'export' and this flag
-    // to enable automatic WebP/AVIF conversion and responsive sizing.
+    unoptimized: !isDev && process.env.STATIC_EXPORT !== 'false',
+    // When STATIC_EXPORT=false (Node.js/Vercel deployment), images are automatically
+    // converted to WebP/AVIF with responsive sizing.
+    // Static export (GitHub Pages) requires unoptimized: true.
+    // In dev and build, allow backend uploads via 127.0.0.1:8000
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '8000',
+        pathname: '/uploads/**',
+      },
+    ],
   },
   typescript: {
     ignoreBuildErrors: false,
@@ -26,6 +38,10 @@ const nextConfig = {
   },
   // Disable the X-Powered-By header (less overhead, better security)
   poweredByHeader: false,
+  // Expose the package version as a public env var so the UI can display it
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
   experimental: {
     // Tree-shake barrel-export packages to reduce bundle size
     optimizePackageImports: [
@@ -49,15 +65,13 @@ const nextConfig = {
   // Proxy backend uploads through Next.js in dev so images are same-origin
   // (required for canvas pixel access in the crop/enhance dialog).
   // Not added in production — static export doesn't support rewrites.
+  // API requests are proxied by the catch-all Route Handler in app/api/[...path]/route.ts
+  // (server-side Node fetch → PHP, more reliable than Turbopack's rewrite proxy).
+  // Only the /uploads/* rewrite is still needed for serving uploaded images/videos.
   ...(isDev
     ? {
         async rewrites() {
           return [
-            {
-              source: '/api/:path*',
-              destination: 'http://127.0.0.1:8000/api/:path*',
-              basePath: false,
-            },
             {
               source: '/uploads/:path*',
               destination: 'http://127.0.0.1:8000/uploads/:path*',

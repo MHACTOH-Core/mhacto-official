@@ -30,7 +30,7 @@ function ArtisanCard({ artisan, featured }: { artisan: Artisan; featured?: boole
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <Link href={`/culture/art-wonders/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/art-wonders/${artisan.id}`} className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col cursor-pointer ${
         featured
@@ -264,7 +264,7 @@ export default function ArtWondersPage() {
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {rest.map((artisan) => (
-              <ArtisanCard key={artisan.id} artisan={artisan} />
+              <div key={artisan.id} id={`item-${artisan.id}`}><ArtisanCard artisan={artisan} /></div>
             ))}
           </div>
         </div>

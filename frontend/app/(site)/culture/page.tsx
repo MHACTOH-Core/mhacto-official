@@ -97,7 +97,7 @@ export default function CulturePage() {
       />
 
               {/* Sticky nav */}
-        <div className="sticky top-[57px] lg:top-[67px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="sticky top-[57px] lg:top-[85px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
           <div className="mx-auto max-w-7xl px-4 lg:px-8">
             <div className="flex gap-1 overflow-x-auto py-1">
               {navSections.map((s) => (
@@ -138,7 +138,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {culinaryWonders.slice(0, 3).map((item, i) => (
-              <Link key={`${item.id}-${i}`} href={`/culture/culinary-wonders/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={`${item.id}-${i}`} href={`/culture/culinary-wonders/${item.id}`} className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 <GalleryImage
                   src={item.image}
@@ -190,7 +190,7 @@ export default function CulturePage() {
           </div>
           <div className="space-y-8">
             {festivals.map((fest, idx) => (
-              <Link key={`${fest.id}-${idx}`} href={`/culture/festivals-celebrations/${fest.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={`${fest.id}-${idx}`} href={`/culture/festivals-celebrations/${fest.id}`} className="block">
               <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
@@ -262,7 +262,7 @@ export default function CulturePage() {
             {culturalPractices.map((practice, i) => {
               const StatusIcon = statusConfig[practice.status].icon
               return (
-                <Link key={`${practice.id}-${i}`} href={`/culture/practices-traditions/${practice.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                <Link key={`${practice.id}-${i}`} href={`/culture/practices-traditions/${practice.id}`} className="block">
                 <Card className="overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                   {practice.image && (
                     <GalleryImage
@@ -315,7 +315,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {artWonders.map((artisan, i) => (
-              <Link key={`${artisan.id}-${i}`} href={`/culture/art-wonders/${artisan.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={`${artisan.id}-${i}`} href={`/culture/art-wonders/${artisan.id}`} className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {artisan.image && (
                   <GalleryImage
@@ -373,7 +373,7 @@ export default function CulturePage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {peopleWonders.slice(0, 3).map((person, i) => (
-              <Link key={`${person.id}-${i}`} href={`/culture/people-wonders/${person.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <Link key={`${person.id}-${i}`} href={`/culture/people-wonders/${person.id}`} className="block">
               <Card className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
                 {person.image && (
                   <GalleryImage

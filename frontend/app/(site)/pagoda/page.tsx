@@ -341,38 +341,23 @@ export default function PagodaPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="relative min-h-[85vh] sm:min-h-[90vh] lg:min-h-screen overflow-hidden">
 
-        {/* ── Background hero image — full-bleed cinematic fade ── */}
+        {/* ── Background hero image — full-bleed, masked to fade left-to-right ── */}
         <div className="absolute inset-0 z-[1]">
-          <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover object-center" />
-          {/* Overall dim for depth & text readability */}
-          <div className="absolute inset-0" style={{ background: `${BG}55` }} />
-          {/* Strong bottom fade — image dissolves into background */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, ${BG}ee 12%, ${BG}99 35%, transparent 60%)` }} />
-          {/* ── Left-to-right hero gradient ────────────────────────────────
-              Exactly 50/50: left half is dark, right half is clear/visible. ── */}
+          {/* The image itself is masked — invisible on the left, fades in toward the right */}
           <div className="absolute inset-0" style={{
-            background: `linear-gradient(
-              to right,
-              ${BG}f5 0%,
-              ${BG}ee 15%,
-              ${BG}cc 30%,
-              ${BG}66 45%,
-              transparent 50%
-            )`
-          }} />
-          {/* Cool blue river-light wash over the dark left panel */}
-          <div className="absolute inset-0" style={{
-            background: `linear-gradient(
-              to right,
-              rgba(15,30,75,0.50) 0%,
-              rgba(15,30,75,0.22) 30%,
-              transparent 50%
-            )`
-          }} />
+            WebkitMaskImage: `linear-gradient(to right, transparent 0%, transparent 25%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.7) 50%, black 65%)`,
+            maskImage: `linear-gradient(to right, transparent 0%, transparent 25%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.7) 50%, black 65%)`,
+          }}>
+            <Image src={heroImage} alt="Pagoda sa Bocaue Festival" fill priority sizes="100vw" className="object-cover object-[65%_25%]" />
+          </div>
+          {/* Subtle dim over the visible image for depth */}
+          <div className="absolute inset-0" style={{ background: `${BG}33` }} />
+          {/* Bottom fade — image dissolves into background */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG} 0%, ${BG}ee 10%, ${BG}88 30%, transparent 55%)` }} />
           {/* Top vignette */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}88 0%, transparent 22%)` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${BG}88 0%, transparent 20%)` }} />
           {/* Soft right edge fade */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to left, ${BG}66 0%, transparent 15%)` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to left, ${BG}55 0%, transparent 12%)` }} />
         </div>
 
         {/* Hero text content — left side */}

@@ -67,8 +67,6 @@ export function TravelToursSection() {
             <Link
               key={tour.id}
               href="/travel-tours"
-              target="_blank"
-              rel="noopener noreferrer"
               className={`group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg reveal-on-scroll delay-${(idx + 1) * 100}`}
             >
               {/* Image */}
@@ -121,8 +119,6 @@ export function TravelToursSection() {
         <div className="mt-10 text-center reveal-on-scroll delay-300">
           <Link
             href="/travel-tours"
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             See All Tour Packages

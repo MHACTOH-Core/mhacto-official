@@ -19,41 +19,13 @@ class User
         $this->conn = $db;
     }
 
-    public function loginByEmail(string $email, string $password): array|false
-    {
-        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-
-        $query = "SELECT user_id, username, full_name, profile_picture, email, password_hash, role
-                  FROM {$this->table_name}
-                  WHERE email = :email AND status = 'active'
-                  LIMIT 1";
-
-        try {
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':email', $email);
-            $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (password_verify($password, $row['password_hash'])) {
-                    unset($row['password_hash']);
-                    return $row;
-                }
-            }
-            return false;
-        } catch (PDOException $e) {
-            error_log("User::loginByEmail error: " . $e->getMessage());
-            return false;
-        }
-    }
-
     /**
      * Look up a user by email — returns the full row (including password_hash
      * and status) so callers can perform granular auth checks.
      */
     public function findByEmail(string $email): array|false
     {
-        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
 
         $query = "SELECT user_id, username, full_name, profile_picture, email, password_hash, role, status
                   FROM {$this->table_name}
@@ -110,7 +82,7 @@ class User
     /** Create a new user account */
     public function create(string $fullName, string $email, string $password, string $role = 'admin'): array|false
     {
-        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
         $allowedRoles = ['super_admin', 'admin', 'content_manager'];
         if (!in_array($role, $allowedRoles, true)) {
             $role = 'admin';
@@ -163,7 +135,8 @@ class User
             $params[':profile_picture'] = $data['profile_picture'];
         }
         if (isset($data['email'])) {
-            $email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
+            $email = $data['email'];
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
             // Check duplicate email (excluding this user)
             $checkQuery = "SELECT user_id FROM {$this->table_name} WHERE email = :check_email AND user_id != :check_id LIMIT 1";
             $checkStmt = $this->conn->prepare($checkQuery);
@@ -186,6 +159,9 @@ class User
             }
         }
         if (!empty($data['password'])) {
+            if (strlen($data['password']) < 8 || !preg_match('/[A-Za-z]/', $data['password']) || !preg_match('/[0-9]/', $data['password'])) {
+                return false;
+            }
             $sets[] = "password_hash = :password_hash";
             $params[':password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT);
         }
@@ -290,6 +266,7 @@ class User
     /** Restore an archived user back to active */
     public function restore(int $id): bool
     {
+        if ($id === 1) return false;
         $query = "UPDATE {$this->table_name} SET status = 'active' WHERE user_id = :id";
 
         try {

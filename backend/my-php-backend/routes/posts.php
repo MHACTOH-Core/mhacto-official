@@ -20,7 +20,6 @@ function handle_posts(string $method, ?string $id): void
 
     try {
         $db = (new Database())->getConnection();
-        $GLOBALS['db'] = $db;
         $post = new Post($db);
 
         switch ($method) {
@@ -29,7 +28,7 @@ function handle_posts(string $method, ?string $id): void
                 break;
             case 'POST':
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
-                _posts_create($post);
+                _posts_create($post, $db);
                 break;
             case 'PUT':
                 Auth::requireRole(['super_admin', 'admin', 'content_manager']);
@@ -78,6 +77,19 @@ function _posts_read(Post $post, ?string $id): void
         }
         if (!$isAuthed) QueryCache::httpCacheHeaders(300);
         Response::json($result);
+    }
+
+    // ── Public search: /api/posts?search=query ───────────────────
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    if ($search !== '') {
+        if (mb_strlen($search) < 2 || mb_strlen($search) > 100) {
+            Response::json([]);  // too short or too long — return empty
+        }
+        $searchLimit = isset($_GET['limit']) ? min((int) $_GET['limit'], 20) : 12;
+        $cacheKey = 'posts_search_' . md5($search . $searchLimit);
+        QueryCache::httpCacheHeaders(120); // 2-minute browser cache for search
+        $results = QueryCache::remember($cacheKey, 120, fn() => $post->search($search, $searchLimit));
+        Response::json($results);
     }
 
     $status   = $_GET['status'] ?? null;
@@ -150,7 +162,7 @@ function _posts_read(Post $post, ?string $id): void
 
 // ── POST ────────────────────────────────────────────────────────────
 
-function _posts_create(Post $post): void
+function _posts_create(Post $post, PDO $pdo): void
 {
     $data = json_decode(file_get_contents('php://input'), true);
     if (!$data || empty($data['title'])) {
@@ -161,8 +173,7 @@ function _posts_create(Post $post): void
     $singletonLabels = ['pagoda'];
     $label = $data['label'] ?? '';
     if (in_array($label, $singletonLabels, true)) {
-        $db = $GLOBALS['db'];
-        $stmt = $db->prepare(
+        $stmt = $pdo->prepare(
             'SELECT COUNT(*) FROM content c
              JOIN content_fields cf ON c.content_id = cf.content_id
              WHERE cf.meta_key = :mk AND cf.meta_value = :lk'
@@ -173,7 +184,7 @@ function _posts_create(Post $post): void
         }
     }
 
-    $mapped    = _posts_mapFrontendToDb($data);
+    $mapped    = _posts_mapFrontendToDb($data, $pdo);
     $contentId = $post->create($mapped);
     if (!$contentId) {
         Response::error('Failed to create post.', 500);
@@ -233,27 +244,31 @@ function _posts_delete(Post $post, ?string $id): void
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function _posts_mapFrontendToDb(array $data): array
+function _posts_mapFrontendToDb(array $data, PDO $pdo): array
 {
     $db = $data;
 
     if (isset($data['contentCategory'])) {
-        $db['category_id'] = _posts_resolveCategoryId($data['contentCategory']);
+        $db['category_id'] = _posts_resolveCategoryId($data['contentCategory'], $pdo);
     }
     if (isset($data['label'])) {
-        $db['label_id']  = _posts_resolveLabelId($data['label']);
+        $db['label_id']  = _posts_resolveLabelId($data['label'], $pdo);
         $db['label_key'] = $data['label'];
     }
     if (isset($data['body']))        $db['description']    = $data['body'];
     if (isset($data['postType']))    $db['post_type']      = $data['postType'];
-    if (isset($data['isFeatured']))  $db['is_featured']    = $data['isFeatured'] ? 1 : 0;
+    if (isset($data['label']) && $data['label'] === 'timeline-of-events') {
+        $db['is_featured'] = 0;
+    } elseif (isset($data['isFeatured'])) {
+        $db['is_featured'] = $data['isFeatured'] ? 1 : 0;
+    }
     if (isset($data['newsDate']))    $db['news_date']      = $data['newsDate'];
     if (isset($data['category']))    $db['place_category'] = $data['category'];
     if (isset($data['author']))      $db['author']         = $data['author'];
     if (isset($data['highlights']))  $db['tour_highlights'] = is_array($data['highlights']) ? json_encode($data['highlights']) : $data['highlights'];
 
-    if (isset($data['image']) && is_array($data['image']))   $db['images'] = $data['image'];
-    if (isset($data['images']) && is_array($data['images'])) $db['images'] = $data['images'];
+    $images = $data['images'] ?? $data['image'] ?? null;
+    if (is_array($images)) $db['images'] = $images;
 
     return $db;
 }
@@ -262,32 +277,27 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
 {
     $mapped = [];
 
-    $simple = ['title', 'status', 'location', 'hours', 'contact', 'established', 'story', 'author'];
+    $simple = ['title', 'status', 'location', 'latitude', 'longitude', 'hours', 'contact', 'established', 'story', 'author'];
     foreach ($simple as $key) {
         if (isset($data[$key])) $mapped[$key] = $data[$key];
     }
 
     if (isset($data['body']))       $mapped['description']    = $data['body'];
     if (isset($data['postType']))   $mapped['post_type']      = $data['postType'];
-    if (isset($data['isFeatured'])) $mapped['is_featured']    = $data['isFeatured'] ? 1 : 0;
+    if (isset($data['label']) && $data['label'] === 'timeline-of-events') {
+        $mapped['is_featured'] = 0;
+    } elseif (isset($data['isFeatured'])) {
+        $mapped['is_featured'] = $data['isFeatured'] ? 1 : 0;
+    }
     if (isset($data['newsDate']))   $mapped['news_date']      = $data['newsDate'];
     if (isset($data['category']))   $mapped['place_category'] = $data['category'];
     if (isset($data['highlights'])) $mapped['tour_highlights'] = is_array($data['highlights']) ? json_encode($data['highlights']) : $data['highlights'];
 
-    if (isset($data['image']) && is_array($data['image']))   $mapped['images'] = $data['image'];
-    if (isset($data['images']) && is_array($data['images'])) $mapped['images'] = $data['images'];
+    $images = $data['images'] ?? $data['image'] ?? null;
+    if (is_array($images)) $mapped['images'] = $images;
 
     if (isset($data['contentCategory'])) {
-        $catMap = [
-            'history'              => 'History',
-            'arts-culture'         => 'Arts & Culture',
-            'tourist-wonders'      => 'Tourist Destinations',
-            'tourist-destinations' => 'Tourist Destinations',
-            'news'                 => 'News & Events',
-            'events'               => 'News & Events',
-            'community'            => 'Community',
-        ];
-        $name = $catMap[$data['contentCategory']] ?? null;
+        $name = _posts_categoryNameMap()[$data['contentCategory']] ?? null;
         if ($name) {
             $stmt = $pdo->prepare("SELECT category_id FROM categories WHERE category_type = 'category' AND label_name = :n LIMIT 1");
             $stmt->execute([':n' => $name]);
@@ -307,9 +317,9 @@ function _posts_mapUpdateToDb(array $data, PDO $pdo): array
     return $mapped;
 }
 
-function _posts_resolveCategoryId(string $key): ?int
+function _posts_categoryNameMap(): array
 {
-    $map = [
+    return [
         'history'              => 'History',
         'arts-culture'         => 'Arts & Culture',
         'tourist-wonders'      => 'Tourist Destinations',
@@ -318,18 +328,22 @@ function _posts_resolveCategoryId(string $key): ?int
         'events'               => 'News & Events',
         'community'            => 'Community',
     ];
-    $name = $map[$key] ?? null;
+}
+
+function _posts_resolveCategoryId(string $key, PDO $pdo): ?int
+{
+    $name = _posts_categoryNameMap()[$key] ?? null;
     if (!$name) return null;
 
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE category_type = 'category' AND label_name = :n LIMIT 1");
+    $stmt = $pdo->prepare("SELECT category_id FROM categories WHERE category_type = 'category' AND label_name = :n LIMIT 1");
     $stmt->execute([':n' => $name]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;
 }
 
-function _posts_resolveLabelId(string $key): ?int
+function _posts_resolveLabelId(string $key, PDO $pdo): ?int
 {
-    $stmt = $GLOBALS['db']->prepare("SELECT category_id FROM categories WHERE category_type = 'label' AND label_key = :k LIMIT 1");
+    $stmt = $pdo->prepare("SELECT category_id FROM categories WHERE category_type = 'label' AND label_key = :k LIMIT 1");
     $stmt->execute([':k' => $key]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (int) $row['category_id'] : null;

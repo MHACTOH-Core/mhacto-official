@@ -71,7 +71,7 @@ type TypeFilter = CuisineItem["type"] | "all"
 // ── Expandable cuisine card ──────────────────────────────────────────
 function CuisineCard({ item, featured }: { item: CuisineItem; featured?: boolean }) {
   return (
-    <Link href={`/culture/culinary-wonders/${item.id}`} target="_blank" rel="noopener noreferrer" className="block">
+    <Link href={`/culture/culinary-wonders/${item.id}`} className="block">
     <Card
       className={`group overflow-hidden border-border transition-all duration-300 flex flex-col ${
         featured
@@ -414,7 +414,7 @@ export default function CulinaryWondersPage() {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {(activeType === "all" ? rest : filtered).map((item) => (
-                <CuisineCard key={item.id} item={item} />
+                <div key={item.id} id={`item-${item.id}`}><CuisineCard item={item} /></div>
               ))}
             </div>
           )}

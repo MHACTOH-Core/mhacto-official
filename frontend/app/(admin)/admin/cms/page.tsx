@@ -55,6 +55,18 @@ import { type FormData, EMPTY_FORM, UNKNOWN_LABEL } from "./_components/cms-type
 import { CMSEditDialog } from "./_components/cms-edit-dialog"
 import { CMSPreviewDialog } from "./_components/cms-preview-dialog"
 
+/** Converts a highlights array from the API into a newline-delimited string for the form. */
+function highlightsFromList(list: string[] | null | undefined): string {
+  return list?.join("\n") ?? ""
+}
+
+/** Converts the form's newline-delimited highlights string back into an array for the API. */
+function highlightsToList(text: string): string[] | undefined {
+  const trimmed = text.trim()
+  if (!trimmed) return undefined
+  return trimmed.split("\n").map((h) => h.trim()).filter(Boolean)
+}
+
 const statusColor: Record<ContentStatus, string> = {
   draft: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
   published: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
@@ -160,12 +172,14 @@ export default function CMSPage() {
       status: post.status,
       images: post.image,
       location: post.location ?? "",
+      latitude: post.latitude ?? "",
+      longitude: post.longitude ?? "",
       hours: post.hours ?? "",
       contact: post.contact ?? "",
       established: post.established ?? "",
       category: post.category ?? "",
       story: post.story ?? "",
-      highlights: post.highlights?.join("\n") ?? "",
+      highlights: highlightsFromList(post.highlights),
       newsDate: post.newsDate ?? "",
       isFeatured: post.isFeatured ?? false,
       author: post.author ?? "",
@@ -196,14 +210,14 @@ export default function CMSPage() {
 
     if (form.postType === "place" || form.postType === "event") {
       payload.location = form.location || undefined
+      payload.latitude = form.latitude || undefined
+      payload.longitude = form.longitude || undefined
       payload.hours = form.hours || undefined
       payload.contact = form.contact || undefined
       payload.established = form.established || undefined
       payload.category = form.category && form.category !== "none" ? form.category : undefined
       payload.story = form.story || undefined
-      payload.highlights = form.highlights.trim()
-        ? form.highlights.split("\n").map((h: string) => h.trim()).filter(Boolean)
-        : undefined
+      payload.highlights = highlightsToList(form.highlights)
       if (form.postType === "event") {
         payload.newsDate = form.newsDate || undefined
       }
@@ -242,7 +256,7 @@ export default function CMSPage() {
   return (
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-6 py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-card-foreground">
@@ -405,10 +419,10 @@ export default function CMSPage() {
 
                 {/* Card body */}
                 <CardContent className="flex flex-1 flex-col p-4">
-                  <h3 className="text-base font-semibold text-card-foreground line-clamp-2 leading-snug">
+                  <h3 className="text-base font-semibold text-card-foreground line-clamp-2 leading-snug break-words">
                     {post.title}
                   </h3>
-                  <p className="mt-1.5 flex-1 text-sm text-muted-foreground line-clamp-3">
+                  <p className="mt-1.5 flex-1 text-sm text-muted-foreground line-clamp-3 break-words">
                     {post.body}
                   </p>
                   {post.location && (

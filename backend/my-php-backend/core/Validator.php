@@ -77,8 +77,8 @@ class Validator
                 break;
 
             case 'integer':
-                if ($value !== null && $value !== '' && !is_numeric($value)) {
-                    return "{$label} must be a number.";
+                if ($value !== null && $value !== '' && filter_var($value, FILTER_VALIDATE_INT) === false) {
+                    return "{$label} must be a whole number.";
                 }
                 break;
 

@@ -189,6 +189,7 @@ export default function BarangaysPage() {
           {filtered.map((barangay) => (
             <div
               key={barangay.id}
+              id={`item-${barangay.id}`}
               className="flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden"
             >
               {/* accent bar */}

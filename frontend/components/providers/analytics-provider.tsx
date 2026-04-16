@@ -6,11 +6,13 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react"
 import type { PageView, DailyVisit } from "@/lib/data/admin-data"
 import {
   apiFetchAnalyticsDashboard,
+  apiFetchAnalyticsDashboardByRange,
   AuthExpiredError,
   type VisitorSummary,
 } from "@/lib/api"
@@ -18,13 +20,21 @@ import { useAuth } from "./auth-provider"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
+export interface DashboardDateFilter {
+  label: string
+  from: string // YYYY-MM-DD
+  to: string   // YYYY-MM-DD
+}
+
 export interface AnalyticsContextValue {
   pageViews: PageView[]
   dailyVisits: DailyVisit[]
   totalViews: number
   visitorSummary: VisitorSummary | null
   isLoadingAnalytics: boolean
+  activeDateFilter: DashboardDateFilter | null
   refreshAnalytics: () => Promise<void>
+  refreshAnalyticsWithRange: (startDate: string, endDate: string, label: string) => Promise<void>
 }
 
 const AnalyticsContext = createContext<AnalyticsContextValue | null>(null)
@@ -43,20 +53,45 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const [dailyVisits, setDailyVisits] = useState<DailyVisit[]>([])
   const [visitorSummary, setVisitorSummary] = useState<VisitorSummary | null>(null)
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false)
+  const [activeDateFilter, setActiveDateFilter] = useState<DashboardDateFilter | null>(null)
+  const fetchGenRef = useRef(0)
 
   const fetchAnalytics = useCallback(async () => {
+    const thisGen = ++fetchGenRef.current
     setIsLoadingAnalytics(true)
     try {
       const data = await apiFetchAnalyticsDashboard()
+      if (fetchGenRef.current !== thisGen) return
       setPageViews(data.pageViews)
       setDailyVisits(data.dailyVisits)
       setVisitorSummary(data.visitorSummary)
+      setActiveDateFilter(null)
     } catch (e) {
       if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
         console.error("[Analytics] dashboard fetch failed:", e)
       }
+    } finally {
+      if (fetchGenRef.current === thisGen) setIsLoadingAnalytics(false)
     }
-    setIsLoadingAnalytics(false)
+  }, [])
+
+  const refreshAnalyticsWithRange = useCallback(async (startDate: string, endDate: string, label: string) => {
+    const thisGen = ++fetchGenRef.current
+    setIsLoadingAnalytics(true)
+    try {
+      const data = await apiFetchAnalyticsDashboardByRange(startDate, endDate)
+      if (fetchGenRef.current !== thisGen) return
+      setPageViews(data.pageViews)
+      setDailyVisits(data.dailyVisits)
+      setVisitorSummary(data.visitorSummary)
+      setActiveDateFilter({ label, from: startDate, to: endDate })
+    } catch (e) {
+      if (!(e instanceof AuthExpiredError) && !(e instanceof Error && /network error/i.test(e.message))) {
+        console.error("[Analytics] dashboard fetch failed:", e)
+      }
+    } finally {
+      if (fetchGenRef.current === thisGen) setIsLoadingAnalytics(false)
+    }
   }, [])
 
   // Delay analytics fetch so CMS data provider's 6 parallel requests finish first
@@ -68,10 +103,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   }, [isHydrated, isLoggedIn, fetchAnalytics])
 
   // Re-fetch when the user switches back to this tab (keeps data fresh)
+  // Throttled to once every 30 s to avoid parallel requests from rapid alt-tabbing
   useEffect(() => {
     if (!isLoggedIn) return
+    let lastFetch = 0
     const onVisible = () => {
-      if (document.visibilityState === "visible") fetchAnalytics()
+      if (document.visibilityState !== "visible") return
+      const now = Date.now()
+      if (now - lastFetch < 30_000) return
+      lastFetch = now
+      fetchAnalytics()
     }
     document.addEventListener("visibilitychange", onVisible)
     return () => document.removeEventListener("visibilitychange", onVisible)
@@ -80,7 +121,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const totalViews = pageViews.reduce((sum, p) => sum + p.views, 0)
 
   return (
-    <AnalyticsContext.Provider value={{ pageViews, dailyVisits, totalViews, visitorSummary, isLoadingAnalytics, refreshAnalytics: fetchAnalytics }}>
+    <AnalyticsContext.Provider value={{
+      pageViews,
+      dailyVisits,
+      totalViews,
+      visitorSummary,
+      isLoadingAnalytics,
+      activeDateFilter,
+      refreshAnalytics: fetchAnalytics,
+      refreshAnalyticsWithRange,
+    }}>
       {children}
     </AnalyticsContext.Provider>
   )

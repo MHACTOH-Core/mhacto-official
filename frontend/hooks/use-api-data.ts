@@ -33,9 +33,13 @@ export function useAPIData<T>(
   const [isLoading, setIsLoading] = useState(enabled && cachedData === undefined)
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
+  const controllerRef = useRef<AbortController | null>(null)
 
   const refetch = useCallback(() => {
+    // Abort any in-flight request before starting a new one
+    controllerRef.current?.abort()
     const controller = new AbortController()
+    controllerRef.current = controller
     const hasCachedData = _hookCache.has(key)
 
     // Only show loading state if there's no cached data to display

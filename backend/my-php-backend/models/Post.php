@@ -33,6 +33,19 @@ class Post
         ";
     }
 
+    // ── Meta key list ──────────────────────────────────────────────
+
+    /** Single source of truth for all meta field keys. */
+    private function metaKeys(): array
+    {
+        return [
+            'label_id', 'label_key', 'is_featured',
+            'location', 'latitude', 'longitude', 'hours', 'visit_date', 'contact', 'established',
+            'place_category', 'story', 'news_date', 'author',
+            'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
+        ];
+    }
+
     // ── Meta helpers ───────────────────────────────────────────────
 
     /** Get all meta key-value pairs for a content item. */
@@ -85,14 +98,14 @@ class Post
     {
         $stmt = $this->conn->prepare($this->baseSelect() . " ORDER BY c.created_at DESC");
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readByStatus(string $status): array
     {
         $stmt = $this->conn->prepare($this->baseSelect() . " WHERE c.status = :s ORDER BY c.created_at DESC");
         $stmt->execute([':s' => $status]);
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readByLabel(string $labelKey, ?string $status = null): array
@@ -118,7 +131,7 @@ class Post
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readByCategory(string $categoryKey, ?string $status = null, ?int $limit = null): array
@@ -142,7 +155,7 @@ class Post
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readOne(int $id): array|false
@@ -163,7 +176,7 @@ class Post
         $stmt = $this->conn->prepare($q);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -198,7 +211,7 @@ class Post
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -239,7 +252,7 @@ class Post
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readPublishedNews(?int $limit = null): array
@@ -259,7 +272,7 @@ class Post
         $stmt = $this->conn->prepare($q);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function readPublishedEvents(?int $limit = null): array
@@ -279,7 +292,33 @@ class Post
         $stmt = $this->conn->prepare($q);
         if ($limit !== null) $stmt->bindValue(':_lim', (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
-        return array_map(fn($r) => $this->formatRow($r), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    // ── SEARCH ─────────────────────────────────────────────────────
+
+    /**
+     * Full-text-like search across published content titles and descriptions.
+     * Prioritises title matches over description matches.
+     */
+    public function search(string $query, int $limit = 12): array
+    {
+        $like = '%' . $query . '%';
+        $sql = $this->baseSelect() . "
+            WHERE c.status = 'published'
+              AND (c.title LIKE :qt OR c.description LIKE :qd)
+            ORDER BY
+                CASE WHEN c.title LIKE :qt2 THEN 0 ELSE 1 END,
+                c.created_at DESC
+            LIMIT :_lim
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':qt',  $like);
+        $stmt->bindValue(':qd',  $like);
+        $stmt->bindValue(':qt2', $like);
+        $stmt->bindValue(':_lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $this->formatRows($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     // ── CREATE ─────────────────────────────────────────────────────
@@ -305,12 +344,7 @@ class Post
             $contentId = (int) $this->conn->lastInsertId();
 
             // Store meta fields
-            $metaKeys = [
-                'label_id', 'label_key', 'is_featured',
-                'location', 'hours', 'visit_date', 'contact', 'established',
-                'place_category', 'story', 'news_date',
-                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
-            ];
+            $metaKeys = $this->metaKeys();
             $metaMap = [];
             foreach ($metaKeys as $mk) {
                 if (array_key_exists($mk, $data) && $data[$mk] !== null) {
@@ -378,12 +412,7 @@ class Post
             }
 
             // Update meta fields
-            $metaKeys = [
-                'label_id', 'label_key', 'is_featured',
-                'location', 'hours', 'visit_date', 'contact', 'established',
-                'place_category', 'story', 'news_date',
-                'tour_type', 'tour_difficulty', 'tour_includes', 'tour_highlights', 'tour_itinerary',
-            ];
+            $metaKeys = $this->metaKeys();
             foreach ($metaKeys as $mk) {
                 if (array_key_exists($mk, $data)) {
                     $this->setMeta($id, $mk, $data[$mk] !== null ? (string) $data[$mk] : null);
@@ -441,6 +470,67 @@ class Post
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // ── Batch loaders (eliminate N+1 queries) ──────────────────────
+
+    /**
+     * Batch-load all meta for a set of content IDs.
+     * Returns [ contentId => [ metaKey => metaValue, ... ], ... ]
+     */
+    private function batchGetMeta(array $ids): array
+    {
+        if (empty($ids)) return [];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->conn->prepare(
+            "SELECT content_id, meta_key, meta_value FROM content_fields WHERE content_id IN ({$placeholders})"
+        );
+        $stmt->execute(array_values($ids));
+        $result = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $result[(int)$row['content_id']][$row['meta_key']] = $row['meta_value'];
+        }
+        return $result;
+    }
+
+    /**
+     * Batch-load all images for a set of content IDs.
+     * Returns [ contentId => [ imageUrl, ... ], ... ]
+     */
+    private function batchGetImages(array $ids): array
+    {
+        if (empty($ids)) return [];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->conn->prepare(
+            "SELECT content_id, image_url FROM content_images WHERE content_id IN ({$placeholders})
+             ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC"
+        );
+        $stmt->execute(array_values($ids));
+        $result = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $result[(int)$row['content_id']][] = $row['image_url'];
+        }
+        return $result;
+    }
+
+    /**
+     * Format multiple rows at once using batch-loaded meta + images.
+     * Reduces from 2N+1 queries down to 3 queries total.
+     */
+    private function formatRows(array $rows): array
+    {
+        if (empty($rows)) return [];
+        $ids = array_map(fn($r) => (int) $r['content_id'], $rows);
+        $allMeta   = $this->batchGetMeta($ids);
+        $allImages = $this->batchGetImages($ids);
+
+        return array_map(function (array $row) use ($allMeta, $allImages) {
+            $contentId = (int) $row['content_id'];
+            $postType  = $row['post_type'] ?? 'place';
+            $imageUrls = $allImages[$contentId] ?? [];
+            $meta      = $allMeta[$contentId] ?? [];
+            return $this->buildFormatted($row, $contentId, $postType, $imageUrls, $meta);
+        }, $rows);
+    }
+
     // ── Format ─────────────────────────────────────────────────────
 
     private function formatRow(array $row): array
@@ -450,7 +540,12 @@ class Post
         $images    = $this->getImages($contentId);
         $imageUrls = array_map(fn($img) => $img['image_url'], $images);
         $meta      = $this->getMeta($contentId);
+        return $this->buildFormatted($row, $contentId, $postType, $imageUrls, $meta);
+    }
 
+    /** Shared formatting logic used by both formatRow (single) and formatRows (batch). */
+    private function buildFormatted(array $row, int $contentId, string $postType, array $imageUrls, array $meta): array
+    {
         return [
             'id'              => (string) $contentId,
             'title'           => $row['title'],
@@ -462,6 +557,8 @@ class Post
             'image'           => $imageUrls,
             'isFeatured'      => (bool) ($meta['is_featured'] ?? false),
             'location'        => $meta['location'] ?? null,
+            'latitude'        => $meta['latitude'] ?? null,
+            'longitude'       => $meta['longitude'] ?? null,
             'hours'           => $meta['hours'] ?? null,
             'contact'         => $meta['contact'] ?? null,
             'established'     => $meta['established'] ?? null,
@@ -473,7 +570,7 @@ class Post
             'tourType'        => $meta['tour_type'] ?? null,
             'tourDifficulty'  => $meta['tour_difficulty'] ?? null,
             'newsDate'        => $meta['news_date'] ?? null,
-            'author'          => null,
+            'author'          => $meta['author'] ?? null,
             'createdAt'       => $row['created_at'],
             'updatedAt'       => $row['updated_at'],
         ];

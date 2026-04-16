@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
 import {
@@ -116,6 +116,20 @@ export default function AccountsPage() {
     if (isLoggedIn) refreshUsers()
   }, [isLoggedIn, refreshUsers])
 
+  const filtered = useMemo(() => users.filter((u) => {
+    if (filterTab === "active" && u.status !== "active") return false
+    if (filterTab === "archived" && u.status !== "archived") return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (
+        (u.full_name ?? "").toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q)
+      )
+    }
+    return true
+  }), [users, filterTab, search])
+
   if (!isHydrated || !isLoggedIn || !currentUser) return null
 
   // Only super_admin and admin can access accounts
@@ -130,20 +144,6 @@ export default function AccountsPage() {
         </main>
     )
   }
-
-  const filtered = users.filter((u) => {
-    if (filterTab === "active" && u.status !== "active") return false
-    if (filterTab === "archived" && u.status !== "archived") return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (
-        (u.full_name ?? "").toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
 
   const openCreate = () => {
     setEditingUser(null)
@@ -178,6 +178,10 @@ export default function AccountsPage() {
       setFormError("Email is required.")
       return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setFormError("Please enter a valid email address.")
+      return
+    }
 
     if (!editingUser) {
       // Creating — password required
@@ -185,8 +189,8 @@ export default function AccountsPage() {
         setFormError("Password is required for new accounts.")
         return
       }
-      if (form.password.length < 6) {
-        setFormError("Password must be at least 6 characters.")
+      if (form.password.length < 8) {
+        setFormError("Password must be at least 8 characters.")
         return
       }
       if (form.password !== form.confirmPassword) {
@@ -195,8 +199,8 @@ export default function AccountsPage() {
       }
     } else {
       // Editing — password optional but must match if provided
-      if (form.password && form.password.length < 6) {
-        setFormError("Password must be at least 6 characters.")
+      if (form.password && form.password.length < 8) {
+        setFormError("Password must be at least 8 characters.")
         return
       }
       if (form.password && form.password !== form.confirmPassword) {
@@ -296,7 +300,7 @@ export default function AccountsPage() {
   return (
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-6 py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-6 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-card-foreground">Account Management</h1>
@@ -572,7 +576,7 @@ export default function AccountsPage() {
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder={editingUser ? "Leave blank to keep current" : "Min. 6 characters"}
+                    placeholder={editingUser ? "Leave blank to keep current" : "Min. 8 characters"}
                   />
                   <Button
                     type="button"

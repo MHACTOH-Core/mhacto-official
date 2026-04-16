@@ -7,7 +7,7 @@ import {
   Users, ShoppingBag, Clock, UserCheck, Landmark, Building2,
   MapPin, GraduationCap, Cross, Newspaper, ArrowRight, Loader2,
 } from "lucide-react"
-import { searchContent, type SearchResult } from "@/lib/search-index"
+import { searchContent, searchContentAsync, type SearchResult } from "@/lib/search-index"
 
 // ── Icon map ──────────────────────────────────────────────────────────
 const iconMap: Record<string, React.ReactNode> = {
@@ -108,19 +108,47 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     }
   }, [open])
 
-  // Debounced search — waits 180ms after the user stops typing before querying
+  // Hybrid search: instant local results + debounced API results
   useEffect(() => {
     if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current)
-    if (!searchQuery.trim()) { setSearchResults([]); setIsSearching(false); return }
+
+    const query = searchQuery.trim()
+    if (!query) { setSearchResults([]); setIsSearching(false); return }
+
+    // Immediately show local static page matches (no network delay)
+    const localResults = searchContent(searchQuery)
+    setSearchResults(localResults)
+    setHighlightedResultIndex(0)
+
+    // Then fetch CMS content from the API (debounced, min 2 chars)
+    if (query.length < 2) { setIsSearching(false); return }
 
     setIsSearching(true)
-    searchDebounceTimerRef.current = setTimeout(() => {
-      setSearchResults(searchContent(searchQuery))
-      setHighlightedResultIndex(0)
-      setIsSearching(false)
-    }, 180)
+    let cancelled = false
 
-    return () => { if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current) }
+    searchDebounceTimerRef.current = setTimeout(async () => {
+      try {
+        const apiResults = await searchContentAsync(query)
+        if (cancelled) return
+        // Merge: local first, then API results (deduplicated by id)
+        const seenIds = new Set(localResults.map((r) => r.id))
+        const merged = [...localResults]
+        for (const r of apiResults) {
+          if (!seenIds.has(r.id)) { merged.push(r); seenIds.add(r.id) }
+        }
+        setSearchResults(merged.slice(0, 16))
+        setHighlightedResultIndex(0)
+      } catch {
+        // On API failure, keep showing local results (already set above)
+      } finally {
+        if (!cancelled) setIsSearching(false)
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current)
+    }
   }, [searchQuery])
 
   /** Handle arrow-key navigation and Enter selection within the results list */
@@ -141,7 +169,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         const targetHref = searchQuery.trim()
           ? searchResults[highlightedResultIndex]?.href
           : quickLinks[highlightedResultIndex]?.href
-        if (targetHref) { router.push(targetHref); onClose() }
+        if (targetHref) { navigateToResult(targetHref) }
       }
     },
     [searchQuery, searchResults, highlightedResultIndex, router, onClose]
@@ -164,7 +192,15 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, [])
 
   /** Navigate to a result page and close the overlay */
-  const navigateToResult = (href: string) => { router.push(href); onClose() }
+  const navigateToResult = (href: string) => {
+    onClose()
+    // Use window.location for hash URLs so the fragment is preserved for scroll-to-item
+    if (href.includes('#')) {
+      window.location.href = href
+    } else {
+      router.push(href)
+    }
+  }
 
   if (!open) return null
 

@@ -7,6 +7,63 @@ export interface SearchResult {
   keywords: string // concatenated searchable text
 }
 
+// ── Label → route prefix mapping ────────────────────────────────────
+// `hasDetail: true` means a /[id] detail page exists; false = list-only page
+const labelRouteMap: Record<string, { prefix: string; category: string; hasDetail: boolean }> = {
+  "destinations":        { prefix: "/destinations",                category: "Heritage Site",      hasDetail: true },
+  "travel-tours":        { prefix: "/travel-tours",                category: "Tour Package",       hasDetail: false },
+  "local-cuisine":       { prefix: "/culture/culinary-wonders",    category: "Cuisine",            hasDetail: false },
+  "festivals":           { prefix: "/culture/festivals-celebrations", category: "Festival",        hasDetail: false },
+  "cultural-practices":  { prefix: "/culture/practices-traditions",   category: "Cultural Practice", hasDetail: false },
+  "crafts-artisan":      { prefix: "/culture/art-wonders",         category: "Artisan",            hasDetail: false },
+  "people-wonders":      { prefix: "/culture/people-wonders",      category: "People Wonder",      hasDetail: false },
+  "restaurants":         { prefix: "/culture/culinary-wonders",    category: "Cuisine",            hasDetail: false },
+  "timeline-of-events":  { prefix: "/history/timeline",            category: "History",            hasDetail: false },
+  "notable-figures":     { prefix: "/history/remarkable-persons",  category: "Notable Person",     hasDetail: false },
+  "schools":             { prefix: "/community/schools",           category: "School",             hasDetail: false },
+  "hospitals":           { prefix: "/community/hospitals",         category: "Hospital",           hasDetail: false },
+  "barangay":            { prefix: "/community/barangays",         category: "Barangay",           hasDetail: false },
+  "local-business":      { prefix: "/community/local-business",    category: "Local Business",     hasDetail: false },
+  "pagoda":              { prefix: "/pagoda",                      category: "Festival",           hasDetail: false },
+  "news":                { prefix: "/news",                        category: "News",               hasDetail: true },
+  "events":              { prefix: "/events",                      category: "Festival",           hasDetail: true },
+}
+
+/** Convert a CMSPost from the API to a SearchResult the overlay can render. */
+export function mapCMSPostToSearchResult(post: {
+  id: string
+  title: string
+  body?: string
+  label?: string
+  postType?: string
+}): SearchResult {
+  const label = post.label ?? "destinations"
+  const mapping = labelRouteMap[label]
+
+  // Build detail href — label mapping takes priority over postType;
+  // for list-only pages, append #item-{id} so the browser scrolls to the card
+  let href: string
+  if (mapping && !mapping.hasDetail)  href = `${mapping.prefix}#item-${post.id}`
+  else if (mapping?.hasDetail)        href = `${mapping.prefix}/${post.id}`
+  else if (post.postType === "news")  href = `/news/${post.id}`
+  else if (post.postType === "event") href = `/events/${post.id}`
+  else                                href = `/places#item-${post.id}`
+
+  const category = mapping?.category ?? "Page"
+  const subtitle = post.body
+    ? post.body.length > 80 ? post.body.slice(0, 80) + "…" : post.body
+    : ""
+
+  return {
+    id: `cms-${post.id}`,
+    title: post.title,
+    subtitle,
+    href,
+    category,
+    keywords: `${post.title} ${post.body ?? ""}`.toLowerCase(),
+  }
+}
+
 // ── Build the flat index ─────────────────────────────────────────────
 export const searchIndex: SearchResult[] = [
 
@@ -57,12 +114,47 @@ export function searchContent(query: string): SearchResult[] {
 
       return { item, score }
     })
-    .filter(({ score }) => score > 0)
+    .filter(({ score, item }) => score > 0 && item.category !== "Page")
     .sort((a, b) => b.score - a.score)
     .slice(0, 12)
     .map(({ item }) => item)
 
   return scored
+}
+
+// ── Backend search function (async) ───────────────────────────────────
+/**
+ * Search backend for posts, tour guides, and other public content.
+ * This searches the live database content instead of the static index.
+ */
+export async function searchContentAsync(query: string): Promise<SearchResult[]> {
+  if (!query.trim()) return []
+
+  try {
+    const params = new URLSearchParams({ q: query })
+    const response = await fetch(`/api/search?${params}`)
+
+    if (!response.ok) {
+      console.warn('Backend search failed, falling back to static index')
+      return searchContent(query)
+    }
+
+    const data = await response.json()
+    const results: any[] = Array.isArray(data) ? data : (data.data?.results ?? data.results ?? [])
+
+    return results.map((item: any) =>
+      mapCMSPostToSearchResult({
+        id: String(item.id),
+        title: item.title ?? '',
+        body: item.description ?? '',
+        label: item.label ?? undefined,
+        postType: item.post_type ?? undefined,
+      })
+    ).filter((r) => r.category !== "Page")
+  } catch (error) {
+    console.warn('Backend search error, falling back to static index', error)
+    return searchContent(query)
+  }
 }
 
 // ── Category icon helper (string name to pass to front-end) ─────────

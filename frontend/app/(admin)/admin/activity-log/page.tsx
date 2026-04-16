@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAdmin } from "@/components/providers/admin-provider"
 import {
@@ -70,12 +70,8 @@ export default function ActivityLogPage() {
 
   if (!isHydrated || !isLoggedIn) return null
 
-  // Role-based filtering: content_manager and admin see only their own logs
-  const roleFiltered = currentUser?.role === "super_admin"
-    ? activityLog
-    : activityLog.filter((entry) => entry.user === (currentUser?.email ?? ""))
-
-  const filtered = roleFiltered.filter((entry) => {
+  // Backend already scopes the log to the requesting user for non-super_admins.
+  const filtered = useMemo(() => activityLog.filter((entry) => {
     if (filterAction !== "all" && entry.action !== filterAction) return false
     if (
       search &&
@@ -84,20 +80,23 @@ export default function ActivityLogPage() {
     )
       return false
     return true
-  })
+  }), [activityLog, filterAction, search])
 
   // Group by date
-  const grouped: Record<string, typeof filtered> = {}
-  for (const entry of filtered) {
-    const dateKey = format(parseISO(entry.timestamp), "MMMM d, yyyy")
-    if (!grouped[dateKey]) grouped[dateKey] = []
-    grouped[dateKey].push(entry)
-  }
+  const grouped = useMemo(() => {
+    const groups: Record<string, typeof filtered> = {}
+    for (const entry of filtered) {
+      const dateKey = format(parseISO(entry.timestamp), "MMMM d, yyyy")
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(entry)
+    }
+    return groups
+  }, [filtered])
 
   return (
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-6 py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <ClipboardList className="h-5 w-5 text-primary" />

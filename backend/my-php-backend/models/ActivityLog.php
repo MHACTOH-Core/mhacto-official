@@ -25,7 +25,7 @@ class ActivityLog
         $query = "
             SELECT al.log_id, al.user_id, al.content_id, al.action,
                    al.details, al.page_path, al.ip_address, al.created_at,
-                   u.email, u.username
+                   u.email, u.username, u.full_name, u.profile_picture
             FROM activity_logs al
             LEFT JOIN users u ON al.user_id = u.user_id
             WHERE al.action != 'page_view'
@@ -45,7 +45,7 @@ class ActivityLog
         $query = "
             SELECT al.log_id, al.user_id, al.content_id, al.action,
                    al.details, al.page_path, al.ip_address, al.created_at,
-                   u.email, u.username
+                   u.email, u.username, u.full_name, u.profile_picture
             FROM activity_logs al
             LEFT JOIN users u ON al.user_id = u.user_id
             WHERE al.action != 'page_view'
@@ -128,9 +128,12 @@ class ActivityLog
         $description = $this->friendlyDescription($action, $data, $details);
 
         // Build user-friendly display name
+        $fullName = $row['full_name'] ?? null;
         $username = $row['username'] ?? null;
         $email    = $row['email'] ?? null;
-        if ($username) {
+        if ($fullName) {
+            $user = $fullName;
+        } elseif ($username) {
             $user = ucfirst($username);
         } elseif ($email) {
             $user = ucfirst(explode('@', $email)[0]);
@@ -139,11 +142,12 @@ class ActivityLog
         }
 
         return [
-            'id'          => (string) $row['log_id'],
-            'action'      => $action,
-            'description' => $description,
-            'timestamp'   => $row['created_at'],
-            'user'        => $user,
+            'id'             => (string) $row['log_id'],
+            'action'         => $action,
+            'description'    => $description,
+            'timestamp'      => $row['created_at'],
+            'user'           => $user,
+            'profilePicture' => $row['profile_picture'] ?? null,
         ];
     }
 

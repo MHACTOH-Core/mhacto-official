@@ -36,13 +36,16 @@ function handle_activity(string $method, ?string $param1): void
                 if (!$data || empty($data['action']) || empty($data['description'])) {
                     Response::error('Action and description are required.', 400);
                 }
+                $action      = substr((string) $data['action'], 0, 50);
+                $description = substr((string) $data['description'], 0, 500);
+                $detailsJson = json_encode(['description' => $description]);
 
                 $entry = $log->log(
-                    $data['action'],
-                    $data['description'],
-                    $data['userId'] ?? null,
+                    $action,
+                    $detailsJson,
+                    (int) $authUser['sub'],
                     null,
-                    $data['contentId'] ?? null
+                    isset($data['contentId']) ? (int) $data['contentId'] : null
                 );
 
                 if ($entry) {

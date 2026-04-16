@@ -50,6 +50,8 @@ export interface LocalBusiness {
   description: string
   products: string[]
   location: string
+  latitude?: string
+  longitude?: string
   contact?: string
   yearEstablished?: string
   image?: string
@@ -84,6 +86,8 @@ export interface Artisan {
   products: string[]
   awards?: string[]
   location: string
+  latitude?: string
+  longitude?: string
   image?: string
   gallery?: string[]
   author?: string
@@ -97,6 +101,8 @@ export interface Restaurant {
   description: string
   specialties: string[]
   location: string
+  latitude?: string
+  longitude?: string
   hours?: string
   priceRange?: "₱" | "₱₱" | "₱₱₱"
   image?: string

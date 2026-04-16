@@ -32,6 +32,7 @@ class Mailer
         $mail->Username   = $cfg['username'];
         $mail->Password   = $cfg['password'];
         $mail->Port       = $cfg['port'];
+        $mail->Timeout    = 5; // fail fast if SMTP is unreachable (seconds)
         $mail->CharSet    = PHPMailer::CHARSET_UTF8;
 
         if ($cfg['encryption'] === 'ssl') {
@@ -100,6 +101,33 @@ class Mailer
             return true;
         } catch (\Exception $e) {
             error_log("Mailer::notifyAdmin failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send an automatic acknowledgement email to the visitor after inquiry submission.
+     *
+     * @param string $toName    Visitor's full name
+     * @param string $toEmail   Visitor's email address
+     * @param int    $inquiryId DB inquiry ID (used as reference number)
+     */
+    public static function sendAutoReply(
+        string $toName,
+        string $toEmail,
+        int    $inquiryId
+    ): bool {
+        try {
+            $mail = self::make();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = "We received your inquiry #$inquiryId — MHACTO Bocaue";
+            $mail->isHTML(true);
+            $mail->Body    = self::autoReplyTemplate($toName, $inquiryId);
+            $mail->AltBody = self::autoReplyTemplatePlain($toName, $inquiryId);
+            $mail->send();
+            return true;
+        } catch (\Exception $e) {
+            error_log("Mailer::sendAutoReply failed: " . $e->getMessage());
             return false;
         }
     }
@@ -504,5 +532,77 @@ HTML;
              . "If you believe this is an error or would like to reschedule, please contact our office "
              . "or submit a new inquiry at our website.\n\n"
              . "We apologize for any inconvenience.\n\nWarm regards,\nMHACTO Bocaue Tourism Office\nBocaue, Bulacan, Philippines";
+    }
+
+    // ─── Auto-Reply Templates ──────────────────────────────────────
+
+    private static function autoReplyTemplate(string $name, int $id): string
+    {
+        $name = htmlspecialchars($name);
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:#1a9bb5;padding:28px 32px;">
+            <p style="margin:0;font-size:20px;font-weight:bold;color:#ffffff;">MHACTO Bocaue Tourism</p>
+            <p style="margin:4px 0 0;font-size:13px;color:#d0f0f7;">Municipal History, Arts, Culture &amp; Tourism Office</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px;">
+            <p style="margin:0 0 16px;font-size:15px;color:#333;">Dear <strong>{$name}</strong>,</p>
+            <p style="margin:0 0 16px;font-size:15px;color:#333;">
+              Thank you for reaching out to us! We have successfully received your inquiry and our team will review it shortly.
+            </p>
+            <div style="background:#f0fafc;border-left:4px solid #1a9bb5;padding:16px 20px;border-radius:4px;margin:0 0 20px;">
+              <p style="margin:0 0 6px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;color:#777;">Reference Number</p>
+              <p style="margin:0;font-size:26px;font-weight:bold;color:#1a9bb5;">#{$id}</p>
+            </div>
+            <p style="margin:0 0 16px;font-size:14px;color:#555;">
+              We typically respond within <strong>1–3 business days</strong>. For urgent matters, you may contact our office directly.
+            </p>
+            <p style="margin:0 0 16px;font-size:14px;color:#555;">
+              Please keep this email for your records. Our team will reply to this email address.
+            </p>
+            <p style="margin:24px 0 0;font-size:14px;color:#333;">
+              Warm regards,<br>
+              <strong>MHACTO Bocaue Tourism Office</strong><br>
+              Bocaue, Bulacan, Philippines
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f0f0f0;padding:16px 32px;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#999;">
+              This is an automated confirmation from MHACTO Bocaue Tourism Office.<br>
+              Please do not reply to this email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
+
+    private static function autoReplyTemplatePlain(string $name, int $id): string
+    {
+        return "Dear {$name},\n\n"
+             . "Thank you for reaching out to us! We have received your inquiry.\n\n"
+             . "Reference Number: #{$id}\n\n"
+             . "We typically respond within 1–3 business days. For urgent matters, please contact our office directly.\n\n"
+             . "Please keep this email for your records. Our team will reply to this email address.\n\n"
+             . "Warm regards,\nMHACTO Bocaue Tourism Office\nBocaue, Bulacan, Philippines";
     }
 }

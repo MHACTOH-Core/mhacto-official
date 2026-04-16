@@ -28,6 +28,8 @@ export interface College {
   logo?: string
   barangay?: string
   location?: string
+  latitude?: string
+  longitude?: string
 }
 
 export interface PublicSchool {
@@ -50,6 +52,8 @@ export interface Hospital {
   services: string[]
   description: string
   location: string
+  latitude?: string
+  longitude?: string
   contact: string
   beds?: number
   hours?: string
@@ -63,6 +67,8 @@ export interface Barangay {
   captain?: string
   address?: string
   location?: string
+  latitude?: string
+  longitude?: string
   contact?: string
   population?: string
   description: string

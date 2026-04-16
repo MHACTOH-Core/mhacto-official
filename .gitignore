@@ -52,15 +52,18 @@ implementation-plan.txt
 notes.txt
 backend/my-php-backend/check_db.php
 *.bak
- activity_logs       |
-| category            |
-| config              |
-| content             |
-| content_fields      |
-| content_images      |
-| featured_content    |
-| inquiries           |
-| milestone           |
-| page_views          |
-| tour_guides         |
+
+# ── SQLite databases (local dev only, never commit) ──
+*.db
+*.sqlite
+*.sqlite3
+
+# ── PHP vendor (install via composer) ────────
+backend/my-php-backend/vendor/
+
+# ── Uploads (user-generated media) ──────────
+# Images are tracked in git so the team shares them via the repo.
+# Videos are excluded due to size — manage them separately.
+backend/my-php-backend/uploads/videos/*
+!backend/my-php-backend/uploads/videos/.gitkeep
 | users      

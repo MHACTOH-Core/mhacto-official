@@ -124,8 +124,6 @@ function MonthCard({ month, monthIndex, events, quarterColor }: { month: string;
                 <Link
                   key={ev.id}
                   href={`/events/${ev.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="group/evt flex items-start gap-3 rounded-xl border border-border/60 bg-gradient-to-r from-background to-muted/20 p-3 hover:border-primary/30 hover:shadow-md hover:from-primary/5 hover:to-background transition-all duration-300"
                   onClick={(e) => e.stopPropagation()}
                 >

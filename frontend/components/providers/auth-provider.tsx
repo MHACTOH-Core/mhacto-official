@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import type { UserRole } from "@/lib/data/admin-data"
-import { apiLogin, apiUpdateProfile, apiChangePassword, setAuthToken, apiFetchUserPreferences, apiUpdateUserPreferences, onAuthError, apiVerifyAuth } from "@/lib/api"
+import { apiLogin, apiUpdateProfile, apiChangePassword, setAuthToken, onAuthError, apiVerifyAuth } from "@/lib/api"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -30,8 +30,6 @@ export interface AuthContextValue {
   currentUser: AuthUser | null
   updateProfile: (data: { full_name?: string; profile_picture?: string | null }) => Promise<boolean>
   changePassword: (oldPassword: string, newPassword: string) => Promise<string | true>
-  notificationPrefs: { enableEmailNotifications: boolean; enableInquiryAlerts: boolean }
-  updateNotificationPrefs: (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }) => Promise<boolean>
   /** True once localStorage has been read on mount */
   isHydrated: boolean
 }
@@ -61,6 +59,25 @@ function saveJson<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+/**
+ * Write session identity to localStorage in one call.
+ * Single source of truth — prevents forgetting an individual saveJson().
+ */
+function persistSession(user: AuthUser): void {
+  saveJson("admin_logged_in", true)
+  saveJson("admin_email", user.email)
+  saveJson("admin_current_user", user)
+}
+
+/**
+ * Clear all session identity keys from localStorage in one call.
+ */
+function clearSession(): void {
+  saveJson("admin_logged_in", false)
+  saveJson("admin_email", "")
+  saveJson("admin_current_user", null)
+}
+
 // ─── Provider ──────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -68,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [adminEmail, setAdminEmail] = useState("")
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
-  const [notificationPrefs, setNotificationPrefs] = useState<{ enableEmailNotifications: boolean; enableInquiryAlerts: boolean }>({ enableEmailNotifications: true, enableInquiryAlerts: true })
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -79,9 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // expiry), force a clean logout so the UI doesn't get stuck in an
     // authenticated-looking state with no ability to make API calls.
     if (loggedIn && !storedToken) {
-      saveJson("admin_logged_in", false)
-      saveJson("admin_email", "")
-      saveJson("admin_current_user", null)
+      clearSession()
       setIsHydrated(true)
       return
     }
@@ -99,9 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoggedIn(false)
           setAdminEmail("")
           setCurrentUser(null)
-          saveJson("admin_logged_in", false)
-          saveJson("admin_email", "")
-          saveJson("admin_current_user", null)
+          clearSession()
         }
         setIsHydrated(true)
       }).catch((err) => {
@@ -114,14 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsHydrated(true)
     }
   }, [])
-
-  // Fetch notification preferences when user is known
-  useEffect(() => {
-    if (!isHydrated || !isLoggedIn || !currentUser) return
-    apiFetchUserPreferences(currentUser.id)
-      .then((prefs) => setNotificationPrefs(prefs))
-      .catch((err) => console.warn("Failed to fetch notification prefs:", err))
-  }, [isHydrated, isLoggedIn, currentUser])
 
   const login = useCallback(async (email: string, password: string): Promise<true | string> => {
     try {
@@ -143,9 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(true)
       setAdminEmail(resp.user.email)
       setCurrentUser(userObj)
-      saveJson("admin_logged_in", true)
-      saveJson("admin_email", resp.user.email)
-      saveJson("admin_current_user", userObj)
+      persistSession(userObj)
       return true
     } catch (error) {
       console.error("Login failed:", error instanceof Error ? error.message : error)
@@ -158,9 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false)
     setAdminEmail("")
     setCurrentUser(null)
-    saveJson("admin_logged_in", false)
-    saveJson("admin_email", "")
-    saveJson("admin_current_user", null)
+    clearSession()
   }, [])
 
   // Auto-logout when the backend returns a 401 (token expired after refresh fails)
@@ -203,26 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [currentUser],
   )
 
-  const updateNotificationPrefs = useCallback(
-    async (prefs: { enableEmailNotifications?: boolean; enableInquiryAlerts?: boolean }): Promise<boolean> => {
-      if (!currentUser) return false
-      try {
-        const res = await apiUpdateUserPreferences(currentUser.id, prefs)
-        if (res.preferences) {
-          setNotificationPrefs(res.preferences)
-        }
-        return true
-      } catch (err) {
-        console.error("updateNotificationPrefs error:", err)
-        return false
-      }
-    },
-    [currentUser],
-  )
-
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, login, logout, adminEmail, currentUser, updateProfile, changePassword, notificationPrefs, updateNotificationPrefs, isHydrated }}
+      value={{ isLoggedIn, login, logout, adminEmail, currentUser, updateProfile, changePassword, isHydrated }}
     >
       {children}
     </AuthContext.Provider>

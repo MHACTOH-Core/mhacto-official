@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Eye, EyeOff, MapPin } from "lucide-react"
-import { useAdmin } from "@/components/providers/admin-provider"
+import { useAuth } from "@/components/providers/auth-provider"
 import { asset, resolveMediaUrl } from "@/lib/utils"
 import { apiFetchSettings } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -159,9 +159,25 @@ function BlueWaveParticles() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-[2]" aria-hidden />
 }
 
+/**
+ * Fetches the admin login background image from site settings.
+ * Isolated here so the login form component has a single responsibility:
+ * credential submission. Layout concerns stay out of the form.
+ */
+function useLoginBackground(): string {
+  const [bgImage, setBgImage] = useState("")
+  useEffect(() => {
+    apiFetchSettings()
+      .then((s) => { if (s?.loginBackgroundImage) setBgImage(s.loginBackgroundImage) })
+      .catch(() => {})
+  }, [])
+  return bgImage
+}
+
 export default function AdminLoginPage() {
-  const { login, isLoggedIn, isHydrated } = useAdmin()
+  const { login, isLoggedIn, isHydrated } = useAuth()
   const router = useRouter()
+  const loginBgImage = useLoginBackground()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -170,16 +186,17 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [loginBgImage, setLoginBgImage] = useState("")
+  const [afkMessage, setAfkMessage] = useState("")
 
   useEffect(() => { setMounted(true) }, [])
 
+  // Check for AFK logout message
   useEffect(() => {
-    apiFetchSettings()
-      .then((s) => {
-        if (s?.loginBackgroundImage) setLoginBgImage(s.loginBackgroundImage)
-      })
-      .catch(() => {})
+    const afkLogout = sessionStorage.getItem("afk_logout")
+    if (afkLogout) {
+      setAfkMessage("Sorry, we logged you out because you've been AFK for 30 minutes.")
+      sessionStorage.removeItem("afk_logout")
+    }
   }, [])
 
   useEffect(() => {
@@ -390,6 +407,14 @@ export default function AdminLoginPage() {
               </Label>
             </div>
 
+            {/* AFK logout message */}
+            {afkMessage && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.08] px-4 py-3">
+                <div className="h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <p className="text-sm text-amber-300">{afkMessage}</p>
+              </div>
+            )}
+
             {/* Error */}
             {error && (
               <div className="flex items-center gap-2.5 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3">
@@ -413,23 +438,6 @@ export default function AdminLoginPage() {
               </span>
             </Button>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-7">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/[0.06]" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-4 text-xs text-slate-500" style={{ backgroundColor: "#15203a" }}>or</span>
-            </div>
-          </div>
-
-          {/* Demo hint */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
-            <p className="text-center text-xs text-slate-500">
-              Demo: <span className="font-semibold text-slate-300">admin@mhacto.gov.ph</span> / <span className="font-semibold text-slate-300">admin123</span>
-            </p>
-          </div>
 
           {/* Footer */}
           <p className="mt-10 text-center text-[11px] text-slate-300/60">

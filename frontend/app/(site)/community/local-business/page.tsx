@@ -79,7 +79,7 @@ export default function LocalBusinessPage() {
           ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 items-start">
             {localBusinesses.map((biz, idx) => (
-              <Card key={biz.id} className={`reveal-on-scroll group overflow-hidden border-border transition-all duration-300 ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
+              <Card key={biz.id} id={`item-${biz.id}`} className={`reveal-on-scroll group overflow-hidden border-border transition-all duration-300 ${idx % 2 === 0 ? "" : "reveal-delay-1"}`}>
                 {biz.images && biz.images.length > 1 ? (
                   <div className={`grid gap-0.5 h-36 overflow-hidden ${biz.images.length <= 2 ? "grid-cols-2" : "grid-cols-3"}`}>
                     {biz.images.slice(0, 6).map((img, idx) => (
@@ -135,7 +135,7 @@ export default function LocalBusinessPage() {
                     </div>
                   )}
                   <h3 className="text-lg font-black text-foreground mb-2">{biz.name}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{biz.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-words">{biz.description}</p>
                   <div className="space-y-2 mb-4">
                     {biz.yearEstablished && (
                       <div className="flex items-center gap-2 text-xs text-foreground">

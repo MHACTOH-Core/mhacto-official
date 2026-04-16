@@ -2,15 +2,21 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
+import dynamic from "next/dynamic"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useAdmin } from "@/components/providers/admin-provider"
-import DashboardPrintReport from "@/components/admin/dashboard-print-report"
+
+// Lazy-load heavy dialog/modal components (only needed when opened)
+const DashboardPrintReport = dynamic(() => import("@/components/admin/dashboard-print-report"), { ssr: false })
+const PageViewsDialog = dynamic(() => import("@/components/admin/page-views-dialog").then(m => ({ default: m.PageViewsDialog })), { ssr: false })
+const VisitorEngagementDialog = dynamic(() => import("@/components/admin/visitor-engagement-dialog").then(m => ({ default: m.VisitorEngagementDialog })), { ssr: false })
 import {
   Users,
-  FileText,
   MessageSquare,
   TrendingUp,
+  TrendingDown,
+  Minus,
   ArrowUpRight,
   Footprints,
   CalendarCheck,
@@ -20,6 +26,8 @@ import {
   MapPin,
   Handshake,
   Printer,
+  CalendarDays,
+  RefreshCw,
 } from "lucide-react"
 import {
   inquiryStatusLabels,
@@ -27,10 +35,12 @@ import {
   type InquiryStatus,
   type InquiryType,
 } from "@/lib/data/admin-data"
+import { resolveMediaUrl } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +52,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import {
   BarChart,
   Bar,
   XAxis,
@@ -52,8 +72,10 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from "recharts"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, startOfYear, isAfter, isBefore, startOfMonth, startOfWeek, differenceInDays } from "date-fns"
 
 // Static gradient definitions — defined outside to avoid recreation on every render
 const BAR_GRADIENTS = [
@@ -85,15 +107,25 @@ export default function DashboardPage() {
     activityLog,
     visitorSummary,
     isLoadingAnalytics,
+    activeDateFilter,
     refreshAnalytics,
+    refreshAnalyticsWithRange,
   } = useAdmin()
+
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+  const [showPrintDialog, setShowPrintDialog] = useState(false)
+  const [showPageViewsDialog, setShowPageViewsDialog] = useState(false)
+  const [showVisitorDialog, setShowVisitorDialog] = useState(false)
+
+  // ── Global dashboard date filter ──
+  type GlobalFilter = "all" | "today" | "week" | "month" | "year" | "custom"
+  const [globalFilter, setGlobalFilter] = useState<GlobalFilter>("all")
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined)
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined)
 
   useEffect(() => {
     if (isHydrated && !isLoggedIn) router.push("/admin")
   }, [isHydrated, isLoggedIn, router])
-
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
-  const [showPrintDialog, setShowPrintDialog] = useState(false)
 
   useEffect(() => {
     let el = document.getElementById("print-portal")
@@ -108,23 +140,72 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // ── Compute the active date range from the global filter ──
+  const globalDateRange = useMemo(() => {
+    const now = new Date()
+    switch (globalFilter) {
+      case "today":
+        return { from: format(now, "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "Today" }
+      case "week": {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 })
+        return { from: format(weekStart, "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Week" }
+      }
+      case "month":
+        return { from: format(startOfMonth(now), "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Month" }
+      case "year":
+        return { from: format(startOfYear(now), "yyyy-MM-dd"), to: format(now, "yyyy-MM-dd"), label: "This Year" }
+      case "custom":
+        if (customFrom && customTo)
+          return {
+            from: format(customFrom, "yyyy-MM-dd"),
+            to:   format(customTo,   "yyyy-MM-dd"),
+            label: `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d, yyyy")}`,
+          }
+        return null
+      default:
+        return null // "all" → last 30 days (backend default)
+    }
+  }, [globalFilter, customFrom, customTo])
+
+  // ── Re-fetch analytics whenever the global filter changes ──
+  useEffect(() => {
+    if (!isHydrated || !isLoggedIn) return
+    if (globalDateRange) {
+      refreshAnalyticsWithRange(globalDateRange.from, globalDateRange.to, globalDateRange.label)
+    } else if (globalFilter === "all") {
+      refreshAnalytics()
+    }
+  // refreshAnalytics / refreshAnalyticsWithRange are stable useCallback refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalDateRange, globalFilter, isHydrated, isLoggedIn])
+
   const handleExport = useCallback(() => {
     setShowPrintDialog(true)
   }, [])
 
   const handlePrintConfirm = useCallback(() => {
     setShowPrintDialog(false)
-    // Small delay so the dialog fully closes before print dialog opens
     setTimeout(() => window.print(), 100)
   }, [])
 
-  // ── Memoized derived data (hooks must run before any early return) ──
+  // ── Memoized derived data ──
 
   const topPages = useMemo(() => [...pageViews].sort((a, b) => b.views - a.views), [pageViews])
 
+  // Filter inquiries client-side by the active global date range
+  const dateFilteredInquiries = useMemo(() => {
+    if (!globalDateRange) return inquiries
+    const from = parseISO(globalDateRange.from)
+    const to   = parseISO(globalDateRange.to)
+    return inquiries.filter((i) => {
+      const d = parseISO(i.createdAt)
+      return !isBefore(d, from) && !isAfter(d, to)
+    })
+  }, [inquiries, globalDateRange])
+
   const activeInquiries = useMemo(
-    () => inquiries.filter((i) => i.status !== "spam" && i.status !== "trash"),
-    [inquiries],
+    () => dateFilteredInquiries.filter((i) => i.status !== "spam" && i.status !== "trash"),
+    [dateFilteredInquiries],
   )
   const totalActiveInquiries = activeInquiries.length
 
@@ -137,17 +218,29 @@ export default function DashboardPage() {
   )
 
   const inquiryByStatus = useMemo(
-    () => (["unread", "read", "assigned", "archived"] as InquiryStatus[]).map((status) => {
-      const count = inquiries.filter((i) => i.status === status).length
+    () => (["unread", "read", "assigned"] as InquiryStatus[]).map((status) => {
+      const count = dateFilteredInquiries.filter((i) => i.status === status).length
       return { status, count, ...inquiryStatusLabels[status] }
     }),
-    [inquiries],
+    [dateFilteredInquiries],
   )
 
-  const visitChartData = useMemo(
-    () => dailyVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views })),
-    [dailyVisits],
-  )
+  // Auto-aggregate by month when range spans more than 60 days
+  const visitChartData = useMemo(() => {
+    const rangeDays = globalDateRange
+      ? differenceInDays(parseISO(globalDateRange.to), parseISO(globalDateRange.from)) + 1
+      : 30
+    const aggregateByMonth = rangeDays > 60
+    if (aggregateByMonth) {
+      const monthly: Record<string, number> = {}
+      for (const d of dailyVisits) {
+        const key = format(parseISO(d.date), "MMM yyyy")
+        monthly[key] = (monthly[key] ?? 0) + d.views
+      }
+      return Object.entries(monthly).map(([date, views]) => ({ date, views }))
+    }
+    return dailyVisits.map((d) => ({ date: format(parseISO(d.date), "MMM d"), views: d.views }))
+  }, [dailyVisits, globalDateRange])
 
   const totals = visitorSummary?.totals
 
@@ -158,7 +251,6 @@ export default function DashboardPage() {
       { name: "Pending",   value: totals?.bookingsPending ?? 0,    color: "hsl(35, 90%, 55%)",  bg: "bg-amber-500",   ring: "ring-amber-500/20",   text: "text-amber-600 dark:text-amber-400" },
       { name: "Assigned",  value: totals?.guideAssigned ?? 0,      color: "hsl(270, 60%, 55%)", bg: "bg-violet-500",  ring: "ring-violet-500/20",  text: "text-violet-600 dark:text-violet-400" },
     ],
-    // totals is derived inline; depend on visitorSummary to avoid stale closure
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visitorSummary],
   )
@@ -176,6 +268,22 @@ export default function DashboardPage() {
   )
 
   const recentActivity = useMemo(() => activityLog.slice(0, 5), [activityLog])
+
+  const trafficSparkline = useMemo(() => visitChartData, [visitChartData])
+
+  const { todayViews, trendPct, trendDir } = useMemo(() => {
+    if (dailyVisits.length === 0)
+      return { todayViews: 0, trendPct: 0, trendDir: "neutral" as const }
+    const sorted = [...dailyVisits].sort((a, b) => a.date.localeCompare(b.date))
+    const today = sorted[sorted.length - 1]?.views ?? 0
+    const yesterday = sorted[sorted.length - 2]?.views ?? 0
+    const pct =
+      yesterday === 0
+        ? today > 0 ? 100 : 0
+        : Math.round(((today - yesterday) / yesterday) * 100)
+    const dir = pct > 0 ? "up" : pct < 0 ? "down" : "neutral"
+    return { todayViews: today, trendPct: Math.abs(pct), trendDir: dir }
+  }, [dailyVisits])
 
   const statCards = useMemo(
     () => [
@@ -212,27 +320,103 @@ export default function DashboardPage() {
     [visitorSummary],
   )
 
-  if (!isHydrated || !isLoggedIn) return null
+  // ── Early returns (after all hooks) ──
+  if (!isHydrated || !isLoggedIn || !currentUser) return null
+
+  // Only super_admin and admin can access dashboard
+  if (currentUser.role === "content_manager") {
+    return (
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h2 className="mt-4 text-xl font-semibold">Access Restricted</h2>
+          <p className="mt-2 text-muted-foreground">You don&apos;t have permission to access the dashboard.</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">
+        <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-bold text-card-foreground sm:text-2xl">Dashboard</h1>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                Welcome back — here&apos;s what&apos;s happening on your website.
+                {activeDateFilter
+                  ? <>Showing data for <strong>{activeDateFilter.label}</strong> ({activeDateFilter.from} – {activeDateFilter.to})</>
+                  : <>Welcome back — here&apos;s what&apos;s happening on your website.</>}
               </p>
             </div>
             {currentUser && (
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={handleExport}
-              >
-                <Printer className="h-4 w-4" /> Export Summary
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* ── Global Date Filter ── */}
+                <Select value={globalFilter} onValueChange={(v) => setGlobalFilter(v as GlobalFilter)}>
+                  <SelectTrigger className="h-8 w-[145px] text-xs">
+                    <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Last 30 days</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                    <SelectSeparator />
+                    <SelectItem value="custom">Custom range…</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Custom range date picker — shown only when "custom" is selected */}
+                {globalFilter === "custom" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {customFrom && customTo
+                          ? `${format(customFrom, "MMM d")} – ${format(customTo, "MMM d, yyyy")}`
+                          : "Pick dates"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="range"
+                        selected={customFrom && customTo ? { from: customFrom, to: customTo } : undefined}
+                        onSelect={(range) => {
+                          setCustomFrom(range?.from)
+                          setCustomTo(range?.to)
+                        }}
+                        numberOfMonths={2}
+                        disabled={{ after: new Date() }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => {
+                    if (globalDateRange) {
+                      refreshAnalyticsWithRange(globalDateRange.from, globalDateRange.to, globalDateRange.label)
+                    } else {
+                      refreshAnalytics()
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={handleExport}
+                >
+                  <Printer className="h-3.5 w-3.5" /> Export PDF
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -242,39 +426,161 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {statCards.map((stat) => (
               <Link key={stat.label} href={stat.href} className="group">
-                <Card className="transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md">
-                  <CardContent className="flex items-start gap-3 p-3 sm:gap-4 sm:p-5">
-                    <div className={`shrink-0 rounded-lg p-2 sm:rounded-xl sm:p-3 ${stat.color}`}>
-                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-5 sm:pb-2">
+                    <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">{stat.label}</CardTitle>
+                    <div className={`shrink-0 rounded-lg p-1.5 sm:rounded-xl sm:p-2 ${stat.color}`}>
+                      <stat.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-                        {stat.label}
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0 sm:p-5 sm:pt-0">
+                    {isLoadingAnalytics ? (
+                      <Skeleton className="mt-1 h-7 w-10 sm:h-8 sm:w-12" />
+                    ) : (
+                      <p className="text-lg font-bold text-card-foreground sm:text-2xl">
+                        {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
                       </p>
-                      {isLoadingAnalytics ? (
-                        <Skeleton className="mt-1 h-7 w-10 sm:h-8 sm:w-12" />
-                      ) : (
-                        <p className="mt-0.5 text-lg font-bold text-card-foreground sm:mt-1 sm:text-2xl">
-                          {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>
             ))}
           </div>
 
+          {/* Website Visits widget */}
+          <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+            <CardHeader className="pb-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-sm font-semibold sm:text-base">Website Visits</CardTitle>
+                  <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    {activeDateFilter ? activeDateFilter.label : "Last 30 days overview"}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 pt-0 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
+              {/* Left: number + trend */}
+              <div className="min-w-[180px]">
+                {isLoadingAnalytics ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-9 w-28" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                ) : dailyVisits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No visit data yet</p>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black text-card-foreground tabular-nums leading-none">
+                      {dailyVisits.reduce((s, d) => s + d.views, 0).toLocaleString()}
+                      <span className="text-sm font-medium text-muted-foreground ml-2">
+                        {activeDateFilter ? activeDateFilter.label.toLowerCase() : "last 30d"}
+                      </span>
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      {trendDir === "up" && (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                          <TrendingUp className="h-3 w-3" /> +{trendPct}%
+                        </span>
+                      )}
+                      {trendDir === "down" && (
+                        <span className="flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-xs font-semibold text-red-700 dark:text-red-300">
+                          <TrendingDown className="h-3 w-3" /> -{trendPct}%
+                        </span>
+                      )}
+                      {trendDir === "neutral" && (
+                        <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                          <Minus className="h-3 w-3" /> No change
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        latest day vs prior day
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Right: chart — fills remaining width */}
+              <div className="h-36 w-full">
+                {isLoadingAnalytics ? (
+                  <Skeleton className="h-full w-full rounded-lg" />
+                ) : trafficSparkline.length > 1 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trafficSparkline} margin={{ top: 8, right: 12, bottom: 20, left: 12 }}>
+                      <defs>
+                        <linearGradient id="visitGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={4}
+                        interval={Math.max(0, Math.floor(trafficSparkline.length / 7) - 1)}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 10,
+                          border: "1px solid hsl(var(--border))",
+                          background: "hsl(var(--card))",
+                          color: "hsl(var(--card-foreground))",
+                          fontSize: 12,
+                          boxShadow: "0 8px 30px rgba(0,0,0,.12)",
+                        }}
+                        itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                        labelStyle={{ color: "hsl(var(--card-foreground))", fontSize: 11 }}
+                        formatter={(value: number) => [`${value.toLocaleString()} visits`, ""]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="views"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        fill="url(#visitGrad)"
+                        dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
+                        animationBegin={0}
+                        animationDuration={900}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    Not enough data
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Charts row — pie left, bar right, equal stretch */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             {/* Visitor Engagement */}
-            <Card className="relative flex flex-col overflow-hidden">
+            <Card className="relative flex flex-col overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
               <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold sm:text-base">
-                  Visitor Engagement
-                </CardTitle>
-                <p className="text-[11px] text-muted-foreground sm:text-xs">Last 30 days overview</p>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold sm:text-base">
+                    Visitor Engagement
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] font-semibold text-primary hover:text-primary/80 gap-1"
+                    onClick={() => setShowVisitorDialog(true)}
+                  >
+                    View All <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    {activeDateFilter ? activeDateFilter.label : "Last 30 days overview"}
+                  </p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col pt-0">
                 {isLoadingAnalytics ? (
@@ -386,20 +692,29 @@ export default function DashboardPage() {
             </Card>
 
             {/* Bar chart — Most popular pages */}
-            <Card className="relative flex flex-col overflow-hidden">
+            <Card className="relative flex flex-col overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
               <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold sm:text-base">
                     Most Popular Pages
                   </CardTitle>
-                  <button
-                    onClick={() => refreshAnalytics()}
-                    className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                    title="Refresh"
-                  >
-                    <TrendingUp className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setShowPageViewsDialog(true)}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      title="View all page views"
+                    >
+                      View All
+                    </button>
+                    <button
+                      onClick={() => refreshAnalytics()}
+                      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      title="Refresh"
+                    >
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground sm:text-xs">Top pages by total views</p>
               </CardHeader>
@@ -485,7 +800,7 @@ export default function DashboardPage() {
           {/* Bottom row: inquiry summary + recent activity */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
             {/* Inquiry Summary */}
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold sm:text-base">
@@ -558,7 +873,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Recent activity */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold sm:text-base">
@@ -586,20 +901,39 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 ) : recentActivity.length > 0 ? (
-                  <div className="space-y-3 sm:space-y-4">
-                    {recentActivity.map((entry) => (
-                      <div key={entry.id} className="flex gap-3">
-                        <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-card-foreground sm:text-sm">
-                            {entry.description}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-sm">
-                            {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
-                          </p>
+                  <div className="space-y-4">
+                    {recentActivity.map((entry) => {
+                      const initials = entry.user
+                        .split(' ')
+                        .map((w) => w[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)
+                      return (
+                        <div key={entry.id} className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 shrink-0 border border-border/50">
+                            {entry.profilePicture && (
+                              <AvatarImage
+                                src={resolveMediaUrl(entry.profilePicture)}
+                                alt={entry.user}
+                              />
+                            )}
+                            <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-card-foreground sm:text-sm">
+                              {entry.user}
+                            </p>
+                            <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
+                              {entry.description}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              {format(parseISO(entry.timestamp), "MMM d, yyyy · h:mm a")}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
@@ -610,6 +944,18 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Page views detail dialog */}
+        <PageViewsDialog
+          open={showPageViewsDialog}
+          onOpenChange={setShowPageViewsDialog}
+        />
+
+        {/* Visitor engagement detail dialog */}
+        <VisitorEngagementDialog
+          open={showVisitorDialog}
+          onOpenChange={setShowVisitorDialog}
+        />
 
         {/* Pre-print instruction dialog */}
         <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
@@ -651,6 +997,9 @@ export default function DashboardPage() {
               totalActiveInquiries={totalActiveInquiries}
               recentActivity={recentActivity}
               generatedBy={currentUser?.fullName || currentUser?.email || "Super Admin"}
+              reportPeriod={activeDateFilter
+                ? `${activeDateFilter.label} (${activeDateFilter.from} – ${activeDateFilter.to})`
+                : "Last 30 Days"}
             />,
             portalContainer,
           )}

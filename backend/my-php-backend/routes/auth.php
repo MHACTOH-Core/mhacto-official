@@ -4,11 +4,13 @@ use App\Models\User;
 use App\Core\Auth;
 use App\Core\Response;
 use App\Core\RateLimit;
+
 /**
  * Route: /api/auth
  *
- * POST /api/auth/login — authenticate admin user, return JWT
- * GET  /api/auth/me    — verify token, return current user
+ * POST /api/auth/login   — authenticate admin user, return JWT
+ * GET  /api/auth/me      — verify token, return current user
+ * POST /api/auth/refresh — issue a new JWT for a recently-expired token
  */
 
 function handle_auth(string $method, ?string $action): void
@@ -26,6 +28,26 @@ function handle_auth(string $method, ?string $action): void
         default:
             Response::error('Not found.', 404);
     }
+}
+
+// ── Private helper ──────────────────────────────────────────────
+
+/**
+ * Map a User DB row to the camelCase shape expected by the frontend.
+ * Single source of truth — eliminates the duplicated mapping in login/me.
+ *
+ * @param array $row  A row returned by User::findByEmail() or User::findById()
+ */
+function _auth_format_user(array $row): array
+{
+    return [
+        'id'             => (int) $row['user_id'],
+        'username'       => $row['username'],
+        'fullName'       => $row['full_name'] ?? $row['username'],
+        'profilePicture' => $row['profile_picture'] ?? null,
+        'email'          => $row['email'],
+        'role'           => $row['role'] ?? 'admin',
+    ];
 }
 
 // ── Login ───────────────────────────────────────────────────────
@@ -46,46 +68,35 @@ function _auth_login(string $method): void
     }
 
     try {
-        $db   = (new Database())->getConnection();
-        $user = new User($db);
+        $db       = (new Database())->getConnection();
+        $userModel = new User($db);
 
-        $row = $user->findByEmail($data->email);
+        $row = $userModel->findByEmail($data->email);
 
         if (!$row) {
             Response::error('No account found with this email.', 401);
-            return;
         }
 
         if ($row['status'] !== 'active') {
             Response::error('This account has been deactivated.', 401);
-            return;
         }
 
         if (!password_verify($data->password, $row['password_hash'])) {
             Response::error('Incorrect password.', 401);
-            return;
         }
 
-        unset($row['password_hash'], $row['status']);
-        $user = [
-            'id'             => $row['user_id'],
-            'username'       => $row['username'],
-            'fullName'       => $row['full_name'] ?? $row['username'],
-            'profilePicture' => $row['profile_picture'] ?? null,
-            'email'          => $row['email'],
-            'role'           => $row['role'] ?? 'admin',
-        ];
+        $userPayload = _auth_format_user($row);
 
         $token = Auth::generateToken([
-            'id'    => $user['id'],
-            'email' => $user['email'],
-            'role'  => $user['role'],
+            'id'    => $userPayload['id'],
+            'email' => $userPayload['email'],
+            'role'  => $userPayload['role'],
         ]);
 
         Response::json([
             'message' => 'Login successful',
             'token'   => $token,
-            'user'    => $user,
+            'user'    => $userPayload,
         ]);
     } catch (Exception $e) {
         error_log("auth/login error: " . $e->getMessage());
@@ -101,32 +112,19 @@ function _auth_me(string $method): void
         Response::error('Method not allowed. Use GET.', 405);
     }
 
-    $authUser = Auth::requireAuth(); // 401 if invalid
+    $authUser = Auth::requireAuth(); // exits with 401 if token is missing/invalid
 
     try {
-        $db   = (new Database())->getConnection();
-        $stmt = $db->prepare(
-            "SELECT user_id, username, full_name, profile_picture, email, role
-             FROM users WHERE user_id = :id AND status = 'active' LIMIT 1"
-        );
-        $stmt->bindParam(':id', $authUser['sub'], PDO::PARAM_INT);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $db        = (new Database())->getConnection();
+        $userModel = new User($db);
 
-        if (!$row) {
+        $row = $userModel->findById((int) $authUser['sub']);
+
+        if (!$row || ($row['status'] ?? '') !== 'active') {
             Response::error('User not found or deactivated.', 401);
         }
 
-        Response::json([
-            'user' => [
-                'id'             => $row['user_id'],
-                'username'       => $row['username'],
-                'fullName'       => $row['full_name'] ?? $row['username'],
-                'profilePicture' => $row['profile_picture'] ?? null,
-                'email'          => $row['email'],
-                'role'           => $row['role'] ?? 'admin',
-            ],
-        ]);
+        Response::json(['user' => _auth_format_user($row)]);
     } catch (Exception $e) {
         error_log("auth/me error: " . $e->getMessage());
         Response::error('Internal server error.', 500);
@@ -149,15 +147,12 @@ function _auth_refresh(string $method): void
     }
 
     try {
-        $db   = (new Database())->getConnection();
-        $stmt = $db->prepare(
-            "SELECT user_id, email, role FROM users WHERE user_id = :id AND status = 'active' LIMIT 1"
-        );
-        $stmt->bindParam(':id', $payload['sub'], PDO::PARAM_INT);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $db        = (new Database())->getConnection();
+        $userModel = new User($db);
 
-        if (!$row) {
+        $row = $userModel->findById((int) $payload['sub']);
+
+        if (!$row || ($row['status'] ?? '') !== 'active') {
             Response::error('User not found or deactivated.', 401);
         }
 

@@ -14,7 +14,7 @@ RewriteEngine On
 
 # Block direct access to PHP source directories
 <IfModule mod_rewrite.c>
-    RewriteRule ^(config|core|models|database|vendor)/.*$ - [F,L]
+    RewriteRule ^(config|core|models|database|vendor|examples|tests)/.*$ - [F,L]
 </IfModule>
 
 # ── Security / DDoS mitigation ────────────────────────────────────

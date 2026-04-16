@@ -9,6 +9,8 @@ export type FormData = {
   status: ContentStatus
   images: string[]
   location: string
+  latitude: string
+  longitude: string
   hours: string
   contact: string
   established: string
@@ -29,6 +31,8 @@ export const EMPTY_FORM: FormData = {
   status: "draft",
   images: [],
   location: "",
+  latitude: "",
+  longitude: "",
   hours: "",
   contact: "",
   established: "",
@@ -84,7 +88,7 @@ export const LABEL_VISIBLE_FIELDS: Record<string, DetailField[]> = {
   "destinations":       ["location", "hours", "contact", "established", "category", "story", "highlights"],
   "travel-tours":       ["contact", "category", "story", "highlights"],
   "events":             ["location", "story", "highlights"],
-  "schools":             ["location", "hours", "established", "contact", "category", "story"],
+  "schools":             ["location", "hours", "established", "contact", "category", "story", "highlights"],
   "hospitals":           ["location", "hours", "contact", "established", "category", "story"],
   "barangay":            ["location", "established", "story"],
   "local-business":      ["location", "hours", "contact", "established", "category", "story", "highlights"],
@@ -119,6 +123,7 @@ export const LABEL_FIELD_LABELS: Record<string, Partial<Record<DetailField, { la
     established: { label: "Enrollment / Student Count", placeholder: "e.g. 1,200 students" },
     contact: { label: "Year Founded", placeholder: "e.g. 1952" },
     story: { label: "Programs Offered", placeholder: "Science & Technology\nHumss\nGeneral Academic Strand" },
+    highlights: { label: "Contact Details", placeholder: "(044) 123-4567\ninfo@school.edu.ph\nhttps://school.edu.ph" },
   },
   "hospitals": {
     story: { label: "Services Offered", placeholder: "Emergency care\nOutpatient services\nLaboratory\nPharmacy" },

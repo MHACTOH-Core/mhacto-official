@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { asset } from "@/lib/utils"
 import { useState, useMemo, useEffect, useRef } from "react"
-import { School, ArrowUpDown, BookOpen, Users, Search, X } from "lucide-react"
+import { School, ArrowUpDown, BookOpen, Users, Search, X, Phone } from "lucide-react"
 import { PageHero } from "@/components/sections/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -299,6 +299,7 @@ export default function SchoolsPage() {
           {displayedSchools.map((school, idx) => (
             <div
               key={school.id}
+              id={`item-${school.id}`}
               className={`reveal-on-scroll flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden ${idx % 4 === 0 ? "" : idx % 4 === 1 ? "reveal-delay-1" : idx % 4 === 2 ? "reveal-delay-2" : "reveal-delay-3"}`}
             >
               {/* accent bar — blue for public, violet for private */}
@@ -367,6 +368,23 @@ export default function SchoolsPage() {
                     ))}
                   </ul>
                 </div>
+
+                {/* Contact Details */}
+                {typeof school.contact === "string" && school.contact.trim() && (
+                  <div className="space-y-2 mt-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/70 uppercase tracking-wide">
+                      <Phone className="h-3.5 w-3.5" />
+                      Contact Details
+                    </div>
+                    <ul className="space-y-0.5">
+                      {school.contact.split(/\n|,/).map((line) => line.trim()).filter(Boolean).map((line) => (
+                        <li key={line} className="text-xs text-muted-foreground">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Footer meta */}
                 {(school.enrollment || school.yearEstablished) && (

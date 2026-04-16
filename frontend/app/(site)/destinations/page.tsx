@@ -98,7 +98,7 @@ export default function DestinationsPage() {
       />
 
           {/* Sticky nav */}
-      <div className="sticky top-[57px] lg:top-[67px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
+      <div className="sticky top-[57px] lg:top-[85px] z-40 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex gap-1 overflow-x-auto py-1">
             {navSections.map((s) => (
@@ -131,7 +131,7 @@ export default function DestinationsPage() {
           <div className="space-y-8">
             {heritageSites.map((site, idx) => (
               <Card key={site.id} className="relative overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 group cursor-pointer">
-                <Link href={`/destinations/${site.id}`} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10" aria-label={site.name} />
+                <Link href={`/destinations/${site.id}`} className="absolute inset-0 z-10" aria-label={site.name} />
                 <div className={`grid gap-0 ${idx % 2 === 0 ? "md:grid-cols-[2fr_3fr]" : "md:grid-cols-[3fr_2fr]"}`}>
                   {idx % 2 === 0 && (
                     <GalleryImage
@@ -194,7 +194,7 @@ export default function DestinationsPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {museums.map((museum) => (
               <Card key={museum.id} className="relative group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer">
-                <Link href={`/destinations/${museum.id}`} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10" aria-label={museum.name} />
+                <Link href={`/destinations/${museum.id}`} className="absolute inset-0 z-10" aria-label={museum.name} />
                 <GalleryImage
                   src={museum.image}
                   alt={museum.name}
@@ -238,7 +238,7 @@ export default function DestinationsPage() {
           <div className="space-y-8">
             {religiousSites.map((site) => (
               <Card key={site.id} className="relative overflow-hidden border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 cursor-pointer">
-                <Link href={`/destinations/${site.id}`} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10" aria-label={site.name} />
+                <Link href={`/destinations/${site.id}`} className="absolute inset-0 z-10" aria-label={site.name} />
                 <div className="grid gap-0 md:grid-cols-[2fr_3fr]">
                   <GalleryImage
                     src={site.image}

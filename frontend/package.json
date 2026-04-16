@@ -1,6 +1,6 @@
 {
-  "name": "my-project",
-  "version": "0.1.0",
+  "name": "mhacto-official",
+  "version": "1.2.0",
   "private": true,
   "engines": {
     "node": ">=20",
@@ -10,7 +10,9 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",
@@ -46,6 +48,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "8.5.1",
     "framer-motion": "^12.36.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
@@ -53,18 +56,27 @@
     "react-day-picker": "8.10.1",
     "react-dom": "19.2.3",
     "react-easy-crop": "^5.5.6",
+    "react-leaflet": "^5.0.0",
     "recharts": "2.15.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^22",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
     "cross-env": "^10.1.0",
+    "jsdom": "^29.0.2",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^4.1.4"
   },
   "pnpm": {
     "overrides": {

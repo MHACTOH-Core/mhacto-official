@@ -44,6 +44,8 @@ export function cmsToHeritageSite(post: CMSPost): HeritageSite {
     image: resolveImage(post),
     gallery: (post.image ?? []).map((img) => resolveMediaUrl(img)).filter(Boolean),
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     hours: post.hours ?? "",
     isProtected: post.isFeatured ?? false,
     protectionLevel: post.isFeatured ? "Heritage Site" : undefined,
@@ -64,6 +66,8 @@ export function cmsToMuseum(post: CMSPost): Museum {
     description: post.body ?? "",
     collections: post.highlights ?? [],
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     hours: post.hours ?? "",
     admission: post.contact ?? "Contact for details",
     contact: post.contact ?? "",
@@ -82,6 +86,8 @@ export function cmsToReligiousSite(post: CMSPost): ReligiousSite {
     description: post.body?.substring(0, 300) ?? "",
     significance: post.story ?? "",
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     hours: post.hours ?? "",
     highlights: post.highlights ?? [],
     image: resolveImage(post),
@@ -191,6 +197,8 @@ export function cmsToArtisan(post: CMSPost): Artisan {
     products: post.highlights ?? [],
     awards: [],
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     image: resolveImage(post),
     author: post.author ?? undefined,
   }
@@ -234,6 +242,8 @@ export function cmsToLocalBusiness(post: CMSPost): LocalBusiness {
     description: post.body ?? "",
     products: post.highlights ?? [],
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
     image: resolveImage(post),
@@ -284,7 +294,7 @@ export function cmsToNotablePerson(post: CMSPost): NotablePerson {
 // ─── Community mappers ────────────────────────────────────────────
 
 /** Parse a comma-separated or newline-separated string into an array */
-function parseList(text: string | undefined | null): string[] {
+export function parseList(text: string | undefined | null): string[] {
   if (!text) return []
   return text
     .split(/[,\n]+/)
@@ -314,7 +324,15 @@ export function cmsToSchoolEntry(post: CMSPost): SchoolEntry {
     description: post.body ?? "",
     programs: parseList(post.story),
     enrollment: post.established ?? undefined,
-    yearEstablished: post.contact ?? undefined,
+    yearEstablished: post.contact
+      ? (() => {
+          const d = new Date(post.contact)
+          return isNaN(d.getTime())
+            ? post.contact
+            : d.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
+        })()
+      : undefined,
+    contact: Array.isArray(post.highlights) ? post.highlights.join("\n") : (post.highlights ?? undefined),
     logo: post.image?.[0] || undefined,
     isFeatured: post.isFeatured ?? false,
   }
@@ -355,6 +373,8 @@ export function cmsToCollege(post: CMSPost): College {
     programs: parseList(post.story),
     description: post.body ?? "",
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     contact: post.contact ?? undefined,
     yearEstablished: post.established ?? undefined,
     enrollment: post.hours ?? undefined,
@@ -377,6 +397,8 @@ export function cmsToHospital(post: CMSPost): Hospital {
     services: parseList(post.story),
     description: post.body ?? "",
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     contact: post.contact ?? "",
     beds: post.established ? parseInt(post.established, 10) || undefined : undefined,
     hours: post.hours ?? "",
@@ -405,6 +427,8 @@ export function cmsToRestaurant(post: CMSPost): Restaurant {
     description: post.body ?? "",
     specialties: parseList(post.story),
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     hours: post.hours ?? "",
     priceRange: ["₱", "₱₱", "₱₱₱"].includes(price ?? "") ? price : undefined,
     image: resolveImage(post),
@@ -422,6 +446,8 @@ export function cmsToBarangay(post: CMSPost): Barangay {
     description: post.body ?? "",
     address: post.location ?? "",
     location: post.location ?? "",
+    latitude: post.latitude ?? "",
+    longitude: post.longitude ?? "",
     population: post.established ?? undefined,
     captain: post.story ?? undefined,
     image: post.image?.[0] || undefined,

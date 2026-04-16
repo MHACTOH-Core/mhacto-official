@@ -4,6 +4,7 @@ use App\Models\HomeContent;
 use App\Models\Post;
 use App\Core\Auth;
 use App\Core\Response;
+use App\Core\QueryCache;
 /**
  * Route: /api/home
  *
@@ -82,6 +83,7 @@ function _home_hero(string $method, PDO $db): void
     $settings = $homeContent->getHeroSettings();
 
     if (!$settings) {
+        QueryCache::httpCacheHeaders(300);
         Response::json([]);
         return;
     }
@@ -102,6 +104,7 @@ function _home_hero(string $method, PDO $db): void
             'isActive'    => true,
         ];
     }
+    QueryCache::httpCacheHeaders(300);
     Response::json($slides);
 }
 
@@ -340,6 +343,7 @@ function _home_culinary(string $method, PDO $db): void
         'isActive'    => ($row['status'] ?? '') === 'published',
     ], $rows);
 
+    QueryCache::httpCacheHeaders(300);
     Response::json($items);
 }
 
@@ -388,6 +392,7 @@ function _home_restaurants(string $method, PDO $db): void
         'isActive'    => ($row['status'] ?? '') === 'published',
     ], $rows);
 
+    QueryCache::httpCacheHeaders(300);
     Response::json($items);
 }
 

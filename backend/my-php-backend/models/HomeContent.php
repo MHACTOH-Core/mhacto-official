@@ -83,7 +83,7 @@ class HomeContent
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $results = array_map([$this, 'formatFeatured'], $rows);
+        $results = $this->formatFeaturedBatch($rows);
 
         if ($all) return $results;
         return $results[0] ?? null;
@@ -167,7 +167,7 @@ class HomeContent
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
-        return array_map([$this, 'formatFeatured'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $this->formatFeaturedBatch($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function createFeaturedLandmark($data)
@@ -457,6 +457,67 @@ class HomeContent
 
     // ── Format helper for featured_content rows ────────────────────
 
+    /**
+     * Batch-format featured rows — loads thumbnails + meta in 2 queries instead of 4N.
+     */
+    private function formatFeaturedBatch(array $rows): array
+    {
+        if (empty($rows)) return [];
+        $ids = array_filter(array_map(fn($r) => $r['content_id'] ? (int)$r['content_id'] : null, $rows));
+        $ids = array_values(array_unique($ids));
+
+        // Batch thumbnails
+        $thumbnails = [];
+        if ($ids) {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->conn->prepare(
+                "SELECT content_id, image_url FROM content_images WHERE content_id IN ({$ph})
+                 ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC"
+            );
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $cid = (int)$r['content_id'];
+                if (!isset($thumbnails[$cid])) $thumbnails[$cid] = $r['image_url'];
+            }
+        }
+
+        // Batch meta (location, place_category, news_date)
+        $meta = [];
+        if ($ids) {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->conn->prepare(
+                "SELECT content_id, meta_key, meta_value FROM content_fields
+                 WHERE content_id IN ({$ph}) AND meta_key IN ('location','place_category','news_date')"
+            );
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $meta[(int)$r['content_id']][$r['meta_key']] = $r['meta_value'];
+            }
+        }
+
+        return array_map(function (array $row) use ($thumbnails, $meta) {
+            $contentId = $row['content_id'] ? (int) $row['content_id'] : null;
+            $m = $contentId ? ($meta[$contentId] ?? []) : [];
+            return [
+                'featuredId'    => (int) $row['featured_id'],
+                'contentId'     => $contentId ? (string) $contentId : null,
+                'section'       => $row['section'],
+                'title'         => $row['title'] ?? '',
+                'description'   => $row['description'] ?? '',
+                'image'         => $contentId ? ($thumbnails[$contentId] ?? null) : null,
+                'postType'      => $row['post_type'] ?? null,
+                'location'      => $m['location'] ?? null,
+                'category'      => $m['place_category'] ?? $row['category_name'] ?? null,
+                'date'          => $m['news_date'] ?? null,
+                'sortOrder'     => (int) ($row['sort_order'] ?? 0),
+                'isActive'      => (bool) ($row['is_active'] ?? true),
+                'createdAt'     => $row['created_at'],
+                'updatedAt'     => $row['updated_at'],
+            ];
+        }, $rows);
+    }
+
+    /** Format a single featured row (used for single-item reads). */
     private function formatFeatured(array $row): array
     {
         $contentId = $row['content_id'] ? (int) $row['content_id'] : null;

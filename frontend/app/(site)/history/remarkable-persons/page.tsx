@@ -79,6 +79,7 @@ export default function RemarkablePersonsPage() {
             {remarkablePersons.map((person) => (
               <Card
                 key={person.id}
+                id={`item-${person.id}`}
                 className="group overflow-hidden border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"
               >
                 {person.image && (

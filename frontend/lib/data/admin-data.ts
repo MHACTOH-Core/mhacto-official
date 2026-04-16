@@ -46,6 +46,8 @@ export interface CMSPost {
   image: string[]
   // Place detail fields (optional — only for place/event post types)
   location?: string
+  latitude?: string
+  longitude?: string
   hours?: string
   contact?: string
   established?: string
@@ -96,6 +98,7 @@ export interface Inquiry {
   inquiryType: InquiryType
   additionalDetails?: Record<string, unknown>
   assignedTo?: string | null
+  assignedGuideId?: string | null
   confirmedDate?: string | null
   confirmedBy?: string | null
   replyText?: string | null
@@ -110,8 +113,20 @@ export interface TourGuide {
   id: string
   fullName: string
   phoneNumber?: string | null
+  organization?: string | null
   availability: GuideAvailability
   isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TourGuideAppointment {
+  id: string
+  guideId: string
+  title: string
+  startDatetime: string // "YYYY-MM-DD HH:MM:SS"
+  endDatetime: string   // "YYYY-MM-DD HH:MM:SS"
+  notes?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -154,6 +169,7 @@ export interface ActivityLogEntry {
   description: string
   timestamp: string
   user: string
+  profilePicture?: string | null
 }
 
 export interface PageView {

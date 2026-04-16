@@ -45,8 +45,10 @@ import {
   apiListMedia,
   apiUploadMedia,
   apiDeleteMedia,
+  apiGetMediaUsages,
   API_BASE,
   type MediaFile,
+  type MediaUsageItem,
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { ImageCropDialog, type CropSaveMode } from "@/components/ui/image-crop-dialog"
@@ -128,6 +130,8 @@ export function MediaPicker({
   const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null)
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
+  /** Map of file URL → usage items (which content/settings reference it) */
+  const [usageMap, setUsageMap] = useState<Record<string, MediaUsageItem[]>>({})
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -150,16 +154,18 @@ export function MediaPicker({
         ...(result.videos ?? []),
       ]
       setFiles(all)
+      // Load usage map in parallel (non-blocking — failures are silent)
+      apiGetMediaUsages().then(setUsageMap).catch(() => {})
+      setLoading(false)
     } catch (err) {
       console.error("Failed to load media:", err)
-      // Auto-retry once after 2 seconds on failure
+      // Auto-retry once after 2 seconds on failure — keep loading state active
       if (retryCount < 1) {
         setTimeout(() => loadFiles(retryCount + 1), 2000)
-        return // keep loading state active
+        return
       }
-      setError("Failed to load media library. Check your connection and try again.")
-    } finally {
       setLoading(false)
+      setError("Failed to load media library. Check your connection and try again.")
     }
   }, [accept])
 
@@ -245,6 +251,14 @@ export function MediaPicker({
         setCropSrc(selected)
         return
       }
+      onSelect(selected)
+      onOpenChange(false)
+    }
+  }
+
+  /** Use selected image as-is — bypasses the crop/enhance dialog entirely */
+  const handleUseAsIs = () => {
+    if (selected) {
       onSelect(selected)
       onOpenChange(false)
     }
@@ -517,6 +531,16 @@ export function MediaPicker({
                               </div>
                             )}
 
+                            {/* In-use badge — shown when this image is referenced by content/settings */}
+                            {!file.url.includes('/edited/') && (usageMap[file.url]?.length ?? 0) > 0 && (
+                              <div
+                                className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-blue-600/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow"
+                                title={`Used by: ${usageMap[file.url].map(u => u.title ?? u.label ?? u.config_key).join(", ")}`}
+                              >
+                                In Use
+                              </div>
+                            )}
+
                             {/* File info overlay */}
                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 pb-1 pt-4 opacity-0 transition-opacity group-hover:opacity-100">
                               <p className="truncate text-[10px] font-medium text-white">{file.name}</p>
@@ -664,11 +688,17 @@ export function MediaPicker({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          {/* Use as-is: select existing image without opening the crop/enhance dialog */}
+          {tab === "existing" && selected && cropEnabled && (
+            <Button variant="outline" onClick={handleUseAsIs}>
+              Use
+            </Button>
+          )}
           <Button
             onClick={handleConfirm}
             disabled={tab === "url" ? !urlInput.trim() : !selected}
           >
-            {tab === "url" ? "Use URL" : "Select"}
+            {tab === "url" ? "Use URL" : cropEnabled && tab === "existing" ? "Edit" : "Select"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -688,8 +718,34 @@ export function MediaPicker({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete file?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
+          <AlertDialogDescription asChild>
+            <div className="space-y-3">
+              <p>
+                Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
+              </p>
+              {/* Usage warning — shown when the file is referenced by content or settings */}
+              {deleteTarget && (usageMap[deleteTarget.url]?.length ?? 0) > 0 && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p className="mb-1.5 text-sm font-semibold">
+                    ⚠️ This image is currently in use by {usageMap[deleteTarget.url].length} item{usageMap[deleteTarget.url].length !== 1 ? "s" : ""}:
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    {usageMap[deleteTarget.url].map((u, i) => (
+                      <li key={i} className="flex items-center gap-1.5">
+                        <span className="font-medium">
+                          {u.type === "content"
+                            ? `${u.title ?? "Untitled"} (${u.post_type ?? "content"}, ${u.status})`
+                            : u.label ?? u.config_key}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-1.5 text-xs opacity-80">
+                    Deleting this file will remove its image from the listed items.
+                  </p>
+                </div>
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
