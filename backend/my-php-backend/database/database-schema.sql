@@ -189,22 +189,6 @@ CREATE TABLE featured_content (
 
 
 -- ────────────────────────────────────────────────────────────────
--- 8b. TOUR_GUIDES  (non-account tourist guide roster)
--- ────────────────────────────────────────────────────────────────
-CREATE TABLE tour_guides (
-  guide_id     INT AUTO_INCREMENT PRIMARY KEY,
-  full_name    VARCHAR(200) NOT NULL,
-  phone_number VARCHAR(20)  DEFAULT NULL,
-  organization VARCHAR(255) DEFAULT NULL  COMMENT 'Organization or company the guide represents',
-  availability ENUM('available','unavailable','on_tour') DEFAULT 'available',
-  is_active    TINYINT(1)   DEFAULT 1,
-  created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_availability (availability, is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- ────────────────────────────────────────────────────────────────
 -- 8. INQUIRIES  (visitor forms — general, tour, walk-in, partnership)
 --    inquiry_type is VARCHAR so new types can be added without migration.
 --    Current types: general_contact | tour_booking | partnership | walk_in
@@ -242,6 +226,22 @@ CREATE TABLE inquiries (
   INDEX idx_purge_date     (data_purge_date),
   INDEX idx_created_status (created_at, status),
   FOREIGN KEY fk_inquiry_guide (assigned_guide_id) REFERENCES tour_guides(guide_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ────────────────────────────────────────────────────────────────
+-- 9. TOUR_GUIDES  (non-account tourist guide roster)
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE tour_guides (
+  guide_id     INT AUTO_INCREMENT PRIMARY KEY,
+  full_name    VARCHAR(200) NOT NULL,
+  phone_number VARCHAR(20)  DEFAULT NULL,
+  organization VARCHAR(255) DEFAULT NULL  COMMENT 'Organization or company the guide represents',
+  availability ENUM('available','unavailable','on_tour') DEFAULT 'available',
+  is_active    TINYINT(1)   DEFAULT 1,
+  created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_availability (availability, is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ────────────────────────────────────────────────────────────────
