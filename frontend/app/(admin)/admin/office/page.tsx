@@ -358,11 +358,11 @@ export default function OfficeCMSPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Title</Label>
-                      <Input value={prog.title} onChange={(e) => updateProgram(i, { title: e.target.value })} placeholder="Program title" />
+                      <Input value={prog.title} onChange={(e) => updateProgram(i, { title: e.target.value })} placeholder="e.g. Integrity" className="break-words" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Description</Label>
-                      <Textarea rows={3} value={prog.description} onChange={(e) => updateProgram(i, { description: e.target.value })} placeholder="Describe this program…" className="resize-y" />
+                      <Textarea rows={3} value={prog.description} onChange={(e) => updateProgram(i, { description: e.target.value })} placeholder="Describe this value…" className="resize-y break-words overflow-wrap-break-word whitespace-pre-wrap" />
                     </div>
                     <div className="grid gap-3 lg:grid-cols-2">
                       <div className="space-y-1.5">
@@ -428,7 +428,7 @@ export default function OfficeCMSPage() {
                     value={form.mission}
                     onChange={(e) => setField("mission", e.target.value)}
                     placeholder="Our mission statement…"
-                    className="resize-y"
+                    className="resize-y break-words overflow-wrap-break-word whitespace-pre-wrap"
                   />
                 </CardContent>
               </Card>
@@ -455,7 +455,7 @@ export default function OfficeCMSPage() {
                     value={form.vision}
                     onChange={(e) => setField("vision", e.target.value)}
                     placeholder="Our vision statement…"
-                    className="resize-y"
+                    className="resize-y break-words overflow-wrap-break-word whitespace-pre-wrap"
                   />
                 </CardContent>
               </Card>

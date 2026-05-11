@@ -84,7 +84,7 @@ export function IdleWarningDialog() {
           </p>
         </div>
 
-        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+        <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0">
           <Button onClick={handleStay} className="w-full cursor-pointer">
             Stay
           </Button>

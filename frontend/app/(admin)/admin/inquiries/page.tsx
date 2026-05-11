@@ -478,13 +478,13 @@ export default function InquiriesPage() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <main className="flex flex-1 overflow-hidden w-full">
+      <main className="flex flex-col md:flex-row flex-1 overflow-hidden w-full h-full">
 
           {/* ─── LEFT: Mailbox sidebar ─────────────────────────── */}
           <div className={cn(
-            "flex flex-col border-r border-border bg-card transition-all duration-200",
-            "w-full sm:w-56 md:w-64 lg:w-72 shrink-0",
-            selectedInquiry ? "hidden sm:flex" : "flex"
+            "flex flex-col border-b md:border-b-0 md:border-r border-border bg-card transition-all duration-200",
+            "w-full md:w-56 lg:w-64 xl:w-72 md:shrink-0",
+            selectedInquiry ? "hidden md:flex" : "flex"
           )}>
             {/* Header */}
             <div className="border-b border-border px-3 sm:px-4 py-3 sm:py-4">

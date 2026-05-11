@@ -93,7 +93,7 @@ class Inquiry
                    date_of_visit, number_of_pax, message, additional_details,
                    consent_given, consent_text, submitter_ip, data_purge_date)
                 VALUES
-                  (:inquiry_type, :full_name, :tourist_name, :email, :contact_number,
+                  (:inquiry_type, :full_name, :tourist_name, :email_address, :contact_number,
                    :date_of_visit, :number_of_pax, :message, :additional_details,
                    :consent_given, :consent_text, :submitter_ip,
                    DATE_ADD(CURDATE(), INTERVAL 10 YEAR))
@@ -107,7 +107,7 @@ class Inquiry
                 ':inquiry_type'       => $data['inquiryType'] ?? 'general_contact',
                 ':full_name'          => $data['name'],
                 ':tourist_name'       => $data['touristName'] ?? null,
-                ':email'              => $data['email'],
+                ':email_address'      => $data['email'],
                 ':contact_number'     => $data['contactNumber'] ?? null,
                 ':date_of_visit'      => $data['dateOfVisit'] ?? null,
                 ':number_of_pax'      => !empty($data['numberOfPax']) ? (int) $data['numberOfPax'] : null,

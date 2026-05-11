@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react"
 import { apiUploadMedia } from "@/lib/api"
 import type { CropSaveMode } from "@/components/ui/image-crop-dialog"
 
-const MIN_PASSWORD_LENGTH = 6
+const MIN_PASSWORD_LENGTH = 8
 // Delay before auto-closing the success dialog so the user sees the confirmation
 const SUCCESS_CLOSE_DELAY_MS = 1500
 
@@ -38,6 +38,8 @@ export function usePasswordForm({ changePassword, onSuccess, onError }: UsePassw
   const submit = useCallback(async () => {
     setError("")
     if (newPassword.length < MIN_PASSWORD_LENGTH) { setError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`); return }
+    if (!/[A-Za-z]/.test(newPassword)) { setError("New password must contain at least one letter."); return }
+    if (!/[0-9]/.test(newPassword)) { setError("New password must contain at least one number."); return }
     if (newPassword !== confirmPassword) { setError("New passwords do not match."); return }
     setSaving(true)
     try {

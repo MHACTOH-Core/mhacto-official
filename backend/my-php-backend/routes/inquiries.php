@@ -114,8 +114,8 @@ function _inquiries_read(Inquiry $inquiry): void
 
 function _inquiries_create(Inquiry $inquiry): void
 {
-    // Spam/DoS protection: max 5 inquiry submissions per IP per hour
-    RateLimit::check('inquiry', 5, 3600);
+    // Spam/DoS protection: max 30 inquiry submissions per IP per hour
+    RateLimit::check('inquiry', 30, 3600);
 
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -157,9 +157,17 @@ function _inquiries_create(Inquiry $inquiry): void
 
     if ($newId) {
         // Notify admin of new inquiry (non-fatal)
-        Mailer::notifyAdmin($data['name'], $data['email'], $data['message'], $newId);
+        try {
+            Mailer::notifyAdmin($data['name'], $data['email'], $data['message'], $newId);
+        } catch (Exception $e) {
+            error_log("Failed to notify admin of inquiry #$newId: " . $e->getMessage());
+        }
         // Send auto-reply acknowledgement to the visitor (non-fatal)
-        Mailer::sendAutoReply($data['name'], $data['email'], $newId);
+        try {
+            Mailer::sendAutoReply($data['name'], $data['email'], $newId);
+        } catch (Exception $e) {
+            error_log("Failed to send auto-reply for inquiry #$newId: " . $e->getMessage());
+        }
         Response::json(['message' => 'Inquiry submitted successfully.'], 201);
     } else {
         Response::error('Failed to submit inquiry.', 500);

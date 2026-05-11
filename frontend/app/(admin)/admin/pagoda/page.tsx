@@ -234,8 +234,11 @@ export default function PagodaPage() {
     setDirty(true)
   }
   const updateField = (field: "eventDate" | "badgeText" | "subtitle", value: string) => {
-    setMeta((prev) => ({ ...prev, [field]: value }))
-    setDirty(true)
+    setMeta((prev) => {
+      const updated = { ...prev, [field]: value }
+      setDirty(true)
+      return updated
+    })
   }
 
   // Save handler
@@ -347,7 +350,7 @@ export default function PagodaPage() {
                       <div className="space-y-1.5">
                         <Label>Badge Text</Label>
                         <Input
-                          value={meta.badgeText}
+                          value={meta.badgeText || ""}
                           onChange={(e) => updateField("badgeText", e.target.value)}
                           placeholder="Bocaue River Festival"
                         />
@@ -356,7 +359,7 @@ export default function PagodaPage() {
                         <div className="space-y-1.5">
                           <Label>Event Date</Label>
                           <Input
-                            value={meta.eventDate}
+                            value={meta.eventDate || ""}
                             onChange={(e) => updateField("eventDate", e.target.value)}
                             placeholder="July 1st"
                           />
@@ -364,7 +367,7 @@ export default function PagodaPage() {
                         <div className="space-y-1.5">
                           <Label>Subtitle</Label>
                           <Input
-                            value={meta.subtitle}
+                            value={meta.subtitle || ""}
                             onChange={(e) => updateField("subtitle", e.target.value)}
                             placeholder="A centuries-old river festival..."
                           />

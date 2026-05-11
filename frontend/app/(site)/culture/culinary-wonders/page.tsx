@@ -1,4 +1,5 @@
-﻿"use client"
+﻿
+"use client"
 
 import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
@@ -218,7 +219,7 @@ export default function CulinaryWondersPage() {
     <main className="min-h-screen bg-background">
       {/* ── Hero ── */}
       <PageHero
-        pageSlug="culinary-wonders"
+        pageSlug="local-cuisine"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Utensils"
         fallbackAccentColor="amber-300"

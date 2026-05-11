@@ -34,7 +34,7 @@ export default function RemarkablePersonsPage() {
   return (
     <main className="min-h-screen bg-background">
       <PageHero
-        pageSlug="remarkable-persons"
+        pageSlug="notable-persons"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Users"
         fallbackAccentColor="purple-300"

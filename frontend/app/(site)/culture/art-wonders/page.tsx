@@ -174,7 +174,7 @@ export default function ArtWondersPage() {
     <main className="min-h-screen bg-background">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <PageHero
-        pageSlug="art-wonders"
+        pageSlug="crafts-artisan"
         fallbackImage="/images/defaults/no-image.svg"
         fallbackIcon="Hammer"
         fallbackAccentColor="amber-300"

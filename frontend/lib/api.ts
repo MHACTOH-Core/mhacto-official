@@ -369,7 +369,7 @@ export async function apiUploadMedia(
   options?: { category?: string; label?: string; subfolder?: string },
 ): Promise<MediaUploadResult> {
   const formData = new FormData()
-  files.forEach((file) => formData.append("files[]", file))
+  files.forEach((file) => formData.append("files", file))
 
   const params = new URLSearchParams({ type })
   if (options?.category) params.set("category", options.category)

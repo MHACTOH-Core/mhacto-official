@@ -74,6 +74,16 @@ function _media_upload(): void
     // Override Content-Type for multipart uploads
     header("Content-Type: application/json; charset=UTF-8");
 
+    $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($contentLength > 0 && empty($_FILES['files'])) {
+        $uploadLimit = ini_get('upload_max_filesize') ?: 'unknown';
+        $postLimit = ini_get('post_max_size') ?: 'unknown';
+        Response::error(
+            "Upload exceeds server limits (upload_max_filesize={$uploadLimit}, post_max_size={$postLimit}).",
+            413
+        );
+    }
+
     if (empty($_FILES['files'])) {
         Response::error('No files uploaded. Use field name "files".', 400);
     }
