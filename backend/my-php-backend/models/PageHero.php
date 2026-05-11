@@ -122,6 +122,16 @@ class PageHero
         'practices-traditions' => [
             'displayName'  => 'Cultural Practices & Traditions',
             'imageUrl'     => '/images/defaults/no-image.svg',
+            // Frontend route uses /culture/art-wonders — provide an alias so admin can edit it
+            'art-wonders' => [
+                'displayName'  => 'Art Wonders',
+                'imageUrl'     => '/images/defaults/no-image.svg',
+                'iconName'     => 'Hammer',
+                'accentColor'  => 'amber-300',
+                'label'        => 'Arts & Culture Wonders',
+                'title'        => 'Art Wonders',
+                'description'  => 'Meet the master craftspeople of Bocaue — weavers, woodcarvers, potters, and pyrotechnics artists who keep centuries-old traditions alive with their hands and their hearts.',
+            ],
             'iconName'     => 'Heart',
             'accentColor'  => 'pink-300',
             'label'        => 'Culture',
@@ -131,6 +141,16 @@ class PageHero
         'crafts-artisan' => [
             'displayName'  => 'Crafts & Artisan',
             'imageUrl'     => '/images/defaults/no-image.svg',
+            // Frontend route uses /culture/culinary-wonders — alias to match frontend
+            'culinary-wonders' => [
+                'displayName'  => 'Culinary Wonders',
+                'imageUrl'     => '/images/defaults/no-image.svg',
+                'iconName'     => 'Utensils',
+                'accentColor'  => 'amber-300',
+                'label'        => 'Local Culinary',
+                'title'        => 'Taste of Bocaue',
+                'description'  => 'From legendary crispy chicharon to generations-old kakanin — explore the flavors, stories, and traditions behind Bocaue\'s most beloved delicacies.',
+            ],
             'iconName'     => 'Hammer',
             'accentColor'  => 'amber-300',
             'label'        => 'Arts & Culture Wonders',
@@ -140,6 +160,16 @@ class PageHero
         'people-wonders' => [
             'displayName'  => 'People Wonders',
             'imageUrl'     => '/images/defaults/no-image.svg',
+            // Frontend uses /history/remarkable-persons — keep an alias so the page hero API matches
+            'remarkable-persons' => [
+                'displayName'  => 'Remarkable Persons',
+                'imageUrl'     => '/images/defaults/no-image.svg',
+                'iconName'     => 'Users',
+                'accentColor'  => 'purple-300',
+                'label'        => 'History Wonders',
+                'title'        => 'Remarkable Persons',
+                'description'  => 'The men and women of Bocaue whose lives, work, and sacrifice have shaped the identity and culture of the municipality.',
+            ],
             'iconName'     => 'Users',
             'accentColor'  => 'pink-300',
             'label'        => 'Arts & Culture Wonders',
